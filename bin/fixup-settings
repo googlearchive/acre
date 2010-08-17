@@ -1,0 +1,89 @@
+# Since the base Acre log and data dirs depend on
+# other configs, we derive them here if they
+# weren't explicitly set somewhere else.
+
+if [ -z "$ACRE_DATADIR" ]; then
+    if [ -z "$MWBUILD_DATAROOT" ]; then
+        ACRE_DATADIR="_data/acre"
+    else
+        ACRE_DATADIR="${MWBUILD_DATAROOT}/acre"
+    fi
+fi
+
+if [ -z "$ACRE_LOGDIR" ]; then
+    if [ -z "$MWBUILD_LOGROOT" ]; then
+        ACRE_LOGDIR="_logs/acre"
+    else
+        ACRE_LOGDIR="${MWBUILD_LOGROOT}/acre"
+    fi
+fi
+
+if [ -z "$ACRE_JSLOGS" ]; then
+    ACRE_JSLOGS="${ACRE_DATADIR}/jslogs"
+fi
+
+if [ -z "$ACRE_ACCESSLOGS" ]; then
+    export ACRE_ACCESSLOGS="${ACRE_DATADIR}/accesslogs"
+fi
+
+if [ -z "$ACRE_STATIC_DIR" ]; then
+    ACRE_STATIC_DIR="${ACRE_DATADIR}/static"
+fi
+
+if [ -z "$ACRE_SERVICE_ADDR" ]; then
+    export ACRE_SERVICE_ADDR=${ACRE_HOST}:${ACRE_PORT}
+fi
+
+# Obtain the acre version
+if [ -z "$ACRE_VERSION" ]; then
+
+    if [ ! -z "$PROJECT_SVN" ]; then
+        ACRE_VERSION="$PROJECT_SVN"
+    else 
+        INFO="._info"
+        
+        # if mw is available, it's better to use that to avoid svn versioning confusion
+        # if not, try to use svn or git-svn, depending on the shape of the local checkout
+        if [ -d ".svn" ]; then
+            svn info > $INFO
+        elif [ -d ".git" ]; then
+            git svn info > $INFO
+        else
+            ACRE_VERSION="acre:exported"
+        fi
+    
+        if [ -z "$ACRE_VERSION" ]; then
+            ACRE_VERSION="`cat $INFO | grep URL | cut -d'/' -f5-`:`cat $INFO | grep Revision | sed 's/.*: //'`"
+            rm $INFO
+        fi
+        
+
+    fi
+fi
+
+# Find the java environment
+if [ ! -z "$JAVA_HOME" ]; then
+    JAVA="$JAVA_HOME/bin/java"
+else 
+    JAVA=`which java`
+    if [ -z "$JAVA" ]; then
+        echo "The 'java' command should be in your path or the 'JAVA_HOME' environment variable should be set"
+        exit 1
+    fi
+fi
+
+# Set Acre PID file
+ACRE_PID=$ACRE_DATADIR/acre.pid
+
+# The testing URL defaults to the local one but only if it wasn't already set
+if [ -z "$TEST_HOST_SUFFIX" ]; then
+    TEST_HOST_SUFFIX="$ACRE_HOST_SUFFIX"
+fi
+if [ -z "$TEST_PORT" ]; then
+    TEST_PORT="$ACRE_PORT"
+fi
+
+# If verbosity is not specified, set syslog threshold level to INFO
+if [ -z "$ACRE_LOG_LEVEL" ]; then
+    ACRE_LOG_LEVEL='INFO'
+fi

@@ -1,0 +1,41 @@
+
+### Root logger ----------------------------------------------------------
+
+log4j.rootLogger=ALL, console
+
+### Log Channel Appenders ------------------------------------------------
+
+# console
+log4j.appender.console=org.apache.log4j.ConsoleAppender
+log4j.appender.console.layout=com.metaweb.util.logging.IndentingLayout
+
+# rotating files
+log4j.appender.rolling=com.metaweb.util.logging.PreRotatingFileAppender
+log4j.appender.rolling.File=@ACRE_LOGDIR@/acre.mwlog.log
+log4j.appender.rolling.FilePrefix=@ACRE_LOGDIR@/acre.mwlog.log
+log4j.appender.rolling.DateFormat=yyyy-MM-dd'T'HH_mm_ss'Z'
+log4j.appender.rolling.layout=com.metaweb.util.logging.NetLogV3Layout
+
+# per-app logs
+log4j.appender.perapp=com.metaweb.util.logging.PerAppFileAppender
+log4j.appender.perapp.File=@ACRE_ACCESSLOGS@
+
+### Acre log channels ----------------------------------------------------
+
+log4j.logger.acre=@ACRE_LOG_LEVEL@, rolling
+log4j.logger.acre.accesslog=ERROR, perapp
+
+log4j.additivity.acre=true
+log4j.additivity.acre.accesslog=false
+
+### Dependencies log channels --------------------------------------------
+
+# jetty
+log4j.logger.org.mortbay.log=INFO
+
+# httpclient
+log4j.logger.org.apache.http=info
+
+# whirlycache
+log4j.logger.com.whirlycott=ERROR
+log4j.logger.com.whirlycott.cache.CacheDecorator=WARN

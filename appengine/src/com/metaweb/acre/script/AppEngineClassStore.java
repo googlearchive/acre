@@ -1,0 +1,44 @@
+// Copyright 2007-2010 Google, Inc.
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+package com.metaweb.acre.script;
+
+import com.google.appengine.api.memcache.MemcacheService;
+import com.google.appengine.api.memcache.MemcacheServiceFactory;
+
+public class AppEngineClassStore implements ClassStore {
+    private MemcacheService _cache;
+
+    public AppEngineClassStore() {
+        _cache = MemcacheServiceFactory.getMemcacheService();
+        _cache.setNamespace("class_store");
+    }
+
+    public StoredClass get(String name) {
+        return (StoredClass) _cache.get(name);
+    }
+
+    public void set(String name, StoredClass klass) {
+        _cache.put(name, klass);
+    }
+
+    public StoredClass new_storedclass() {
+        return new StoredClass();
+    }
+
+    public StoredClass new_storedclass(String name, byte[] code) {
+        return new StoredClass(name, code);
+    }
+}
