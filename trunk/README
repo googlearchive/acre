@@ -1,0 +1,90 @@
+Acre (A Crash of Rhinos Evaluating)
+-----------------------------------
+
+Acre is a server-side Javascript platform for implementing web applications
+easily.  It was designed to facilitate the development of applications that
+make use of the data provided by Freebase.com, though it is a capable platform
+for generic web application development. Applications are generally implemented
+using the Acre templating language, which is a variation of Mjt
+(http://mjtemplate.org). It's also possible to implement applications directly
+in Javascript, which is preferable for APIs that return JSON results.
+
+Traditionally, Acre stores the meta-data and source required to find and run
+applications using the APIs provided by Freebase.com.  The retrieval mechanism
+for discovering source and meta data is pluggable, and thus easily extensible.
+This release includes a method that uses the local file system to find and run
+applications, as well as the more traditional Freebase.com implementation.
+
+Running Acre
+------------
+
+To run acre, take a look at config/project.local.conf, which should contain
+reasonable defaults. Now:
+
+./acre run
+
+and then look at:
+
+http://localhost:8115/acre/status in your browser.
+
+If everything looks alright, congratulations, you have Acre running! By
+default, Acre gets data and source from sandbox-freebase.com. If you want it to
+get data and source from freebase.com run it with:
+
+./acre -c otg run
+
+
+Developing Acre apps
+--------------------
+
+Acre apps are stored in 'webapp/WEB-INF/scripts'.  Here's a simple example:
+
+Your app is called:      foo
+Put the files in:        webapp/WEB-INF/scripts/foo/
+Point your browser at:   http://foo.dev.acre.localhost:8115
+
+Acre is configured to serve your apps from under dev.acre.localhost:8115.  To
+make this work, you will need to configure a hostname for each app you're
+working on.  You can do this by adding the following to your /etc/hosts file:
+
+  127.0.0.1   foo.dev.acre.localhost
+
+(Repeat this line for each app you want to serve.)
+
+I you want to use a different base URL, update 'ACRE_HOST_BASE' and
+'ACRE_HOST_SUFFIX' in your 'config/project.local.conf' file, and restart Acre.
+
+You can use subdirectories for different versions of your apps, staging, etc.
+The directory structure is the same as the namespace path in Freebase.com, so
+if you want acre to serve:
+
+http://foo.bar.dev.acre.localhost:8115/index
+
+you would create the directory 'webapp/WEB-INF/scripts/bar/foo' and place a
+file named 'index.<ext>' in it. Acre uses the extension to determine what
+mechanism to use to run the file. By default Acre will serve the file as raw
+text unless certain extensions are used:
+
+.mjt will treat the file as an Acre template
+.sjs will treat the file as a server-side Javascript file
+.mql will treat the file as a MQL Query
+.{png, jpg, gif} will serve the file as binary with the appropriate mime-type
+
+
+Example apps
+------------
+
+Some simple example applications are included in this distribution.
+
+Example 1: Hello World
+
+The files can be found at:
+  webapp/WEB-INF/scripts/examples/helloworld
+
+Add this line to your /etc/hosts:
+  127.0.0.1 helloworld.examples.acre.localhost
+
+Point your browser at:
+  http://helloworld.examples.acre.localhost:8115
+
+

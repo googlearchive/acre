@@ -1,0 +1,105 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+  
+<head>
+  <title>TV microdata example</title>
+  
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type"></meta>
+
+  <script type="text/javascript" 
+          src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js">
+  </script>
+  <script type="text/javascript" 
+          src="../mjt.js">
+  </script>
+  <script type="text/javascript"
+    src="mql_micro.js"></script>
+
+  <script type="text/javascript">
+    
+    function init () {
+        window.itemvalue = {
+                "com.freebase.tv.tv_program.genre" : { id: 'xxx',
+                                                       about: 'http://rdf.freebase.com/ns/guid.9202a8c04000641f800000000584db7f',
+                                                       name: 'Drama' },
+                "com.freebase.tv.tv_program.air_date_of_first_episode" : 'foo',
+                "com.freebase.tv.tv_program.episode_running_time" : 23,
+                "com.freebase.tv.tv_program.program_creator": { id: 'xxx',
+                                                                about: 'http://rdf.freebase.com/ns/guid.9202a8c04000641f800000000584db7f',
+                                                                name: 'Fred' },
+                "com.freebase.tv.tv_program.tv_producer" : [{
+                    name: null,
+                    "com.freebase.tv.tv_producer_term.producer": {
+                        about: "http://rdf.freebase.com/ns/en.matthew_weiner",
+                        name: 'Matthew Weiner'
+                    }
+                }]
+            };
+        mjt.run('page');
+    }
+
+  </script>
+
+</head>
+<body onload="init()">
+<!--   <link href="http://rdf.freebase.com/ns/en.mad_men" mjt.itemprop="about"></link> -->
+
+<div id='page'>
+  
+    <h3>template output</h3>
+
+<div mjt.def="microdata()" data-limit="5" mjt.item>
+  <link mjt.itemprop="about" href="" />
+  <img mjt.itemprop="com.freebase.common.topic.image" src="" />
+  <h1 mjt.itemprop="com.freebase.type.object.name"></h1>
+  by <h2 mjt.itemprop="com.freebase.tv.tv_program.program_creator" mjt.item>
+          <span mjt.itemprop="com.freebase.type.object.name"></span>
+        </h2>
+
+  <hr />
+  <ul>
+    <li mjt.itemprop="com.freebase.tv.tv_program.seasons" mjt.item>
+      <link mjt.itemprop="about" href="" />
+      <span data-sort="" style="display:none;" mjt.itemprop="com.freebase.tv.tv_series_season.season_number"></span>
+      <span mjt.itemprop="com.freebase.type.object.name"></span>
+      <ul>
+        <li mjt.itemprop="com.freebase.tv.tv_series_season.episodes" item>
+          <span data-sort="" style="display:none;" mjt.itemprop="com.freebase.tv.tv_series_episode.episode_number"></span>
+          <span mjt.itemprop="com.freebase.type.object.name"></span>
+          <link mjt.itemprop="about" href="" />
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+
+<h3>template source microdata</h3>
+<pre>
+${JSON.stringify(microdata.source_microdata, null, 2)}
+</pre>
+
+<h3>mql query</h3>
+<pre>
+${JSON.stringify(make_mql(microdata.source_microdata), null, 2)}
+</pre>
+
+<div mjt.def="run_query()">
+  <span mjt.task="x">
+    mjt.freebase.MqlRead([make_mql(microdata.source_microdata)])
+  </span>
+  <span mjt.choose="x.state">
+    <span mjt.when="ready">
+      ${JSON.stringify(x.result, null, 2)}
+    </span>
+  </span>
+</div>
+${run_query()}
+
+
+<h3>input microdata</h3>
+<pre>
+${JSON.stringify(window.itemvalue, null, 2)}
+</pre>
+
+</div>
+</body></html>

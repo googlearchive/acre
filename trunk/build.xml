@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--+
+    |
+    |  Acre Build File    
+    |                
+    +-->
+
+<project name="acre" default="compile" basedir=".">
+
+    <property environment="env"/>
+
+    <property name="library.dir" value="${basedir}/library"/>
+    <property name="library.src.dir" value="${library.dir}/src" />
+    <property name="library.lib.dir" value="${library.dir}/lib" />
+    <property name="library.classes.dir" value="${library.dir}/classes" />
+
+    <property name="server.dir" value="${basedir}/server"/>
+    <property name="server.src.dir" value="${server.dir}/src" />
+    <property name="server.lib.dir" value="${server.dir}/lib" />
+    <property name="server.classes.dir" value="${server.dir}/classes" />
+
+    <property name="webapp.dir" value="${basedir}/webapp"/>
+    <property name="webapp.config.dir" value="${webapp.dir}/META-INF"/>
+    <property name="webapp.src.dir" value="${webapp.dir}/WEB-INF/src" />
+    <property name="webapp.lib.dir" value="${webapp.dir}/WEB-INF/lib" />
+    <property name="webapp.classes.dir" value="${webapp.dir}/WEB-INF/classes" />
+
+    <property name="appengine.dir" value="${basedir}/appengine"/>
+    <property name="appengine.src.dir" value="${appengine.dir}/src" />
+    <property name="appengine.lib.dir" value="${appengine.dir}/lib" />
+    <property name="appengine.classes.dir" value="${appengine.dir}/classes" />
+    
+    <path id="server.class.path">
+        <fileset dir="${server.lib.dir}">
+            <include name="**/*.jar" />
+        </fileset>
+        <pathelement location="${library.classes.dir}"/>
+    </path>
+
+    <path id="webapp.class.path">
+        <path refid="server.class.path"/>
+        <fileset dir="${webapp.lib.dir}">
+            <include name="**/*.jar" />
+        </fileset>
+        <pathelement location="${library.classes.dir}"/>
+    </path>
+
+    <path id="appengine.class.path">
+        <path refid="webapp.class.path"/>
+        <fileset dir="${sdk.dir}/lib/user">
+            <include name="**/*.jar" />
+        </fileset>
+        <pathelement location="${webapp.classes.dir}"/>
+    </path>
+    
+    <target name="compile-library" description="Compile the library">
+        <mkdir dir="${library.classes.dir}" />
+        <javac srcdir="${library.src.dir}" destdir="${library.classes.dir}"  debug="true">
+            <classpath refid="server.class.path" />
+        </javac>
+    </target>
+    
+    <target name="compile-server" description="Compile the server">
+        <mkdir dir="${server.classes.dir}" />
+        <javac srcdir="${server.src.dir}" destdir="${server.classes.dir}"  debug="true">
+            <classpath refid="server.class.path" />
+        </javac>
+    </target>
+        
+    <target name="compile-webapp" description="Compile the webapp">
+        <mkdir dir="${webapp.classes.dir}" />
+        <javac srcdir="${webapp.src.dir}" destdir="${webapp.classes.dir}" debug="true">
+            <classpath refid="webapp.class.path" />
+        </javac>
+    </target>
+
+    <target name="compile-appengine" description="Compile the Google AppEngine connectors">
+        <mkdir dir="${appengine.classes.dir}" />
+        <javac srcdir="${appengine.src.dir}" destdir="${appengine.classes.dir}" debug="true">
+            <classpath refid="appengine.class.path" />
+        </javac>
+    </target>
+
+    <target name="compile" depends="compile-library, compile-server, compile-webapp" description="Compile everything" />
+
+    <target name="appengine" depends="compile-library, compile-webapp, compile-appengine"
+            description="Build a webapp">
+
+      <!-- run ./acre -c branch make-configs -->
+      <exec executable="${basedir}/acre">
+        <arg value="-c" />
+        <arg value="appengine" />
+        <arg value="make-configs"/>
+      </exec>
+
+      <copy todir="${webapp.classes.dir}">
+        <fileset dir="${library.classes.dir}">
+          <include name="**/*.class"/>
+        </fileset>
+        <fileset dir="${appengine.classes.dir}">
+          <include name="**/*.class"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${webapp.lib.dir}" flatten="true">
+        <fileset dir="${server.lib.dir}">
+          <include name="log4j-1.2.15.jar" />
+          <include name="slf4j-*.jar" />
+          <include name="jcl-over-slf4j-1.5.6.jar" />
+        </fileset>
+      </copy>
+
+      <copy todir="${webapp.lib.dir}" flatten="true">
+        <fileset dir="${sdk.dir}/lib/user">
+          <include name="**/*.jar" />
+        </fileset>
+      </copy>
+    </target>
+    
+    <target name="clean" description="Wipeout all generated files">
+        <delete dir="${library.classes.dir}" />
+        <delete dir="${server.classes.dir}" />
+        <delete dir="${webapp.classes.dir}" />
+        <delete dir="${appengine.classes.dir}" />
+    </target>
+
+</project>
