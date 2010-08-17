@@ -1,14 +1,18 @@
 #labels Featured,Phase-Deploy
-#read this first
+= Download =
 
-= Introduction =
+Download the Acre source using the instructions here:
+http://code.google.com/p/acre/source/checkout
 
-Add your content here.
 
+= Build and Run =
 
-= Details =
+There are extended instructions in the README file that comes with the checkout. 
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+The quick version is:
+
+Build Acre:
+  * ./acre build 
+
+Run it:
+  * ./acre run
