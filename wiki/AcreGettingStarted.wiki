@@ -1,18 +1,23 @@
 #labels Featured,Phase-Deploy
-= Download =
+The open source release Acre allows you to run Acre apps on your own machine.
 
-Download the Acre source using the instructions here:
-http://code.google.com/p/acre/source/checkout
+== Install and run Acre ==
 
+To run it, the steps are:
 
-= Build and Run =
+* download (either via the "Downloads" tab or the "Source" tab above, as you prefer)
+* ./acre build
+* ./acre run
+* point your browser at http://localhost:8115/acre/status to check that it worked
 
-There are extended instructions in the README file that comes with the checkout. 
+== Developing apps ==
 
-The quick version is:
+Put the source for your apps in webapp/WEB-INF/scripts/ and edit your /etc/hosts (or otherwise configure DNS) as described in the README file, so that you can point your browser at http://yourapp.dev.acre.localhost:8115/ to see your app in action.
 
-Build Acre:
-  * ./acre build 
+== More information ==
 
-Run it:
-  * ./acre run
+For more information about developing apps, see:
+
+* [http://freebase.com/docs/ Freebase and Acre API docs]
+
+For assistance with building apps, please join the [http://lists.freebase.com/mailman/listinfo/freebase-discuss freebase-discuss mailing list].  The acre-dev list (attached to this project) is only for the development of the Acre open source software itself.
