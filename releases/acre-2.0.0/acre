@@ -1,0 +1,163 @@
+#!/bin/sh
+
+########################################################## 
+#                  Acre Control System                   #
+##########################################################
+
+# Print Failure Info -------------------------------------
+fail() {
+    cat <<EOF
+Unknown command: $1
+Type '$0 help' for usage.
+EOF
+    exit 1
+}
+
+# Print Error Info -------------------------------------
+error() {
+    echo "ERROR: $1"
+    exit 1
+}
+
+# Print Warning Info -------------------------------------
+warning() {
+    echo "WARNING: $1"
+    echo
+}
+
+# Print Usage Info ---------------------------------------
+usage() {
+    cat <<EOF
+Usage: $0 [options] <command>
+
+Available Options:
+  
+  -c <conf> ........... The configuration file that acre should use
+                        (or name in project.<name>.conf)
+                        [default: sandbox]
+
+  -p <port> ........... The port acre should listen to
+                        [default:  8115]
+
+  -v <level> .......... Log verbosity level (one of "DEBUG,INFO,WARN,ERROR")
+                        [default: INFO]
+                        
+Available Commands:
+
+    build ............. Build Acre
+    
+    war ............... Build a WAR package of Acre to run on a regular servlet container
+    appengine ......... Build a WAR package of Acre to run on Google App Engine
+    appengine-local ... Build a WAR package of Acre to run on Google App Engine (locally)
+    
+    run ............... Run Acre
+    run_app <dir> ..... Run Acre with a local app from disk
+    start ............. Start Acre as a daemon
+    stop .............. Stop Acre that was started as a daemon
+    zap ............... Remove the Acre PID file
+    
+    clean ............. Remove all class files
+    clean-whitespace .. Normalize tabs and newlines
+    
+    setup-keystore .... Initialize the KeyStore SQL tables
+
+EOF
+    exit 0
+}
+
+# Load Configs --------------------------------------------
+load() {
+    cat $1 | egrep "^[A-Z]" | sed 's/^\(.*\)$/export \1/' > .`basename $1`
+    . ./.`basename $1`
+    rm ./.`basename $1`
+}
+
+# We called without arguments print the usage -------------
+[ $# -gt 0 ] || usage
+
+# Normalize the current directory -------------------------
+cd `dirname $0`
+
+# Load default configs ------------------------------------
+if [ -f "config/project.conf" ]; then
+    load "config/project.conf"
+else 
+    error "Missing 'project.conf'"
+fi
+
+
+# Extract the options -------------------------------------
+export CONF="sandbox"
+while [ $# -ne 0 ] ; do
+  case $1 in
+    -c) shift 
+        export CONF="$1" 
+        shift
+        continue;;
+        
+    -p) shift 
+        export PORT="$1"
+        shift
+        continue;;
+        
+    -v) shift
+        export ACRE_LOG_LEVEL="$1"
+        shift
+        continue;;
+        
+    -*) echo "$0: invalid option: $1" >&2
+        exit 1;;
+        
+    *) break;;
+  esac
+done
+
+# Overwrite defaults with cli config ----------------------
+if [ "$CONF" != "" ]; then
+    if [ -f $CONF ]; then
+        load $CONF
+    elif [ -f "config/project.$CONF.conf" ]; then    
+        load "config/project.$CONF.conf"
+    else 
+        fail "configuration file project.$CONF.conf not found";
+    fi
+fi
+
+# Overwrite defaults with local configs (if present) ------
+if [ -f "config/project.local.conf" ]; then
+    load "config/project.local.conf"
+fi
+
+# Overload the port if it was set -------------------------
+if [ "$PORT" != "" ]; then
+    export ACRE_PORT="$PORT"
+fi
+
+# Assign the wanted action --------------------------------
+ACTION=$1
+COMMAND=
+shift
+
+# Decide what script to run based on the wanted action ----
+case "$ACTION" in
+    help) usage ;;
+    build) SCRIPT="build"; COMMAND="compile" ;;
+    war) SCRIPT="build"; COMMAND="war" ;;
+    appengine) SCRIPT="build"; COMMAND="appengine"; export ANT_PARAMS="-Dappengine.remote=true -Dsdk.dir=\"$APPENGINE_HOME\"" ;;
+    appengine-local) SCRIPT="build"; COMMAND="appengine"; export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" ;;
+    clean) SCRIPT="build"; COMMAND="clean" ;;
+    run) SCRIPT="start" ;;
+    *) SCRIPT="$ACTION" ;;
+esac
+
+# Invoke the wanted action --------------------------------
+if [ -f "./bin/$SCRIPT" ]; then
+    export ACTION
+    export JAVA
+    ./bin/$SCRIPT $COMMAND $*
+    result=$?
+else
+    fail "'$ACTION'"
+fi
+
+exit $result

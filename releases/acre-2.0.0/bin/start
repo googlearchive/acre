@@ -1,0 +1,103 @@
+#!/bin/sh
+
+# Normalize the current directory
+cd `dirname $0`/..
+
+if [ "$ACTION" = "run_app" ] ; then
+    ACRE_HOST_SUFFIX="localhost"
+    ACRE_HOST_BASE="localhost"
+fi
+
+# Generate any derived settings
+. bin/fixup-settings
+
+# Make configuration files
+. bin/make-configs
+
+# function to make paths absolute
+absolute_path () {
+  case $1 in
+    /*) echo $1; ;;
+    *) echo `pwd`/$1; ;;
+  esac
+}
+
+# Check if Acre is already running
+if [ "$ACTION" != "run" ] && [ -f $ACRE_PID ]; then
+    echo "$ACRE_PID exists. Is Acre already running?"
+    exit 1
+fi
+
+# Create directories that Acre will need to function
+mkdir -p "$ACRE_LOGDIR"
+mkdir -p "$ACRE_DATADIR"
+mkdir -p "$ACRE_STATIC_DIR"
+
+# Check if the static symlink is not there
+if [ ! -L webapp/WEB-INF/static ]; then
+    ln -s `absolute_path ${ACRE_STATIC_DIR}` webapp/WEB-INF/static
+fi
+
+if [ ! -z "$LOGFWD_REGDIR" ]; then
+    mkdir -p ${LOGFWD_REGDIR}
+    echo "${ACRE_LOGDIR}/acre.mwlog.log.*" > ${LOGFWD_REGDIR}/acre.reg
+fi
+
+# Obtain Acre classpath
+classpath="`absolute_path library/classes`:`absolute_path server/classes`"
+classpath="${classpath}:`ls server/lib/*.jar | paste -s -d: -`"
+
+#        ACRE_CACHE_CLASS("com.metaweb.acre.script.AppEngineCache"),
+#        ACRE_KEYSTORE_CLASS("com.metaweb.acre.util.AppEngineKeyStore"),
+
+LOCAL_SERVER_CLASSES="-DACRE_CACHE_CLASS=com.metaweb.acre.script.WhirlycottCache -DACRE_KEYSTORE_CLASS=com.metaweb.acre.util.MySQLKeyStore"
+
+RUN_CMD="$JAVA $JVM_MEM $JVM_PERM_MEM $JVM_JMX $DEBUG -cp $classpath -DconfigDir=webapp/META-INF $LOCAL_SERVER_CLASSES -DSTATIC_SCRIPT_PATH=webapp/WEB-INF/scripts $EXTRA_CONF com.metaweb.acre.Main"
+
+echo "Starting '$ACRE_VERSION' mounted at '*.$ACRE_HOST_SUFFIX' over '$ACRE_METAWEB_API_ADDR' "    
+
+if [ ! -z "$DEBUG" ]; then
+    echo "with DEBUG parameters: $DEBUG"
+fi
+
+if [ "$ACTION" = "start" ] ; then
+
+    # Execute the JVM fork the process in background
+    nohup sh -c "cd webapp && exec $RUN_CMD >> acre.console.log 2>&1" >/dev/null &
+    A_PID=$!
+    echo $A_PID > $ACRE_PID
+
+    # Loop waiting for status
+    sleep 2
+    for try in 1 2 3 ; do
+        curlmsg="\nstatus=%{http_code}\n"
+        result=`curl -w "$curlmsg" -s "http://127.0.0.1:$ACRE_PORT/status"`
+        ret=$?
+        if [ $ret -eq 0 ] ; then 
+            echo "$result" | grep "status=200" > /dev/null
+            gret=$?
+            if [ $gret -eq 0 ] ; then 
+                echo "/status returned: $result"
+                echo "Acre started ok"
+                exit 0
+            fi
+        fi
+        echo "failed $try /status check"
+        sleep_int=$(($try*5))
+        sleep $sleep_int
+    done
+    
+    # if we get here, there was an error, so we should kill
+    . ./stop
+    
+    echo
+    echo "giving up, last /status check returned:"
+    echo "$result"
+    echo
+    echo "start failed"
+    exit 1
+    
+else 
+    exec $RUN_CMD
+fi
+

@@ -1,0 +1,167 @@
+#! /usr/bin/env perl -w
+use Getopt::Long;
+
+my $CONFIG_DIR="config";
+my $CONFIG="$CONFIG_DIR/acre.properties";
+my $PASSWD_FILE=".passwd";
+my $COOKIE_FILE=".cookies.txt";
+
+my $LISTFILE    ='.testlist.json';
+my $LISTFILEALL ='.testlist_all.json';
+
+my ($action, $help, $verbose, $test,$testall,$update);
+ 
+usage() if ( ! GetOptions('action|a:s'=>\$action, 'help|?'=>\$help, 'verbose|v'=>\$verbose, 'test'=>\$test, 'testall'=>\$testall, 'update'=>\$update) or defined $help );
+
+sub usage
+{
+  print "Unknown option: @_\n" if ( @_ );
+
+  print "\nFor running on-disk acre apps:\n";
+  print "usage: $0 [--action=echo|curl|open] [--verbose] [--help] [filename]\n";
+
+  print "\nFor testing on-disk apps:\n";
+  print "usage: $0 --test or --testall [--update]\n";
+  print "       --update re-creates the local list of tests\n";
+
+  print "\nFor running a specific test url:\n";
+  print "usage: $0 --test [--update] testappurl\n";
+  print "       If .passwd exists, first login to freebase unless $COOKIE_FILE already exists\n";
+  print "       --update force update of $COOKIE_FILE\n";
+
+  print "\n";
+  exit;
+}
+
+my $filename = shift || '';
+my $testappurl = $filename;
+$filename =~ s/\.[^\.]+$//; # remove file extensions (.sjs .mjt)
+find_config();
+
+my $script_base = get_prop("ACRE_WEBAPP") . '/' . get_prop("STATIC_SCRIPT_PATH");
+my $hostname    = get_prop("ACRE_HOST_SUFFIX") . ':' . get_prop("ACRE_PORT");
+my $api_addr    = get_prop("ACRE_METAWEB_API_ADDR") . ':' . get_prop("ACRE_METAWEB_API_ADDR_PORT");
+# do we need ACRE_WEBAPP_ROOT?
+chdir($ENV{'PWD'}); # return to original dir
+
+$verbose && print "script_base=$script_base\n";
+$verbose && print "hostname=$hostname\n";
+
+$verbose && print "pwd=$ENV{'PWD'}\n";
+
+my $url = $ENV{'PWD'};
+$url =~ /$script_base(.+)/ || die "Could not find $script_base in $ENV{'PWD'} ";
+my $appid = $1;
+my $apphostname = (join '.', reverse  split(/\//,$appid)) . $hostname;
+
+if ($test or $testall) {
+  # test mode
+  run_tests();
+}
+else {
+  # execute mode
+  $action = $action || 'open';
+  $url = "http://$apphostname/$filename";
+  do_cmd("$action '$url'");
+}
+
+exit 0;
+
+sub run_tests {
+
+  if ($testappurl) {
+    # test a single file
+    -e $PASSWD_FILE && freebase_login();
+    test_file($testappurl, "-b $COOKIE_FILE");
+  } else {
+    # discover list of tests
+    my $listfiles = $LISTFILE;
+    $url = "http://$apphostname/acre/test?mode=listfiles";
+    if ($testall) {
+      $url = "$url&recurse=1";
+      $listfiles = $LISTFILEALL; 
+    }
+    if (-e $listfiles && !$update) {
+      print "Re-loading exsiting $listfiles\n";
+    }
+    else {
+      do_cmd("curl --silent -o $listfiles '$url'");
+    }
+    open(TESTS,$listfiles) || die "Could not open $listfiles ";
+    while(<TESTS>) {
+      /^\s*"(.+)"/ && test_file($1,'');
+    }
+    close(TESTS);
+    print "\n";
+  }
+}
+
+sub freebase_login {
+  if (-e $COOKIE_FILE && !$update) {
+    $verbose && print "Using existing $COOKIE_FILE\n";
+    return;
+  }
+  $verbose && print "Logging in using $PASSWD_FILE\n";
+  my $post_args = get_file($PASSWD_FILE);
+  chomp($post_args);
+  my $LOGIN_URL="http://$api_addr/api/account/login?mw_cookie_scope=domain";
+  do_cmd("curl --silent -c $COOKIE_FILE -d '$post_args'  '$LOGIN_URL'");
+}
+
+sub test_file {
+  my ($url,$extra_args) = @_;
+  $verbose && print "Test: $url\n";
+  my $testurl = "$url?output=json";
+  my $result = do_cmd("curl -silent $extra_args $testurl");
+  if ($result =~ /"failures" : [1-9]/ || !($result =~ /HTTP\/1\.1 200 OK/)) {
+    print "\n\n$result\n\nTest failed: $url\n";
+    exit(1);
+  } else {
+    print "." unless $verbose;
+  }
+}
+
+sub do_cmd {
+  my ($cmd) = @_;
+  ($verbose) && print "$cmd\n";
+  my $out = `$cmd`;
+  $? && die "\n\nExecution failed: $cmd ";
+  return $out;
+}
+
+sub get_file {
+  my ($filename) = @_;
+  $verbose && print " get_file: $filename\n";
+  local $/=undef;
+  open FILE, $filename or die "cannot open $filename";
+  my $text = <FILE>;
+  close FILE;
+  return $text;
+}
+
+my $prop_file_text;
+sub get_prop {
+    my ($propname) = @_;
+    if (!$prop_file_text) {
+      $prop_file_text = get_file($CONFIG);
+    }
+    # ignore comment lines (only leading whitespace allowed)
+    # grab the value after the equals sign (without any trailing whitespace)
+    $prop_file_text =~ /\n\s*$propname=(\S+)/ || die "Could not find $propname in $CONFIG";
+    return $1;
+}
+
+sub find_config {
+    my @path = split(/\//, $ENV{'PWD'});
+    my $cwd;
+    do {
+        pop(@path);
+        $cwd = join('/',@path);
+        chdir($cwd) || die "Could not cd $cwd";
+        # print "path: visting: $cwd\n";
+    } while ( ($#path > 1) && !(-e $CONFIG_DIR && -e $CONFIG));
+
+    ($#path>1) || die "Could not find $CONFIG in any parent dir of $ENV{'PWD'}\n";
+    $verbose && print "Found config in " . $cwd . "\n";
+}
+

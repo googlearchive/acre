@@ -1,0 +1,70 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <title>Log Viewer</title>
+  <link   type="text/css"       href="/acre/static/console/logviewer_css.css" charset="utf-8" media="screen" rel="stylesheet" />
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+  <script type="text/javascript" src="/acre/static/console/json2.js"></script>
+  <script type="text/javascript" src="/acre/static/console/metaweb_costs.js"></script>
+  <script type="text/javascript" src="/acre/static/console/logviewer_lib.js" ></script>
+  <script type="text/javascript" src="/acre/static/console/json_js_viewer.js"></script>
+</head>
+<body>
+  <!-- only used in stand-alone mode -->
+  <div id="app-output">
+    <h3>Application Output</h3>
+    <iframe name="app"></iframe>
+  </div>
+  
+  <div class="clear" id="header">
+
+    <div id="logo">
+      <a href="http://www.freebase.com/" target="_top" title="Return to Freebase homepage">
+        <img alt="Freebase" border="0" src="/acre/static/console/freebase-logo-mini.png" /></a>
+      </div>
+      <div id="pathbar">
+        <p>
+          <span id="app-url-base"></span>
+          <input id="edit-path-and-args" title="/extra/path?name=value (optional)" type="text" /> 
+          <a href="#" id="run-link" target="_top">Run</a>
+        </p>
+      </div>
+    </div>
+
+    <div id="actionbar">
+
+      <ul class="display-last">
+        <li id="log-toggle"><a>Show Logs</a></li>
+        <li class="icon-debug">?</li><li class="icon-info">?</li><li class="icon-warn">?</li><li class="icon-error">?</li>
+        <li><label><input id="show-verbose" type="checkbox" /> Show Debug messages</label></li>
+        <li id="costs" class="display-last"></li>
+        <li>
+          <a id="tid-link" href="http://stats.metaweb.com/query/transaction?tid=TID" target="_blank" title="Sorry, Metaweb only">tid</a> 
+        </li>
+        <li>
+          <a id="source-link" href="" class="disabled" target="_blank" title="View the source code for this app">View Source</a>
+        </li>
+      </ul>
+      
+
+      <p id="unframe"><a href="#" target="_top">Remove Frame</a><a class="icon-closebox" href="#" target="_top">x</a></p>
+
+    </div>
+
+    <div id="log-content">
+      <ul id="log-entries">
+        <li class="log-entry">
+          <p class="event-name">&nbsp;</p>
+          <p class="timestamp"><span></span></p>
+          <p class="event"></p>
+        </li>
+      </ul>
+    </div>
+    <!-- If we ever support a console prompt:
+    <form id="promptbox" class="display-last" action="">
+      <label>&gt;<input id="prompt" type="text"/></label>
+    </form>
+    -->
+  </body>
+  </html>
