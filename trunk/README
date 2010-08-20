@@ -1,5 +1,8 @@
-Acre (A Crash of Rhinos Evaluating)
------------------------------------
+
+                
+                   Acre (A Crash of Rhinos Evaluating)
+                   -----------------------------------
+
 
 Acre is a server-side Javascript platform for implementing web applications
 easily.  It was designed to facilitate the development of applications that
@@ -15,23 +18,36 @@ for discovering source and meta data is pluggable, and thus easily extensible.
 This release includes a method that uses the local file system to find and run
 applications, as well as the more traditional Freebase.com implementation.
 
+
+Building Acre
+-------------
+
+Acre requires you to have a Java Developer's Kit installed (version 5 or greater)
+and Apache Ant. (basically, 'java', 'javac' and 'ant' need to be present in your path).
+All the libraries that Acre requires to build and to run are already shipped with it.
+
+To build, simply type
+
+  ./acre build
+
+
 Running Acre
 ------------
 
 To run acre, take a look at config/project.local.conf, which should contain
 reasonable defaults. Now:
 
-./acre run
+  ./acre run
 
 and then look at:
 
-http://localhost:8115/acre/status in your browser.
+  http://localhost:8115/acre/status in your browser.
 
 If everything looks alright, congratulations, you have Acre running! By
 default, Acre gets data and source from sandbox-freebase.com. If you want it to
 get data and source from freebase.com run it with:
 
-./acre -c otg run
+  ./acre -c otg run
 
 
 Developing Acre apps
@@ -58,17 +74,17 @@ You can use subdirectories for different versions of your apps, staging, etc.
 The directory structure is the same as the namespace path in Freebase.com, so
 if you want acre to serve:
 
-http://foo.bar.dev.acre.localhost:8115/index
+  http://foo.bar.dev.acre.localhost:8115/index
 
 you would create the directory 'webapp/WEB-INF/scripts/bar/foo' and place a
 file named 'index.<ext>' in it. Acre uses the extension to determine what
 mechanism to use to run the file. By default Acre will serve the file as raw
 text unless certain extensions are used:
 
-.mjt will treat the file as an Acre template
-.sjs will treat the file as a server-side Javascript file
-.mql will treat the file as a MQL Query
-.{png, jpg, gif} will serve the file as binary with the appropriate mime-type
+  .mjt will treat the file as an Acre template
+  .sjs will treat the file as a server-side Javascript file
+  .mql will treat the file as a MQL Query
+  .{png, jpg, gif} will serve the file as binary with the appropriate mime-type
 
 
 Example apps
@@ -86,5 +102,15 @@ Add this line to your /etc/hosts:
 
 Point your browser at:
   http://helloworld.examples.acre.localhost:8115
+
+
+			                     - o -
+
+
+Thank you for your interest.
+
+
+                                          The Acre Development Team
+
 
 
