@@ -56,21 +56,21 @@
     
     <target name="compile-library" description="Compile the library">
         <mkdir dir="${library.classes.dir}" />
-        <javac srcdir="${library.src.dir}" destdir="${library.classes.dir}"  debug="true">
+        <javac srcdir="${library.src.dir}" destdir="${library.classes.dir}" includeantruntime="false" debug="true">
             <classpath refid="server.class.path" />
         </javac>
     </target>
     
     <target name="compile-server" description="Compile the server">
         <mkdir dir="${server.classes.dir}" />
-        <javac srcdir="${server.src.dir}" destdir="${server.classes.dir}"  debug="true">
+        <javac srcdir="${server.src.dir}" destdir="${server.classes.dir}" includeantruntime="false" debug="true">
             <classpath refid="server.class.path" />
         </javac>
     </target>
         
     <target name="compile-webapp" description="Compile the webapp">
         <mkdir dir="${webapp.classes.dir}" />
-        <javac srcdir="${webapp.src.dir}" destdir="${webapp.classes.dir}" debug="true">
+        <javac srcdir="${webapp.src.dir}" destdir="${webapp.classes.dir}" includeantruntime="false" debug="true">
             <classpath refid="webapp.class.path" />
         </javac>
     </target>
