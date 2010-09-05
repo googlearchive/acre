@@ -252,10 +252,9 @@ public class ProxyPassServlet extends HttpServlet {
      * @param httpMethodProxyRequest The request that we are about to send to
      *                                the proxy host
      */
-    @SuppressWarnings("unchecked")
     private void setProxyRequestHeaders(HttpServletRequest httpServletRequest, HttpRequestBase httpMethodProxyRequest) {
         // Get an Enumeration of all of the header names sent by the client
-        Enumeration enumerationOfHeaderNames = httpServletRequest.getHeaderNames();
+        Enumeration<?> enumerationOfHeaderNames = httpServletRequest.getHeaderNames();
         while(enumerationOfHeaderNames.hasMoreElements()) {
             String stringHeaderName = (String) enumerationOfHeaderNames.nextElement();
             if(stringHeaderName.equalsIgnoreCase(STRING_CONTENT_LENGTH_HEADER_NAME))
@@ -265,7 +264,7 @@ public class ProxyPassServlet extends HttpServlet {
             //      as several headers each with a different value rather than
             //      sending the header as a comma separated list.
             // Thus, we get an Enumeration of the header values sent by the client
-            Enumeration enumerationOfHeaderValues = httpServletRequest.getHeaders(stringHeaderName);
+            Enumeration<?> enumerationOfHeaderValues = httpServletRequest.getHeaders(stringHeaderName);
             while(enumerationOfHeaderValues.hasMoreElements()) {
                 String stringHeaderValue = (String) enumerationOfHeaderValues.nextElement();
                 // In case the proxy host is running multiple virtual servers,

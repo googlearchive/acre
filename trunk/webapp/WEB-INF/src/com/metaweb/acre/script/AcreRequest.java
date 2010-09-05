@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-
 package com.metaweb.acre.script;
 
 import java.io.BufferedReader;
@@ -200,7 +198,7 @@ public class AcreRequest extends JsConvertable {
             }
             if (hname.equalsIgnoreCase("content-type")) {
                 if (new_entry instanceof ArrayList) {
-                    content_type = (String)((ArrayList)new_entry).get(0);
+                    content_type = (String)((ArrayList<?>) new_entry).get(0);
                 } else {
                     content_type = (String)new_entry;
                 }

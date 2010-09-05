@@ -111,7 +111,7 @@ public class AcreResponse extends JsConvertable {
             _logs.add(msg);
         }
     }
-    @SuppressWarnings("unchecked")
+    
     public void userlog4j(String level, String event_name, Object... msgparts) {
         HashMap<String, String> msg = new HashMap<String, String>();
 
