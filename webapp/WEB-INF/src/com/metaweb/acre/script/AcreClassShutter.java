@@ -39,7 +39,6 @@ public class AcreClassShutter implements ClassShutter {
         if ( "org.mozilla.javascript.EcmaError".equals(fullClassName)) return false;
         if ( "org.mozilla.javascript.EvaluatorException".equals(fullClassName)) return false;
         if ( "org.mozilla.javascript.JavaScriptException".equals(fullClassName)) return false;
-        if (false) return false;
 
         return !ENABLED;
     }
