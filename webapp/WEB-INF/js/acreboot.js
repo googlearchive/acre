@@ -2335,10 +2335,7 @@ function parse_url(sname, pinfo) {
     var m = sname.match('((.*)\.)?' + _request.server_host + '$');
     var m2 = sname.match('((.*)\.)?' + _hostenv.ACRE_HOST_BASE + '$');
     var res = null;
-  syslog.info("XXXXXXXXXXXXXXXXXXXX");
-  syslog.info("HOST BASE HOST BASE "+_hostenv.ACRE_HOST_BASE);
-  syslog.info("SNAME SNAME SNAME SNAME "+sname);
-  syslog.info("XXXXXXXXXXXXXXXXXXXX");
+
     /*
      * We face two possible cases:
      *   1. Hostname matches the predetermined acre server_host
