@@ -22,8 +22,7 @@ public class AppEngineClassStore implements ClassStore {
     private MemcacheService _cache;
 
     public AppEngineClassStore() {
-        _cache = MemcacheServiceFactory.getMemcacheService();
-        _cache.setNamespace("class_store");
+        _cache = MemcacheServiceFactory.getMemcacheService("class_store");
     }
 
     public StoredClass get(String name) {
