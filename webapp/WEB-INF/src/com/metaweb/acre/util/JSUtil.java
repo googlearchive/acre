@@ -30,7 +30,7 @@ import com.metaweb.acre.util.exceptions.AcreInternalError;
 
 public class JSUtil {
     
-    private static Map<Class<AnnotatedForJS>, String[]> funcCache = new HashMap<Class<AnnotatedForJS>, String[]> ();
+    private static Map<Class<? extends AnnotatedForJS>, String[]> funcCache = new HashMap<Class<? extends AnnotatedForJS>, String[]> ();
 
     public static ScriptableObject makeBasicScriptable(AnnotatedForJS annotatedObj) {
         ScriptableObject jsobj = (ScriptableObject)Context.getCurrentContext().newObject(annotatedObj.getScope());
@@ -39,8 +39,7 @@ public class JSUtil {
     }
     
     public static void populateScriptable(ScriptableObject targetJSsobj, AnnotatedForJS srcAnnotatedObj) {
-        @SuppressWarnings("unchecked")
-		Class<AnnotatedForJS> clazz = (Class<AnnotatedForJS>) srcAnnotatedObj.getClass();
+    	Class<? extends AnnotatedForJS> clazz = srcAnnotatedObj.getClass();
         try {
             // let's cache all the relevant METHOD names for this class
             String [] methodNames = funcCache.get(clazz);
