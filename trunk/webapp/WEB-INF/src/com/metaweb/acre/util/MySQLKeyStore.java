@@ -32,14 +32,18 @@ import org.apache.commons.dbcp.PoolingDriver;
 import org.apache.commons.pool.impl.GenericObjectPool;
 
 import com.metaweb.acre.Configuration;
+import com.metaweb.util.logging.MetawebLogger;
 
 public class MySQLKeyStore implements KeyStore {
 
+    private static MetawebLogger _logger = new MetawebLogger();
+	
     private static final String DRIVER_PREFIX = "jdbc:apache:commons:dbcp:";
     private static final String DATASOURCE_NAME = "keystore";
     private static final String DATASOURCE = DRIVER_PREFIX + DATASOURCE_NAME;
     private static final String TEST_QUERY = "select 1";
-
+    private static final String ERROR_MSG = "MySQL Driver not found at startup, can't connect to keystore.";
+    
     private static MySQLKeyStore _singleton;
     
     public static synchronized MySQLKeyStore getKeyStore() {
@@ -51,13 +55,16 @@ public class MySQLKeyStore implements KeyStore {
 
     // ---------------------------------------------------------------------------
     
+    private boolean active = false;
+    
     private String _table_name;
 
     private MySQLKeyStore() {
         try {
             Class.forName(Configuration.Values.ACRE_SQL_DRIVER.getValue());
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+            _logger.warn("acre.keystore", "MySQL JDBC Driver not found");
+            return;
         }
 
         try {
@@ -88,6 +95,8 @@ public class MySQLKeyStore implements KeyStore {
 
         driver.registerPool(DATASOURCE_NAME,connectionPool);
 
+        active = true;
+        
         // Now we can just use the connect string "jdbc:apache:commons:dbcp:keystore"
         // to access our pool of Connections.
     }
@@ -101,6 +110,8 @@ public class MySQLKeyStore implements KeyStore {
     }
 
     public void delete_key(String keyname, String appid) {
+    	if (!active) throw new RuntimeException(ERROR_MSG);
+    	
         String q = "DELETE FROM " + _table_name +
             " WHERE key_id = ? AND app_id = ?;";
 
@@ -124,6 +135,7 @@ public class MySQLKeyStore implements KeyStore {
     }
 
     public String[] get_key(String keyname, String appid) {
+    	if (!active) throw new RuntimeException(ERROR_MSG);
 
         String q = "SELECT token, secret FROM " + _table_name +
             " WHERE key_id = ? AND app_id = ?;";
@@ -157,6 +169,7 @@ public class MySQLKeyStore implements KeyStore {
     }
 
     public List<Map<String,String>> get_full_keys(String appid) {
+    	if (!active) throw new RuntimeException(ERROR_MSG);
 
         String q = "SELECT key_id, token, secret FROM " + _table_name + 
             " WHERE app_id = ?;";
@@ -194,6 +207,7 @@ public class MySQLKeyStore implements KeyStore {
     }
     
     public List<String> get_keys(String appid) {
+    	if (!active) throw new RuntimeException(ERROR_MSG);
 
         String q = "SELECT key_id FROM " + _table_name + " WHERE app_id = ?;";
                 
@@ -228,6 +242,8 @@ public class MySQLKeyStore implements KeyStore {
     
     private void insert_key(String keyname, String appid, String token,
                             String secret) {
+
+    	if (!active) throw new RuntimeException(ERROR_MSG);
 
         // new apporach:
         //  - select keyname/appid
