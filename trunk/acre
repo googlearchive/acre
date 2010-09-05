@@ -60,6 +60,7 @@ Available Commands:
     clean-whitespace .. Normalize tabs and newlines
     
     setup-keystore .... Initialize the KeyStore SQL tables
+    get-mysql-driver .. Obtain the MySQL JDBC Driver
 
 EOF
     exit 0
