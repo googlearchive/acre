@@ -21,7 +21,6 @@ import com.metaweb.acre.Configuration;
 import com.metaweb.acre.util.Cache;
 import com.metaweb.util.javascript.JSObject;
 
-@SuppressWarnings("unchecked")
 public class JSCache extends JSObject {
     
     private static final long serialVersionUID = 7556102890015508964L;
@@ -33,7 +32,7 @@ public class JSCache extends JSObject {
             Configuration.Values.ACRE_CACHE_CLASS.getValue();
 
         try {
-            Class cls = Class.forName(cache_class);
+            Class<?> cls = Class.forName(cache_class);
             Method method = cls.getMethod("getCache", new Class[0]);
             _cache = (Cache)method.invoke(null, new Object[0]);
         } catch (Exception e) {

@@ -78,7 +78,6 @@ public class KeyStoreServlet extends HttpServlet {
 
     private final Pattern GUID_pattern = Pattern.compile("#.*");
 
-    @SuppressWarnings("unchecked")
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -86,7 +85,7 @@ public class KeyStoreServlet extends HttpServlet {
         String keystore_class = 
             Configuration.Values.ACRE_KEYSTORE_CLASS.getValue();
         try {
-            Class cls = Class.forName(keystore_class);
+            Class<?> cls = Class.forName(keystore_class);
             Method method = cls.getMethod("getKeyStore", new Class[0]);
             _store = (KeyStore)method.invoke(null, new Object[0]);
         } catch (Exception e) {

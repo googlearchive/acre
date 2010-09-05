@@ -119,7 +119,6 @@ public final class MetawebLogger {
         logActual(event_name, level, message, null);
     }
 
-    @SuppressWarnings("unchecked")
     public void syslog4j(Level level, String event_name, Object... msgparts) {
         HashMap<String, String> msg = new HashMap<String, String>();
 

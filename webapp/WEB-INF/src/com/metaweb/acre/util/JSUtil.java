@@ -33,16 +33,16 @@ public class JSUtil {
     private static Map<Class<AnnotatedForJS>, String[]> funcCache = new HashMap<Class<AnnotatedForJS>, String[]> ();
 
     public static ScriptableObject makeBasicScriptable(AnnotatedForJS annotatedObj) {
-         ScriptableObject jsobj = (ScriptableObject)Context.getCurrentContext().newObject(annotatedObj.getScope());
+        ScriptableObject jsobj = (ScriptableObject)Context.getCurrentContext().newObject(annotatedObj.getScope());
         populateScriptable(jsobj, annotatedObj);
         return jsobj;
     }
     
-    @SuppressWarnings("unchecked")
     public static void populateScriptable(ScriptableObject targetJSsobj, AnnotatedForJS srcAnnotatedObj) {
-        Class clazz = srcAnnotatedObj.getClass();
+        @SuppressWarnings("unchecked")
+		Class<AnnotatedForJS> clazz = (Class<AnnotatedForJS>) srcAnnotatedObj.getClass();
         try {
-            //lets cache all the relevant METHOD names for this class
+            // let's cache all the relevant METHOD names for this class
             String [] methodNames = funcCache.get(clazz);
             if (methodNames == null) {
                 Method[] methods = clazz.getDeclaredMethods();

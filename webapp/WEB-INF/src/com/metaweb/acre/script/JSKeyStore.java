@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.metaweb.acre.script;
 
 import java.lang.reflect.Method;
@@ -28,7 +27,6 @@ import com.metaweb.acre.util.KeyStore;
 import com.metaweb.util.javascript.JSObject;
 import com.metaweb.util.logging.MetawebLogger;
 
-@SuppressWarnings("unchecked")
 public class JSKeyStore extends JSObject {
     
     private static final long serialVersionUID = -306790422514648132L;
@@ -40,7 +38,7 @@ public class JSKeyStore extends JSObject {
         String keystore_class = 
             Configuration.Values.ACRE_KEYSTORE_CLASS.getValue();
         try {
-            Class cls = Class.forName(keystore_class);
+            Class<?> cls = Class.forName(keystore_class);
             Method method = cls.getMethod("getKeyStore", new Class[0]);
             _keystore = (KeyStore)method.invoke(null, new Object[0]);
         } catch (Exception e) {

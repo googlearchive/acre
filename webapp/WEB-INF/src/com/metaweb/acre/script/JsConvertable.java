@@ -55,8 +55,7 @@ public class JsConvertable {
     }
     */
 
-    @SuppressWarnings("unchecked")
-    static public Object _convertStatic(Scriptable scope, Object value, Class vclass) {
+    static public Object _convertStatic(Scriptable scope, Object value, Class<?> vclass) {
         Context cx = Context.getCurrentContext();
 
         if (vclass == null) {
@@ -80,13 +79,13 @@ public class JsConvertable {
         // XXX share these with convertDynamic
         } else if (value instanceof Map) {
             Scriptable o = cx.newObject(scope);
-            Map<String,Object> map = (Map<String, Object>) value;
-            for (Map.Entry<String,Object> entry : map.entrySet()) {
-                o.put(entry.getKey(), o, _convertStatic(scope, entry.getValue(), null));
+            Map<?,?> map = (Map<?,?>) value;
+            for (Map.Entry<?,?> entry : map.entrySet()) {
+                o.put((String) entry.getKey(), o, _convertStatic(scope, entry.getValue(), null));
             }
             return o;
         } else if (value instanceof List) {
-            List<Object> list = (List<Object>) value;
+            List<?> list = (List<?>) value;
             Scriptable o = cx.newArray(scope, list.size());
             int vindex = 0;
             for (Object item : list) {
@@ -100,7 +99,6 @@ public class JsConvertable {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public Scriptable toJsObject(Scriptable scope, Scriptable existing_obj) {
         Context cx = Context.getCurrentContext();
         Class<? extends JsConvertable> clazz = getClass();
@@ -125,7 +123,7 @@ public class JsConvertable {
             }
 
             try {
-                Class vclass = f.getType();
+                Class<?> vclass = f.getType();
                 Object value = f.get(this);
 
                 //System.err.println("JSConv " + name + "  " + vclass.getName() + "   " + (value == null ? "null" : ""));

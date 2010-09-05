@@ -32,8 +32,7 @@ public class OneTrueConfig {
     public OneTrueConfig() {
     }
 
-    @SuppressWarnings("unchecked")
-	public String get_string_property(Map obj, String key)
+	public String get_string_property(Map<?,?> obj, String key)
         throws JSONException, OneTrueConfigException {
         String out = null;
         if (obj.containsKey(key)) {
@@ -50,8 +49,7 @@ public class OneTrueConfig {
         return out;
     }
 
-    @SuppressWarnings("unchecked")
-	public Map route_as_servlet(Map to) throws JSONException,
+	public Map<String, String> route_as_servlet(Map<?,?> to) throws JSONException,
                                                OneTrueConfigException {
         Map<String, String> out = new HashMap<String, String>();
         String path = get_string_property(to, "path");
@@ -67,8 +65,7 @@ public class OneTrueConfig {
         return out;
     }
 
-    @SuppressWarnings("unchecked")
-	public Map route_as_static(Map to) throws JSONException,
+    public Map<String, String> route_as_static(Map<?,?> to) throws JSONException,
                                               OneTrueConfigException {
         Map<String, String> out = new HashMap<String, String>();
         String path = get_string_property(to, "path");
@@ -83,8 +80,7 @@ public class OneTrueConfig {
         return out;
     }
 
-    @SuppressWarnings("unchecked")
-	public Map route_as_script(Map to) throws JSONException,
+    public Map<String, String> route_as_script(Map<?,?> to) throws JSONException,
                                               OneTrueConfigException {
         Map<String, String> out = new HashMap<String, String>();
         String location = get_string_property(to, "location");
@@ -111,8 +107,7 @@ public class OneTrueConfig {
         return out;
     }
 
-    @SuppressWarnings("unchecked")
-	public Map route_as_app(Map to) throws JSONException, OneTrueConfigException {
+    public Map<String, String> route_as_app(Map<?,?> to) throws JSONException, OneTrueConfigException {
         Map<String, String> out = new HashMap<String, String>();
         String location = get_string_property(to, "location");
         String host = "";
@@ -134,8 +129,7 @@ public class OneTrueConfig {
         return out;
     }
 
-    @SuppressWarnings("unchecked")
-	public String process_param(Map param) throws JSONException,
+    public String process_param(Map<?,?> param) throws JSONException,
                                                   OneTrueConfigException {
         if (param.containsKey("key") && param.containsKey("value")) {
             Object keyv = param.get("key");
@@ -156,8 +150,7 @@ public class OneTrueConfig {
         }
     }
 
-    @SuppressWarnings("unchecked")
-	public List<String> process_from(List hosts_list, String from_qs,
+    public List<String> process_from(List<Object> hosts_list, String from_qs,
                                      String path) throws JSONException,
                                                          OneTrueConfigException {
         List<String> out = new ArrayList<String>();
@@ -179,9 +172,8 @@ public class OneTrueConfig {
         return out;
     }
 
-    @SuppressWarnings("unchecked")
-	public List<String[]> process_rule(List hosts_list,
-                                       Map rule) throws JSONException,
+    public List<String[]> process_rule(List<Object> hosts_list,
+                                       Map<?,?> rule) throws JSONException,
                                                         OneTrueConfigException {
         List<String[]> res = new ArrayList<String[]>();
         if (rule.containsKey("from") && rule.containsKey("to")) {
@@ -194,22 +186,22 @@ public class OneTrueConfig {
             }
 
             // host:from_path servlet hostname-"dev.freebaseapps.com" to_path
-            Map from = (Map)fromv;
-            Map to = (Map)tov;
-            List to_pathes = new ArrayList<String>();
+            Map<?,?> from = (Map<?,?>)fromv;
+            Map<?,?> to = (Map<?,?>)tov;
+            List<String> to_pathes = new ArrayList<String>();
 
             String from_qs = "";
             if (from.containsKey("param")) {
                 Object paramv = from.get("param");
                 from_qs += "?";
                 if (paramv instanceof Map) {
-                    from_qs += process_param((Map)paramv);
+                    from_qs += process_param((Map<?,?>)paramv);
                 } else if (paramv instanceof List) {
                     int i = 0;
-                    for (Object param : (List)paramv) {
+                    for (Object param : (List<?>)paramv) {
                         if (param instanceof Map) {
-                            from_qs += process_param((Map)param);
-                            if (i != ((List)paramv).size()-1) from_qs += "&";
+                            from_qs += process_param((Map<?,?>)param);
+                            if (i != ((List<?>)paramv).size()-1) from_qs += "&";
                         } else {
                             throw new OneTrueConfigException("Property param "+
                                                              "includes invalid "+
@@ -231,7 +223,7 @@ public class OneTrueConfig {
                 if (pathv instanceof String) {
                     to_pathes = process_from(hosts_list, from_qs, (String)pathv);
                 } else if (pathv instanceof List) {
-                    for (Object path : (List)pathv) {
+                    for (Object path : (List<?>)pathv) {
                         if (path instanceof String) {
                             to_pathes.addAll(process_from(hosts_list, from_qs,
                                                           (String)path));
@@ -259,7 +251,7 @@ public class OneTrueConfig {
                                                  JSON.stringify(to));
             }
 
-            Map route_rule = new HashMap<String, String>();
+            Map<String, String> route_rule = new HashMap<String, String>();
             if (route_as.equals("servlet")) {
                 route_rule = route_as_servlet(to);
             } else if (route_as.equals("static")) {
@@ -292,14 +284,14 @@ public class OneTrueConfig {
     }
 
     @SuppressWarnings("unchecked")
-	public List<String[]> handle_rule(Map rule) 
+	public List<String[]> handle_rule(Map<?,?> rule) 
         throws JSONException, OneTrueConfigException {
         List<String[]> res = new ArrayList<String[]>();
         if (rule.containsKey("rules") && rule.containsKey("host")) {
             Object hostv = rule.get("host");
             List<Object> hosts_list;
             if (hostv instanceof List) {
-                hosts_list = (List)hostv;
+                hosts_list = (List<Object>)hostv;
             } else {
                 hosts_list = new ArrayList<Object>();
                 hosts_list.add(hostv);
@@ -307,8 +299,8 @@ public class OneTrueConfig {
 
             Object rules = rule.get("rules");
             if (rules instanceof List) {
-                for (Object r : (List)rules) {
-                    res.addAll(process_rule(hosts_list, (Map)r));
+                for (Object r : (List<?>)rules) {
+                    res.addAll(process_rule(hosts_list, (Map<?,?>)r));
                 }
             } else {
                 throw new OneTrueConfigException("Rules property "+
@@ -324,13 +316,12 @@ public class OneTrueConfig {
         return res;
     }
 
-    @SuppressWarnings("unchecked")
-	public List<String[]> handle_rules_list(List rules) 
+    public List<String[]> handle_rules_list(List<?> rules) 
         throws JSONException, OneTrueConfigException {
         List<String[]> res = new ArrayList<String[]>();
         for (Object obj : rules) {
             if (obj instanceof Map) {
-                res.addAll(handle_rule((Map)obj));
+                res.addAll(handle_rule((Map<?,?>)obj));
             } else {
                 throw new OneTrueConfigException("Invalid rule definition " +
                                                  JSON.stringify(obj));
@@ -339,14 +330,13 @@ public class OneTrueConfig {
         return res;
     }
 
-    @SuppressWarnings("unchecked")
-	public static List<String[]> parse(String jsonstr) throws JSONException,
+    public static List<String[]> parse(String jsonstr) throws JSONException,
                                                        OneTrueConfigException {
         OneTrueConfig otc = new OneTrueConfig();
         
         Object parsed = JSON.parse(jsonstr);
         if (parsed instanceof List) {
-            List rules = (List)parsed;
+            List<?> rules = (List<?>)parsed;
             int size = rules.size();
             if (size > 0) {
                 return otc.handle_rules_list(rules);
@@ -354,7 +344,7 @@ public class OneTrueConfig {
                 throw new OneTrueConfigException("no rules (exiting)");
             }
         } else if (parsed instanceof Map) {
-            Map rule = (Map)parsed;
+            Map<?,?> rule = (Map<?,?>)parsed;
             return otc.handle_rule(rule);
         } else {
             throw new OneTrueConfigException("No rules (exiting)");

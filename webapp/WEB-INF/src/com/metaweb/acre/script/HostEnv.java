@@ -855,19 +855,18 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
      *  this is for user logging but from the java code
      */
     @SuppressWarnings("unchecked")
-    @JS_Function
+	@JS_Function
     public void userlog(String level, Object msg) {
         if (msg instanceof String) {
-            String msg_str = (String)msg;
+            String msg_str = (String) msg;
             msg = new ArrayList<String>();
-            ((ArrayList)msg).add(msg_str);
+            ((ArrayList<String>) msg).add(msg_str);
         }
         if (msg instanceof List || msg instanceof Scriptable) {
             res.log(level, msg);
         }
     }
 
-    @SuppressWarnings("unchecked")
     public void syslog4j(Level level, String event_name, Object... msgparts) {
         HashMap<String, String> msg = new HashMap<String, String>();
 
