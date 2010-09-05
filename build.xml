@@ -77,7 +77,7 @@
 
     <target name="compile-appengine" description="Compile the Google AppEngine connectors">
         <mkdir dir="${appengine.classes.dir}" />
-        <javac srcdir="${appengine.src.dir}" destdir="${appengine.classes.dir}" debug="true">
+        <javac srcdir="${appengine.src.dir}" destdir="${appengine.classes.dir}" includeantruntime="false" debug="true">
             <classpath refid="appengine.class.path" />
         </javac>
     </target>
