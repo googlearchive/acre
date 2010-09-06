@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-
 package com.metaweb.acre.script;
 
 import java.io.BufferedInputStream;
@@ -25,18 +23,13 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Calendar;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
@@ -197,12 +190,9 @@ public class AcreFetch extends JsConvertable {
                                        CookiePolicy.BROWSER_COMPATIBILITY);
 
         // in msec
-        Calendar cal = Calendar.getInstance();
-        int tzdiff = cal.get(Calendar.ZONE_OFFSET) - cal.get(Calendar.DST_OFFSET);
 
-        long timeout = _deadline - System.currentTimeMillis() - tzdiff;
-        if (timeout < 0)
-            timeout = 0;
+        long timeout = _deadline - System.currentTimeMillis();
+        if (timeout < 0) timeout = 0;
         client.getParams().setParameter(AllClientPNames.CONNECTION_TIMEOUT,
                                         (int)timeout);
         client.getParams().setParameter(AllClientPNames.SO_TIMEOUT,

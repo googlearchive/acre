@@ -15,8 +15,6 @@
 
 package com.metaweb.acre.script;
 
-import java.util.Calendar;
-
 import org.mozilla.javascript.Callable;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -70,11 +68,8 @@ public class AcreContextFactory extends ContextFactory {
     @Override
     protected void observeInstructionCount(Context cx, int instructionCount) {
         AcreContext mcx = (AcreContext) cx;
-        Calendar cal = Calendar.getInstance();
-        int tzdiff = cal.get(Calendar.ZONE_OFFSET) - cal.get(Calendar.DST_OFFSET);
 
-        long currentTime = System.currentTimeMillis() - tzdiff;
-        if (currentTime > mcx.deadline) {
+        if (System.currentTimeMillis() > mcx.deadline) {
             _logger.error("script.time_limit.exceeded", "script terminated (was taking too long to complete)");
             throw new AcreScriptError("the script was taking too long to complete");
         }
