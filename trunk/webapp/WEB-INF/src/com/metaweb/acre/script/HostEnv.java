@@ -31,7 +31,6 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -411,9 +410,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
             // we ought to make sure acreboot has initialized before
             // throwing this error
-            Calendar cal = Calendar.getInstance();
-            int tzdiff = cal.get(Calendar.ZONE_OFFSET) - cal.get(Calendar.DST_OFFSET);
-            if (System.currentTimeMillis()-tzdiff > req._deadline) {
+            if (System.currentTimeMillis() > req._deadline) {
                 throw new AcreDeadlineError("Request chain time quota expired");
             }
 
@@ -703,12 +700,9 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     public AcreFetch prepareFetch(String urlStr, String method, Object content,
                                   Scriptable headers, boolean system,
                                   boolean log_to_user, Object response_encoding) {
-        Calendar cal = Calendar.getInstance();
-        int tzdiff = cal.get(Calendar.ZONE_OFFSET) - cal.get(Calendar.DST_OFFSET);
 
-        if (System.currentTimeMillis()-tzdiff > req._deadline) {
-            throw new RuntimeException("Cannot call urlfetch, the script ran "+
-                                       "out of time");
+    	if (System.currentTimeMillis() > req._deadline) {
+            throw new RuntimeException("Cannot call urlfetch, the script ran out of time");
         }
 
         // give the subrequest a shorter deadline so this request can
@@ -789,22 +783,17 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             throw new JSConvertableException("Async Urlfetch not available on reentry")
                 .newJSException(this);
 
-        Calendar cal = Calendar.getInstance();
-        int tzdiff = cal.get(Calendar.ZONE_OFFSET) - cal.get(Calendar.DST_OFFSET);
-
-        if (System.currentTimeMillis()-tzdiff > req._deadline) {
-            throw new RuntimeException("Cannot call urlfetch, the script ran "+
-                                       "out of time");
+        if (System.currentTimeMillis() > req._deadline) {
+            throw new RuntimeException("Cannot call urlfetch, the script ran out of time");
         }
 
         // give the subrequest a shorter deadline so this request can
         // handle any failure
-        long timeout = req._deadline - System.currentTimeMillis() + tzdiff
-            - NETWORK_DEADLINE_ADVANCE;
+        long timeout = req._deadline - System.currentTimeMillis() - NETWORK_DEADLINE_ADVANCE;
 
-        if (!timeout_ms.isNaN() && timeout_ms.longValue() < timeout)
-            timeout = timeout_ms.longValue();
-
+        if (!timeout_ms.isNaN() && timeout_ms.longValue() < timeout) {
+        	timeout = timeout_ms.longValue();
+        }
 
         Map<String, String> header_map = new HashMap<String, String>();
         if (headers != null) {
@@ -822,15 +811,12 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     @JS_Function
     public void async_wait(Double timeout_ms) {
-        Calendar cal = Calendar.getInstance();
-        int tzdiff = cal.get(Calendar.ZONE_OFFSET) - cal.get(Calendar.DST_OFFSET);
-
-        long timeout = req._deadline - System.currentTimeMillis() + tzdiff 
-            - NETWORK_DEADLINE_ADVANCE;
+        long timeout = req._deadline - System.currentTimeMillis() - NETWORK_DEADLINE_ADVANCE;
 
         // XXX consider throwing, or at least warning if this condition fails
-        if (!timeout_ms.isNaN() && timeout_ms.longValue() < timeout)
+        if (!timeout_ms.isNaN() && timeout_ms.longValue() < timeout) {
             timeout = timeout_ms.longValue();
+        }
 
         _async_fetch.wait_on_result(timeout, TimeUnit.MILLISECONDS);
     }
