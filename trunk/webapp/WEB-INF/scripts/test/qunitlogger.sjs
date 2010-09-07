@@ -49,12 +49,14 @@ function log(result, message) {
 
 function testStart(name,testEnvironment) {
   debug('--testStart:'+name);
-  currentModule.tests.push({name:name, testEnvironment:testEnvironment||null, log:[]});
+  // runtime is initally starttime
+  currentModule.tests.push({name:name, runtime:+new Date(), testEnvironment:testEnvironment||null, log:[]});
 }
 
 function testDone(name, failures, total) {
   debug('--testDone:'+name+' failures='+failures+' total='+total);
   extend(currentTest(), {
+    runtime:+new Date() - currentTest().runtime, // convert start time to runtime
     failures:failures,
     total:total
   });
@@ -91,7 +93,7 @@ function _checkDefaultModule() {
 // duplicated in dashboard.sjs
 function get_app_path() {
   //TODO: what's the acre way to get the app_path?
-  return '//' + (acre.request.server_name).replace('.'+acre.host.name,'');  
+  return '//' + (acre.request.server_name).replace('.'+acre.host.name,'');
 }
 
 function report() {
