@@ -144,6 +144,8 @@
                 <exclude name="${build.dir}/**"/>
                 <exclude name="${dist.dir}/**"/>
                 <exclude name="${data.dir}/**"/>
+                <exclude name="${webapp.config.dir}/*.properties"/>
+                <exclude name="${webapp.config.dir}/*.conf"/>
                 <exclude name="**/mysql-connector-java*"/>
             </fileset>
         </copy>
