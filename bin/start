@@ -47,12 +47,12 @@ fi
 classpath="`absolute_path library/classes`:`absolute_path server/classes`"
 classpath="${classpath}:`ls server/lib/*.jar | paste -s -d: -`"
 
-#        ACRE_CACHE_CLASS("com.metaweb.acre.script.AppEngineCache"),
-#        ACRE_KEYSTORE_CLASS("com.metaweb.acre.util.AppEngineKeyStore"),
+#        ACRE_CACHE_CLASS("com.google.acre.script.AppEngineCache"),
+#        ACRE_KEYSTORE_CLASS("com.google.acre.util.AppEngineKeyStore"),
 
-LOCAL_SERVER_CLASSES="-DACRE_CACHE_CLASS=com.metaweb.acre.script.WhirlycottCache -DACRE_KEYSTORE_CLASS=com.metaweb.acre.util.MySQLKeyStore"
+LOCAL_SERVER_CLASSES="-DACRE_CACHE_CLASS=com.google.acre.script.WhirlycottCache -DACRE_KEYSTORE_CLASS=com.google.acre.util.MySQLKeyStore"
 
-RUN_CMD="$JAVA $JVM_MEM $JVM_PERM_MEM $JVM_JMX $DEBUG -cp $classpath -DconfigDir=webapp/META-INF $LOCAL_SERVER_CLASSES -DSTATIC_SCRIPT_PATH=webapp/WEB-INF/scripts $EXTRA_CONF com.metaweb.acre.Main"
+RUN_CMD="$JAVA $JVM_MEM $JVM_PERM_MEM $JVM_JMX $DEBUG -cp $classpath -DconfigDir=webapp/META-INF $LOCAL_SERVER_CLASSES -DSTATIC_SCRIPT_PATH=webapp/WEB-INF/scripts $EXTRA_CONF com.google.acre.Main"
 
 echo "Starting '$ACRE_VERSION' mounted at '*.$ACRE_HOST_SUFFIX' over '$ACRE_METAWEB_API_ADDR' "    
 
