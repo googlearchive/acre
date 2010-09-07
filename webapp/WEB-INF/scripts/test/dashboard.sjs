@@ -3,6 +3,14 @@ var show_suite,report_modules; // TODO: hang these off QUnit?
 
 show_suite = function(test_suite) {
   //TODO: only run specified test if ?test=tname
+  var is_json_output = acre.request.params.output && acre.request.params.output.indexOf('json') == 0;
+
+  //jsonp wrapper
+  if (acre.request.params.callback && is_json_output) {
+    acre.write(acre.request.params.callback + '(');
+  }
+
+  // actual output
   if (acre.request.params.output==='jsonsummary') {
     acre.write(JSON.stringify( {failures:test_suite.failures, total:test_suite.total} ));
   } else if (acre.request.params.output==='json') {
@@ -12,9 +20,13 @@ show_suite = function(test_suite) {
     var templates = acre.require('report');
     acre.response.set_header('Content-Type','text/html');
     acre.write(templates.show_suite(test_suite));
-    
   }
-  //TODO: add  callbacks
+
+  //jsonp wrapper
+  if (acre.request.params.callback && is_json_output) {
+    acre.write(');');
+  }
+
 };
 
 report_modules = function (modules) {
