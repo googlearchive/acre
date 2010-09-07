@@ -9,6 +9,17 @@
 <project name="acre" default="compile" basedir=".">
 
     <property environment="env"/>
+	
+    <condition property="version" value="trunk">
+        <not><isset property="version"/></not>
+    </condition>
+
+    <condition property="revision" value="rXXXX">
+        <not><isset property="revision"/></not>
+    </condition>
+
+	<property name="name" value="acre" />
+    <property name="fullname" value="${name}-${version}-${revision}" />
 
     <property name="library.dir" value="${basedir}/library"/>
     <property name="library.src.dir" value="${library.dir}/src" />
@@ -31,6 +42,11 @@
     <property name="appengine.lib.dir" value="${appengine.dir}/lib" />
     <property name="appengine.classes.dir" value="${appengine.dir}/classes" />
     
+    <property name="build.dir" value="_build" />
+    <property name="dist.dir" value="_dist" />
+    <property name="data.dir" value="_data" />
+    <property name="logs.dir" value="_logs" />
+
     <path id="server.class.path">
         <fileset dir="${server.lib.dir}">
             <include name="**/*.jar" />
@@ -117,12 +133,44 @@
         </fileset>
       </copy>
     </target>
+
+	<target name="dist" description="Build the acre distribution" depends="compile">
+        <mkdir dir="${build.dir}" />
+		<copy todir="${build.dir}/${name}-${version}">
+            <fileset dir=".">
+                <include name="**/*"/>
+                <exclude name="${data.dir}/**"/>
+                <exclude name="${logs.dir}/**"/>
+                <exclude name="${build.dir}/**"/>
+                <exclude name="${dist.dir}/**"/>
+                <exclude name="${data.dir}/**"/>
+                <exclude name="**/mysql-connector-java*"/>
+            </fileset>
+        </copy>
+        
+        <tar longfile="gnu" compression="gzip" destfile="${dist.dir}/${fullname}.tar.gz">
+           <tarfileset dir="${build.dir}" filemode="755">
+               <include name="${name}-${version}/${name}"/>
+           </tarfileset>        
+           <tarfileset dir="${build.dir}">
+               <include name="${name}-${version}/**"/>
+               <exclude name="${name}-${version}/${name}"/>
+           </tarfileset>        
+        </tar>
+	</target>
     
-    <target name="clean" description="Wipeout all generated files">
+    <target name="clean" description="Remove all compiled classes">
         <delete dir="${library.classes.dir}" />
         <delete dir="${server.classes.dir}" />
         <delete dir="${webapp.classes.dir}" />
         <delete dir="${appengine.classes.dir}" />
+    </target>
+
+    <target name="distclean" description="Remove all files not in version control" depends="clean">
+        <delete dir="${build.dir}" />
+        <delete dir="${dist.dir}" />
+        <delete dir="${data.dir}" />
+        <delete dir="${logs.dir}" />
     </target>
 
 </project>
