@@ -1,4 +1,5 @@
 #summary How to get started with Acre
+#labels Featured
 
 The open source release Acre allows you to run Acre apps on your own machine.
 
