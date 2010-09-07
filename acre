@@ -58,10 +58,13 @@ Available Commands:
     
     clean ............. Remove all class files
     clean-whitespace .. Normalize tabs and newlines
+    distclean ......... Restore everything to checkout state
     
     setup-keystore .... Initialize the KeyStore SQL tables
     get-mysql-driver .. Obtain the MySQL JDBC Driver
 
+    dist <version> .... Builds a tar.gz distribution for acre
+    
 EOF
     exit 0
 }
@@ -72,6 +75,29 @@ load() {
     . ./.`basename $1`
     rm ./.`basename $1`
 }
+
+# Get version ---------------------------------------------
+get_version() {
+    VERSION="$1"
+    if [ -z "$VERSION" ]; then
+        error "Must specify a version number"
+    fi
+}
+
+# Get revision ---------------------------------------------
+get_revision() {
+    if [ -d ".svn" ]; then
+        INFO=`svn info`
+    elif [ -d ".git" ]; then
+        INFO=`git svn info`
+    else
+        error "cannot obtain revision, exiting!"
+    fi
+
+    REVISION=`echo $INFO | sed 's/.*Revision: /r/' | sed 's/ .*//'`
+}
+
+# -------------------------------------------------------------------------------------
 
 # We called without arguments print the usage -------------
 [ $# -gt 0 ] || usage
@@ -85,7 +111,6 @@ if [ -f "config/project.conf" ]; then
 else 
     error "Missing 'project.conf'"
 fi
-
 
 # Extract the options -------------------------------------
 export CONF="sandbox"
@@ -144,9 +169,11 @@ case "$ACTION" in
     help) usage ;;
     build) SCRIPT="build"; COMMAND="compile" ;;
     war) SCRIPT="build"; COMMAND="war" ;;
+    dist) SCRIPT="build"; COMMAND="dist"; get_version $1; get_revision; export ANT_PARAMS="-Dversion=$VERSION -Drevision=$REVISION" ;;
     appengine) SCRIPT="build"; COMMAND="appengine"; export ANT_PARAMS="-Dappengine.remote=true -Dsdk.dir=\"$APPENGINE_HOME\"" ;;
     appengine-local) SCRIPT="build"; COMMAND="appengine"; export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" ;;
     clean) SCRIPT="build"; COMMAND="clean" ;;
+    distclean) SCRIPT="build"; COMMAND="distclean" ;;
     run) SCRIPT="start" ;;
     *) SCRIPT="$ACTION" ;;
 esac
