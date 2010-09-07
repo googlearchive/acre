@@ -4,7 +4,7 @@
 
 acre.require('/test/lib').enable(this);
 
-var ACRE_MAX_LOGS_SIZE = 25000; // from acre/library/src/com/metaweb/acre/Configuration.java
+var ACRE_MAX_LOGS_SIZE = 25000; // from acre/library/src/com/google/acre/Configuration.java
 var MAX_LOG_KB = Math.floor(ACRE_MAX_LOGS_SIZE/1024)-1; // why do we need 1KB of overhead?
 var TOO_BIG_KB = MAX_LOG_KB + 1;
 

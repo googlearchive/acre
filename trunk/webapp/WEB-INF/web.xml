@@ -9,21 +9,21 @@
     <description>Dispatch request to javascript</description>
     <display-name>DISPATCH REQUEST TO JAVASCRIPT</display-name>
     <servlet-name>DispatchServlet</servlet-name>
-    <servlet-class>com.metaweb.acre.servlet.DispatchServlet</servlet-class>
+    <servlet-class>com.google.acre.servlet.DispatchServlet</servlet-class>
   </servlet>
   
   <servlet>
     <description>proxy</description>
     <display-name>ProxyPassServlet</display-name>
     <servlet-name>ProxyPassServlet</servlet-name>
-    <servlet-class>com.metaweb.acre.servlet.ProxyPassServlet</servlet-class>
+    <servlet-class>com.google.acre.servlet.ProxyPassServlet</servlet-class>
   </servlet>
 
   <servlet>
     <description>Provides write access to the Freebase KeyStore</description>
     <display-name>KeyStoreServlet</display-name>
     <servlet-name>KeyStoreServlet</servlet-name>
-    <servlet-class>com.metaweb.acre.servlet.KeyStoreServlet</servlet-class>
+    <servlet-class>com.google.acre.servlet.KeyStoreServlet</servlet-class>
   </servlet>
 
   <servlet>
@@ -32,7 +32,7 @@
     </description>
     <display-name>OneTrueServlet</display-name>
     <servlet-name>OneTrueServlet</servlet-name>
-    <servlet-class>com.metaweb.acre.servlet.OneTrueServlet</servlet-class>
+    <servlet-class>com.google.acre.servlet.OneTrueServlet</servlet-class>
     <load-on-startup>1</load-on-startup>
   </servlet>
 
