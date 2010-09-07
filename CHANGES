@@ -1,7 +1,13 @@
+2010-09-07 - acre-2.0.1
+  Fixed Issue-2 - 500 Internal Server Error (due to faulty code to compensate for timezone differences)
+  Changed com.metaweb to com.google namespace for java classes
+  Merged latest differences from internal metaweb repo
+  Removed MySQL connector library (because of license incompatibility)
+
 2010-08-19 - acre-2.0.0
   Initial open source release
 
-2009-07-01 - "Acre 1.0"
+2009-07-01 - Acre-1.0
   This was what we called the hosted version of Acre on its public launch.
   It is not available for download.
   See http://blog.freebase.com/2009/07/20/acre-1-0-developer-hub/
