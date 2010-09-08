@@ -19,12 +19,6 @@ error() {
     exit 1
 }
 
-# Print Warning Info -------------------------------------
-warning() {
-    echo "WARNING: $1"
-    echo
-}
-
 # Print Usage Info ---------------------------------------
 usage() {
     cat <<EOF
@@ -145,7 +139,7 @@ if [ "$CONF" != "" ]; then
     elif [ -f "config/project.$CONF.conf" ]; then    
         load "config/project.$CONF.conf"
     else 
-        fail "configuration file project.$CONF.conf not found";
+        error "configuration file project.$CONF.conf not found";
     fi
 fi
 
