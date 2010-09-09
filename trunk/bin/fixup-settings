@@ -75,14 +75,6 @@ fi
 # Set Acre PID file
 ACRE_PID=$ACRE_DATADIR/acre.pid
 
-# The testing URL defaults to the local one but only if it wasn't already set
-if [ -z "$TEST_HOST_SUFFIX" ]; then
-    TEST_HOST_SUFFIX="$ACRE_HOST_SUFFIX"
-fi
-if [ -z "$TEST_PORT" ]; then
-    TEST_PORT="$ACRE_PORT"
-fi
-
 # If verbosity is not specified, set syslog threshold level to INFO
 if [ -z "$ACRE_LOG_LEVEL" ]; then
     ACRE_LOG_LEVEL='INFO'
