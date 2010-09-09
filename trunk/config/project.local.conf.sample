@@ -2,12 +2,12 @@
 #
 # These are the local parameters that override the default ones
 # 
-# *DO NOT* change this file, make a copy called "project.local.mw4" and change that instead
+# *DO NOT* change this file, make a copy called "project.local.conf" and change that instead
 # 
 
 ####### select what URL acre expects to be responding to (your DNS or /etc/host should mount *.acre.z to 127.0.0.1)
-ACRE_HOST_SUFFIX="dev.acre.localhost"
-ACRE_HOST_BASE="acre.localhost"
+ACRE_HOST_SUFFIX="dev.acre.z"
+ACRE_HOST_BASE="acre.z"
 
 ####### the appeditor local host (your DNS or /etc/host should mount ae.trunk.qa.metaweb.com to 127.0.0.1)
 #ACRE_APPEDITOR_HOST="ae.$ACRE_METAWEB_BASE_ADDR"
