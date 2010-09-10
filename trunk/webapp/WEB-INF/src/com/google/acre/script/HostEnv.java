@@ -1060,7 +1060,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             String excdump = cw.toString();
             syslog(Level.ERROR, "hostenv.internal.error.msg", "ACRE INTERNAL ERROR: \n" + excdump);
 
-            write("ACRE INTERNAL ERROR -- Please Report to irc://irc.freenode.net/#metaweb\n");
+            write("ACRE INTERNAL ERROR -- Please Report to irc://irc.freenode.net/#freebase\n");
             write("Request Id: " + req._metaweb_tid + "\n\n");
             write(excdump + "\n");
         } catch (Throwable e) {
