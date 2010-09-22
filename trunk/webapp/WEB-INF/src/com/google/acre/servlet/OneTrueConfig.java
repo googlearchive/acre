@@ -353,14 +353,20 @@ public class OneTrueConfig {
 
     public static List<String[]> parse() throws JSONException,
                                                 OneTrueConfigException {
-        String cdir = System.getProperty("configDir");
-        File f = new File(cdir, "ots.conf");
-        String contents = null;
-        try {
-            contents = FileUtils.readFileToString(f);
-            return parse(contents);
-        } catch (IOException e) {
-            throw new OneTrueConfigException("Error reading file: "+f);
+        File cdir = new File(System.getProperty("configDir"));
+        List<String[]> rules = new ArrayList<String[]>();
+        for (File f : cdir.listFiles()) {
+            String name = f.getName();
+            if (name.startsWith("ots.") && name.endsWith(".conf")) {
+                String contents = null;
+                try {
+                    contents = FileUtils.readFileToString(f);
+                    rules.addAll(parse(contents));
+                } catch (IOException e) {
+                    throw new OneTrueConfigException("Error reading file: " + f);
+                }
+            }
         }
+        return rules;
     }
 }
