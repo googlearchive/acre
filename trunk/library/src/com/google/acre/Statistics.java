@@ -142,8 +142,10 @@ public class Statistics extends TimerTask implements StatisticsMBean {
             requestsMeter.update();
             urlfetchWaitingMeter.update();
             urlfetchReadingMeter.update();
-            for (Meter meter : appMeters.values()) {
-                meter.update();
+            synchronized(appMeters) {
+                for (Meter meter : appMeters.values()) {
+                    meter.update();
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -154,7 +156,9 @@ public class Statistics extends TimerTask implements StatisticsMBean {
         Meter meter = null;
         if (!appMeters.containsKey(app)) {
             meter = new Meter(app + "_meter", 0.9f, 0.1f);
-            appMeters.put(app, meter);
+            synchronized(appMeters) {
+                appMeters.put(app, meter);
+            }
         } else {
             meter = appMeters.get(app);
         }
