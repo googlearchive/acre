@@ -18,6 +18,7 @@ package com.google.acre.servlet;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -351,11 +352,16 @@ public class OneTrueConfig {
         }
     }
 
-    public static List<String[]> parse() throws JSONException,
-                                                OneTrueConfigException {
+    public static List<String[]> parse() throws JSONException, OneTrueConfigException {
+        
         File cdir = new File(System.getProperty("configDir"));
         List<String[]> rules = new ArrayList<String[]>();
-        for (File f : cdir.listFiles()) {
+
+        String[] files = cdir.list();
+        Arrays.sort(files);
+
+        for (String s : files) {
+            File f = new File(cdir, s);
             String name = f.getName();
             if (name.startsWith("ots.") && name.endsWith(".conf")) {
                 String contents = null;
@@ -367,6 +373,11 @@ public class OneTrueConfig {
                 }
             }
         }
+        
+        // this rule must be last
+        String[] dispatch_rule = { "/", "DispatchServlet", null, "/" };
+        rules.add(dispatch_rule);
+
         return rules;
     }
 }
