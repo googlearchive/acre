@@ -13,7 +13,7 @@ ACRE_HOST_BASE="acre.z"
 #ACRE_APPEDITOR_HOST="ae.$ACRE_METAWEB_BASE_ADDR"
 
 ####### for development is better to autoreload and avoid committing suicide
-ACRE_AUTORELOADING="TRUE"
+#ACRE_AUTORELOADING="TRUE"
 ACRE_SUICIDE="FALSE"
 
 # developer mode exposes testing hooks that should never be present
