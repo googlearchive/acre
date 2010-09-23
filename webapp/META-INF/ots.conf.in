@@ -131,19 +131,5 @@
             }
 
         ]
-    },
-    {
-        "host":null,
-        "rules":[
-            {
-                "from":{
-                    "path":"/"
-                },
-                "to":{
-                    "route_as":"app",
-                    "location":null
-                }
-            }
-        ]
     }
 ]
