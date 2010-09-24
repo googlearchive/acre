@@ -2258,7 +2258,21 @@ try {
 
 // ----------------------------- acre.freebase -----------------------------------------
 
+var mjt_freebase_whitelist = {
+    "date_from_iso" : true,
+    "date_to_iso" : true,
+    "mqlkey_quote" : true,
+    "mqlkey_unquote" : true
+}
+
 acre.freebase = {};
+
+for (var k in _mjt.freebase) {
+    if (k in mjt_freebase_whitelist) {
+        acre.freebase[k] = _mjt.freebase[k];
+    }
+}
+
 var _system_freebase = {};
 
 var freebase_scope = {};
@@ -2278,15 +2292,16 @@ var mjt_freebase_synctasks = {
     Upload: 'upload'
 };
 
-for (var k in mjt_freebase_synctasks)
-  (function (k) {
-     var mapped_name = mjt_freebase_synctasks[k];
-     acre.freebase[k] = function () {
-       var res = acre.freebase[mapped_name].apply(this, arguments);
-       res.enqueue = function () { return res; };
-       return res;
-     };
-   })(k);
+for (var k in mjt_freebase_synctasks) {
+    (function (k) {
+        var mapped_name = mjt_freebase_synctasks[k];
+        acre.freebase[k] = function () {
+            var res = acre.freebase[mapped_name].apply(this, arguments);
+            res.enqueue = function () { return res; };
+            return res;
+        };
+    })(k);
+}
 
 // cleanup
 delete freebase_scope;
