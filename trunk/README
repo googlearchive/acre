@@ -57,7 +57,7 @@ Acre apps are stored in 'webapp/WEB-INF/scripts'.  Here's a simple example:
 
 Your app is called:      foo
 Put the files in:        webapp/WEB-INF/scripts/foo/
-Point your browser at:   http://foo.dev.acre.localhost:8115
+Point your browser at:   http://foo.dev.acre.localhost:8115/
 
 Acre is configured to serve your apps from under dev.acre.localhost:8115.  To
 make this work, you will need to configure a hostname for each app you're
@@ -98,10 +98,10 @@ The files can be found at:
   webapp/WEB-INF/scripts/examples/helloworld
 
 Add this line to your /etc/hosts:
-  127.0.0.1 helloworld.examples.acre.localhost
+  127.0.0.1 helloworld.examples.dev.acre.localhost
 
 Point your browser at:
-  http://helloworld.examples.acre.localhost:8115
+  http://helloworld.examples.dev.acre.localhost:8115/
 
 
 			                     - o -
