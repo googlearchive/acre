@@ -2496,7 +2496,13 @@ var boot_acrelet = function () {
     // (normally triggered by a shift-reload in the browser)
     // we need to touch and get a new mwLastWriteTime value to really clear
     // the caches
-    if ('cache-control' in acre.request.headers) {
+    // if an x-acre-cache-control header is present, then do not bust the cache
+    // The reason for this change is that many browsers will by default issue
+    // a no-cache cache-control header for XHR post requests which will make 
+    // them very slow for no reason on acre
+    // In order to bypass this problem, we introduced a new header that instructs
+    // acre to not bust its uberfetch cache for these requests
+    if ('cache-control' in acre.request.headers && !('x-acre-cache-control' in acre.request.headers)) {
         if (/no-cache/.test(acre.request.headers['cache-control'])) {
             // get a new _mwLastWriteTime for the client so future
             // requests will also be fresh.
