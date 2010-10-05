@@ -1650,15 +1650,15 @@ var proto_require = function(namespace, script, skip_cache) {
                     // this is the case where we got an app key without a domain or .dev - e.g. //foobar
                     // do not use ACRE_HOST_BASE - use a well-known domain such as acre.z
                     app_ver_id_parts = app_ver_id_parts.reverse();
-                    app_ver_id_parts.unshift('z/acre');
 
-                    var host_base_parts = _hostenv.ACRE_HOST_BASE.split('.');
+                    var host_base_parts = "acre.z".split('.');
                     for (var a=0; a < host_base_parts.length; a++) {
                         app_ver_id_parts.unshift(host_base_parts[a]);
                     }
 
                     app_ver_id_parts.unshift(_DEFAULT_HOST_NS);
                     app_ver_id = app_ver_id_parts.join('/');
+										console.log("app ver id parts", app_ver_id_parts);
                 }
 
                 file = req_part.shift();
