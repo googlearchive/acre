@@ -1606,11 +1606,9 @@ var proto_require = function(namespace, script, skip_cache) {
                 var file = '';
                 var path_part = '';
                 var query_string = '';
-
-                var start_part = parts[1];
-                for (var i = 2; i < parts.length; i++) {
-                    start_part = start_part+parts[i];
-                }
+                
+                parts.shift();
+                start_part = parts.join("//");
 
                 // extract querystring, if present
                 var qparts = start_part.split("?");
