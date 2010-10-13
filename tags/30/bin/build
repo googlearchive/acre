@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# Normalize the current directory
+cd `dirname $0`/..
+
+# Generate any derived settings
+. bin/fixup-settings
+
+# Make configuration files
+. bin/make-configs
+
+ant -f build.xml $ANT_PARAMS $1 || exit 1
