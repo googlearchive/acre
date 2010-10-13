@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<title>libmjt</title>
+
+
+<script type="text/javascript">
+
+// this gets evaluated in the scope of the iframe window.
+//  while the template gets evaluated in the scope
+//  of the host window.
+// so we can't actually get anything out of it?
+
+
+</script>
+
+</head>
+
+<body>
+
+
+this is a mjt library file.  the definitions here can be
+imported using mjt.load_from_iframe() on an iframe containing this file.
+
+there should be a corresponding style sheet in libmjt.css.
+
+
+
+<pre mjt.script="">
+
+/* use mjt.script rather than a script tag in order to get */
+/*  things evaluated in the context of the main frame instead */
+/*  of in the library iframe. */
+
+/* generate an url query section that will pass through */
+/*  some mjt variables like mjt.service_url and mjt.debug. */
+var app_url = this.defs.app_url = function(u, values) {
+    /* tedious values copy to add new items */
+    var myvalues = {};
+    if (typeof(values) != 'undefined') {
+        for (var k in values)
+            myvalues[k] = values[k];
+    }
+
+    if (mjt.service_url != mjt.default_service_url)
+        myvalues['mjt.server'] = mjt.service_url
+
+    if (mjt.debug)
+        myvalues['mjt.debug'] = '' + mjt.debug;
+
+    var q = mjt.formencode(myvalues);
+
+    if (q == '')
+       return u;
+
+    return u + (u.match(/\?/) ? '&amp;' : '?') + q;
+}
+</pre>
+
+
+
+
+header(title) displays the page header
+
+<div mjt.def="header(title)">
+    <h2 mjt.if="title">$title</h2>
+</div>
+
+
+
+footer() displays the page footer
+
+<div mjt.def="footer()" style="text-align:center">
+<hr/>
+<!-- powered by <a href="http://mjtemplate.org/">mjt</a> -->
+</div>
+
+
+link(o) tries to generate a good link to an object
+
+<span mjt.def="link(o)" mjt.choose="typeof(o)">
+  <span mjt.when="object">
+     <pre mjt.script="">
+         var name = o.name;
+         if (!name) name = o.id;
+         if (!name) name = o.value;
+         if (!name) name = '[unknown object]';
+
+         var tid = o.id;
+         if (!tid &amp;&amp;
+             typeof(o.namespace) == 'object' &amp;&amp; 
+             o.namespace.id) {
+             tid = o.namespace.id;
+         }
+     </pre>
+
+        <a mjt.if="tid"
+           href="${l.app_url('view.html?id='+mjt.formquote(tid))}"
+           >$name</a>
+        <span mjt.else=""
+           >$name</span>
+  </span>
+  <span mjt.otherwise="">
+      $o
+  </span>
+</span>
+
+
+
+task_state(task) shows the task state, unless it's 'ready'
+in which cast the application should do something.
+
+<div mjt.def="task_state(t)"
+     mjt.choose="t.state">
+     <div mjt.when="ready" mjt.strip="1"></div>
+     <div mjt.when="wait" mjt.strip="1"><i>loading ...</i></div>
+     <div mjt.when="error">
+         error:
+         <div mjt.for="msg in t.messages">
+           $msg.code: $msg.message
+         </div>
+     </div>
+</div>
+
+
+showjson displays a json value as html.
+
+<span mjt.def="showjson(o)"
+      mjt.choose="typeof(o)">
+  <span mjt.when="object">
+    <i mjt.if="!o"> null </i>
+    <span mjt.elif="o instanceof Array">
+      [
+        <div mjt.for="v in o"
+             style="padding-left:20px;">
+          ${showjson(v)}
+        </div>
+      ]
+    </span>
+    <span mjt.else="">
+      {
+        <div mjt.for="k,v in o"
+             style="padding-left:20px;">
+          $k: ${showjson(v)}
+        </div>
+      }
+    </span>
+  </span>
+  <span mjt.when="number"> $o </span>
+  <i mjt.when="boolean"> $o </i>
+  <span mjt.when="string"> "$o" </span>
+</span>
+
+
+</body>
+</html>

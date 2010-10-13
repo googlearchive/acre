@@ -1,0 +1,154 @@
+<acre:block>
+  <acre:block def="show_suite(test_suite)">
+    <html>
+      <head>
+        <title>Test: ${test_suite.app_path}</title>
+        <acre:script>
+          var t = acre.require("/freebase/apps/default/templates");
+          var ui_host = (acre.current_script.app.id+'/ui').split('/').reverse().join('.');
+          var UI_URL = 'http://' + ui_host + acre.host.dev_name + ':' + acre.host.port;
+          UI_URL = UI_URL.replace(/:80$/,''); // strip out the default port
+
+          // must match default setup: function() {} in qunit.sjs
+          var emptyFuncStr = String(function() {});
+
+          // dump a testEnvironment converting functions to strings, but ignore default setup and teardown functions
+          function dumpEnv(env) {
+            if (!env) { return ''; }
+            var empty = true;
+            for (var k in env) {
+              var val = env[k];
+              if (typeof val==='function') {
+                val = String(val);
+                if ((k==='setup' || k==='teardown') && val===emptyFuncStr) { delete env[k]; continue; }
+                else {
+                  env[k] = val;                  
+                }
+              }
+            empty = false;
+            }
+            return empty ? '' : JSON.stringify(env,null,2);
+          }
+                    
+          function dump_prop(val) { return JSON.stringify(val); }
+          
+          function link_test(run_url,testname) { return acre.form.build_url(run_url,{test:testname}); }
+          
+          // HACK: we don't enforce unique names for modules and tests, so this could break
+          function get_key(testfile,module,test) {
+            var key = encodeURIComponent(testfile.file) +'/' + encodeURIComponent(module.name) +'/' + encodeURIComponent(test.name);
+            key = key.replace(/%20/g,'+'); // make it a little less ugly
+            return key;
+          }
+        </acre:script>
+
+        ${t.style()}
+        <link rel="stylesheet" href="${UI_URL}/tablesorter.css"/>
+        <link rel="stylesheet" href="${UI_URL}/reportstyle.css"/>
+        
+        <!-- TODO: when /freebase/libs/jquery released use ${t.jquery('jquery14')} -->
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+        <script type="text/javascript" src="${UI_URL}/jquery.tablesorter.min.js"></script>
+        <script type="text/javascript" src="${UI_URL}/reportcode.js"></script>
+
+        <script>
+        // from Server to Client
+        var test_suite = ${JSON.stringify(test_suite)};
+        </script>
+
+      </head>
+      <body>
+        
+        <div id="header">
+          <div class="links">
+            <a href="http://wiki.freebase.com/wiki/Acre_testing" target="_blank">Help</a>
+            <span id="showconsole" style="display:none;"> | <a href="#" title="Reload page in Acre Console">Console</a></span>
+          </div>
+          <h2>Acre Test Runner: ${test_suite.app_path}</h2>
+        </div>
+        
+        <acre:block def="dump_val(val)">
+          <a acre:if="typeof val === 'string' && val.indexOf('http://')===0" href="$val">$val</a>
+          <acre:block else="">${JSON.stringify(val)}</acre:block>
+        </acre:block>
+        
+        <table class="tablesorter">
+          <thead><tr>
+            <th class="col-select"><input type="checkbox" checked/></th>
+            <th>File</th>
+            <th>Module</th>
+            <!-- <th class="fail">Fails</th>
+            <th class="total">Total</th> -->
+            <th>Test</th>
+            <th>testEnvironment</th>
+            <th class="result">Result</th>
+            <!-- ><th style="width:8em;">State</th> 
+            <th>Time</th> -->
+            </tr></thead>
+          <tbody>
+            <acre:block for="testfile in test_suite.testfiles">
+            <acre:block for="module in testfile.modules">
+              <tr acre:for="test in module.tests" data-testkey="${get_key(testfile,module,test)}">
+                <td><input type="checkbox"/></td>
+                <td><a class="run_file"   href="$testfile.run_url">$testfile.file</a></td>
+                <td><span class="run_module">$module.name</span></td>
+                <!-- <td class="fail">${module.failures || ''}</td>
+                <td class="total">${module.total || ''}</td> -->
+                <td class="test">$test.name</td>
+                <td class="env"><acre:block if="dumpEnv(test.testEnvironment)"><span class="toggle"></span><span class="output hidden">${dumpEnv(test.testEnvironment)}}</span></acre:block></td>
+                <td class="result"></td>
+              </tr>
+            </acre:block>
+          </tbody>
+        </table>   
+        
+
+        
+        <div acre:if="!test_suite || !test_suite.testfiles || !test_suite.testfiles.length" class="warning">
+          This application doesn't have any <code>test_</code> files.<br>
+          Check out this example: <code><a href="http://acre.freebase.com/#app=/user/willmoffat/military1000&file=test_query">test_query</a></code>
+          - it's not scary ;-)
+          <p>If you're developing an on-disk app, then you need a <code>MANIFEST.sjs</code> containing<br>
+            <code>var MF={test:{files:['test_file1','test_file2']}};</code></p>
+        </div>
+        
+        <div id="footer">
+          <div class="links">
+            <span id="outputlinks">
+              <strong>Execute:</strong>
+              <a href="?mode=execute"       title="Execute tests and show HTML report">HTML</a> |
+              <a href="?output=json"        title="Execute tests and return JSON results">JSON</a> |
+              <a href="?output=jsonsummary" title="Execute tests and return total number of tests and failures as JSON">Summary</a>
+              <span id="tidlink" style="display:none;">
+                | <a href="#" target="_blank" title="(Metaweb internal ony)">tid</a>
+              </span>
+              <br>
+              <strong>Discover:</strong>
+              <a href="?mode=discover"             title="Discover tests and show HTML list">HTML</a> |
+              <a href="?mode=discover&output=json" title="Discover tests and return as JSON">JSON</a>
+            </span>
+          </div>
+          <button id="runall">Run tests</button>
+          <span id="globalstatus">Status:
+            <span class="message" >Loading...</span>
+            <span class="total"   >Total:    <span class="numtotal">0</span></span>
+            <span class="failures">Failures: <span class="numfail" >0</span></span>
+          </span>
+        </div>
+
+      </body>
+    </html>
+    
+  </acre:block>
+
+  <!-- Self-test of report -->
+  <acre:block if="acre.current_script.id === acre.request.script.id">
+    <acre:script>
+      var testurl = 'http://tests.test.'+acre.host.dev_name+'/qunit_basic';
+      var test_suite = JSON.parse(acre.urlfetch(testurl+'?output=json').body);
+      console.log('Sample test_suite',test_suite);
+    </acre:script>
+    ${show_suite(test_suite)}
+  </acre:block>
+  
+</acre:block>

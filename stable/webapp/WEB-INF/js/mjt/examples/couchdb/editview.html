@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<script type="text/javascript" src="../../mjt.js"></script>
+<script type="text/javascript" src="./couchdb.js"></script>
+<title>couchdb view editor</title>
+<script type="text/javascript">
+var couchdb = new mjt.services.CouchdbService(window.location.protocol + '//' + window.location.host + '/couchdb');
+</script>
+</head>
+<body onload="mjt.run()" style="display:none">
+
+
+<div mjt.def="putdesign(name, views)">
+  <pre mjt.task="q">
+    couchdb.PutDoc(mjt.urlquery.db, name, {
+        views: (views || {})
+    })
+  </pre>
+
+  <div mjt.if="q.state == 'ready'">
+    created
+XXX update display here
+  </div>
+
+  <div mjt.if="q.state == 'wait'">
+    waiting...
+  </div>
+
+  <div mjt.if="q.state == 'error'">
+    <div mjt.for="msg in q.messages">
+      <a href="apiref?message=$msg.code">$msg.message</a>
+    </div>
+  </div>
+</div>
+
+<div mjt.def="setdesign(name)">
+  <pre mjt.task="q">
+    couchdb.GetDoc(mjt.urlquery.db, name)
+  </pre>
+  
+  <div mjt.if="q.state == 'ready'">
+PUT ERE?
+<!--    ${putdesign(name)} -->
+  </div>
+
+  <div mjt.if="q.state == 'error'">
+${mjt.warn('QQQ', q)}
+    <div mjt.if="q.messages[0].code == '/apiary/couchdb/not_found'">
+      ${putdesign(name)}
+    </div>
+    <div mjt.else="">
+      <div mjt.for="msg in q.messages">
+        <a href="apiref?message=$msg.code">$msg.message</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div mjt.def="showview(name, view)">
+  <h3>$name</h3>
+  <div>$view</div>
+</div>
+
+
+<div mjt.def="showtest(viewsrc)">
+${mjt.warn('VS', viewsrc)}
+  <pre mjt.task="q">
+    couchdb.TempView(mjt.urlquery.db, 'function (doc) { ' + viewsrc + ' }')
+  </pre>
+  
+  <div mjt.if="q.state == 'ready'">
+    <div>$q.result.total_rows results</div>
+    <div mjt.for="row in q.result.rows">
+      ${JSON.stringify(row)}
+    </div>
+  </div>
+
+  <div mjt.if="q.state == 'error'">
+    error running view:
+    <div mjt.for="msg in q.messages">
+      $msg.code: $msg.message
+    </div>
+  </div>
+</div>
+
+
+
+
+<div mjt.def="showdesign(design)">
+  <pre mjt.task="q">
+    couchdb.GetDoc(mjt.urlquery.db, design)
+  </pre>
+  
+  <div mjt.if="q.state == 'ready'">
+    <span mjt.for="viewname, view in q.result.views">
+      <a href="#"
+         mjt.onclick="mjt.run('viewinfo', showview, [viewname, view]); return false;"
+         >$viewname</a>
+    </span>
+    <span>
+      <input id="view_name" type="text" size="20" value="">
+      </input>
+      <button mjt.onclick="mjt.run('view_name_output', setview, [document.getElementById('view_name').value])">save as</button>
+      <span id="view_name_output"></span>
+    </span>
+
+    ${showeditor()}
+  </div>
+
+  <div mjt.if="q.state == 'error'">
+    error fetching $design:
+    <div mjt.for="msg in q.messages">
+      $msg.code: $msg.message
+    </div>
+  </div>
+</div>
+
+<div mjt.def="showeditor()">
+  <table>
+    <tr>
+      <td>
+        <div>
+          the variable <b>doc</b> and function <b>map()</b> are predefined.
+          see <a href="http://www.couchdbwiki.com/index.php?title=Views">couchdb views</a> for more.
+          <button mjt.onclick="mjt.run('testview', showtest, [document.getElementById('viewbody').value])">test</button>
+        </div>
+        <textarea id="viewbody" cols="50" rows="10"
+                  >map(null, doc);</textarea>
+      </td>
+      <td>
+        <div id="testview">
+        </div>
+      </td>
+    </tr>
+    
+  </table>
+</div>
+
+
+$mjt.urlquery.db on $couchdb.service_url
+
+
+<div id="viewinfo">
+
+<div mjt.if="mjt.urlquery.design">
+  ${showdesign('_design/' + mjt.urlquery.design)}
+</div>
+<div mjt.else="">
+  <div>
+    design: ${mjt.urlquery.design || '-'}
+    <input id="design_name" type="text" size="20" value="">
+    </input>
+    <button mjt.onclick="mjt.run('design_name_output', setdesign, ['_design/'+document.getElementById('design_name').value])">set design</button>
+    <span id="design_name_output"></span>
+  </div>
+
+  ${showeditor()}
+</div>
+</div>
+
+</body></html>

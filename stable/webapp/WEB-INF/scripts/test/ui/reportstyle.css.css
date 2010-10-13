@@ -1,0 +1,36 @@
+#footer {
+  bottom: 0px;
+  /*position: fixed;*/
+  width: 100%
+}
+
+table.tablesorter { margin:0; }
+th.result { width:50%; }
+th.col-select { width: 1em; }
+
+a { text-decoration: none; }
+
+.toggle { cursor:pointer; border:thin dotted gray; color:black; padding:0px 2px; margin-right:5px; }
+.output.hidden { display:none; }
+
+td.env { white-space:pre; }
+
+/* per-test */
+span.hadfails { color: red; }
+span.nofails { color: green; }
+
+/* per ok() */
+.failed { color: red; }
+/* .passed { color: green; } */
+
+
+.links {
+  float:right;
+}
+
+#outputlinks { font-size:80%;}
+
+#footer .links { padding-right:2em; } /* compensate for position:fixed  */
+#footer strong { width:4em; display:inline-block; }
+
+.warning { border: solid thin gray; margin:3em; padding:1em; width:50em; background-color:#fa6;}
