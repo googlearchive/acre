@@ -1,0 +1,109 @@
+* { vertical-align: baseline; font-weight: inherit; font-family: inherit; font-style: inherit; font-size: inherit; border: 0 none; outline: 0; padding: 0; margin: 0; }
+
+body { font-size: 62.5%; }
+table { border-collapse: collapse; border-spacing: 0; }
+ul, ol { list-style: none; }
+h1, h2, h3, h4, h5, h6 { font-weight: normal; font-size: 100%; }
+
+/* ~ */
+
+a:link, a:visited { text-decoration: none; color: #1170a3; }
+a:link:hover, a:visited:hover { text-decoration: underline; }
+.right { text-align: right; }
+.icon-debug { background: url(icons-status.png) no-repeat 0 0; }
+.icon-info  { background: url(icons-status.png) no-repeat 0 -20px; }
+.icon-warn  { background: url(icons-status.png) no-repeat 0 -40px; }
+.icon-error { background: url(icons-status.png) no-repeat 0 -60px; }
+.unigeo { font-family: monospace; font-size: 1.5em; color: #f60; }
+.mw-only, .display-last { display: none; }
+
+
+/* ~ */
+
+body { background: #fff; color: #444; min-width: 850px; line-height: 1.5;
+       font-family: "Lucida Grande", Tahoma, Verdana, Arial, Helvetica, sans-serif; }
+    
+#header { position: relative; height: 32px; background: #f2f2f2 url(fb-grid-1px_v1.png) repeat-x 0 -775px; }
+#logo { position: absolute; top: -1px; left: 30px; height: 32px; border-left: 1px solid #e5e5e5; }
+#logo a { display: block; margin-top: 7px; border-left: 1px solid #fff; padding-left: 22px; padding-right: 3px; }
+#logo:hover, #logo a:hover { background: #fff; }
+#pathbar { position: absolute; top: 0; left: 100px; height: 32px; border-left: 1px solid #e5e5e5; display:none; }
+#pathbar p { border-left: 1px solid #fff; padding: 6px 0 0 30px; font-size: 1.2em; }
+#pathbar input { border: 1px solid #bbb; padding: 2px; width: 20em; font-size: 0.9em; }
+#pathbar .defaultText { color: #aaa; }
+
+#actionbar { position: relative; height: 28px; border-left: 1px solid #e5e5e5; background: #e3f6fa; white-space: nowrap; }
+#actionbar ul { position: absolute; top: 4px; list-style: none; }
+#actionbar li { display: inline; padding: 5px 5px 5px 20px; }
+#unframe { position: absolute; top: 0; right: 10px; padding: 8px 20px 0 0; }
+#unframe a { padding: 0; }
+#unframe .icon-closebox { position: absolute; overflow: hidden; top: 10px; right: 5px; height: 11px; width: 11px; padding: 0; text-indent: -9999px; background: url(close-buttons.png) no-repeat 0 -22px; }
+/*#log-toggle { padding: 1px 5px 3px 5px; }*/
+#log-toggle a { padding: 5px 20px; font-size: 1.2em; color:#1170A3; cursor:pointer;} /*WILL: why doesn't <a> already have cursor? */
+#log-toggle a:hover { background: #f9fdff; }
+
+/* metaweb costs */
+#costs b { font-weight:bold;}
+.mw-costs span:hover { color:black; }
+
+/* Used in stand-alone mode only */
+#app-output { display:none; position: fixed; right: 5px; bottom: 5px; }
+#app-output iframe { border: thin solid grey; }
+
+#log-content { position: relative; background: #f9fdff; padding: 1px; }
+.log-entry { position: relative; min-height: 22px; font-size: 1.1em; border-top: 1px solid #f9fdff; color: #777;}
+.log-entry.debug { background: #e4f3db; }
+.log-entry.info  { background: #e5f2fb; }
+.log-entry.warn  { background: #fcf3db; }
+.log-entry.error { background: #fce2db; }
+.log-entry p { padding: 3px 0; }
+
+.log-entry.debug .event-name { color: #1bc33a; background: url(icons-status.png) no-repeat 0 0;}
+.log-entry.info  .event-name { color: #46a3dd; background: url(icons-status.png) no-repeat 0 -20px;}
+.log-entry.warn  .event-name { color: #ff8123; background: url(icons-status.png) no-repeat 0 -40px;}
+.log-entry.error .event-name { color: #ff5723; background: url(icons-status.png) no-repeat 0 -60px;}
+.log-entry .event-name { position: absolute; left: 5px; top: 0; padding: 3px 0 3px 20px; overflow: hidden; }
+.log-entry .timestamp  { position: absolute; left: 2em; top: 0; width: 60px; text-align: right; overflow: hidden; }
+.log-entry .event { margin-left: 10em; }
+.log-entry.warn .event, .log-entry.error .event, .log-entry.app .event { color: #222; }
+.log-entry .int, .log-entry .string, .log-entry .hilite, .log-entry .event span.object, .log-entry .undefined, .log-entry .null { padding: 0 8px 0 0; color: #222; }
+.log-entry b { font-weight:bold; }
+
+.log-entry.verbose { display: none; }
+.status-200 { color: #1bc33a; }
+.status-unknown { color: #ff5723; }
+.http-headers>ul { display:inline-block; }
+
+/* WILL: */
+#log-entries>li:first-child { display:none; } /* Hide Template entry */
+
+/* mini treeview */
+.json-js-view ul { list-style: none; margin-left: 2em; }
+.json-js-view .controller { width:10pt; display:inline-block; cursor: pointer; }
+.json-js-view li>.controller:first-child { margin-left: -10pt; } /* Right align controllers in a vertical list */
+.json-js-view li.expandable>span:hover { color: #FF6600; cursor:pointer; }
+.json-js-view li.closed>ul { display:none; }
+
+.json-js-view .inherited   { font-style:italic; }
+.json-js-view .highlight   { outline: solid thin red; }
+.json-js-view .overflow    { color:red; }
+.json-js-view .skipped     { color:#aaa; }
+.json-js-view .link        { color: #1170a3; }
+.json-js-view .constructor { font-weight: bold; }
+.json-js-view .str-length  { color:grey; }
+.json-js-view .highlight   { background: yellow no-repeat; }
+
+/* these correspond to 'typeof v' */
+.json-js-view .function  { color:#996; }
+.json-js-view .number    { color:#90c; }
+.json-js-view .boolean   { color:#06c; }
+.json-js-view .string    { color: #396; word-wrap:break-word; }
+.json-js-view .string:before { content : open-quote; }
+.json-js-view .string:after  { content : close-quote; }
+.json-js-view .null      { color:grey; } /* special case (typeof is actually 'object') */
+.json-js-view .undefined { color:grey; }
+
+
+
+
+

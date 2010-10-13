@@ -1,0 +1,101 @@
+
+/* style sheet for rst2html output  */
+
+body {
+  font-family: Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+a:link {
+  color: #06c;
+  text-decoration: none;
+}
+
+a:visited {
+  color: #06c;
+  text-decoration:none;
+}
+
+a:hover {
+  color: #06c;
+  text-decoration: underline;
+}
+
+a[name]:hover {
+  text-decoration: inherit; 
+  color: inherit; 
+  background: inherit
+  }
+
+p {
+  font-size: 1em;
+  max-width: 550px;
+  line-height: 1.1em;
+}
+
+span.pre {
+}
+
+h2 {
+  margin: 0;
+  color: #b20;
+  font-weight: normal;
+}
+
+ul {
+  padding: 0 20px;
+}
+  
+li {
+  margin: 5px;
+  max-width: 550px;  
+}
+  
+.document {
+  margin: 10px 15px;
+  border-top: 3px double #06c;
+  border-bottom: 3px double #06c;
+}
+
+.title { 
+  text-align: right;
+  margin: 10px;
+  color: #b20;
+  font-size: 3em;
+  font-weight: normal;
+  font-style: italic;
+  }
+  
+.section {
+  margin: 20px 10px;
+  padding: 0;
+}
+
+.literal-block {
+  border-top: 1px solid #b20;
+  border-bottom: 1px solid #b20;
+  padding: 10px 0;
+}
+
+/* for live side-by-side mjt demo tables */
+
+.example { 
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: collapse;
+  margin: 0 0 10px 0;
+  }
+
+.example_in, .example_out { 
+  width: 50%;
+  padding: 5px;
+  border: 1px solid #999;
+  }
+
+.example_in .literal-block, .example_out .literal-block { 
+  border: 0;
+  }
+
+
+

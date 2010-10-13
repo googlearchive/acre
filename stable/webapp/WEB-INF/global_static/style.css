@@ -1,0 +1,94 @@
+html {
+  font-size: 62.5%;
+}
+
+body {
+  color: #333;
+  font-size: 1.3em;
+  font-family: "Lucida Grande","Tahoma",sans-serif;
+  background-color: #FAFDFF;
+  background-image: url('/acre/static/rhino.png');
+  background-repeat: no-repeat;
+  background-position: bottom left;
+  background-attachment: fixed;
+}
+
+h1 {
+  font-size: 1.8em;
+  font-weight: normal;
+  margin: 0em;
+}
+
+h4 {
+	margin-bottom: 0em;
+}
+
+table {
+  font-size: inherit;
+  font-size: inherit;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+pre {
+    font-size: 1.0em;
+    border: 1px solid #ccc;
+    padding: 0.6em 0.4em;
+    overflow: auto;
+}
+
+pre span.error {
+	color: red;
+	font-weight: bold;
+	font-size: 1.4em;
+}
+
+input {
+  font-family: inherit;
+  font-size: inherit;
+  border: 1px solid #ccc;
+  padding: 0.2em;
+}
+
+a {
+  color:#1170A3;
+  text-decoration: none;
+  font-family: monospace;
+  font-size: 1.3em;
+}
+
+a:focus, a:active {
+  outline-color: -moz-use-text-color;
+  outline-style: none;
+  outline-width: medium;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+#body {
+  margin: 120px 150px;
+  padding: 1em 2em;
+  border: 1px solid #A9E9FB;
+  background-color: #fff;
+}
+
+.script {
+  font-weight: bold;
+  font-size: 1.3em;
+}
+
+.msg {
+  font-size: 1.15em;
+}
+
+.internal {
+	display: none;
+}
+
+.tid {
+    margin-top: 1em;
+    text-align: right;
+    font-size: 90%;
+}
