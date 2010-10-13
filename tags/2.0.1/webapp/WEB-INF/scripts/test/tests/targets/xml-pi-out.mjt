@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<acre:doc type="application/foo+xml" xml-pi="0">
-
-<foo>bar</foo>
-baz
-
-</acre:doc>
-
