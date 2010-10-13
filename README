@@ -13,10 +13,10 @@ using the Acre templating language, which is a variation of Mjt
 in Javascript, which is preferable for APIs that return JSON results.
 
 Traditionally, Acre stores the meta-data and source required to find and run
-applications using the APIs provided by Freebase.com.  The retrieval mechanism
+applications using the APIs provided by freebase.com.  The retrieval mechanism
 for discovering source and meta data is pluggable, and thus easily extensible.
 This release includes a method that uses the local file system to find and run
-applications, as well as the more traditional Freebase.com implementation.
+applications, as well as the more traditional freebase.com implementation.
 
 
 Building Acre
@@ -34,44 +34,49 @@ To build, simply type
 Running Acre
 ------------
 
-To run acre, take a look at config/project.local.conf, which should contain
-reasonable defaults. Now:
+To run acre, simply type:
 
   ./acre run
 
 and then look at:
 
-  http://localhost:8115/acre/status in your browser.
+  http://127.0.0.1:8115/acre/status in your browser.
 
-If everything looks alright, congratulations, you have Acre running! By
-default, Acre gets data and source from sandbox-freebase.com. If you want it to
-get data and source from freebase.com run it with:
+If everything looks alright, congratulations, you have Acre running! 
 
-  ./acre -c otg run
+By default, Acre gets data and source code from sandbox-freebase.com. 
+If you want it to get data and source code from the main freebase.com site 
+run it like this:
+
+  ./acre -c freebase run
 
 
-Developing Acre apps
---------------------
+Developing Acre apps residing on your local disk
+------------------------------------------------
 
-Acre apps are stored in 'webapp/WEB-INF/scripts'.  Here's a simple example:
+Acre will look for your local acre apps in the 'webapp/WEB-INF/scripts' directory.  
+Here's a simple example:
 
 Your app is called:      foo
 Put the files in:        webapp/WEB-INF/scripts/foo/
 Point your browser at:   http://foo.dev.acre.localhost:8115/
 
-Acre is configured to serve your apps from under dev.acre.localhost:8115.  To
-make this work, you will need to configure a hostname for each app you're
-working on.  You can do this by adding the following to your /etc/hosts file:
+Acre by default is configured to expect your apps to be responding to *.dev.acre.localhost:8115 domains.  
+To make this work, you will need to configure a hostname for each app you're
+working on to tell your computer it should route the requests to those domains to Acre.
+The simplest way to do this is by adding the following to your /etc/hosts file:
 
   127.0.0.1   foo.dev.acre.localhost
 
-(Repeat this line for each app you want to serve.)
+(unfortunately, you can't use wildcards in /etc/hosts so you have to add a new line for 
+each app you want your local acre to serve)
 
-I you want to use a different base URL, update 'ACRE_HOST_BASE' and
-'ACRE_HOST_SUFFIX' in your 'config/project.local.conf' file, and restart Acre.
+I you want to use a different base URL (for example, once you deploy Acre on your own server), 
+update 'ACRE_HOST_BASE' and 'ACRE_HOST_SUFFIX' in your 'config/project.local.conf' file, and 
+restart Acre.
 
 You can use subdirectories for different versions of your apps, staging, etc.
-The directory structure is the same as the namespace path in Freebase.com, so
+The directory structure is the same as the namespace path in freebase.com, so
 if you want acre to serve:
 
   http://foo.bar.dev.acre.localhost:8115/index

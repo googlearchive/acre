@@ -56,8 +56,6 @@ if [ -z "$ACRE_VERSION" ]; then
             ACRE_VERSION="`cat $INFO | grep URL | cut -d'/' -f5-`:`cat $INFO | grep Revision | sed 's/.*: //'`"
             rm $INFO
         fi
-        
-
     fi
 fi
 

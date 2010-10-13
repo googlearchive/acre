@@ -115,7 +115,6 @@
 
       <copy file="${webapp.config.dir}/log4j-appengine.properties" tofile="${webapp.config.dir}/log4j.properties" overwrite="true"/>
 
-
       <copy todir="${webapp.classes.dir}">
         <fileset dir="${library.classes.dir}">
           <include name="**/*.class"/>
