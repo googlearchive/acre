@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Normalize the current directory
+cd `dirname $0`/..
+
+# Fixup settings
+. bin/fixup-settings
+ 
+result=$(curl -sf "http://127.0.0.1:$ACRE_PORT/status")
+ret=$?
+
+echo "status: $result"
+exit $ret

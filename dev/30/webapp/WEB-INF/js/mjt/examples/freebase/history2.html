@@ -1,0 +1,396 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<link rel="stylesheet" href="../../style.css" type="text/css"></link>
+<title>freebase edit history</title>
+<script type="text/javascript" src="../../mjt.js"></script>
+<script type="text/javascript" src="../../rison.js"></script>
+<script type="text/javascript" src="../../src/freebase/mqlhistory.js"></script>
+
+
+<style type="text/css">
+tr.subject_row {
+}
+.subject_id {
+  //border:1px solid black;
+  //background-color: #eff;
+  font-size:+120%;
+}
+.prop_id0 {
+  width:20em;
+  !text-align:right;
+  font-size:smaller;
+}
+.prop_id1 {
+  width:8em;
+  font-weight:bold;
+}
+.edit_prop_value {
+   width:300px;
+}
+.edit_creator {
+   width:5em;
+}
+.edit_timestamp {
+   width:6em;
+   text-align: right;
+}
+.prop_schema {
+}
+.prop_id {
+}
+.create_action {
+  font-weight:bold;
+}
+.delete_action {
+}
+.other_action {
+}
+.write_wait {
+  font-weight:bold;
+  font-color: #830;
+}
+.write_ready {
+  font-color: #3f3;
+}
+.write_error {
+  font-weight:bold;
+  font-color: #f33;
+}
+
+.timestamp_date {
+  font-weight: bold;
+  float:left;
+}
+.timestamp_time {
+  font-weight: bold;
+  color: #555;
+}
+.timestamp_subtime {
+}
+
+.action {
+}
+
+.action_0 {
+  background-color: #f4ffff;
+}
+
+.action_1 {
+}
+
+.action .undobutton {
+  visibility:hidden;
+}
+
+.action:hover .undobutton {
+  visibility:visible;
+}
+
+.subject_link {
+  // vertical-align:bottom;
+}
+
+</style>
+
+
+</head>
+
+<body onload="mjt.run('top');">
+
+<div id="top" style="display:none;">
+
+  <span mjt.def="show_xhr_signin()">
+    <span mjt.if="mjt.freebase.xhr_ok">
+      <span mjt.if="mjt.freebase.freebase_user">
+        signed in as <b>$mjt.freebase.freebase_user.id</b>
+        to <span class="service_url">${mjt.service_url.replace(/^http:\/\//, '')}</span>
+        | <a href="signin.html?mjt.server=." target="_blank">sign out</a>
+      </span>
+      <span mjt.else="">
+        not signed in to <span class="service_url">${mjt.service_url.replace(/^http:\/\//, '')}</span>
+        | <a href="signin.html?mjt.server=." target="_blank">sign in</a>
+      </span>
+    </span>
+  </span>
+    
+
+  <span mjt.def="showtimestamp(mqldate, lastdate)">
+    <span mjt.script="">
+      var d = /^([\d-]+)T([\d:]+)\.(\d+)Z$/.exec(mqldate);
+      var d0 = /^([\d-]+)T([\d:]+)\.(\d+)Z$/.exec(lastdate) || ['','','','']
+      var diffdate = (d[1] != d0[1]);
+      var difftime = diffdate || (d[2] != d0[2]);
+      var diffsub  = difftime || (d[3] != d0[3]);
+    </span>
+    <span class="timestamp_date" mjt.if="diffdate">${d[1]}</span>
+    <span  class="timestamp_time" mjt.if="difftime">${d[2]}</span
+    ><span  class="timestamp_subtime" mjt.if="diffsub">.${d[3]}</span>
+  </span>
+
+  <span mjt.def="showlink(o, name)" mjt.choose="typeof(o)">
+    <span mjt.when="object">
+       <span mjt.script="">
+           var inid;
+
+           if (typeof name != 'undefined') {
+           } else if (typeof o.name == 'string') {
+               name = o.name;
+           } else if (typeof o.id == 'string') {
+               name = o.id;
+           } else if (typeof o.value != 'undefined') {
+               name = o.value;
+               if (typeof o.namespace != 'undefined')
+                   inid = o.namespace;
+               if (typeof o.lang != 'undefined')
+                   inid = o.lang;
+           } else {
+               name = '[unknown object]';
+           }
+
+           if (/^\/guid\/.{32}$/.exec(name)) {
+               name = '/guid/...' + name.slice(30);
+           }
+
+           if (typeof inid == 'object')
+               inid = inid.id;
+
+           var tid = o.id;
+       </span>
+
+       <a mjt.if="tid"
+          title="$tid"
+          href="$mjt.service_url/view$tid"
+          >$name</a>
+       <span mjt.elif="typeof inid != 'undefined'"
+             >$name : <a href="$inid">$inid</a></span>
+       <span mjt.else=""
+             >$name</span>
+    </span>
+    <span mjt.when="string">
+       <span mjt.script="">
+           if (!name) name = o;
+       </span>
+       <a title="$o" href="$mjt.service_url/view$o">$name</a>
+    </span>
+    <span mjt.otherwise="">
+        $o
+    </span>
+  </span>
+
+
+
+  <span mjt.def="undo_action(action)">
+    <span mjt.script="">
+      var wq = {
+          id: action._src.id
+      };
+      dest = {};
+      for (var k in action._dest)
+          dest[k] = action._dest[k];
+
+      switch (action.operation) {
+        case 'insert':
+          dest.connect = 'delete';
+          break;
+        case 'delete':
+          dest.connect = 'insert';
+          break;
+        default: 
+          /* this should be an error - cant undo 'create' */
+          break;
+      }
+
+      wq[action.linktype] = dest;
+    </span>
+    <span mjt.task="w">
+      mjt.freebase.MqlWrite(wq)
+    </span>
+    <span mjt.choose="w.state" mjt.strip="1">
+      <span mjt.when="ready" class="write_ready">
+        undone
+      </span>
+      <span mjt.when="error" class="write_error">
+        error:
+        <span mjt.for="msg in objectq.messages" style="padding-left:20px">
+          $msg.message
+          (${showlink(msg.code, 'help')})
+        </span>
+      </span>
+      <span mjt.when="wait" class="write_wait">
+        saving...
+      </span>
+    </span>
+  </span>
+
+
+  <table mjt.def="showlist(actions)">
+
+    <tr>
+      <th>timestamp&nbsp;(UTC)</th>
+      <th>object</th>
+      <th>operation</th>
+      <th>property</th>
+      <th>value</th>
+    </tr>
+
+    <tr mjt.strip="1">
+      <td>
+        <pre mjt.script="">
+          var last_timestamp = '';
+          var last_propid;
+          var last_proptype = '';
+          var last_propkey = '';
+          var last_subject = '';
+        </pre>
+      </td>
+    </tr>
+
+    <tr mjt.for="rowi, action in actions"
+        mjt.attrs="{'class':'action action_'+(rowi%2)}">
+      <td class="edit_timestamp">
+        <span mjt.if="last_timestamp != action.timestamp">
+          ${showtimestamp(action.timestamp, last_timestamp)}
+          <span mjt.script="">
+            last_timestamp = action.timestamp;
+          </span>
+        </span>
+      </td>
+
+      <td class="subject_link">
+        <div mjt.if="last_subject != action._src.id"
+             class="subject_id">
+          ${showlink(action._src)}
+          <pre mjt.script="">
+            last_subject = action._src.id;
+          </pre>
+        </div>
+      </td>
+
+      <td class="operation">
+        <span mjt.choose="action.operation">
+          <span mjt.when="delete" class="delete_action">
+            <!--
+            <a class="undobutton"
+               href="#"
+               mjt.if="mjt.freebase.xhr_ok &amp;&amp; action.valid"
+               mjt.onclick="mjt.run(this, undo_action, [action]); return false;"
+               >undo</a>-->&nbsp;$action.operation
+          </span>
+          <span mjt.when="create" class="create_action">
+            $action.operation
+          </span>
+          <span mjt.otherwise="" class="other_action">
+            <!-- <a class="undobutton"
+                 href="#"
+                 mjt.if="mjt.freebase.xhr_ok &amp;&amp; action.valid"
+                 mjt.onclick="mjt.run(this, undo_action, [action]); return false;"
+                      >undo</a
+              >-->&nbsp;<strike mjt.strip="typeof action.valid == 'undefined' || action.valid"
+              >$action.operation</strike>
+          </span>
+        </span>
+      </td>
+
+      <td>
+        <div mjt.if="typeof action.linktype != 'undefined'">
+          <pre mjt.script="">
+            var epropid = action.linktype;
+            var eproptype = '';
+            var epropkey = '';
+            var m = /^(.*)\/([^\/]+)$/.exec(epropid);
+            if (m) {
+              eproptype = m[1];
+              epropkey = m[2];
+            }
+          </pre>
+          <div class="prop_id0" mjt.if="epropid != last_propid">
+            <div mjt.if="eproptype &amp;&amp; eproptype != last_proptype"
+                 class="prop_schema">
+              &nbsp;${showlink(eproptype, eproptype+'/')}
+            </div>
+  
+            <div mjt.if="!epropkey"
+                 class="prop_id">
+              ${showlink(epropid)}
+            </div>
+          </div>
+          <div mjt.if="epropid != last_propid &amp;&amp; epropkey"
+               class="prop_id1">
+            ${showlink(epropid, '&middot;&nbsp;'+epropkey)}
+          </div>
+  
+          <pre mjt.script="">
+            last_propid = epropid;
+            last_proptype = eproptype;
+            last_propkey = epropkey;
+          </pre>
+        </div>
+      </td>
+
+      <td class="edit_prop_value">
+        <span mjt.if="typeof action._dest != 'undefined'">
+          ${showlink(action._dest)} 
+        </span>
+      </td>
+
+
+<!--
+      <td class="edit_creator">
+        <span mjt.if="last_creator != action.creator">
+          <span mjt.script="">
+            last_creator = action.creator;
+          </span>
+          ${showlink(last_creator)}
+        </span>
+      </td>
+-->
+    </tr>
+  </table>
+
+  <pre mjt.task="historyq">
+    mjt.freebase.MqlHistory(mjt.urlquery.user || null)
+  </pre>
+
+  <h2>
+    Recent edit history
+    <span mjt.if="mjt.app.state.user">for $mjt.app.state.user</span>
+  </h2>
+
+  ${show_xhr_signin()}
+
+  <div>
+    you will probably have to narrow this to a particular user or
+    the history queries will time out.
+  </div>
+  <div>
+    note that the top of the list should be complete, but the end
+    is not (events that happened during that time may be missing).
+  </div>
+  <div>
+    the list should really be truncated
+    before any incomplete times are shown.
+  </div>
+
+  <div mjt.choose="historyq.state" mjt.strip="1">
+    <div mjt.when="ready">
+      ${showlist(historyq.result)}
+    </div>
+    <div mjt.when="error">
+      error:
+      <div mjt.for="msg in historyq.messages" style="padding-left:20px">
+        $msg.message
+        (${showlink(msg.code, 'help')})
+      </div>
+    </div>
+    <div mjt.when="wait">
+      loading...
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

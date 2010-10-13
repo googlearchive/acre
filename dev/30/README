@@ -1,0 +1,121 @@
+
+                
+                   Acre (A Crash of Rhinos Evaluating)
+                   -----------------------------------
+
+
+Acre is a server-side Javascript platform for implementing web applications
+easily.  It was designed to facilitate the development of applications that
+make use of the data provided by Freebase.com, though it is a capable platform
+for generic web application development. Applications are generally implemented
+using the Acre templating language, which is a variation of Mjt
+(http://mjtemplate.org). It's also possible to implement applications directly
+in Javascript, which is preferable for APIs that return JSON results.
+
+Traditionally, Acre stores the meta-data and source required to find and run
+applications using the APIs provided by freebase.com.  The retrieval mechanism
+for discovering source and meta data is pluggable, and thus easily extensible.
+This release includes a method that uses the local file system to find and run
+applications, as well as the more traditional freebase.com implementation.
+
+
+Building Acre
+-------------
+
+Acre requires you to have a Java Developer's Kit installed (version 5 or greater)
+and Apache Ant. (basically, 'java', 'javac' and 'ant' need to be present in your path).
+All the libraries that Acre requires to build and to run are already shipped with it.
+
+To build, simply type
+
+  ./acre build
+
+
+Running Acre
+------------
+
+To run acre, simply type:
+
+  ./acre run
+
+and then look at:
+
+  http://127.0.0.1:8115/acre/status in your browser.
+
+If everything looks alright, congratulations, you have Acre running! 
+
+By default, Acre gets data and source code from sandbox-freebase.com. 
+If you want it to get data and source code from the main freebase.com site 
+run it like this:
+
+  ./acre -c freebase run
+
+
+Developing Acre apps residing on your local disk
+------------------------------------------------
+
+Acre will look for your local acre apps in the 'webapp/WEB-INF/scripts' directory.  
+Here's a simple example:
+
+Your app is called:      foo
+Put the files in:        webapp/WEB-INF/scripts/foo/
+Point your browser at:   http://foo.dev.acre.localhost:8115/
+
+Acre by default is configured to expect your apps to be responding to *.dev.acre.localhost:8115 domains.  
+To make this work, you will need to configure a hostname for each app you're
+working on to tell your computer it should route the requests to those domains to Acre.
+The simplest way to do this is by adding the following to your /etc/hosts file:
+
+  127.0.0.1   foo.dev.acre.localhost
+
+(unfortunately, you can't use wildcards in /etc/hosts so you have to add a new line for 
+each app you want your local acre to serve)
+
+I you want to use a different base URL (for example, once you deploy Acre on your own server), 
+update 'ACRE_HOST_BASE' and 'ACRE_HOST_SUFFIX' in your 'config/project.local.conf' file, and 
+restart Acre.
+
+You can use subdirectories for different versions of your apps, staging, etc.
+The directory structure is the same as the namespace path in freebase.com, so
+if you want acre to serve:
+
+  http://foo.bar.dev.acre.localhost:8115/index
+
+you would create the directory 'webapp/WEB-INF/scripts/bar/foo' and place a
+file named 'index.<ext>' in it. Acre uses the extension to determine what
+mechanism to use to run the file. By default Acre will serve the file as raw
+text unless certain extensions are used:
+
+  .mjt will treat the file as an Acre template
+  .sjs will treat the file as a server-side Javascript file
+  .mql will treat the file as a MQL Query
+  .{png, jpg, gif} will serve the file as binary with the appropriate mime-type
+
+
+Example apps
+------------
+
+Some simple example applications are included in this distribution.
+
+Example 1: Hello World
+
+The files can be found at:
+  webapp/WEB-INF/scripts/examples/helloworld
+
+Add this line to your /etc/hosts:
+  127.0.0.1 helloworld.examples.dev.acre.localhost
+
+Point your browser at:
+  http://helloworld.examples.dev.acre.localhost:8115/
+
+
+			                     - o -
+
+
+Thank you for your interest.
+
+
+                                          The Acre Development Team
+
+
+
