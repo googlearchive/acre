@@ -35,20 +35,25 @@ Available Options:
 
   -v <level> .......... Log verbosity level (one of "DEBUG,INFO,WARN,ERROR")
                         [default: INFO]
-                        
+
+  -w <dir> ............ War location
+                        [default: _build/war]
+                                                
 Available Commands:
 
     build ............. Build Acre
     
     war ............... Build a WAR package of Acre to run on a regular servlet container
-    appengine ......... Build a WAR package of Acre to run on Google App Engine
-    appengine-local ... Build a WAR package of Acre to run on Google App Engine (locally)
     
     run ............... Run Acre
     run_app <dir> ..... Run Acre with a local app from disk
     start ............. Start Acre as a daemon
     stop .............. Stop Acre that was started as a daemon
     zap ............... Remove the Acre PID file
+
+    appengine-build ... Build a WAR package of Acre to run on Google App Engine
+    appengine-run ..... Run Acre in the local Google App Engine simulator (must call 'appengine-build' first)
+    appengine-deploy .. Deploy Acre on Google App Engine (must call 'appengine-build' first)
     
     clean ............. Remove all class files
     clean-whitespace .. Normalize tabs and newlines
@@ -61,6 +66,15 @@ Available Commands:
     
 EOF
     exit 0
+}
+
+check_appengine() {
+    if [ -z "$APPENGINE_HOME" ]; then
+        error "The APPENGINE_HOME parameter is not set in your environment. Did you install the Google AppEngine SDK for Java?"
+    fi
+    if [ ! -f "$APPENGINE_HOME/bin/appcfg.sh" ]; then
+        error "can\'t find 'appcfg.sh' in $APPENGINE_HOME. Is this the Google AppEngine SDK for Java?"
+    fi
 }
 
 # Load Configs --------------------------------------------
@@ -89,6 +103,19 @@ get_revision() {
     fi
 
     REVISION=`echo $INFO | sed 's/.*Revision: /r/' | sed 's/ .*//'`
+}
+
+# ----------------------- commands --------------------------
+
+invoke() {
+    if [ -f "./bin/$SCRIPT" ]; then
+        export ACTION
+        export JAVA
+        ./bin/$SCRIPT $COMMAND $*
+        result=$?
+    else
+        fail "'$ACTION'"
+    fi
 }
 
 # -------------------------------------------------------------------------------------
@@ -124,6 +151,11 @@ while [ $# -ne 0 ] ; do
         export ACRE_LOG_LEVEL="$1"
         shift
         continue;;
+
+    -w) shift
+        export WAR="$1"
+        shift
+        continue;;
         
     -*) echo "$0: invalid option: $1" >&2
         exit 1;;
@@ -153,6 +185,11 @@ if [ "$PORT" != "" ]; then
     export ACRE_PORT="$PORT"
 fi
 
+# War location --------------------------------------------
+if [ "$WAR" == "" ]; then
+    WAR="_build/war"
+fi
+
 # Assign the wanted action --------------------------------
 ACTION=$1
 COMMAND=
@@ -164,43 +201,63 @@ case "$ACTION" in
         usage ;;
     build) 
         SCRIPT="build"
-        COMMAND="compile" ;;
+        COMMAND="compile" 
+        invoke;;
     run) 
-        SCRIPT="start" ;;
+        SCRIPT="start" 
+        invoke;;
     war) 
         SCRIPT="build" 
-        COMMAND="war" ;;
+        COMMAND="war" 
+        invoke;;
     dist) 
-        SCRIPT="build"; 
-        COMMAND="dist"; 
-        get_version $1; 
-        get_revision; 
-        export ANT_PARAMS="-Dversion=$VERSION -Drevision=$REVISION" ;;
+        SCRIPT="build" 
+        COMMAND="dist" 
+        get_version $1 
+        get_revision
+        export ANT_PARAMS="-Dversion=$VERSION -Drevision=$REVISION" 
+        invoke;;
     clean) 
-        SCRIPT="build"; 
-        COMMAND="clean" ;;
+        SCRIPT="build"
+        COMMAND="clean" 
+        invoke;;
     distclean) 
-        SCRIPT="build"; 
-        COMMAND="distclean" ;;
-    appengine) 
-        SCRIPT="build"; 
-        COMMAND="appengine"; 
-        export ANT_PARAMS="-Dappengine.remote=true -Dsdk.dir=\"$APPENGINE_HOME\"" ;;
-    appengine-local) 
-        SCRIPT="build"; 
-        COMMAND="appengine"; 
-        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" ;;
-    *) SCRIPT="$ACTION" ;;
+        SCRIPT="build"
+        COMMAND="distclean" 
+        invoke;;
+    appengine-build) 
+        SCRIPT="build" 
+        COMMAND="appengine"
+        check_appengine
+        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" 
+        invoke;;
+    appengine-run) 
+        check_appengine
+        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" 
+        if [ ! -d "$WAR" ]; then
+            SCRIPT="build" 
+            COMMAND="appengine"
+            invoke
+        fi
+        SCRIPT="build" 
+        COMMAND="appengine-local"
+        invoke
+        if [ "$PORT" != "" ]; then
+            CONF="-p $PORT"
+        fi
+        $APPENGINE_HOME/bin/dev_appserver.sh $CONF "$WAR";;
+    appengine-deploy) 
+        check_appengine
+        if [ ! -d "$WAR" ]; then
+            SCRIPT="build" 
+            COMMAND="appengine"
+            export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" 
+            invoke
+        fi
+        $APPENGINE_HOME/bin/appcfg.sh update "$WAR";;
+    *) 
+        SCRIPT="$ACTION" 
+        invoke;;
 esac
-
-# Invoke the wanted action --------------------------------
-if [ -f "./bin/$SCRIPT" ]; then
-    export ACTION
-    export JAVA
-    ./bin/$SCRIPT $COMMAND $*
-    result=$?
-else
-    fail "'$ACTION'"
-fi
 
 exit $result

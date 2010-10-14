@@ -169,7 +169,7 @@
       </copy>
     </target>
 
-    <target name="copy-appengine-jars" unless="appengine.remote">
+    <target name="appengine-local">
       <copy todir="${war.lib.dir}" flatten="true">
         <fileset dir="${sdk.dir}/lib/user">
           <include name="**/*.jar" />
@@ -201,7 +201,7 @@
       <delete file="${war.config.dir}/log4j-appengine.properties" />
     </target>
         
-    <target name="appengine" depends="war, copy-appengine-jars, copy-appengine-configs, compile-appengine" description="Build WAR for Google App Engine">
+    <target name="appengine" depends="war, copy-appengine-configs, compile-appengine" description="Build WAR for Google App Engine">
       <copy todir="${war.classes.dir}">
         <fileset dir="${appengine.classes.dir}">
           <include name="**/*.class"/>
