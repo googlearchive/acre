@@ -21,6 +21,13 @@
 	<property name="name" value="acre" />
     <property name="fullname" value="${name}-${version}-${revision}" />
 
+    <property name="config.dir" value="config" />
+    
+    <property name="build.dir" value="_build" />
+    <property name="dist.dir" value="_dist" />
+    <property name="data.dir" value="_data" />
+    <property name="logs.dir" value="_logs" />
+
     <property name="library.dir" value="${basedir}/library"/>
     <property name="library.src.dir" value="${library.dir}/src" />
     <property name="library.lib.dir" value="${library.dir}/lib" />
@@ -43,12 +50,11 @@
     <property name="appengine.lib.dir" value="${appengine.dir}/lib" />
     <property name="appengine.classes.dir" value="${appengine.dir}/classes" />
 
-    <property name="config.dir" value="config" />
-    
-    <property name="build.dir" value="_build" />
-    <property name="dist.dir" value="_dist" />
-    <property name="data.dir" value="_data" />
-    <property name="logs.dir" value="_logs" />
+    <property name="war.dir" value="${build.dir}/war"/>
+    <property name="war.config.dir" value="${war.dir}/META-INF"/>
+    <property name="war.web-inf" value="${war.dir}/WEB-INF"/>
+    <property name="war.lib.dir" value="${war.web-inf}/lib" />
+    <property name="war.classes.dir" value="${war.web-inf}/classes" />
 
     <path id="server.class.path">
         <fileset dir="${server.lib.dir}">
@@ -103,40 +109,109 @@
 
     <target name="compile" depends="compile-library, compile-server, compile-webapp" description="Compile everything" />
 
-    <target name="appengine" depends="compile-library, compile-webapp, compile-appengine"
-            description="Build a webapp">
+    <target name="war" depends="compile-library, compile-webapp" description="Build a webapp">
+    
+      <mkdir dir="${war.dir}" />
+      <mkdir dir="${war.config.dir}" />
+      <mkdir dir="${war.lib.dir}" />
+      <mkdir dir="${war.classes.dir}" />
 
-      <!-- run ./acre -c branch make-configs -->
+      <copy todir="${war.config.dir}">
+        <fileset dir="${webapp.config.dir}">
+          <include name="**/*.properties"/>
+          <include name="**/*.conf"/>
+        </fileset>
+      </copy>
+
+      <copy file="${webapp.web-inf}/web.xml" tofile="${war.web-inf}/web.xml" />
+
+      <copy todir="${war.classes.dir}">
+        <fileset dir="${webapp.classes.dir}">
+          <include name="**/*.class"/>
+        </fileset>
+        <fileset dir="${library.classes.dir}">
+          <include name="**/*.class"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${war.lib.dir}" flatten="true">
+        <fileset dir="${webapp.lib.dir}">
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${server.lib.dir}">
+          <include name="log4j-*.jar" />
+          <include name="slf4j-*.jar" />
+          <include name="jcl-over-slf4j-*.jar" />
+        </fileset>
+      </copy>
+
+      <copy todir="${war.dir}/WEB-INF/js">
+        <fileset dir="${webapp.dir}/WEB-INF/js">
+          <include name="**/*.js" />
+          <exclude name="mjt/examples/**"/>
+          <exclude name="mjt/doc/**"/>
+          <exclude name="mjt/test/**"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${war.dir}/WEB-INF/scripts">
+        <fileset dir="${webapp.dir}/WEB-INF/scripts">
+          <include name="**/*" />
+          <exclude name="examples/**"/>
+          <exclude name="freebase/**"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${war.dir}/WEB-INF/global_static">
+        <fileset dir="${webapp.dir}/WEB-INF/global_static">
+          <include name="**/*" />
+        </fileset>
+      </copy>
+    </target>
+
+    <target name="copy-appengine-jars" unless="appengine.remote">
+      <copy todir="${war.lib.dir}" flatten="true">
+        <fileset dir="${sdk.dir}/lib/user">
+          <include name="**/*.jar" />
+        </fileset>
+      </copy>
+    </target>
+    
+    <target name="copy-appengine-configs">
       <exec executable="${basedir}/acre">
         <arg value="-c" />
         <arg value="appengine" />
         <arg value="make-configs"/>
       </exec>
 
-      <copy file="${webapp.config.dir}/log4j-appengine.properties" tofile="${webapp.config.dir}/log4j.properties" overwrite="true"/>
-
-      <copy todir="${webapp.classes.dir}">
-        <fileset dir="${library.classes.dir}">
-          <include name="**/*.class"/>
+      <copy todir="${war.config.dir}" overwrite="true">
+        <fileset dir="${webapp.config.dir}">
+          <include name="**/*.properties"/>
+          <include name="**/*.conf"/>
         </fileset>
+      </copy>
+
+      <copy todir="${war.web-inf}" overwrite="true">
+        <fileset dir="${webapp.web-inf}">
+          <include name="*.xml"/>
+        </fileset>
+      </copy>
+
+      <copy file="${war.config.dir}/log4j-appengine.properties" tofile="${war.config.dir}/log4j.properties" overwrite="true"/>
+      <delete file="${war.config.dir}/log4j-appengine.properties" />
+    </target>
+        
+    <target name="appengine" depends="war, copy-appengine-jars, copy-appengine-configs, compile-appengine" description="Build WAR for Google App Engine">
+      <copy todir="${war.classes.dir}">
         <fileset dir="${appengine.classes.dir}">
           <include name="**/*.class"/>
         </fileset>
       </copy>
 
-      <copy todir="${webapp.lib.dir}" flatten="true">
-        <fileset dir="${server.lib.dir}">
-          <include name="log4j-1.2.15.jar" />
-          <include name="slf4j-*.jar" />
-          <include name="jcl-over-slf4j-1.5.6.jar" />
-        </fileset>
-      </copy>
-
-      <copy todir="${webapp.lib.dir}" flatten="true">
-        <fileset dir="${sdk.dir}/lib/user">
-          <include name="**/*.jar" />
-        </fileset>
-      </copy>
+      <delete>
+        <fileset dir="${war.lib.dir}" includes="**/mysql*"/>
+        <fileset dir="${war.classes.dir}" includes="**/MySQL*"/>
+      </delete>
     </target>
 
 	<target name="dist" description="Build the acre distribution" depends="compile">
