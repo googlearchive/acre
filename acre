@@ -25,7 +25,7 @@ usage() {
 Usage: $0 [options] <command>
 
 Available Options:
-  
+    
   -c <conf> ........... The configuration file that acre should use
                         (or name in project.<name>.conf)
                         [default: sandbox]
@@ -109,7 +109,7 @@ fi
 # Extract the options -------------------------------------
 export CONF="sandbox"
 while [ $# -ne 0 ] ; do
-  case $1 in
+  case "$1" in
     -c) shift 
         export CONF="$1" 
         shift
@@ -160,15 +160,36 @@ shift
 
 # Decide what script to run based on the wanted action ----
 case "$ACTION" in
-    help) usage ;;
-    build) SCRIPT="build"; COMMAND="compile" ;;
-    war) SCRIPT="build"; COMMAND="war" ;;
-    dist) SCRIPT="build"; COMMAND="dist"; get_version $1; get_revision; export ANT_PARAMS="-Dversion=$VERSION -Drevision=$REVISION" ;;
-    appengine) SCRIPT="build"; COMMAND="appengine"; export ANT_PARAMS="-Dappengine.remote=true -Dsdk.dir=\"$APPENGINE_HOME\"" ;;
-    appengine-local) SCRIPT="build"; COMMAND="appengine"; export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" ;;
-    clean) SCRIPT="build"; COMMAND="clean" ;;
-    distclean) SCRIPT="build"; COMMAND="distclean" ;;
-    run) SCRIPT="start" ;;
+    help) 
+        usage ;;
+    build) 
+        SCRIPT="build"
+        COMMAND="compile" ;;
+    run) 
+        SCRIPT="start" ;;
+    war) 
+        SCRIPT="build" 
+        COMMAND="war" ;;
+    dist) 
+        SCRIPT="build"; 
+        COMMAND="dist"; 
+        get_version $1; 
+        get_revision; 
+        export ANT_PARAMS="-Dversion=$VERSION -Drevision=$REVISION" ;;
+    clean) 
+        SCRIPT="build"; 
+        COMMAND="clean" ;;
+    distclean) 
+        SCRIPT="build"; 
+        COMMAND="distclean" ;;
+    appengine) 
+        SCRIPT="build"; 
+        COMMAND="appengine"; 
+        export ANT_PARAMS="-Dappengine.remote=true -Dsdk.dir=\"$APPENGINE_HOME\"" ;;
+    appengine-local) 
+        SCRIPT="build"; 
+        COMMAND="appengine"; 
+        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" ;;
     *) SCRIPT="$ACTION" ;;
 esac
 
