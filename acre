@@ -8,7 +8,7 @@
 fail() {
     cat <<EOF
 Unknown command: $1
-Type '$0 help' for usage.
+Type '$0 -h' for usage.
 EOF
     exit 1
 }
@@ -29,7 +29,7 @@ Available Options:
   -h .................. Show this help screen
   
   -c <conf> ........... The configuration file that acre should use
-                        (or name in project.<name>.conf)
+                        (or name in config/project.<name>.conf)
                         [default: sandbox]
 
   -p <port> ........... The port acre should listen to
