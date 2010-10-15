@@ -26,6 +26,8 @@ Usage: $0 [options] <command>
 
 Available Options:
     
+  -h .................. Show this help screen
+  
   -c <conf> ........... The configuration file that acre should use
                         (or name in project.<name>.conf)
                         [default: sandbox]
@@ -137,6 +139,8 @@ fi
 export CONF="sandbox"
 while [ $# -ne 0 ] ; do
   case "$1" in
+    -h) usage;;
+    
     -c) shift 
         export CONF="$1" 
         shift
@@ -175,11 +179,6 @@ if [ "$CONF" != "" ]; then
     fi
 fi
 
-# Overwrite defaults with local configs (if present) ------
-if [ -f "config/project.local.conf" ]; then
-    load "config/project.local.conf"
-fi
-
 # Overload the port if it was set -------------------------
 if [ "$PORT" != "" ]; then
     export ACRE_PORT="$PORT"
@@ -194,6 +193,11 @@ fi
 ACTION=$1
 COMMAND=
 shift
+
+# Overwrite defaults with local configs (if present) ------
+if [ -f "config/project.local.conf" ] && [ "$ACTION" != "appengine-deploy" ]; then
+    load "config/project.local.conf"
+fi
 
 # Decide what script to run based on the wanted action ----
 case "$ACTION" in
@@ -243,9 +247,10 @@ case "$ACTION" in
         COMMAND="appengine-local"
         invoke
         if [ "$PORT" != "" ]; then
-            CONF="-p $PORT"
+            APPSERVER_PARAMS="-p $PORT"
         fi
-        $APPENGINE_HOME/bin/dev_appserver.sh $CONF "$WAR";;
+        set -x
+        $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS "$WAR";;
     appengine-deploy) 
         check_appengine
         SCRIPT="build" 
