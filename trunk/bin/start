@@ -8,9 +8,6 @@ if [ "$ACTION" = "run_app" ] ; then
     ACRE_HOST_BASE="localhost"
 fi
 
-# Generate any derived settings
-. bin/fixup-settings
-
 # Make configuration files
 . bin/make-configs
 

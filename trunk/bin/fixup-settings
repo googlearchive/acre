@@ -57,6 +57,7 @@ if [ -z "$ACRE_VERSION" ]; then
             rm $INFO
         fi
     fi
+    
 fi
 
 # Find the java environment
