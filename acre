@@ -249,7 +249,6 @@ case "$ACTION" in
         if [ "$PORT" != "" ]; then
             APPSERVER_PARAMS="-p $PORT"
         fi
-        set -x
         $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS "$WAR";;
     appengine-deploy) 
         check_appengine
