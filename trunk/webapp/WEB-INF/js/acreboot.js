@@ -1089,6 +1089,13 @@ acre.template.load_from_string = function (source, name) {
     return pkgtop;
 };
 
+// provide a string of template markup and compile it to JS
+// useful for sending compiled templates over the wire
+acre.template.string_to_js = function (string, name) {
+    return _mjt.acre.compile_string(source, name).toJS();
+};
+
+
 // ------------------------------------------ uber fetch ------------------------------------
 
 var UBERFETCH_ERROR_NOT_FOUND = 1,
