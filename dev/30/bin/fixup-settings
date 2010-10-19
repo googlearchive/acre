@@ -37,8 +37,8 @@ fi
 # Obtain the acre version
 if [ -z "$ACRE_VERSION" ]; then
 
-    if [ ! -z "$PROJECT_SVN" ]; then
-        ACRE_VERSION="$PROJECT_SVN"
+    if [ ! -z "$ACRE_SVN_PATH" ]; then
+        ACRE_VERSION="$ACRE_SVN_PATH"
     else 
         INFO="._info"
         
