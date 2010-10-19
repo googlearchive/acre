@@ -1344,9 +1344,14 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
                                    UBERFETCH_ERROR_PERMISSIONS);
     }
 
-    // Handle the case that we've hit a version node
     var app_version_t = res["/freebase/apps/acre_app_version/acre_app"];
-    if (app_version_t !== null) {
+    if (app_version_t === null) {
+		// Handle the case that we've hit an app
+		result.links = [namespace];
+		if (namespace !== res.id)
+			result.links.push(res.id);
+	} else {
+	    // Handle the case that we've hit a version node
         var target_ns = app_version_t['id'];
         var target_guid = app_version_t['guid'];
         var target_asof = res['/freebase/apps/acre_app_version/as_of_time'];
@@ -1398,7 +1403,6 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
     result.service_metadata.service_url =
         result.service_metadata.service_url || freebase_service_url;
 
-    result.links = result.links || [namespace];
     result.versions = result.versions || [];
 
     result.files = result.files || {};
@@ -1545,17 +1549,14 @@ var proto_require = function(namespace, script, skip_cache) {
     var ckey = "METADATA:"+data.app_guid+":"+data.as_of;
     if (method.cachable && data.versions.length > 0) {
         // cache the metadata in the long-term cache, the metadata is
-      // cached permaneltly (or until overriden).
-      var store_data = JSON.stringify(data);
-      _cache.put(ckey, store_data);
-      syslog.info({key: ckey, value: store_data}, 'uberfetch.cache.write.key');
+        // cached permaneltly (or until overriden).
+        _cache.put(ckey, JSON.stringify(data));
+        
         // we want to build an index of ids to the metadata block
         // which we do with LINK keys in the metadata cache. These
         // only last for ten minutes, since they are considered a
         // front-line caching mechanism, and thus require a
         // shift+refresh to refresh.
-        syslog.info({key:"LINK:"+data.app_id, value: ckey }, 'uberfetch.cache.write.link');
-        _cache.put("LINK:"+data.app_id, ckey, 60000);
         for (var l=0; l < data.links.length; l++) {
             var link = data.links[l];
             syslog.info({key:"LINK:"+link, value: ckey }, 'uberfetch.cache.write.link');
@@ -1569,7 +1570,6 @@ var proto_require = function(namespace, script, skip_cache) {
     // whirlycott, for getting the same metadata in a single request
     // cycle. Metadata is directly linked to the link keys (in this
     // case, there should only be one link key)
-    METADATA_CACHE[data.app_id] = data;
     for (var l=0; l < data.links.length; l++) {
         var link = data.links[l];
         METADATA_CACHE[link] = data;
