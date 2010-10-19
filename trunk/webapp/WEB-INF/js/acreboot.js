@@ -1134,6 +1134,8 @@ var uberfetch_cache = function(namespace) {
         throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
     }
 
+    syslog.info({result: res, key: ckey}, 'uberfetch.cache.lookup.success');
+
     return JSON.parse(res);
 };
 
@@ -1543,17 +1545,20 @@ var proto_require = function(namespace, script, skip_cache) {
     var ckey = "METADATA:"+data.app_guid+":"+data.as_of;
     if (method.cachable && data.versions.length > 0) {
         // cache the metadata in the long-term cache, the metadata is
-        // cached permaneltly (or until overriden).
-        _cache.put(ckey, JSON.stringify(data));
-
+      // cached permaneltly (or until overriden).
+      var store_data = JSON.stringify(data);
+      _cache.put(ckey, store_data);
+      syslog.info({key: ckey, value: store_data}, 'uberfetch.cache.write.key');
         // we want to build an index of ids to the metadata block
         // which we do with LINK keys in the metadata cache. These
         // only last for ten minutes, since they are considered a
         // front-line caching mechanism, and thus require a
         // shift+refresh to refresh.
+        syslog.info({key:"LINK:"+data.app_id, value: ckey }, 'uberfetch.cache.write.link');
         _cache.put("LINK:"+data.app_id, ckey, 60000);
         for (var l=0; l < data.links.length; l++) {
             var link = data.links[l];
+            syslog.info({key:"LINK:"+link, value: ckey }, 'uberfetch.cache.write.link');
             _cache.put("LINK:"+link, ckey, 60000);
         }
     }
