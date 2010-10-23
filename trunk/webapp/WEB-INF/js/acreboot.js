@@ -1352,12 +1352,7 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
     }
 
     var app_version_t = res["/freebase/apps/acre_app_version/acre_app"];
-    if (app_version_t === null) {
-		// Handle the case that we've hit an app
-		result.links = [namespace];
-		if (namespace !== res.id)
-			result.links.push(res.id);
-	} else {
+    if (app_version_t !== null) {
 	    // Handle the case that we've hit a version node
         var target_ns = app_version_t['id'];
         var target_guid = app_version_t['guid'];
@@ -1376,7 +1371,6 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
          * loop (version node pointed at a version node) by testing for the
          * presence of result.links.
          */
-        result.links = result.links || [namespace];
         result.versions = result.versions || [];
         for (var a=0; a < target_versions.length; a++) {
             var version = target_versions[a].value;
@@ -1411,6 +1405,7 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
         result.service_metadata.service_url || freebase_service_url;
 
     result.versions = result.versions || [];
+	result.links = result.links || [namespace];
 
     result.files = result.files || {};
 
