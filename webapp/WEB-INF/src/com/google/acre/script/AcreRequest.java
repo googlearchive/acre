@@ -68,7 +68,6 @@ public class AcreRequest extends JsConvertable {
     public String script_name;
     public String freebase_service_url;
     public String freebase_site_host;
-    public String freebase_appeditor_host;
 
     // if non-empty, this overrides the script_id computed from the url
     public String handler_script_id;
@@ -103,7 +102,6 @@ public class AcreRequest extends JsConvertable {
         headers = new HashMap<String, Object>();
         cookies = new HashMap<String, AcreCookie>();
         version = Configuration.Values.ACRE_VERSION.getValue();
-        freebase_appeditor_host = Configuration.Values.ACRE_APPEDITOR_HOST.getValue();
         skip_routes = false;
         _metaweb_tid = (String) request.getAttribute("X-Metaweb-TID");
 
