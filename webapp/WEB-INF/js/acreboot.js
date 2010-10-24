@@ -1376,6 +1376,7 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
             var version = target_versions[a].value;
             result.versions.push(version);
 
+        	result.links = result.links || [namespace];
             var fqid = target_ns+'/'+version;
             if (fqid !== namespace)
                 result.links.push(fqid);
