@@ -1352,12 +1352,7 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
     }
 
     var app_version_t = res["/freebase/apps/acre_app_version/acre_app"];
-    if (app_version_t === null) {
-		// Handle the case that we've hit an app
-		result.links = [namespace];
-		if (namespace !== res.id)
-			result.links.push(res.id);
-	} else {
+    if (app_version_t !== null) {
 	    // Handle the case that we've hit a version node
         var target_ns = app_version_t['id'];
         var target_guid = app_version_t['guid'];
@@ -1376,12 +1371,12 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
          * loop (version node pointed at a version node) by testing for the
          * presence of result.links.
          */
-        result.links = result.links || [namespace];
         result.versions = result.versions || [];
         for (var a=0; a < target_versions.length; a++) {
             var version = target_versions[a].value;
             result.versions.push(version);
 
+        	result.links = result.links || [namespace];
             var fqid = target_ns+'/'+version;
             if (fqid !== namespace)
                 result.links.push(fqid);
@@ -1411,6 +1406,7 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
         result.service_metadata.service_url || freebase_service_url;
 
     result.versions = result.versions || [];
+	result.links = result.links || [namespace];
 
     result.files = result.files || {};
 
@@ -2469,8 +2465,8 @@ function split_ns(id) {
 var boot_acrelet = function () {
     var freebase_source_url = '';
     function make_freebase_source_url(namespace, script_name) {
-        return 'http://' + _request.freebase_appeditor_host +
-            '/#!path=//' + namespace.split("/").reverse().join(".") + 'dev/' + script_name;
+        return _request.freebase_site_host +
+            '/appeditor#!path=//' + namespace.split("/").reverse().join(".") + 'dev/' + script_name;
     }
 
     var url_result = [];
@@ -2540,8 +2536,7 @@ var boot_acrelet = function () {
               'version':out.app_version,
               'id':out.app_id+'/'+out.files[reqsn].name
             };
-            freebase_source_url = 'http://' + _request.freebase_appeditor_host +
-            '/#app=' + out.app_id + '&file=' + out.files[reqsn].name;
+            freebase_source_url = make_freebase_source_url(out.app_id, out.files[reqsn].name);
           }
           _request_app_guid = out.app_guid;
         }
@@ -2641,9 +2636,6 @@ var boot_acrelet = function () {
 
         freebase_source_url = make_freebase_source_url(link_ns, link_sname);
     }
-
-    // We don't need the raw hostname anymore
-    delete _request.freebase_appeditor_host;
 
     // Every acre http response also has this link
     acre.response.set_header('x-acre-source-url', freebase_source_url);
