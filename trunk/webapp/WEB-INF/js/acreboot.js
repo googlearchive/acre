@@ -1126,8 +1126,10 @@ var METADATA_CACHE = {};
 
 var uberfetch_cache = function(namespace) {
     syslog.info({'id':namespace}, 'uberfetch.cache.lookup');
-    if (namespace in METADATA_CACHE) return METADATA_CACHE[namespace];
-
+    if (namespace in METADATA_CACHE) {
+	syslog.info({ 'id' : namespace, 's' : 'inprocess', 'm' : 'uberfetch_cache'}, 'uberfetch.cache.success');
+	return METADATA_CACHE[namespace];
+    }
     var ckey = _cache.get("LINK:"+namespace);
     if (ckey == null) {
         syslog.info({id:namespace, key:"LINK:"+namespace},
@@ -1141,7 +1143,7 @@ var uberfetch_cache = function(namespace) {
         throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
     }
 
-    syslog.info({result: res, key: ckey}, 'uberfetch.cache.lookup.success');
+    syslog.info({ 'key': ckey, 's': 'memcache', 'm' : 'uberfetch_cache'}, 'uberfetch.cache.success');
 
     return JSON.parse(res);
 };
@@ -1458,10 +1460,14 @@ var proto_require = function(namespace, script, skip_cache) {
                     // check cache and optionally call the thunk...
                     var ckey = "METADATA:"+res[2]+":"+res[3];
                     if (ckey in METADATA_CACHE) {
+			syslog({'s' : 'inprocess', 'key' : ckey, 'm' : 'trampoline' }, 'uberfetch.cache.success');
                         return METADATA_CACHE[ckey];
                     } else {
                         var r2 = _cache.get(ckey);
-                        if (r2 !== null) return JSON.parse(r2);
+                        if (r2 !== null) {
+			    syslog({'s' : 'memcache', 'key' : ckey, 'm' : 'trampoline' }, 'uberfetch.cache.success');
+			    return JSON.parse(r2);
+			}
                     }
                 }
 
