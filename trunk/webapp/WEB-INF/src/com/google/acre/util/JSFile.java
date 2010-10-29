@@ -135,7 +135,7 @@ public class JSFile extends JSObject {
                 ((JSBinary)res).set_data(bytes);
                 res = ((JSBinary)res).makeJSInstance(_scope);
             } else {
-                res = IOUtils.toString(r);
+                res = IOUtils.toString(r, "utf-8");
             }
         } catch (java.io.IOException ioe) {
             return null;
