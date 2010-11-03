@@ -31,12 +31,12 @@ public class CachedScript {
     }
 
     public static String toClassName(String name) {
+        // strip leading slashes
         while (name.charAt(0) == '/') {
             name = name.substring(1);
         }
-        // ensure that the class name does not start with a number
-        name = "cn" + name;
-        return name.replace('/','.').replace("-","_$_");
+        // classnames cannot start with a number or contain other illegal characters
+        return "cn" + name.replace('/','.').replace("-","_$_");
     }
     
     public static String clean(String name) {
