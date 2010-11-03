@@ -63,7 +63,7 @@ public class ScriptManager {
 
         // see if we have a cached script with this class name
         // and if it contains a compiled script
-        if (cachedScript != null && script.getCompiledScript() != null) {
+        if (cachedScript != null && cachedScript.getCompiledScript() != null) {
             return cachedScript;
         }
 
