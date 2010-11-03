@@ -1897,10 +1897,13 @@ var proto_require = function(namespace, script, skip_cache) {
                 scope.acre.__proto__ = _topscope.acre;
             }
 
+            // use the full versioned path as the class name so that it shows up in user-visible stack traces
+            var class_name = '//' + (script.app.versions.length ? script.app.versions[0] + '.' : '') + script.app.app_id.split('/').reverse().join('.') + 'dev/' + script.name;
+            
             var compiler_env = {
                 'scope':scope_augmentation(scope || make_scope()),
                 'swizzle':false,
-                'class_name':script.app.app_id + '/' + script.name,
+                'class_name': class_name,
                 'content_hash':script.data.content_hash
             };
 

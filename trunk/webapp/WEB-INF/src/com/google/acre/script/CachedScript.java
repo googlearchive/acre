@@ -23,7 +23,6 @@ public class CachedScript {
     private String _class_name;
     private String _script_name;
     private String _source_name;
-    private String _app;
     private Script _compiled_script;
     private int[] linemap;
 
@@ -32,9 +31,11 @@ public class CachedScript {
     }
 
     public static String toClassName(String name) {
-        if (name.charAt(0) == '/') {
+        while (name.charAt(0) == '/') {
             name = name.substring(1);
         }
+        // ensure that the class name does not start with a number
+        name = "cn" + name;
         return name.replace('/','.').replace("-","_$_");
     }
     
@@ -54,14 +55,6 @@ public class CachedScript {
     }
     
     public CachedScript(String script_name, String source_text, String content_id) {
-        
-        // XXX: this is hacky, we should not be inferring the app name 
-        //      from the script name like this
-        int index = script_name.lastIndexOf('/');
-        if (index > -1) {
-            _app = script_name.substring(0,index);
-        }
-
         _script_name = clean(script_name);
         _source_name = join(_script_name,content_id);
         _class_name = toClassName(_source_name);
@@ -79,10 +72,6 @@ public class CachedScript {
 
     public String getSourceName() {
         return _source_name;
-    }
-    
-    public String getApp() {
-        return _app;
     }
     
     public String getSourceText() {
