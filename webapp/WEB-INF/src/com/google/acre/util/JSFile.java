@@ -149,6 +149,11 @@ public class JSFile extends JSObject {
 
         return res;
     }
+    
+    public boolean jsGet_dir() {
+        File f = new File(_filename);
+        return f.isDirectory();
+    }
 
     public long jsGet_mtime() {
         File f = new File(_filename);
