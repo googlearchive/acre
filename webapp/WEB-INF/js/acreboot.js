@@ -1088,13 +1088,12 @@ var METADATA_CACHE = {};
 var uberfetch_cache = function(namespace) {
     syslog.info({'id':namespace}, 'uberfetch.cache.lookup');
     if (namespace in METADATA_CACHE) {
-	syslog.info({ 'id' : namespace, 's' : 'inprocess', 'm' : 'uberfetch_cache'}, 'uberfetch.cache.success');
-	return METADATA_CACHE[namespace];
+	    syslog.info({ 'id' : namespace, 's' : 'inprocess', 'm' : 'uberfetch_cache'}, 'uberfetch.cache.success');
+	    return METADATA_CACHE[namespace];
     }
     var ckey = _cache.get("LINK:"+namespace);
     if (ckey == null) {
-        syslog.info({id:namespace, key:"LINK:"+namespace},
-                    'uberfetch.cache.link_key.not_found');
+        syslog.info({id:namespace, key:"LINK:"+namespace}, 'uberfetch.cache.link_key.not_found');
         throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
     }
 
@@ -1429,14 +1428,14 @@ var proto_require = function(namespace, script, skip_cache) {
                     // check cache and optionally call the thunk...
                     var ckey = "METADATA:"+res[2]+":"+res[3];
                     if (ckey in METADATA_CACHE) {
-			syslog({'s' : 'inprocess', 'key' : ckey, 'm' : 'trampoline' }, 'uberfetch.cache.success');
+			            syslog({'s' : 'inprocess', 'key' : ckey, 'm' : 'trampoline' }, 'uberfetch.cache.success');
                         return METADATA_CACHE[ckey];
                     } else {
                         var r2 = _cache.get(ckey);
                         if (r2 !== null) {
-			    syslog({'s' : 'memcache', 'key' : ckey, 'm' : 'trampoline' }, 'uberfetch.cache.success');
-			    return JSON.parse(r2);
-			}
+			                syslog({'s' : 'memcache', 'key' : ckey, 'm' : 'trampoline' }, 'uberfetch.cache.success');
+			                return JSON.parse(r2);
+			            }
                     }
                 }
 
