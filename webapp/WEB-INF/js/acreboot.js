@@ -49,10 +49,14 @@ if (typeof _topscope.XML != 'undefined') {
     delete _topscope.XML;
 }
 
+//---------------------------- globals / utils ---------------------------------------
+
 var _DEFAULT_HOST_NS = '/freebase/apps/hosts';
 
-var freebase_service_url = _request.freebase_service_url;
-var freebase_site_host = _request.freebase_site_host;
+function escape_re(s) {
+  var specials = /[.*+?|()\[\]{}\\]/g;
+  return s.replace(specials, '\\$&');
+}
 
 //--------------------------------- syslog --------------------------------------------
 
@@ -182,11 +186,6 @@ acre.host = {
     port : _request.server_port
 };
 
-function escape_re(s) {
-  var specials = /[.*+?|()\[\]{}\\]/g;
-  return s.replace(specials, '\\$&');
-}
-
 //-------------------------------- acre.request -----------------------------------------
 
 acre.request = {
@@ -288,7 +287,6 @@ function serialize_cookiejar(cjar) {
     return out.join(':');
 }
 
-
 // ------------------------------- acre.environ -----------------------------------------
 
 acre.environ = _request; // deprecated
@@ -310,6 +308,7 @@ var AcreResponse_max_age = 0;
 var AcreResponse_vary = [];
 var AcreResponse_vary_cookies = {};
 
+// AcreResponse methods are exposed to user scripts as acre.response.*
 AcreResponse.prototype.set_header = function (name, value) {
     // according to http://www.w3.org/Protocols/rfc2616/rfc2616-sec2.html#sec2
     var http_token_re = /[-a-zA-Z0-9!#$%&'*+.^_`|~]+/; // ']
@@ -414,8 +413,6 @@ AcreResponse.prototype.set_cookie = function (name, value, options) {
     this.cookies[name] = cookie;
 };
 
-
-// XXX who calls this?
 AcreResponse.prototype.set_cache_policy = function (policy) {
     switch (policy) {
         case 'fresh':
@@ -432,6 +429,7 @@ AcreResponse.prototype.set_cache_policy = function (policy) {
 AcreResponse.prototype.set_policy =
     AcreResponse.prototype.set_cache_policy; // deprecated
 
+// these AcreResponse_* functions are called during _hostenv.finish_response()
 var AcreResponse_generate_date = function (d) {
     function padz(n) {
         return n > 10 ? n : '0'+n;
@@ -1376,7 +1374,7 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
      res['/type/domain/owners'].member.id.substr(6) :
      null);
      result.service_metadata.service_url =
-     result.service_metadata.service_url || freebase_service_url;
+     result.service_metadata.service_url || _request.freebase_service_url;
 
      result.versions = result.versions || [];
      result.links = result.links || [namespace];
@@ -2264,8 +2262,8 @@ var _system_freebase = {};
 var freebase_scope = {};
 freebase_scope.syslog = syslog;
 _hostenv.load_system_script('freebase.js', freebase_scope);
-freebase_scope.augment(acre.freebase, acre.urlfetch, acre.async.urlfetch, freebase_service_url, freebase_site_host, mwlt_mode);
-freebase_scope.augment(_system_freebase, _system_urlfetch, _system_async_urlfetch, freebase_service_url, freebase_site_host, mwlt_mode);
+freebase_scope.augment(acre.freebase, acre.urlfetch, acre.async.urlfetch, _request.freebase_service_url, _request.freebase_site_host, mwlt_mode);
+freebase_scope.augment(_system_freebase, _system_urlfetch, _system_async_urlfetch, _request.freebase_service_url, _request.freebase_site_host, mwlt_mode);
 
 // for backwards compatibility, these mjt.Task classes
 // are enqueue()d immediately in the acre environment only.
