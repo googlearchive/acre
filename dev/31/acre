@@ -1,0 +1,265 @@
+#!/bin/sh
+
+########################################################## 
+#                  Acre Control System                   #
+##########################################################
+
+# Print Failure Info -------------------------------------
+fail() {
+    cat <<EOF
+Unknown command: $1
+Type '$0 -h' for usage.
+EOF
+    exit 1
+}
+
+# Print Error Info -------------------------------------
+error() {
+    echo "ERROR: $1"
+    exit 1
+}
+
+# Print Usage Info ---------------------------------------
+usage() {
+    cat <<EOF
+Usage: $0 [options] <command>
+
+Available Options:
+    
+  -h .................. Show this help screen
+  
+  -c <conf> ........... The configuration file that acre should use
+                        (or name in config/project.<name>.conf)
+                        [default: sandbox]
+
+  -p <port> ........... The port acre should listen to
+                        [default:  8115]
+
+  -v <level> .......... Log verbosity level (one of "DEBUG,INFO,WARN,ERROR")
+                        [default: INFO]
+
+  -w <dir> ............ War location
+                        [default: _build/war]
+                                                
+Available Commands:
+
+    build ............. Build Acre
+    
+    war ............... Build a WAR package of Acre to run on a regular servlet container
+    
+    run ............... Run Acre
+    run_app <dir> ..... Run Acre with a local app from disk
+    start ............. Start Acre as a daemon
+    stop .............. Stop Acre that was started as a daemon
+    zap ............... Remove the Acre PID file
+
+    appengine-build ... Build a WAR package of Acre to run on Google App Engine
+    appengine-run ..... Run Acre in the local Google App Engine simulator (must call 'appengine-build' first)
+    appengine-deploy .. Deploy Acre on Google App Engine (must call 'appengine-build' first)
+    
+    clean ............. Remove all class files
+    clean-whitespace .. Normalize tabs and newlines
+    distclean ......... Restore everything to checkout state
+    
+    setup-keystore .... Initialize the KeyStore SQL tables
+    get-mysql-driver .. Obtain the MySQL JDBC Driver
+
+    dist <version> .... Builds a tar.gz distribution for acre
+    
+EOF
+    exit 0
+}
+
+check_appengine() {
+    if [ -z "$APPENGINE_HOME" ]; then
+        error "The APPENGINE_HOME parameter is not set in your environment. Did you install the Google AppEngine SDK for Java?"
+    fi
+    if [ ! -f "$APPENGINE_HOME/bin/appcfg.sh" ]; then
+        error "can\'t find 'appcfg.sh' in $APPENGINE_HOME. Is this the Google AppEngine SDK for Java?"
+    fi
+}
+
+# Load Configs --------------------------------------------
+load() {
+    cat $1 | egrep "^[A-Z]" | sed 's/^\(.*\)$/export \1/' > .`basename $1`
+    . ./.`basename $1`
+    rm ./.`basename $1`
+}
+
+# Get version ---------------------------------------------
+get_version() {
+    VERSION="$1"
+    if [ -z "$VERSION" ]; then
+        error "Must specify a version number"
+    fi
+}
+
+# Get revision ---------------------------------------------
+get_revision() {
+    if [ -d ".svn" ]; then
+        INFO=`svn info`
+    elif [ -d ".git" ]; then
+        INFO=`git svn info`
+    else
+        error "cannot obtain revision, exiting!"
+    fi
+
+    REVISION=`echo $INFO | sed 's/.*Revision: /r/' | sed 's/ .*//'`
+}
+
+# ----------------------- commands --------------------------
+
+invoke() {
+    if [ -f "./bin/$SCRIPT" ]; then
+        export ACTION
+        export JAVA
+        ./bin/$SCRIPT $COMMAND $*
+        result=$?
+    else
+        fail "'$ACTION'"
+    fi
+}
+
+# -------------------------------------------------------------------------------------
+
+# We called without arguments print the usage -------------
+[ $# -gt 0 ] || usage
+
+# Normalize the current directory -------------------------
+cd `dirname $0`
+
+# Load default configs ------------------------------------
+if [ -f "config/project.conf" ]; then
+    load "config/project.conf"
+else 
+    error "Missing 'project.conf'"
+fi
+
+# Extract the options -------------------------------------
+export CONF="sandbox"
+while [ $# -ne 0 ] ; do
+  case "$1" in
+    -h) usage;;
+    
+    -c) shift 
+        export CONF="$1" 
+        shift
+        continue;;
+        
+    -p) shift 
+        export PORT="$1"
+        shift
+        continue;;
+        
+    -v) shift
+        export ACRE_LOG_LEVEL="$1"
+        shift
+        continue;;
+
+    -w) shift
+        export WAR="$1"
+        shift
+        continue;;
+        
+    -*) echo "$0: invalid option: $1" >&2
+        exit 1;;
+        
+    *) break;;
+  esac
+done
+
+# Overwrite defaults with cli config ----------------------
+if [ "$CONF" != "" ]; then
+    if [ -f $CONF ]; then
+        load $CONF
+    elif [ -f "config/project.$CONF.conf" ]; then    
+        load "config/project.$CONF.conf"
+    else 
+        error "configuration file project.$CONF.conf not found";
+    fi
+fi
+
+# Overload the port if it was set -------------------------
+if [ "$PORT" != "" ]; then
+    export ACRE_PORT="$PORT"
+fi
+
+# War location --------------------------------------------
+if [ "$WAR" == "" ]; then
+    WAR="_build/war"
+fi
+
+# Assign the wanted action --------------------------------
+ACTION=$1
+COMMAND=
+shift
+
+# Overwrite defaults with local configs (if present) ------
+if [ -f "config/project.local.conf" ] && [ "$ACTION" != "appengine-deploy" ]; then
+    load "config/project.local.conf"
+fi
+
+# Decide what script to run based on the wanted action ----
+case "$ACTION" in
+    help) 
+        usage ;;
+    build) 
+        SCRIPT="build"
+        COMMAND="compile" 
+        invoke;;
+    run) 
+        SCRIPT="start" 
+        invoke;;
+    war) 
+        SCRIPT="build" 
+        COMMAND="war" 
+        invoke;;
+    dist) 
+        SCRIPT="build" 
+        COMMAND="dist" 
+        get_version $1 
+        get_revision
+        export ANT_PARAMS="-Dversion=$VERSION -Drevision=$REVISION" 
+        invoke;;
+    clean) 
+        SCRIPT="build"
+        COMMAND="clean" 
+        invoke;;
+    distclean) 
+        SCRIPT="build"
+        COMMAND="distclean" 
+        invoke;;
+    appengine-build) 
+        SCRIPT="build" 
+        COMMAND="appengine"
+        check_appengine
+        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" 
+        invoke;;
+    appengine-run) 
+        check_appengine
+        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" 
+        if [ ! -d "$WAR" ]; then
+            SCRIPT="build" 
+            COMMAND="appengine"
+            invoke
+        fi
+        SCRIPT="build" 
+        COMMAND="appengine-local"
+        invoke
+        if [ "$PORT" != "" ]; then
+            APPSERVER_PARAMS="-p $PORT"
+        fi
+        $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS "$WAR";;
+    appengine-deploy) 
+        check_appengine
+        SCRIPT="build" 
+        COMMAND="appengine"
+        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" 
+        invoke
+        $APPENGINE_HOME/bin/appcfg.sh update "$WAR";;
+    *) 
+        SCRIPT="$ACTION" 
+        invoke;;
+esac
+
+exit $result
