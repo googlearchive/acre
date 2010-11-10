@@ -33,9 +33,7 @@ public class AcreExceptionInfo extends JsConvertable {
     
     private boolean HIDE_INTERNAL_JS_STACK = Configuration.Values.HIDE_ACREBOOT_STACK.getBoolean();
 
-    public String script_name;
-    public String script_app;
-    public String script_id;
+    public String script_path;
     public String name;
     public String message;
     public String filename;
@@ -44,11 +42,9 @@ public class AcreExceptionInfo extends JsConvertable {
 
     public List<AcreStackFrame> stack = new ArrayList<AcreStackFrame>();
 
-    public AcreExceptionInfo(String sname, String app, String id, String msg, Throwable t, ScriptManager scriptManager, Scriptable _scope) {
+    public AcreExceptionInfo(String spath, String msg, Throwable t, ScriptManager scriptManager, Scriptable _scope) {
 
-        script_name = sname;
-        script_app = app;
-        script_id = id;
+        script_path = spath;
         name = "Error";
         message = msg;
         filename = null;

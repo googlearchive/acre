@@ -101,7 +101,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     private static String ACRE_HOST_SUFFIX = Configuration.Values.ACRE_HOST_SUFFIX.getValue();
     private static String ACRE_HOST_BASE = Configuration.Values.ACRE_HOST_BASE.getValue();
 
-    private static final String DEFAULT_NAMESPACE = "/default";
+    private static final String DEFAULT_HOST_PATH = "//default.dev";
 
     //private static boolean HIDE_INTERNAL_JS_STACK = Configuration.Values.HIDE_ACREBOOT_STACK.getBoolean();
     private static boolean ENABLE_SUPERVISOR = Configuration.Values.ACRE_SUPERVISOR_THREAD.getBoolean();
@@ -401,7 +401,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                  Configuration.Values.ACRE_MWLT_MODE_COOKIE_SCOPE.getValue());
         this.put("ACRE_DEVELOPER_MODE", this,
                  Configuration.Values.ACRE_DEVELOPER_MODE.getBoolean());
-        this.put("DEFAULT_NAMESPACE", this, DEFAULT_NAMESPACE);
+        this.put("DEFAULT_HOST_PATH", this, DEFAULT_HOST_PATH);
 
         _scope.put("ACRE_REQUEST", _scope, req.toJsObject(_scope));
 
@@ -429,19 +429,11 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                         renderErrorPage("JS exception", jsexc, "hostenv.script.error.jsexception");
                         return;
                     } else if (val instanceof Scriptable && exit_exception.hasInstance((Scriptable) val)) {
-                        Object sid = ((Scriptable) val).get("route_to", (Scriptable) val);
+                        Object spath = ((Scriptable) val).get("route_to", (Scriptable) val);
                         Object skip_routes = ((Scriptable) val).get("skip_routes", (Scriptable) val);
-                        Object path_info = ((Scriptable) val).get("path_info", (Scriptable) val);
-                        Object query_string = ((Scriptable) val).get("query_string", (Scriptable) val);
 
-                        if (sid instanceof String && path_info instanceof String && query_string instanceof String) {
-                            internalRedirect((String) sid, (Boolean) skip_routes, (String) path_info, (String) query_string);
-                            return;
-                        } else if (sid instanceof String && path_info instanceof String) {
-                            internalRedirect((String) sid, (Boolean) skip_routes, (String) path_info);
-                            return;
-                        } else if (sid instanceof String) {
-                            internalRedirect((String)sid, (Boolean) skip_routes);
+                        if (spath instanceof String) {
+                            internalRedirect((String)spath, (Boolean) skip_routes);
                             return;
                         }
                     }
@@ -507,25 +499,18 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
      *  @returns the new HostEnv
      */
 
-    public HostEnv internalRedirect(String script_id, boolean skip_routes) throws IOException {
-        return internalRedirect(script_id, skip_routes, null, null);
-    }
+    public HostEnv internalRedirect(String script_path, boolean skip_routes) throws IOException {
+        syslog(Level.DEBUG, "hostenv.script.internalredirect", "internal redirect to " + script_path);
 
-    public HostEnv internalRedirect(String script_id, boolean skip_routes, String path_info) throws IOException {
-        return internalRedirect(script_id, skip_routes, path_info, null);
-    }
-
-    public HostEnv internalRedirect(String script_id, boolean skip_routes,
-                                    String path_info, String query_string) throws IOException {
-        syslog(Level.DEBUG, "hostenv.script.internalredirect", "internal redirect to " + script_id);
-
-        if (path_info != null) {
-            req.setPathInfo(path_info);
+        // reset the request path_info and query_string
+        URL url;
+        try {
+            url = new URL("http:" + script_path);
+        } catch (MalformedURLException e) { 
+            throw new RuntimeException(e);
         }
-
-        if (query_string != null) {
-            req.setQueryString(query_string);
-        }
+        req.setPathInfo(url.getPath());
+        req.setQueryString(url.getQuery());
 
         // reset the response
         res.reset();
@@ -538,7 +523,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         newenv._parent_hostenv = this;
 
         // modify the AcreRequest to add any additional info
-        req.handler_script_id = script_id;
+        req.handler_script_path = script_path;
         req.skip_routes = skip_routes;
 
         // if the script is an error script, add additional time to the quota for the error script
@@ -1024,12 +1009,12 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             return;
         }
 
-        String script_id = "ACREBOOT";
+        String script_path = "ACREBOOT";
 
-        if (has("script_id", this))
-            script_id = (String)get("script_id", this);
+        if (has("script_path", this))
+            script_path = (String)get("script_path", this);
 
-        syslog(Level.DEBUG, "hostenv.script.finish", "Done with script " + script_id);
+        syslog(Level.DEBUG, "hostenv.script.finish", "Done with script " + script_path);
     }
 
     /**
@@ -1075,13 +1060,13 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     // page to use for handling errors, it must be a script, not a template.
     private static final String ERROR_PAGE = "error";
-    private static final String DEFAULT_ERROR_PAGE  = DEFAULT_NAMESPACE + "/" + ERROR_PAGE;
+    private static final String DEFAULT_ERROR_PAGE  = DEFAULT_HOST_PATH + "/" + ERROR_PAGE;
 
     /**
      *  render the error page using /freebase/apps/default/error
      */
     private void renderErrorPage(String message, Throwable t, String logevent) {
-        String error_script_id = null;
+        String error_script_path = null;
 
         try {
             try {
@@ -1089,15 +1074,16 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 // t.printStackTrace(new PrintWriter(exc_log));
 
                 // fetch metadata computed by acreboot.js
+                // get fresh script_name, script_path, script_host_path
                 String script_name = "UNKNOWN";
-                String script_namespace = "UNKNOWN";
-                String script_id = "UNKNOWN";
+                String script_path = "UNKNOWN";
+                String script_host_path = "UNKNOWN";
                 if (has("script_name", this))
-                    script_name = (String)get("script_name", this);
-                if (has("script_namespace", this))
-                    script_namespace = (String)get("script_namespace", this);
-                if (has("script_id", this))
-                    script_id = (String)get("script_id", this);
+                    script_name = (String)this.get("script_name", this);
+                if (has("script_path", this))
+                    script_path = (String)this.get("script_path", this);
+                if (has("script_host_path", this))
+                    script_host_path = (String)this.get("script_host_path", this);
 
                 String log_msg = message;
                 if (t != null) {
@@ -1111,54 +1097,52 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                     }
                 }
 
-                syslog(Level.ERROR, logevent, log_msg + " [" + script_id + "]");
+                syslog(Level.ERROR, logevent, log_msg + " [" + script_path + "]");
 
                 // handle the error using the local error handler for the script
                 // this will fall back to the default error handler if no local handler is found
-                if ("UNKNOWN".equals(script_namespace) || "UNKNOWN".equals(script_name)) {
+                if ("UNKNOWN".equals(script_host_path) || "UNKNOWN".equals(script_name)) {
                     if (log_msg.indexOf("syntax error") > -1) {
                         reportDisaster("Syntax Error in acreboot.js", t);
                         return;
                     }
 
-                    if (req.handler_script_id != null &&
-                        req.handler_script_id.equals(DEFAULT_ERROR_PAGE)) {
+                    if (req.handler_script_path != null &&
+                        req.handler_script_path.equals(DEFAULT_ERROR_PAGE)) {
                         reportDisaster("Fatal error in acreboot.js", t);
                         return;
                     }
 
                     syslog(Level.ERROR, logevent, "Error in acreboot.js, no error context available");
-                    error_script_id = DEFAULT_ERROR_PAGE;
+                    error_script_path = DEFAULT_ERROR_PAGE;
 
                     // this is a hack to handle huge request bodies, which can choke acreboot.js
                     // in the error script
                     req.request_body = "";
                 } else if (req.error_info == null) {
-                    error_script_id = script_namespace + "/" + ERROR_PAGE;
+                    error_script_path = script_host_path + "/" + ERROR_PAGE;
                 } else {
                     // if we were handling an error in a user error handler, fall back to the system one.
 
                     // if there is an error in the system-wide error handler we have serious problems.
-                    if (script_namespace.equals(DEFAULT_NAMESPACE)) {
+                    if (script_host_path.equals(DEFAULT_HOST_PATH)) {
                         // prevent infinite loops in error scripts
                         reportDisaster("Error while rendering default error page", t);
                         return;
                     }
 
                     // if it's already some other error script, force it to the default error script
-                    error_script_id = DEFAULT_ERROR_PAGE;
+                    error_script_path = DEFAULT_ERROR_PAGE;
                 }
 
                 userlog("error", log_msg);
 
                 // pass the exception info to the error script
-                req.error_info = new AcreExceptionInfo(script_name, script_namespace,
-                                                       script_id, message, t, _scriptManager,
-                                                       _scope);
+                req.error_info = new AcreExceptionInfo(script_path, message, t, _scriptManager, _scope);
 
-                internalRedirect(error_script_id, true);
+                internalRedirect(error_script_path, true);
             } catch (RhinoException e) {
-                simpleReportRhinoException("error running error script " + error_script_id, e);
+                simpleReportRhinoException("error running error script " + error_script_path, e);
             }
         } catch (Throwable e) {
             reportDisaster("Internal error in error page", e);

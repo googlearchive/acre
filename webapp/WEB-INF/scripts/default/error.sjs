@@ -12,7 +12,7 @@ if ('accept' in acre.request.headers && acre.request.headers['accept'].indexOf('
     
     acre.write("<html>\n");
     acre.write("<head>\n");
-    acre.write(" <title>Error in ", einfo.script.id ,"</title>\n");
+    acre.write(" <title>Error in ", einfo.script_path ,"</title>\n");
     acre.write(" <link href='" + acre_server + "/acre/static/style.css' rel='stylesheet' type='text/css'>\n");
     acre.write("</head>\n");
     
@@ -24,16 +24,15 @@ if ('accept' in acre.request.headers && acre.request.headers['accept'].indexOf('
         acre.write('<p><b>error info is UNDEFINED</b></p>\n');
     } else {
 
-        function parsename(filename) {
-            return (/^(\/.+)\/([^\/]+)$/).exec(filename);
+        function is_user_script(filename) {
+            return !!(/^\//).exec(filename);
         }
                     
-        function sourcelink(filename, line, fileinfo) {
-            if (fileinfo === null) {
+        function sourcelink(filename, line, user_script) {
+            if (!user_script) {
                 return filename + ': ' + line;
             } else {
-                var url = acre.freebase.service_url + '/tools/appeditor/#app='
-                    + acre.form.quote(fileinfo[1]) + '&file=' + acre.form.quote(fileinfo[2])
+                var url = acre.freebase.site_host + '/appeditor/#!path=' + filename
                     + '&line=' + acre.form.quote(line);
                 return '<a target="_blank" href="' + url + '">' + filename + '</a>: ' + line; 
             }
@@ -49,13 +48,13 @@ if ('accept' in acre.request.headers && acre.request.headers['accept'].indexOf('
             }
         }
 
-        acre.write('<h1>Error in <span class="script">', einfo.script.name, '</span></h1>');
+        acre.write('<h1>Error in <span class="script">', einfo.script_path, '</span></h1>');
         acre.write('<p class="msg">' , acre.html.encode(einfo.message), '</p>\n');
         
-        var fileinfo = parsename(einfo.filename);
+        var user_script = is_user_script(einfo.filename);
         
-        if (fileinfo) { // this happens for syntax errors
-            acre.write('<p>at ', sourcelink(einfo.filename, einfo.line, fileinfo), '</p>\n');
+        if (user_script) { // this happens for syntax errors
+            acre.write('<p>at ', sourcelink(einfo.filename, einfo.line, user_script), '</p>\n');
         }
     
         var frames = einfo.stack;
@@ -65,11 +64,11 @@ if ('accept' in acre.request.headers && acre.request.headers['accept'].indexOf('
             while (i < frames.length ) {
                 var filename = frames[i].filename;
                 var line = frames[i].line;
-                var info = parsename(filename);
+                var user_script = is_user_script(filename);
                 acre.write('<li');
-                if (info === null) { acre.write(' class="internal"'); }
+                if (!user_script) { acre.write(' class="internal"'); }
                 acre.write('>');
-                acre.write(sourcelink(filename, line, info));
+                acre.write(sourcelink(filename, line, user_script));
                 acre.write('</li>\n');
                 i++;
             }   
@@ -108,7 +107,7 @@ if ('accept' in acre.request.headers && acre.request.headers['accept'].indexOf('
     if (!einfo) {
         acre.write('This page is only intended to render an error caused by processing another script.\n');
     } else {
-        acre.write("Error in " + einfo.script.id + "\n\n");
+        acre.write("Error in " + einfo.script_path + "\n\n");
         acre.write(einfo.message + "\n\n");
         if ('x-metaweb-tid' in acre.request.headers) {
             acre.write("TID: " + acre.request.headers['x-metaweb-tid'] + "\n\n");
