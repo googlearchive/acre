@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.script;
 
 import java.io.BufferedInputStream;
@@ -65,7 +64,7 @@ class NHttpAsyncUrlfetch implements AsyncUrlfetch {
     }
 
     // Note It's easier to just call this with introspection
-    // and then set the _scope and _response variables after instatiation
+    // and then set the _scope and _response variables after instantiation
     public NHttpAsyncUrlfetch() {
         _nhttp = new NHttpClient(Configuration.Values
                                  .ACRE_MAX_ASYNC_CONNECTIONS.getInteger());
@@ -180,7 +179,7 @@ class NHttpAsyncUrlfetch implements AsyncUrlfetch {
                                 "Http.req.hdr", httpreqhdr);
         }
         
-        // XXX this is time the request was initiated, not necessairly the
+        // XXX this is time the request was initiated, not necessarily the
         // time it was actually dispatched
         final long start_time = System.currentTimeMillis();
         try {
@@ -234,8 +233,6 @@ class NHttpAsyncUrlfetch implements AsyncUrlfetch {
         if (port == -1) port = 80;
         CookieOrigin origin = new CookieOrigin(url.getHost(), port,
                                                url.getPath(), issecure);
-
-
 
         Object body = "";
         int status = res.getStatusLine().getStatusCode();
