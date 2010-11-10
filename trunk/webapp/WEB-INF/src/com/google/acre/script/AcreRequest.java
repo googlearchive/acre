@@ -69,8 +69,8 @@ public class AcreRequest extends JsConvertable {
     public String freebase_service_url;
     public String freebase_site_host;
 
-    // if non-empty, this overrides the script_id computed from the url
-    public String handler_script_id;
+    // if non-empty, this overrides the script_path computed from the url
+    public String handler_script_path;
 
     public Date request_start_time;
 

@@ -36,7 +36,8 @@ public class CachedScript {
             name = name.substring(1);
         }
         // classnames cannot start with a number or contain other illegal characters
-        return "cn" + name.replace('/','.').replace("-","_$_");
+        // the '..' happens when we have a path like //foo.com./file
+        return "cn" + name.replace("/",".").replace("-","_$_").replace("..",".");
     }
     
     public static String clean(String name) {

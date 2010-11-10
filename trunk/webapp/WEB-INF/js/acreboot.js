@@ -51,12 +51,145 @@ if (typeof _topscope.XML != 'undefined') {
 
 //---------------------------- globals / utils ---------------------------------------
 
-var _DEFAULT_HOST_NS = '/freebase/apps/hosts';
+var _DEFAULT_APP = "release.apps.site.freebase.dev";
+var _DEFAULT_FILE = "index";
+var _DEFAULT_HOSTS_PATH = '/freebase/apps/hosts';
+var _DEFAULT_ACRE_HOST_PATH = "/z/acre";
 
 function escape_re(s) {
   var specials = /[.*+?|()\[\]{}\\]/g;
   return s.replace(specials, '\\$&');
 }
+
+var mqlkey_unescape = function (x) {
+  x = x.replace(/\$([0-9A-Fa-f]{4})/g, function (a,b) {
+      return String.fromCharCode(parseInt(b, 16));
+  });
+  return x;
+}
+
+function namespace_to_host(namespace) {
+    var host_re = new RegExp(escape_re('^' + _DEFAULT_HOSTS_PATH));
+    var acre_host_re = new RegExp(escape_re('^' + _DEFAULT_ACRE_HOST_PATH));
+    
+    if (host_re.test(namespace)) {
+        namespace = namespace.replace(host_re, "");
+        if (acre_host_re.test(namespace)) {
+            namespace = namespace.replace(acre_host_re, "").replace(/^\//, "");
+        }
+    } else {
+        namespace = "dev" + namespace;
+    }
+    return namespace.split("/").reverse().join(".");
+}
+
+function host_to_namespace(host) {
+    var path = null;
+    
+    var host_parts = host.split(".");
+    var trailing_host_part = host_parts.pop();
+    if (trailing_host_part === 'dev') {
+        path = "/" + host_parts.reverse().join("/");
+    } else if (trailing_host_part === '') {
+        path = _DEFAULT_HOSTS_PATH + "/" + host_parts.reverse().join("/");
+    } else {
+        host_parts.push(trailing_host_part);
+        path = _DEFAULT_HOSTS_PATH + _DEFAULT_ACRE_HOST_PATH + "/" + host_parts.reverse().join("/");
+    }
+    
+    return path;
+}
+
+function compose_req_path(host, path, query_string) {
+    var req_path = '//' + host;
+
+    if (path) {
+        req_path += '/' + path;
+    }
+
+    if (query_string) {
+        req_path += '?' + query_string;
+    }
+    
+    return req_path;
+};
+
+function decompose_req_path(req_path) {
+    var host = null;
+        path = null;
+        query_string = null;
+    
+    // remove protocol if present
+    var req_path_parts = req_path.split("//");
+    var protocol = req_path_parts.shift();
+    req_path = req_path_parts.join("//");
+        
+    // extract querystring, if present
+    var qparts = req_path.split("?");
+    if (qparts.length > 1) {
+        query_string = qparts[1];
+    }
+    
+    // split host from path
+    req_path_parts = qparts[0].split("/");
+    host = req_path_parts.shift();
+    path = req_path_parts.join("/");
+
+    // if it's a full URL we need to turn host into new require-style host
+    if (protocol !== "") {
+        // remove port
+        host = host.replace(/\:\d*$/,"");
+        
+        // normalize host relative to current acre host
+        var acre_host_re = new RegExp("^((.*)\.)?" + escape_re(_request.server_host_base) + "$");
+        var m = host.match(acre_host_re);
+        host = m ? (m[2]||null) : host + ".";
+    }
+    
+    return [host, path, query_string];
+}
+
+function req_path_to_script_id(req_path) {
+    var [host, script] = decompose_req_path(req_path);
+    script = script.split("/").pop();
+    return host_to_namespace(host) + "/" + script;
+}
+
+function split_script_id(script_id) {
+    var namespace = script_id.split('/');
+    var f = namespace.pop();
+    namespace = namespace.join('/');
+    return [namespace, f];
+}
+
+function file_in_path(filename, path) {
+    var file_re = new RegExp(escape_re(filename) + "(\/.*)?$");
+    var in_path = false;
+    var path_info = "";
+    
+    if (file_re.test(path)) {
+        in_path = true;
+        path_info = path.replace(new RegExp("^" + escape_re(filename)),"");
+        // XXX - add leading slash for backward-compatibility
+        if (path_info === "") path_info = "/";
+    } else {
+        // XXX - add leading slash for backward-compatibility
+        path_info = "/" + path;
+    }
+    
+    // XXX - strip trailing slash for backward-compatibility
+    if (path_info.length > 1 && path_info.substr(-1) === "/") {
+        path_info = path_info.substr(0, path_info.length-1);
+    }
+    
+    return [path_info, in_path];
+}
+
+function file_from_path(path) {
+    return path.match(/^[^\/]*/)[0];
+}
+
+
 
 //--------------------------------- syslog --------------------------------------------
 
@@ -103,8 +236,7 @@ acre.make_dev_url = function (appid,version) {
     var port = acre.request.server_port;
     version = (typeof version != 'undefined') ? version + '.' : '';
     port = ((protocol == 'http' && port != 80) || (protocol == 'https' && port != 443)) ? ":" + port : '';
-    var app = appid.split('/').reverse().join('.');
-    return protocol + "://" + version + app + acre.host.dev_name + port;
+    return protocol + "://" + version + namespace_to_host(appid) + port;
 };
 
 /**
@@ -197,7 +329,7 @@ acre.request = {
     protocol : _request.server_protocol, // XXX: how do we get the request protocol?
     method : _request.request_method,
     base_path : _request.request_path_info.replace(new RegExp(escape_re(_request.path_info)+"$"), ""),
-    path_info : _request.path_info,
+    path_info : _request.path_info,                                                                 
     query_string : _request.query_string,
     headers : _request.headers,
     body : _request.request_body,
@@ -533,14 +665,6 @@ acre.response = new AcreResponse();
  */
 if (_request.error_info) {
     acre.error = _request.error_info;
-    acre.error.script = {
-        "name" : _request.error_info.script_name,
-        "id"   : _request.error_info.script_id,
-        "app"  : _request.error_info.script_app
-    };
-    delete acre.error.script_name;
-    delete acre.error.script_id;
-    delete acre.error.script_app;
 
     // error-specific info is passed as a JSON string - decode it here
     var info_json = acre.error.info_json;
@@ -1065,6 +1189,7 @@ var UBERFETCH_ERROR_NOT_FOUND = 1,
     UBERFETCH_ERROR_PERMISSIONS = 4,
     UBERFETCH_ERROR_UNKNOWN = 5;
 
+
 function make_uberfetch_error(msg, code, extend, parent) {
     msg = msg || 'Unknown Error';
     code = code || UBERFETCH_ERROR_UNKNOWN;
@@ -1085,31 +1210,31 @@ function make_uberfetch_error(msg, code, extend, parent) {
 
 var METADATA_CACHE = {};
 
-var uberfetch_cache = function(namespace) {
-    syslog.info({'id':namespace}, 'uberfetch.cache.lookup');
-    if (namespace in METADATA_CACHE) {
-	    syslog.info({ 'id' : namespace, 's' : 'inprocess', 'm' : 'uberfetch_cache'}, 'uberfetch.cache.success');
-	    return METADATA_CACHE[namespace];
+var uberfetch_cache = function(host) {
+    syslog.info({'host':host}, 'appfetch.cache.lookup');
+    if (host in METADATA_CACHE) {
+	    syslog.info({'host': host, 's': 'inprocess', 'm': 'uberfetch_cache'}, 'appfetch.cache.success');
+	    return METADATA_CACHE[host];
     }
-    var ckey = _cache.get("LINK:"+namespace);
+    var ckey = _cache.get("HOST:"+host);
     if (ckey == null) {
-        syslog.info({id:namespace, key:"LINK:"+namespace}, 'uberfetch.cache.link_key.not_found');
+        syslog.info({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.host.not_found');
         throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
     }
 
     var res = _cache.get(ckey);
     if (res === null) {
-        syslog.info({id:namespace, key:ckey}, 'uberfetch.cache.metadata.not_found');
+        syslog.info({'host': host, 'key': ckey}, 'appfetch.cache.metadata.not_found');
         throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
     }
 
-    syslog.info({ 'key': ckey, 's': 'memcache', 'm' : 'uberfetch_cache'}, 'uberfetch.cache.success');
+    syslog.info({'key': ckey, 's': 'memcache', 'm': 'uberfetch_cache'}, 'appfetch.cache.success');
 
     return JSON.parse(res);
 };
 
-var uberfetch_file = function(namespace, result) {
-    syslog.info({'id':namespace}, 'uberfetch.file.lookup');
+var uberfetch_file = function(host, result) {
+    syslog.info({'host': host}, 'appfetch.file.lookup');
     function _extension_to_metadata(fn) {
         var handler_map = {'sjs':'acre_script', 'mql':'mqlquery', 'mjt':'mjt',
                            'gif':'binary',    'jpg':'binary', 'png':'binary',
@@ -1130,24 +1255,27 @@ var uberfetch_file = function(namespace, result) {
 
     result = result || {};
 
-    var path = _hostenv.STATIC_SCRIPT_PATH+namespace;
+    var path = _hostenv.STATIC_SCRIPT_PATH + host_to_namespace(host);
+    syslog.info(path, 'appfetch.file.lookup_path');
+    
     var files = _file.files(path);
 
     if (!files || files.length == 0) {
-        syslog.debug({'fake_id':namespace}, "uberfetch.file.not_found");
+        syslog.debug({'host': host}, "appfetch.file.not_found");
         throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
     }
 
-    result.app_id = namespace;
-    result.app_guid = namespace; // XXX is this going to make a mess?
-    result.as_of = null; // XXX return the max mtime?
+    result.host = host;
+    result.app_id = host_to_namespace(host);
+    result.app_guid = host; // XXX is this going to make a mess?
+    result.as_of = null;    // XXX return the max mtime?
     result.service_metadata = result.service_metadata ||
         {
             'write_user':null,
             'service_url':null
         };
 
-    result.links = result.links || [namespace];
+    result.hosts = result.hosts || [host];
     result.versions = result.versions || [];
     result.files = result.files || {};
 
@@ -1160,8 +1288,9 @@ var uberfetch_file = function(namespace, result) {
         if (file == '.metadata') {
             // try and fill in metadata values here
             var dot_metadata = JSON.parse(f.body);
-            result.app_id = dot_metadata.id || result.app_id;
-            result.app_guid = dot_metadata.guid || result.app_guid;
+            result.host = dot_metadata.host || result.host;
+            result.app_id = host_to_namespace(host);
+            result.app_guid = dot_metadata.guid || result.guid;
             if (dot_metadata.write_user) {
                 result.service_metadata.write_user = dot_metadata.write_user.substr(6);
             }
@@ -1181,26 +1310,29 @@ var uberfetch_file = function(namespace, result) {
     }
 
     if (!has_files) {
-        syslog.debug({'fake_id':namespace}, "uberfetch.file.not_found");
+        syslog.debug({'host': host}, "appfetch.file.not_found");
         throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
+    } else {
+        syslog.debug({'host': host}, "appfetch.file.found");
     }
 
     return result;
 };
 
-var uberfetch_graph  = function(namespace, guid, as_of, result) {
+var uberfetch_graph  = function(host, guid, as_of, result) {
     /* Returns:
      *
      * {
-     *   "app_id":null,
-     *   "app_guid":null,  // metadata index 1
-     *   "as_of":null, // metadata index 2
+     *   "host" : null
+     *   "app_id" : null      // deprecated
+     *   "app_guid" : null,  // metadata index 1
+     *   "as_of":null,       // metadata index 2
      *   "service_metadata":
      *     {
      *      "write_user":null,
      *      "service_url":null
      *     },
-     *   "links":[""], // alternative ids
+     *   "hosts":[""], // alternative hosts
      *   "versions":[],
      *   "files":{
      *     name:{
@@ -1218,17 +1350,11 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
      *
      */
      
-     function mqlkey_unescape(x) {
-         x = x.replace(/\$([0-9A-Fa-f]{4})/g, function (a,b) {
-             return String.fromCharCode(parseInt(b, 16));
-         });
-         return x;
-     };
-     
      as_of = as_of || null;
      result = result || {};
 
-     syslog.info({'id':namespace}, 'uberfetch.graph.lookup');
+     var namespace = host_to_namespace(host);
+     syslog.info({'id': namespace}, 'appfetch.graph.lookup');
 
      var q = {
          "/freebase/apps/acre_app_version/acre_app" : {
@@ -1294,7 +1420,7 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
          { 'as_of_time' : /(.*)Z/.exec(as_of)[1] } : null;
      } catch (e) {
          // Unable to parse
-         syslog.error(e, "uberfetch.graph.asof.parse.error");
+         syslog.error(e, "appfetch.graph.asof.parse.error");
          throw make_uberfetch_error("as_of_time parse error",
          UBERFETCH_ERROR_ASOF_PARSE, e);
      }
@@ -1303,13 +1429,13 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
      try {
          var res = _system_freebase.mqlread(q, envelope).result;
      } catch (e) {
-         syslog.error(e, "uberfetch.graph.mqlread.error");
+         syslog.error(e, "appfetch.graph.mqlread.error");
          throw make_uberfetch_error("Mqlread Error",
          UBERFETCH_ERROR_MQLREAD, e);
      }
 
      if (res == null) {
-         syslog.debug({'fake_id':namespace}, "uberfetch.graph.not_found");
+         syslog.debug({'fake_id':namespace}, "appfetch.graph.not_found");
          throw make_uberfetch_error("Not Found Error",
          UBERFETCH_ERROR_NOT_FOUND);
      }
@@ -1324,7 +1450,7 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
      var app_version_t = res["/freebase/apps/acre_app_version/acre_app"];
      if (app_version_t !== null) {
          // Handle the case that we've hit a version node
-         var target_ns = app_version_t['id'];
+         var target_host = namespace_to_host(app_version_t['id']);
          var target_guid = app_version_t['guid'];
          var target_asof = res['/freebase/apps/acre_app_version/as_of_time'];
          var target_versions = app_version_t['/type/namespace/keys'];
@@ -1341,15 +1467,20 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
          * loop (version node pointed at a version node) by testing for the
          * presence of result.links.
          */
+         result.host = result.host || host;
          result.versions = result.versions || [];
          for (var a=0; a < target_versions.length; a++) {
              var version = target_versions[a].value;
              result.versions.push(version);
 
-             result.links = result.links || [namespace];
-             var fqid = target_ns+'/'+version;
-             if (fqid !== namespace)
-             result.links.push(fqid);
+             result.hosts = result.hosts || [host];
+             var vhost = version + '.' + target_host;
+             if (vhost !== host) result.hosts.push(vhost);
+         }
+         
+         var canonical_host = namespace_to_host(res.id);
+         if (canonical_host !== host) {
+             hosts.push(canonical_host);
          }
 
          var servurl = res['/freebase/apps/acre_app_version/service_url'];
@@ -1359,24 +1490,26 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
          }
 
          // XXX we'd rather just return target_guid, target_asof
-         return [uberfetch_graph, target_ns, target_guid, target_asof, result];
+         return [uberfetch_graph, target_host, target_guid, target_asof, result];
      }
 
      // Explictly build out the metadata here, filling in any blanks, in case
      // we didn't hit a version node up front.
+     result.host = result.host || host;
      result.app_id = res.id;
      result.app_guid = res.guid;
      result.as_of = as_of;
 
      result.service_metadata = result.service_metadata || {};
      result.service_metadata.write_user = (res['/type/domain/owners'] != null ?
-     res['/type/domain/owners'].member.id.substr(6) :
-     null);
+     res['/type/domain/owners'].member.id.substr(6) : null);
      result.service_metadata.service_url =
      result.service_metadata.service_url || _request.freebase_service_url;
 
      result.versions = result.versions || [];
-     result.links = result.links || [namespace];
+     result.hosts = result.hosts || [host];
+     
+     var canonical_host = namespace_to_host(res.id);
 
      result.files = result.files || {};
 
@@ -1404,7 +1537,7 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
                  file_data['/common/document/content'].guid.substr(1);
                  result.files[mqlkey_unescape(f.value)] = file_result;
              } else {
-                 syslog.warn({"filename":f.value}, "uberfetch.not_a_file");
+                 syslog.warn({"filename":f.value}, "appfetch.not_a_file");
              }
          }
      }
@@ -1413,7 +1546,10 @@ var uberfetch_graph  = function(namespace, guid, as_of, result) {
 };
 
 
-var proto_require = function(namespace, script, skip_cache) {
+var proto_require = function(req_path, skip_cache) {
+    var [host, script] = decompose_req_path(req_path);
+    //throw new Error("Must specify a file to require");
+    
     var script_noext;
     if (script) {
         script_noext = script.split('.')[0];
@@ -1428,12 +1564,12 @@ var proto_require = function(namespace, script, skip_cache) {
                     // check cache and optionally call the thunk...
                     var ckey = "METADATA:"+res[2]+":"+res[3];
                     if (ckey in METADATA_CACHE) {
-			            syslog({'s' : 'inprocess', 'key' : ckey, 'm' : 'trampoline' }, 'uberfetch.cache.success');
+			            syslog({'s' : 'inprocess', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
                         return METADATA_CACHE[ckey];
                     } else {
                         var r2 = _cache.get(ckey);
                         if (r2 !== null) {
-			                syslog({'s' : 'memcache', 'key' : ckey, 'm' : 'trampoline' }, 'uberfetch.cache.success');
+			                syslog({'s' : 'memcache', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
 			                return JSON.parse(r2);
 			            }
                     }
@@ -1499,7 +1635,7 @@ var proto_require = function(namespace, script, skip_cache) {
         }
     ];
 
-    var data = null;
+    var app_data = null;
     var method = {};
     for (var a=0; a < methods.length; a++) {
         method = methods[a];
@@ -1507,58 +1643,58 @@ var proto_require = function(namespace, script, skip_cache) {
             // for now use cachable as a way to tell if a method supports
             // using the cache or not
             if (skip_cache && method.cachable === false) continue;
-            data = method.fetcher(namespace);
+            app_data = method.fetcher(host);
             if (method.cachable)
-                data.__source__ = method.source;
+                app_data.__source__ = method.source;
             break;
          } catch (e if e.__code__ == UBERFETCH_ERROR_NOT_FOUND) {
-             data = null;
+             app_data = null;
              continue;
          }
     }
 
-    if (data === null) {
+    if (app_data === null) {
         // XXX fail! exception?
         return null;
     }
 
-    // now cache the data
-    var ckey = "METADATA:"+data.app_guid+":"+data.as_of;
-    if (method.cachable && data.versions.length > 0) {
+    // now cache the app_data
+    var ckey = "METADATA:"+app_data.app_guid+":"+app_data.as_of;
+    
+    if (method.cachable && app_data.versions.length > 0) {
         // cache the metadata in the long-term cache, the metadata is
         // cached permaneltly (or until overriden).
-        _cache.put(ckey, JSON.stringify(data));
+        _cache.put(ckey, JSON.stringify(app_data));
         
         // we want to build an index of ids to the metadata block
         // which we do with LINK keys in the metadata cache. These
         // only last for ten minutes, since they are considered a
         // front-line caching mechanism, and thus require a
         // shift+refresh to refresh.
-        for (var l=0; l < data.links.length; l++) {
-            var link = data.links[l];
-            syslog.info({key:"LINK:"+link, value: ckey }, 'uberfetch.cache.write.link');
-            _cache.put("LINK:"+link, ckey, 60000);
+        for (var l=0; l < app_data.hosts.length; l++) {
+            var host = app_data.hosts[l];
+            syslog.info({key:"HOST:"+host, value: ckey }, 'appfetch.cache.write.host');
+            _cache.put("HOST:"+host, ckey, 60000);
         }
     }
-
 
     // Always put it in the request-level cache. Using the
     // request-level cache should be marginally faster than using
     // whirlycott, for getting the same metadata in a single request
     // cycle. Metadata is directly linked to the link keys (in this
     // case, there should only be one link key)
-    for (var l=0; l < data.links.length; l++) {
-        var link = data.links[l];
-        METADATA_CACHE[link] = data;
+    for (var l=0; l < app_data.hosts.length; l++) {
+        var host = app_data.hosts[l];
+        METADATA_CACHE[host] = app_data;
     }
 
-    // Note that we wait till after we've cached the data before
+    // Note that we wait till after we've cached the app_data before
     // failing to find the specific file we're interested in.
     var s;
     if (script) {
-        if (script in data.files) {
+        if (script in app_data.files) {
             s = script;
-        } else if (script_noext in data.files) {
+        } else if (script_noext in app_data.files) {
             s = script_noext;
         } else {
             return null;
@@ -1566,184 +1702,98 @@ var proto_require = function(namespace, script, skip_cache) {
     } else {
         // Provide the app metadata if proto_require is called
         // without a script name.
-        return data;
+        return app_data;
     }
 
-    function FileData(data, name) {
+    function FileData(app_data, name) {
         return {
-            '__source__':data.__source__,
+            '__source__':app_data.__source__,
             'name':name,
-            'data':data.files[name],
+            'data':app_data.files[name],
             'get_content':method.get_content,
-            'app':data
+            'app':app_data
         };
     }
 
     function scope_augmentation(aug_scope) {
-        function decompose_path(path, version, new_only, app_only) {
+        // convert all forms of require syntax into fully-qualified new require syntax
+        function normalize_path(path, version, new_only, app_only) {
+            if (!path) path = "";
             var parts = path.split('//');
+            
             if (parts.length >= 2) {
-
-                // Mode 1: new require syntax
-                var file = '';
-                var path_part = '';
-                var query_string = '';
                 
-                parts.shift();
-                start_part = parts.join("//");
-
-                // extract querystring, if present
-                var qparts = start_part.split("?");
-                path = qparts[0];
-                if (qparts.length > 1) {
-                    query_string = qparts[1];
-                }
-
-                // figure out versioned app id and the remaining parts
-                var app_ver_id = '';
-
-                var req_part = path.split("/");
-                var app_ver_id_part = req_part.shift();
-
-                // reverse-parse full http URLs into the short syntax
-                if (/^http(s)?:$/.test(parts[0])) {
-                    var acre_host_base = "." + _request.server_host_base +
-                                        (_request.server_port !== 80 ? (":" + _request.server_port) : "");
-                    var acre_host_re = new RegExp(escape_re(acre_host_base + "$"));
-
-                    app_ver_id_part = acre_host_re.test(app_ver_id_part) ?
-                                        app_ver_id_part.replace(acre_host_re, "") :
-                                        app_ver_id_part + ".";
-                }
-
-                var app_ver_id_parts = app_ver_id_part.split('.');
-
-                if (app_ver_id_parts[app_ver_id_parts.length-1] == 'dev') {
-                    app_ver_id = '/' +
-                        app_ver_id_parts.slice(0, app_ver_id_parts.length-1)
-                        .reverse().join('/');
-                } else if (app_ver_id_parts[app_ver_id_parts.length-1] == '') {
-                    app_ver_id_parts.pop();
-                    app_ver_id_parts.reverse().unshift(_DEFAULT_HOST_NS);
-                    app_ver_id = app_ver_id_parts.join('/');
-                } else {
-                    // this is the case where we got an app key without a domain or .dev - e.g. //foobar
-                    // do not use ACRE_HOST_BASE - use a domain such as acre.z that is known to be in the graph
-                    app_ver_id_parts = app_ver_id_parts.reverse();
-
-                    var host_base_parts = "acre.z".split('.');
-                    for (var a=0; a < host_base_parts.length; a++) {
-                        app_ver_id_parts.unshift(host_base_parts[a]);
-                    }
-
-                    app_ver_id_parts.unshift(_DEFAULT_HOST_NS);
-                    app_ver_id = app_ver_id_parts.join('/');
-										console.log("app ver id parts", app_ver_id_parts);
-                }
-
-                file = req_part.shift();
-                path_part = '/'+req_part.join('/').split('?')[0];
-
-                return [app_ver_id, file, path_part, query_string];
+                // Mode 1: new require syntax                
+                return path;
+                
             } else if (/^(freebase:)?\//.test(path)) {
                 if (new_only) throw new Error("Freebase ID syntax is not supported for this method.  Use URL syntax.");
+                
                 // Mode 2: old require syntax
                 var namespace = path.replace(/^freebase:/,"").split('/');
                 var script = namespace.pop();
                 if (version) namespace.push(version);
                 namespace = namespace.join('/');
-                return [namespace, script];
+                path = compose_req_path(namespace_to_host(namespace), script);
+                return path;
+                
             } else {
                 if (app_only) throw new Error("Only apps are supported by this method");
-                // Mode 3: relative require
-
-                // extract querystring, if present
-                var qparts = path.split("?");
-                path = qparts[0];
-                if (qparts.length > 1) {
-                    var query_string = qparts[1];
-                }
-
-                // split off file from path_info
-                var req_part = path.split("/");
-                var file = req_part.shift();
-                var path_part = '/'+req_part.join('/');
-
-                // XXX this supports changing the relative version
-                // not sure that's desireable
-                // XXX it'd be nice if we could pass guid/asof in instead,
-                //     which requires we break up the resolution phase somewhat
-                var apppath = data.app_id +
-                    ((version || data.versions.length > 0) ? '/'+
-                     (version || data.versions[0]) :'');
-
-                return [apppath, file, path_part, query_string];
+                
+                // Mode 3: relative require, so push the host back on
+                return compose_req_path(app_data.host, path);
             }
         }
-
+        
         // XXX this depends on scope_augmentation being run after we figure out s
-        aug_scope.acre.current_script = assembleScriptObj(data, data.files[s]);
-        if (aug_scope == _topscope && data.files[s].name != 'not_found') {
+        aug_scope.acre.current_script = assembleScriptObj(app_data, app_data.files[s]);
+        if (aug_scope == _topscope && app_data.files[s].name != 'not_found') {
             aug_scope.acre.request.script = aug_scope.acre.current_script;
 
-            if (data.service_metadata.write_user !== null) {
-                _hostenv.write_user = data.service_metadata.write_user;
+            if (app_data.service_metadata.write_user !== null) {
+                _hostenv.write_user = app_data.service_metadata.write_user;
             }
-            if (data.service_metadata.service_url &&
-                /http(s?):\/\//.test(data.service_metadata.service_url))
-                acre.freebase.set_service_url(data.service_metadata.service_url);
+            if (app_data.service_metadata.service_url &&
+                /^http(s?):\/\//.test(app_data.service_metadata.service_url))
+                acre.freebase.set_service_url(app_data.service_metadata.service_url);
 
             deprecate(aug_scope);
         }
 
         aug_scope.acre.route = function (path) {
-            var [app, script, path_info, qs] = decompose_path(path, null, true);
+            path = normalize_path(path, null, true);
+            
+            var [h, p, qs] = decompose_req_path(path);
+            var hostpath = app_data.host;
 
-            if (path_info == '') path_info = '/';
-            var apppath = data.app_id +
-                ((data.versions.length > 0) ? '/'+
-                 (data.versions[0]) :'');
-
+            // AcreExitException is the only mechanism we have 
+            // for cleanly restarting a request
             var exit_e = new _hostenv.AcreExitException();
-            exit_e.route_to = app+'/'+script;
-            exit_e.skip_routes = (apppath == app);
-            exit_e.path_info = path_info;
-            exit_e.query_string = qs;
+            exit_e.route_to = path;
+            exit_e.skip_routes = (hostpath == h);
             throw exit_e;
         };
 
-        // XXX what sort of path formats should we support?
         aug_scope.acre.get_metadata = function(path) {
-            var app;
-            if (!path) {
-                app = data.app_id + ((data.versions.length > 0) ? '/' + data.versions[0] : '');
-            } else {
-                [app] = decompose_path(path, null, true, true);
-            }
-
-            return proto_require(app, null, skip_cache);
+            // ensure we only have the host part
+            var [host] = decompose_req_path(normalize_path(path, null, true, false));
+            return proto_require(compose_req_path(host), skip_cache);
         };
 
         function get_sobj(path, version) {
             if (!path) {
                 throw new Error("No URL provided");
-            }
+            }          
 
-            var [app, script] = decompose_path(path, version);
-
-            if (!script)
-                throw new Error("Must specify a file to require");
-
-            var sobj = proto_require(app, script, skip_cache);
-
-            // XXX I'd rather use app+script here, but the tests depend
-            // on path
+            var sobj = proto_require(normalize_path(path), skip_cache);
+            
             if (sobj === null) {
                 throw new Error('Could not fetch data from ' + path);
             }
 
-            if (sobj.app.app_id+'/'+sobj.name == aug_scope.acre.current_script.id)
-                throw new Error("A script can not require itself");
+            if (compose_req_path(sobj.app.host, sobj.name) === aug_scope.acre.current_script.path) {
+                throw new Error("A script can not require itself");                
+            }
 
             return sobj;
         }
@@ -1865,105 +1915,101 @@ var proto_require = function(namespace, script, skip_cache) {
                 scope.acre.__proto__ = _topscope.acre;
             }
 
-            // use the full versioned path as the class name so that it shows up in user-visible stack traces
-            var class_name = '//' + (script.app.versions.length ? script.app.versions[0] + '.' : '') + script.app.app_id.split('/').reverse().join('.') + 'dev/' + script.name;
-            
             var compiler_env = {
                 'scope':scope_augmentation(scope || make_scope()),
                 'swizzle':false,
-                'class_name': class_name,
+                'class_name': compose_req_path(script.app.host, script.name),
                 'content_hash':script.data.content_hash
             };
 
             switch (script.data.handler) {
-            case 'mqlquery':
-                res = _hostenv.load_script_from_cache(compiler_env.class_name,
-                                                      compiler_env.content_hash,
-                                                      {},
-                                                      false
-                                                     );
-                if (res == null) {
-                    res = {
-                        name: script.name,
-                        query: JSON.parse(script.get_content().body)
-                    };
-                    var jsstr = "var module = ("+JSON.stringify(res)+");";
-                    res = _hostenv.load_script_from_string(jsstr,
-                                                           compiler_env.class_name,
-                                                           compiler_env.content_hash,
-                                                           {},
-                                                           null,
-                                                           compiler_env.swizzle);
-                }
-                res = MqlQueryWrapper(res.module.name, res.module.query);
-                break;
-            case 'binary':
-                res = script.get_content();
-                break;
-            case 'passthrough':
-                res = _hostenv.load_script_from_cache(compiler_env.class_name,
-                                                      compiler_env.content_hash,
-                                                      {},
-                                                      false
-                                                     );
-
-                if (res == null) {
+                case 'mqlquery':
+                    res = _hostenv.load_script_from_cache(compiler_env.class_name,
+                                                          compiler_env.content_hash,
+                                                          {},
+                                                          false
+                                                         );
+                    if (res == null) {
+                        res = {
+                            name: script.name,
+                            query: JSON.parse(script.get_content().body)
+                        };
+                        var jsstr = "var module = ("+JSON.stringify(res)+");";
+                        res = _hostenv.load_script_from_string(jsstr,
+                                                               compiler_env.class_name,
+                                                               compiler_env.content_hash,
+                                                               {},
+                                                               null,
+                                                               compiler_env.swizzle);
+                    }
+                    res = MqlQueryWrapper(res.module.name, res.module.query);
+                    break;
+                case 'binary':
                     res = script.get_content();
+                    break;
+                case 'passthrough':
+                    res = _hostenv.load_script_from_cache(compiler_env.class_name,
+                                                          compiler_env.content_hash,
+                                                          {},
+                                                          false
+                                                         );
 
-                    var jsstr = "var module = ("+JSON.stringify(res)+");";
-                    res = _hostenv.load_script_from_string(jsstr,
-                                                           compiler_env.class_name,
-                                                           compiler_env.content_hash,
-                                                           {},
-                                                           null,
-                                                           compiler_env.swizzle);
-                }
-                res = res.module;
+                    if (res == null) {
+                        res = script.get_content();
 
-                break;
-            case 'acre_script':
-                res = _hostenv.load_script_from_cache(compiler_env.class_name,
-                                                      compiler_env.content_hash,
-                                                      compiler_env.scope,
-                                                      compiler_env.swizzle);
+                        var jsstr = "var module = ("+JSON.stringify(res)+");";
+                        res = _hostenv.load_script_from_string(jsstr,
+                                                               compiler_env.class_name,
+                                                               compiler_env.content_hash,
+                                                               {},
+                                                               null,
+                                                               compiler_env.swizzle);
+                    }
+                    res = res.module;
 
-                if (res === null) {
-                    res = _hostenv.load_script_from_string(script.get_content().body,
-                                                           compiler_env.class_name,
-                                                           compiler_env.content_hash,
-                                                           compiler_env.scope,
-                                                           null,
-                                                           compiler_env.swizzle);
-                }
-                break;
-            case 'mjt':
-                var module;
-                module = _hostenv.load_script_from_cache(compiler_env.class_name,
-                                                         compiler_env.content_hash,
-                                                         compiler_env.scope,
-                                                         compiler_env.swizzle);
+                    break;
+                case 'acre_script':
+                    res = _hostenv.load_script_from_cache(compiler_env.class_name,
+                                                          compiler_env.content_hash,
+                                                          compiler_env.scope,
+                                                          compiler_env.swizzle);
 
-                if (module === null) {
+                    if (res === null) {
+                        res = _hostenv.load_script_from_string(script.get_content().body,
+                                                               compiler_env.class_name,
+                                                               compiler_env.content_hash,
+                                                               compiler_env.scope,
+                                                               null,
+                                                               compiler_env.swizzle);
+                    }
+                    break;
+                case 'mjt':
+                    var module;
+                    module = _hostenv.load_script_from_cache(compiler_env.class_name,
+                                                             compiler_env.content_hash,
+                                                             compiler_env.scope,
+                                                             compiler_env.swizzle);
 
-                    var cpkg = _mjt.acre.compile_string(script.get_content().body,
-                                                        compiler_env.class_name);
-                    var js_text = 'var pkgdef = (' + cpkg.toJS() +');';
-                    module =
-                        _hostenv.load_script_from_string(js_text,
-                                                         compiler_env.class_name,
-                                                         compiler_env.content_hash,
-                                                         compiler_env.scope,
-                                                         cpkg.debug_locs,
-                                                         compiler_env.swizzle);
-                }
+                    if (module === null) {
 
-                res = (new _mjt.TemplatePackage())
-                    .init_from_js(module.pkgdef).toplevel();
-                break;
-            default:
-                throw make_uberfetch_error("Unsupported Handler Type");
+                        var cpkg = _mjt.acre.compile_string(script.get_content().body,
+                                                            compiler_env.class_name);
+                        var js_text = 'var pkgdef = (' + cpkg.toJS() +');';
+                        module =
+                            _hostenv.load_script_from_string(js_text,
+                                                             compiler_env.class_name,
+                                                             compiler_env.content_hash,
+                                                             compiler_env.scope,
+                                                             cpkg.debug_locs,
+                                                             compiler_env.swizzle);
+                    }
+
+                    res = (new _mjt.TemplatePackage())
+                        .init_from_js(module.pkgdef).toplevel();
+                    break;
+                default:
+                    throw make_uberfetch_error("Unsupported Handler Type");
             }
-
             return res;
         };
 
@@ -2021,7 +2067,7 @@ var proto_require = function(namespace, script, skip_cache) {
         return script;
     }
 
-    return run_augmentation(FileData(data, s));
+    return run_augmentation(FileData(app_data, s));
 };
 
 // ---------------------------------------- finish_response ------------------------------
@@ -2313,178 +2359,76 @@ for (var name in _topscope) {
     console_scope.skip(_topscope[name]);
 }
 
-// We do not delete console_scope so that we can add more 'acre' objects to skip list
-
-//--------------------------------- parse_url --------------------------------------
-
-var URLPARSE_FOUND = 0;
-var URLPARSE_MAYBE_HOST = 1;
-
-/*
- * parse a url  (NOTE also fetches metadata!)
- *
- *   sname is the server name   (defaults to _request.server_name)
- *   pinfo is the path          (defaults to _request.path_info)
- *
- * returns an object containing the parsed url components, as well
- *  as the metadata fetched from the graph.
- */
-function parse_url(sname, pinfo) {
-    sname = sname || _request.server_name;
-    sname = sname.toLowerCase();
-    pinfo = pinfo || _request.path_info;
-    var m = sname.match('((.*)\.)?' + _request.server_host + '$');
-    var m2 = sname.match('((.*)\.)?' + _hostenv.ACRE_HOST_BASE + '$');
-    var res = null;
-
-    /*
-     * We face two possible cases:
-     *   1. Hostname matches the predetermined acre server_host
-     *   2. Hostname fails to match but may be a short name
-     * In either case we return a triple [conceptual_id, path_info, state]
-     * The rest is handled by a call to uberfetch
-     */
-    if (m || sname == _hostenv.ACRE_HOST_BASE) {
-        var url_namespace = (m !== null) ? m[2] : null;
-        var script_namespace;
-        if (!url_namespace) {
-            // XXX we're rendering the default here...
-            script_namespace = '/freebase/apps/home/release';
-        } else {
-            script_namespace = '/' + url_namespace.split('.').reverse().join('/');
-        }
-
-        var script_name = pinfo.substring(1).split("/")[0];
-        if (script_name == '') script_name = 'index';
-
-
-        var script_id = script_namespace + '/' + script_name;
-        var path_info = pinfo.substring(script_name.length+1);
-        if (path_info === '') path_info = '/';
-
-        res = [script_id, path_info, URLPARSE_FOUND];
-    } else if (m2) {
-        var script_namespace = _DEFAULT_HOST_NS + '/z/acre/' + m2[2].split('.').reverse().join('/');
-
-        var script_name = pinfo.substring(1).split("/")[0];
-        if (script_name == '') script_name = 'index';
-
-        var script_id = script_namespace + '/' + script_name;
-
-        var path_info = pinfo.substring(script_name.length+1);
-        if (path_info === '') path_info = '/';
-
-        res = [script_id, path_info, URLPARSE_MAYBE_HOST];
-    } else {
-        var script_namespace = _DEFAULT_HOST_NS + '/' + sname.split('.').reverse().join('/');
-
-        var script_name = pinfo.substring(1).split("/")[0];
-        if (script_name == '') script_name = 'index';
-
-        var script_id = script_namespace + '/' + script_name;
-
-        var path_info = pinfo.substring(script_name.length+1);
-        if (path_info === '') path_info = '/';
-
-        res = [script_id, path_info, URLPARSE_MAYBE_HOST];
-    }
-
-    return res;
-}
-
 //--------------------------------------- boot ------------------------------------
 
 /*
  * Create a good looking script context object based on
  * the flat metadata used inside uberfetch
  */
-var assembleScriptObj = function(app, metadata) {
-    var f = metadata;
-    var app_path = app.app_id.substr(1).split('/').reverse().join('.');
-    if (app.versions.length > 0) {
-        app_path = app.versions[0]+'.'  + app_path;
-    }
-    app_path += '.dev';
-    app_path = '//'+app_path;
-
+var assembleScriptObj = function(app, file) {
     return {
-        id : app.app_id + '/' + f.name,
-        path: app_path + '/' + f.name,
-        name : f.name,
-        content_id : f.content_id,
-        handler : f.handler,
-        media_type : f.media_type,
+        id : app.app_id + '/' + file.name,
+        path: compose_req_path(app.host, file.name),
+        name : file.name,
+        content_id : file.content_id,
+        handler : file.handler,
+        media_type : file.media_type,
         app : {
             id : app.app_id,
-            path : app_path,
+            path : compose_req_path(app.host),
             guid : app.app_guid,
             version :(app.versions.length > 0 ? app.versions[0] : null),
             versions : app.versions,
-            base_url : acre.host.protocol + "://" +
-                (app.versions.length > 0 ? (app.versions[0] + ".") : "") +
-                app.app_id.split('/').reverse().join('.') +
-                acre.host.dev_name +
+            base_url : acre.host.protocol + "://" + 
+                (app.host.match(/\.$/) ? app.host.replace(/\.$/, "") : (app.host + "." + acre.host.name)) +
                 (acre.host.port !== 80 ? (":" + acre.host.port) : "")
         }
     };
 };
 
-function split_ns(id) {
-    var namespace = id.split('/');
-    var f = namespace.pop();
-    namespace = namespace.join('/');
-    return [namespace, f];
-}
 
 /*
  * look up a document in the blob store and load it as an acre script.
  */
 var boot_acrelet = function () {
-    var freebase_source_url = '';
-    function make_freebase_source_url(namespace, script_name) {
-        return _request.freebase_site_host +
-            '/appeditor#!path=//' + namespace.split("/").reverse().join(".") + 'dev/' + script_name;
-    }
+    
+    // Determine what path we're running:
+    var request_path = null;
 
-    var url_result = [];
+    // 1. If it's an internal redirect (acre.route(), error page, etc.), get from handler_script_path:
+    if (typeof _request.handler_script_path == 'string' && _request.handler_script_path != '') {
+        request_path = _request.handler_script_path;
 
-    // override handler script if indicated (for internal redirects)
-    var _handler_script_id = null;
-    if (typeof _request.handler_script_id == 'string' &&
-        _request.handler_script_id != '') {
-        url_result[0] = _handler_script_id = _request.handler_script_id;
-        url_result[1] = _request.path_info;
-        url_result[2] = URLPARSE_FOUND;
-        /// XXX fulhack to support the correct source url in the error page
-        if ('error' in acre && 'script' in acre.error &&
-            'id' in acre.error.script) {
-            var [ens, esn] = split_ns(acre.error.script.id);
-            freebase_source_url = make_freebase_source_url(ens, esn);
-        }
+    // 2. Otherwise, get from request:
     } else {
-        url_result = parse_url();
+        var [h, p] = decompose_req_path('http://' + _request.server_name.toLowerCase() + _request.path_info);
+
+        if (!h) h = _DEFAULT_APP;
+        if (!p) p = _DEFAULT_FILE;
+
+        request_path = compose_req_path(h, p);
     }
-    delete _request.handler_script_id;
-
-    var [namespace, script_name] = split_ns(url_result[0]);
-
-    // XXX there is a chicken and the egg problem here, we need to touch
-    // before fetching metadata, but we don't want to touch if we're
-    // getting a local-file since we don't need to. Personally, I find
-    // consistency is better than a slight speed up for shift-reload on
-    // local files...
-
-    var skip_cache = false;
+    delete _request.handler_script_path;
+    
+    
     // if we get 'cache-control: no-cache' in the request headers
     // (normally triggered by a shift-reload in the browser)
     // we need to touch and get a new mwLastWriteTime value to really clear
     // the caches
+    
+    // XXX there is a chicken and the egg problem here... we need to touch
+    // before fetching metadata, but we don't want to touch if we're
+    // getting a local-file since we don't need to. Personally, I find
+    // consistency is better than a slight speed up for shift-reload on
+    // local files...
+    
     // if an x-acre-cache-control header is present, then do not bust the cache
     // The reason for this change is that many browsers will by default issue
     // a no-cache cache-control header for XHR post requests which will make 
-    // them very slow for no reason on acre
-    // In order to bypass this problem, we introduced a new header that instructs
+    // them very slow for no reason on acre.  In order to bypass this problem, 
+    // we introduced a new header (x-acre-caceh-control) that instructs
     // acre to not bust its uberfetch cache for these requests
+    var skip_cache = false;
     if ('cache-control' in acre.request.headers && !('x-acre-cache-control' in acre.request.headers)) {
         if (/no-cache/.test(acre.request.headers['cache-control'])) {
             // get a new _mwLastWriteTime for the client so future
@@ -2494,151 +2438,137 @@ var boot_acrelet = function () {
         }
     }
 
-    // We can't use AcreScript here because it requires a script name, which we
-    // can't really determine; There may be a work around? It sucks to have to
-    // split out this instance of metadata resolution
-    if (_request.request_url.split('/')[3] == 'acre') {
-        var req_url_res = parse_url(_request.request_server_name,
-                                    _request.request_path_info);
-        var [reqns, reqsn] = split_ns(req_url_res[0]);
 
-        var out = proto_require(reqns, null, skip_cache);
-        if (out !== null) {
-          if (reqsn in out.files) {
-            acre.request.requested_script = {
-              'app':{
-                'id':out.app_id
-              },
-              'name':out.files[reqsn].name,
-              'version':out.app_version,
-              'id':out.app_id+'/'+out.files[reqsn].name
-            };
-            freebase_source_url = make_freebase_source_url(out.app_id, out.files[reqsn].name);
-          }
-          _request_app_guid = out.app_guid;
-        }
-    }
-
+    // Set up the list of paths we're going to try before failing altogether, 
+    // (routes, not_found, default scripts, etc.)
     var FALLTHROUGH_SCRIPTS = {
         'robots.txt':true,
         'favicon.ico':true,
         'error':true
     };
 
-    function fallbacks_for(ns, sname) {
-        sname = sname || null;
+    function fallbacks_for(req_path) {
+        var [host, path] = decompose_req_path(req_path);
+        var DEFAULT_HOST = _hostenv.DEFAULT_HOST_PATH.substr(2);
 
         var fallbacks = [];
-        if (_request.skip_routes !== true)
-            fallbacks.push(ns+'/routes');
+        if (_request.skip_routes !== true) {
+            fallbacks.push(compose_req_path(host,  'routes' + '/' + path));
+        }
 
-        fallbacks.push(url_result[0]);
+        fallbacks.push(req_path);
 
-        if (sname in FALLTHROUGH_SCRIPTS) {
-            fallbacks.push(
-                    _hostenv.DEFAULT_NAMESPACE + '/' + sname
-            );
+        for (sname in  FALLTHROUGH_SCRIPTS) {
+            if (file_in_path(sname, path)[1]) {
+                fallbacks.push(compose_req_path(DEFAULT_HOST, path));
+            }
         }
 
         fallbacks = fallbacks.concat(
             [
-                ns + '/not_found',
-                _hostenv.DEFAULT_NAMESPACE + '/not_found'
+                compose_req_path(host, 'not_found'),
+                compose_req_path(DEFAULT_HOST, 'not_found')
             ]
         );
 
         return fallbacks;
     };
 
-    var fallbacks = fallbacks_for(namespace, script_name);
+    var fallbacks = fallbacks_for(request_path);
 
-    var data = null;
+    // Work out way down the list until we find one that works:
+    var script = null;
     for (var a=0; a < fallbacks.length; a++) {
-        var [ns, sn] = split_ns(fallbacks[a]);
+        var fpath = fallbacks[a];
         try {
-            data = proto_require(ns, sn, skip_cache);
+            // PATH-TODO - remove once proto_require can set path_info;
+            var [fh, fp] = decompose_req_path(fpath);
+            var fscript = file_from_path(fp);   // just pop the first part off
+            fpath = compose_req_path(fh, fscript);
+            acre.request.path_info = file_in_path(fscript, fp)[0];
+            
+            syslog(fpath, "fallbacks.route_to");
+            script = proto_require(fpath, skip_cache);
         } catch (e if e.__code__ == UBERFETCH_ERROR_MQLREAD) {
             acre.response.status = 503;
             acre.write("Service Temporarily Unavailable\n");
             acre.exit();
         }
-
-        if (data !== null) {
-            // XXX fulhack to reset the path_info when running routes
-            if (sn == 'routes') {
-                var [_, rsn] = split_ns(url_result[0]);
-                url_result[1] = '/'+(rsn !== 'index' ? rsn : '') +
-                    (url_result[1] != "/" ? url_result[1] : '');
-            }
+        
+        if (script === null) {
+            syslog(fpath, "fallbacks.not_found");
+        } else {
+            syslog(fpath, "fallbacks.found");
             break;
         }
     }
 
-    if (data == null) {
-        // this is a catastrophic lookup failure
+    // this is a catastrophic lookup failure
+    if (script == null) {
         acre.response.set_header('content-type', 'text/plain');
         acre.response.status = 404;
-        acre.write('No valid acre script found at ' + url_result[0] + ' (or defaults)\n');
+        acre.write('No valid acre script found at ' + request_path + ' (or defaults)\n');
         acre.exit();
     }
-
-    acre.request.path_info = url_result[1];
-
-    _hostenv.script_namespace = data.app.app_id;
-    _hostenv.script_id = data.app.app_id +'/' + data.name;
-    _hostenv.script_name = data.name;
+    
+    
+    // Time to set up the rest of the environment...
+    var [req_host, req_path, req_query_string] = decompose_req_path(request_path);
+    var script_id = req_path_to_script_id(request_path);            // for deprecated stuff
+    var [namespace, script_name] = split_script_id(script_id);      // for deprecated stuff
+    
+    // This information is needed by the error page
+    _hostenv.script_name = script.name;
+    _hostenv.script_path = compose_req_path(script.app.host, script.name);
+    _hostenv.script_host_path = compose_req_path(script.app.host);
 
     // We need this information to generate things like the appeditor url, and
     // to run the not_found page, it will actually get overriden with a proper
     // version if scope_augmentation is running in _topscope
     acre.request.script = {
         'app': {
-            'id':namespace
+            'id': host_to_namespace(req_host),
+            'path': compose_req_path(req_host)
         },
-        'name':script_name
+        'name': file_from_path(req_path),
+        'path': request_path
     };
 
     // before the script is actually run, we want to set the app_guid aside
     // if we didn't already do so
     if (_request_app_guid === null) {
-        _request_app_guid = data.app.app_guid;
+        _request_app_guid = script.app.app_guid;
     }
 
     // View Source link:
-    if (freebase_source_url == '') {
-        var link_ns = ((acre.request.script.app.id != namespace) ?
-                       namespace : acre.request.script.app.id);
-        var link_sname = ((acre.request.script.name != script_name) ?
-                          script_name : acre.request.script.name);
-
-        freebase_source_url = make_freebase_source_url(link_ns, link_sname);
+    var source_path = request_path;
+    if ('error' in acre && 'script_path' in acre.error) { // error page is a special case
+        source_path = acre.error.script_path;       
     }
-
-    // Every acre http response also has this link
-    acre.response.set_header('x-acre-source-url', freebase_source_url);
+    acre.response.set_header('x-acre-source-url',  
+                            _request.freebase_site_host + '/appeditor#!path=' + source_path);
 
     // Decorate deprecated APIs with warning messages, and setup deprecated values
     // XXX may want to move this into the _topscope block in scope_augmentation?
     // it would give more accurate information, and deprecate() has to be there
     // any way.
     (function () {
-         acre.request_context = { // deprecated
-             script_name : script_name,
-             script_id : url_result[0],
-             script_namespace : namespace,
-             script_version : (data.app.versions.length > 0 ?
-                               data.app.versions[0] : null)
-         };
+        acre.request_context = { // deprecated
+            script_name : script_name,
+            script_id : script_id,
+            script_namespace : namespace,
+            script_version : (script.app.versions.length > 0 ? script.app.versions[0] : null)
+        };
 
-         acre.environ.path_info = url_result[1]; // deprecated
+        acre.environ.path_info = acre.request.path_info; // deprecated
 
-         acre.context = acre.request_context; // deprecated
-         acre.environ.script_name = data.name; // deprecated
-         acre.environ.script_id = data.app.app_id + '/' + data.name; // deprecated
-         acre.environ.script_namespace = data.app.app_id; // deprecated
+        acre.context = acre.request_context; // deprecated
+        acre.environ.script_name = script.name; // deprecated
+        acre.environ.script_id = host_to_namespace(script.app.host) + '/' + script.name; // deprecated
+        acre.environ.script_namespace = host_to_namespace(script.app.host); // deprecated
     })();
 
-    var res = data.to_http_response(_topscope);
+    var res = script.to_http_response(_topscope);
     if (res !== null) {
         acre.response.status = res.status;
         for (var k in res.headers) {
