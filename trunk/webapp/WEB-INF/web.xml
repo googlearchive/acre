@@ -64,6 +64,11 @@
     <filter-name>GzipFilter</filter-name>
     <filter-class>org.mortbay.servlet.GzipFilter</filter-class>
   </filter>
+
+  <servlet-mapping>
+    <servlet-name>DefaultServlet</servlet-name>
+    <url-pattern>/static/*</url-pattern>
+  </servlet-mapping>
  
   <servlet-mapping>
     <servlet-name>OneTrueServlet</servlet-name>
