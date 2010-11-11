@@ -66,11 +66,6 @@
   </filter>
 
   <servlet-mapping>
-    <servlet-name>DefaultServlet</servlet-name>
-    <url-pattern>/static/*</url-pattern>
-  </servlet-mapping>
- 
-  <servlet-mapping>
     <servlet-name>OneTrueServlet</servlet-name>
     <url-pattern>/*</url-pattern>
   </servlet-mapping>
