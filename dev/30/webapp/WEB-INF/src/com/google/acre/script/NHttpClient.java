@@ -61,17 +61,23 @@ import org.apache.http.protocol.RequestExpectContinue;
 import org.apache.http.protocol.RequestTargetHost;
 import org.apache.http.protocol.RequestUserAgent;
 
+import com.google.acre.Configuration;
+
 /*
  * Based on http://www.eamtd.com/IT/a/20090729/072912164110271541.html
  */
 
 public class NHttpClient {
+    
     private final HttpParams DEFAULT_HTTP_PARAMS = new BasicHttpParams()
-        .setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 5000)
-        .setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 10000)
+        .setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 
+            Configuration.Values.ACRE_REQUEST_MAX_TIME.getInteger())
+        .setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, 
+            Configuration.Values.ACRE_REQUEST_MAX_TIME.getInteger())
         .setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 512 * 1024)
-        .setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, true); 
-    private static final int DEFAULT_MAX_CONNECTIONS = 10;
+        .setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, true);
+    
+    private static final int DEFAULT_MAX_CONNECTIONS = Configuration.Values.ACRE_MAX_ASYNC_CONNECTIONS.getInteger();
 
     private List<NHttpClientClosure> _requests;
     private DefaultConnectingIOReactor _reactor; 
@@ -81,7 +87,7 @@ public class NHttpClient {
     private int _max_connections;
 
     private NHttpClient.NHttpProxyHost _proxy;
-
+    
     public static class NHttpException extends Exception {
         private static final long serialVersionUID = 3381900596614745150L;
         public NHttpException(String msg) {
@@ -98,7 +104,6 @@ public class NHttpClient {
             super("Time limit exceeded");
         }
     }
-
 
     public static abstract class NHttpProxyHost {
         private String _host;
@@ -376,15 +381,15 @@ public class NHttpClient {
         handler.setEventListener(new EventListener() {
                 private final static String REQUEST_CLOSURE = "request-closure";
                 public void connectionClosed(NHttpConnection conn) {
-                    // pass
+                    // pass (should we be logging this?)
                 }
 
                 public void connectionOpen(NHttpConnection conn) {
-                    // pass
+                    // pass (should we be logging this?)
                 }
 
                 public void connectionTimeout(NHttpConnection conn) {
-                    // pass
+                    noteException(null, conn);
                 }
 
                 void noteException(Exception e, NHttpConnection conn) {
@@ -546,8 +551,10 @@ public class NHttpClient {
     }
 
     public void wait_on_result(long time, TimeUnit tunit) throws NHttpException {
+
         if (_reactor != null && _reactor.getStatus() != IOReactorStatus.INACTIVE)
             throw new NHttpException("Can not run wait_on_results while it is already running");
+        
         start();
 
         long endtime = System.currentTimeMillis() + tunit.toMillis(time);
@@ -615,6 +622,7 @@ public class NHttpClient {
 
             i++;
         }
+        
         // It's somewhat questionable to stop the reactor when we're done
         // but we can restart it if we need it again.
         stop();
@@ -664,10 +672,6 @@ public class NHttpClient {
 
             return null; 
         }
-
-//        public ConsumingNHttpEntity responseEntity(final HttpResponse response, final HttpContext context) {
-//            return new BufferingNHttpEntity(response.getEntity(), new HeapByteBufferAllocator());
-//        }
 
         public void handleResponse(final HttpResponse response,
                                     final HttpContext context) {
