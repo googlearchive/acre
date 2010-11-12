@@ -115,6 +115,7 @@ class NHttpAsyncUrlfetch implements AsyncUrlfetch {
 
     private static final Pattern CT_RE =
         Pattern.compile("^([^;]+); charset=['\"]?([^;'\"]+)['\"]?");    
+    
     public void make_request(String url,
                              String method,
                              long timeout,
