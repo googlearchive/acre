@@ -81,6 +81,7 @@ check_appengine() {
 
 # Load Configs --------------------------------------------
 load() {
+    echo "Loading configurations from $1"
     cat $1 | egrep "^[A-Z]" | sed 's/^\(.*\)$/export \1/' > .`basename $1`
     . ./.`basename $1`
     rm ./.`basename $1`
