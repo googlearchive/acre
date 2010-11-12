@@ -509,8 +509,16 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         } catch (MalformedURLException e) { 
             throw new RuntimeException(e);
         }
+        
+        String path_info = url.getPath();
+        String query_string = url.getQuery();
+        
+        if (query_string == null) {
+            query_string = "";
+        }
+        
         req.setPathInfo(url.getPath());
-        req.setQueryString(url.getQuery());
+        req.setQueryString(query_string);
 
         // reset the response
         res.reset();
