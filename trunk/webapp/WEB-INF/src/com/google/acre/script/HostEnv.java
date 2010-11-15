@@ -1086,13 +1086,16 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 String script_name = "UNKNOWN";
                 String script_path = "UNKNOWN";
                 String script_host_path = "UNKNOWN";
+                String error_handler_path = "UNKNOWN";
                 if (has("script_name", this))
                     script_name = (String)this.get("script_name", this);
                 if (has("script_path", this))
                     script_path = (String)this.get("script_path", this);
                 if (has("script_host_path", this))
                     script_host_path = (String)this.get("script_host_path", this);
-
+                if (has("error_handler_path", this))
+                    error_handler_path = (String)this.get("error_handler_path", this);
+                    
                 String log_msg = message;
                 if (t != null) {
                     if (t instanceof RhinoException) {
@@ -1128,7 +1131,13 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                     // in the error script
                     req.request_body = "";
                 } else if (req.error_info == null) {
-                    error_script_path = script_host_path + "/" + ERROR_PAGE;
+                    // try the app's error handler or one specified by the app 
+                    // using acre.response.set_error_handler(path)
+                    if ("UNKNOWN".equals(error_handler_path)) {
+                        error_script_path = script_host_path + "/" + ERROR_PAGE;
+                    } else {
+                        error_script_path = error_handler_path;
+                    }
                 } else {
                     // if we were handling an error in a user error handler, fall back to the system one.
 
