@@ -1822,6 +1822,11 @@ var proto_require = function(req_path, skip_cache) {
 
             return sobj.to_module(scope);
         };
+        
+        aug_scope.acre.response.set_error_handler = function(path) {
+            path = normalize_path(path, null, true);
+            _hostenv.error_handler_path = path;
+        };
 
         return aug_scope;
     }
