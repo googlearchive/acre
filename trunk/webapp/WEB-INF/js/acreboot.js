@@ -1686,23 +1686,32 @@ var proto_require = function(req_path, skip_cache) {
     // failing to find the specific file we're interested in.
     var filename, path_info;
     if (path) {
-       // PATH-TODO just pop the first part off for now
-        fn = file_from_path(path);
-        path_info = file_in_path(fn, path)[0];
-        
-        var fn_noext = fn.split('.')[0];
-        
-        if (fn in app_data.files) {
-            filename = fn
-        } else if (fn_noext in app_data.files) {
-            filename = fn_noext;
-        } else {
-            return null;
+        var path_segs = path.split("/");
+
+        while (path_segs.length) {
+            var fn = path_segs.join("/");
+            path_info = file_in_path(fn, path)[0];
+
+            // Early-on acre didn't support extensions, so it would resolve 
+            // requests for filenames with extensions to the filename w/out an 
+            // extension... now we get to support that forever!  :-P
+            var fn_noext = fn.replace(/\.[^\/\.]*$/,"");
+
+            if (fn in app_data.files) {
+                filename = fn;
+                break;
+            } else if (fn_noext in app_data.files) {
+                filename = fn_noext;
+                break;
+            }
+
+            path_segs.pop();
         }
-        
+
+        if (!filename) return null;
     } else {
         // Provide the app metadata if proto_require is called
-        // without a script name.
+        // without a path.
         return app_data;
     }
 
