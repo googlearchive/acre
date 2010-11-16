@@ -60,7 +60,7 @@ fi
 if [ "$ACTION" = "start" ] ; then
 
     # Execute the JVM fork the process in background
-    nohup sh -c "cd webapp && exec $RUN_CMD >> acre.console.log 2>&1" >/dev/null &
+    nohup sh -c "exec $RUN_CMD >> acre.console.log 2>&1" >/dev/null &
     A_PID=$!
     echo $A_PID > $ACRE_PID
 
