@@ -1547,13 +1547,6 @@ var uberfetch_graph  = function(host, guid, as_of, result) {
 
 
 var proto_require = function(req_path, skip_cache) {
-    var [host, script] = decompose_req_path(req_path);
-    //throw new Error("Must specify a file to require");
-    
-    var script_noext;
-    if (script) {
-        script_noext = script.split('.')[0];
-    }
 
     function CacheTrampoline(f) {
         return function () {
@@ -1635,6 +1628,7 @@ var proto_require = function(req_path, skip_cache) {
         }
     ];
 
+    var [host, path] = decompose_req_path(req_path);
     var app_data = null;
     var method = {};
     for (var a=0; a < methods.length; a++) {
@@ -1690,25 +1684,33 @@ var proto_require = function(req_path, skip_cache) {
 
     // Note that we wait till after we've cached the app_data before
     // failing to find the specific file we're interested in.
-    var s;
-    if (script) {
-        if (script in app_data.files) {
-            s = script;
-        } else if (script_noext in app_data.files) {
-            s = script_noext;
+    var filename, path_info;
+    if (path) {
+       // PATH-TODO just pop the first part off for now
+        fn = file_from_path(path);
+        path_info = file_in_path(fn, path)[0];
+        
+        var fn_noext = fn.split('.')[0];
+        
+        if (fn in app_data.files) {
+            filename = fn
+        } else if (fn_noext in app_data.files) {
+            filename = fn_noext;
         } else {
             return null;
         }
+        
     } else {
         // Provide the app metadata if proto_require is called
         // without a script name.
         return app_data;
     }
 
-    function FileData(app_data, name) {
+    function FileData(app_data, name, path_info) {
         return {
             '__source__':app_data.__source__,
             'name':name,
+            'path_info':path_info,
             'data':app_data.files[name],
             'get_content':method.get_content,
             'app':app_data
@@ -1745,9 +1747,9 @@ var proto_require = function(req_path, skip_cache) {
             }
         }
         
-        // XXX this depends on scope_augmentation being run after we figure out s
-        aug_scope.acre.current_script = assembleScriptObj(app_data, app_data.files[s]);
-        if (aug_scope == _topscope && app_data.files[s].name != 'not_found') {
+        // XXX this depends on scope_augmentation being run after we figure out 'filename'
+        aug_scope.acre.current_script = assembleScriptObj(app_data, app_data.files[filename]);
+        if (aug_scope == _topscope && app_data.files[filename].name != 'not_found') {
             aug_scope.acre.request.script = aug_scope.acre.current_script;
 
             if (app_data.service_metadata.write_user !== null) {
@@ -2019,6 +2021,9 @@ var proto_require = function(req_path, skip_cache) {
         };
 
         script.to_http_response = function (scope, params)  {
+            // we're running at the top-level, so reset path_info
+            acre.request.path_info = script.path_info;
+            
             var module = script.to_module(scope);
             var res = {'body':'', 'status':200, 'headers':{}};
 
@@ -2072,7 +2077,7 @@ var proto_require = function(req_path, skip_cache) {
         return script;
     }
 
-    return run_augmentation(FileData(app_data, s));
+    return run_augmentation(FileData(app_data, filename, path_info));
 };
 
 // ---------------------------------------- finish_response ------------------------------
@@ -2431,7 +2436,7 @@ var boot_acrelet = function () {
     // The reason for this change is that many browsers will by default issue
     // a no-cache cache-control header for XHR post requests which will make 
     // them very slow for no reason on acre.  In order to bypass this problem, 
-    // we introduced a new header (x-acre-caceh-control) that instructs
+    // we introduced a new header (x-acre-cache-control) that instructs
     // acre to not bust its uberfetch cache for these requests
     var skip_cache = false;
     if ('cache-control' in acre.request.headers && !('x-acre-cache-control' in acre.request.headers)) {
@@ -2481,17 +2486,11 @@ var boot_acrelet = function () {
 
     var fallbacks = fallbacks_for(request_path);
 
-    // Work out way down the list until we find one that works:
+    // Work our way down the list until we find one that works:
     var script = null;
     for (var a=0; a < fallbacks.length; a++) {
         var fpath = fallbacks[a];
-        try {
-            // PATH-TODO - remove once proto_require can set path_info;
-            var [fh, fp] = decompose_req_path(fpath);
-            var fscript = file_from_path(fp);   // just pop the first part off
-            fpath = compose_req_path(fh, fscript);
-            acre.request.path_info = file_in_path(fscript, fp)[0];
-            
+        try {            
             syslog(fpath, "fallbacks.route_to");
             script = proto_require(fpath, skip_cache);
         } catch (e if e.__code__ == UBERFETCH_ERROR_MQLREAD) {
