@@ -1210,27 +1210,35 @@ function make_uberfetch_error(msg, code, extend, parent) {
 
 var METADATA_CACHE = {};
 
-var uberfetch_cache = function(host) {
-    syslog.info({'host':host}, 'appfetch.cache.lookup');
-    if (host in METADATA_CACHE) {
-	    syslog.info({'host': host, 's': 'inprocess', 'm': 'uberfetch_cache'}, 'appfetch.cache.success');
-	    return METADATA_CACHE[host];
-    }
-    var ckey = _cache.get("HOST:"+host);
-    if (ckey == null) {
-        syslog.info({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.host.not_found');
-        throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
-    }
+var uberfetch_cache = function(skip_cache) {
+    return function(host) {
+        syslog.info({'host':host}, 'appfetch.cache.lookup');
+        if (host in METADATA_CACHE) {
+    	    syslog.info({'host': host, 's': 'inprocess', 'm': 'uberfetch_cache'}, 'appfetch.cache.success');
+    	    return METADATA_CACHE[host];
+        }
+        
+        if (skip_cache) {
+            syslog.info({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.skip');
+            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
+        }
+        
+        var ckey = _cache.get("HOST:"+host);
+        if (ckey == null) {
+            syslog.info({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.host.not_found');
+            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
+        }
 
-    var res = _cache.get(ckey);
-    if (res === null) {
-        syslog.info({'host': host, 'key': ckey}, 'appfetch.cache.metadata.not_found');
-        throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
-    }
+        var res = _cache.get(ckey);
+        if (res === null) {
+            syslog.info({'host': host, 'key': ckey}, 'appfetch.cache.metadata.not_found');
+            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
+        }
 
-    syslog.info({'key': ckey, 's': 'memcache', 'm': 'uberfetch_cache'}, 'appfetch.cache.success');
+        syslog.info({'key': ckey, 's': 'memcache', 'm': 'uberfetch_cache'}, 'appfetch.cache.success');
 
-    return JSON.parse(res);
+        return JSON.parse(res);  
+    };
 };
 
 var uberfetch_file = function(host, result) {
@@ -1545,35 +1553,36 @@ var uberfetch_graph  = function(host, guid, as_of, result) {
      return result;
 };
 
+// Used to cache both invocations when an ubefetch method call itself (only uberfetch_graph)
+var CacheTrampoline = function(f, skip_cache) {
+    return function () {
+        var res = f.apply(this, arguments);
+
+        if (res && res instanceof Array) {
+            if (!skip_cache) {
+                // check cache and optionally call the thunk...
+                var ckey = "METADATA:"+res[2]+":"+res[3];
+                if (ckey in METADATA_CACHE) {
+		            syslog({'s' : 'inprocess', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
+                    return METADATA_CACHE[ckey];
+                } else {
+                    var r2 = _cache.get(ckey);
+                    if (r2 !== null) {
+		                syslog({'s' : 'memcache', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
+		                return JSON.parse(r2);
+		            }
+                }
+            }
+
+            return res[0].apply(null, res.slice(1));
+        } else {
+            return res;
+        }
+    };
+}
+
 
 var proto_require = function(req_path, skip_cache) {
-
-    function CacheTrampoline(f) {
-        return function () {
-            var res = f.apply(this, arguments);
-
-            if (res && res instanceof Array) {
-                if (!skip_cache) {
-                    // check cache and optionally call the thunk...
-                    var ckey = "METADATA:"+res[2]+":"+res[3];
-                    if (ckey in METADATA_CACHE) {
-			            syslog({'s' : 'inprocess', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
-                        return METADATA_CACHE[ckey];
-                    } else {
-                        var r2 = _cache.get(ckey);
-                        if (r2 !== null) {
-			                syslog({'s' : 'memcache', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
-			                return JSON.parse(r2);
-			            }
-                    }
-                }
-
-                return res[0].apply(null, res.slice(1));
-            } else {
-                return res;
-            }
-        };
-    }
 
     function file_get_content () {
         return {
@@ -1611,7 +1620,7 @@ var proto_require = function(req_path, skip_cache) {
         {
             'source':'cache',
             'cachable':false,
-            'fetcher':uberfetch_cache,
+            'fetcher':uberfetch_cache(skip_cache),
             'get_content':cache_get_content
         },
         {
@@ -1623,7 +1632,7 @@ var proto_require = function(req_path, skip_cache) {
         {
             'source':'graph',
             'cachable':true,
-            'fetcher':CacheTrampoline(uberfetch_graph),
+            'fetcher':CacheTrampoline(uberfetch_graph, skip_cache),
             'get_content':graph_get_content
         }
     ];
@@ -1634,9 +1643,6 @@ var proto_require = function(req_path, skip_cache) {
     for (var a=0; a < methods.length; a++) {
         method = methods[a];
         try {
-            // for now use cachable as a way to tell if a method supports
-            // using the cache or not
-            if (skip_cache && method.cachable === false) continue;
             app_data = method.fetcher(host);
             if (method.cachable)
                 app_data.__source__ = method.source;
