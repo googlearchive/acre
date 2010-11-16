@@ -186,7 +186,7 @@ if [ "$PORT" != "" ]; then
 fi
 
 # War location --------------------------------------------
-if [ "$WAR" == "" ]; then
+if [ "$WAR" = "" ]; then
     WAR="_build/war"
 fi
 
