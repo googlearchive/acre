@@ -1242,7 +1242,9 @@ var uberfetch_cache = function(skip_cache) {
 };
 
 var uberfetch_file = function(host, result) {
-    syslog.info({'host': host}, 'appfetch.file.lookup');
+    // avoid infinite recursion (e.g., symlink to self)
+    var MAX_DIRECTORY_DEPTH = 5;
+    
     function _extension_to_metadata(fn) {
         var handler_map = {'sjs':'acre_script', 'mql':'mqlquery', 'mjt':'mjt',
                            'gif':'binary',    'jpg':'binary', 'png':'binary',
@@ -1260,19 +1262,99 @@ var uberfetch_file = function(host, result) {
         return {name:fn.join('.'),
                 handler:handler, media_type:media_type};
     }
-
-    result = result || {};
-
-    var path = _hostenv.STATIC_SCRIPT_PATH + host_to_namespace(host);
-    syslog.info(path, 'appfetch.file.lookup_path');
     
-    var files = _file.files(path);
+    function _inventory_path(disk_path) {
+        var files = _file.files(disk_path);
+        
+        var p = {
+            dirs : [],
+            files : [],
+            has_files : false,
+            metadata : null
+        };
 
-    if (!files || files.length == 0) {
-        syslog.debug({'host': host}, "appfetch.file.not_found");
-        throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
+        if (!files) {
+            syslog.debug({'host': host}, "appfetch.file.not_found");
+            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
+        }
+    
+        for (var a=0; a < files.length; a++) {
+            var file = files[a];
+            var f = new _file(disk_path+"/"+file, false);
+            if (/~$/.test(file)) continue;      // skip ~ files (e.g., emacs temp files)
+            
+            // .metadata files are a special case... these contain app metadata
+            if (file === '.metadata') {
+                p.metadata = JSON.parse(f.body);
+                continue;
+            }
+            
+            if (f.dir) {
+                if (/^\./.test(file)) continue;     // skip . directories (e.g., '.svn')
+                p.dirs.push(file);
+                continue;
+            }
+
+            var file_data = _extension_to_metadata(file);
+            file_data.content_id = disk_path+'/'+file;
+            file_data.content_hash = disk_path+"/"+file+f.mtime;
+            if (file_data.name === '') continue;
+            p.files.push(file_data);
+            p.has_files = true;
+            delete f;
+        }
+        
+        return p;
+    }
+    
+    function _set_app_metadata(app, md) {
+        app.host = md.host || app.host;
+        app.app_guid = md.guid || app.app_guid;
+        if (md.write_user) {
+            app.service_metadata.write_user = md.write_user.substr(6);
+        }
+        app.service_metadata.service_url =
+            md.service_url || app.service_metadata.service_url;
+    };
+    
+    function _add_directory(app, disk_path, base_path, depth) {
+        depth = depth || 0;
+        base_path = base_path || "";
+        var dir = _inventory_path(disk_path);
+        
+        // some things we only do at root-level
+        if (depth === 0) {
+            // app is empty!
+            if (!dir.has_files) {
+                syslog.debug({'host': host}, "appfetch.file.not_found");
+                throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
+            }
+
+            // fill in app metadata
+            if (dir.metadata) {
+                _set_app_metadata(app, dir.metadata);
+                delete dir.metadata;
+            }            
+        }
+
+        // skip nested apps
+        if (!dir.metadata) {
+            for (var i=0; i < dir.files.length; i++) {
+                var file = dir.files[i];
+                app.files[base_path + file.name] = file;                
+            }
+            if (depth < MAX_DIRECTORY_DEPTH) {
+                for (var d=0; d < dir.dirs.length; d++) {
+                    var subdir = dir.dirs[d];
+                    _add_directory(app, disk_path + "/" + subdir, base_path + subdir + "/", depth + 1);
+                }
+            }
+        }
     }
 
+    syslog.info({'host': host}, 'appfetch.file.lookup');
+    
+    result = result || {};
     result.host = host;
     result.app_id = host_to_namespace(host);
     result.app_guid = host; // XXX is this going to make a mess?
@@ -1286,44 +1368,14 @@ var uberfetch_file = function(host, result) {
     result.hosts = result.hosts || [host];
     result.versions = result.versions || [];
     result.files = result.files || {};
+    
+    var path = _hostenv.STATIC_SCRIPT_PATH + host_to_namespace(host);
+    syslog.info(path, 'appfetch.file.disk_path');
+    
+    // this will recurse until all files are added
+    _add_directory(result, path);
 
-    var has_files = false;
-    for (var a in files) {
-        var file = files[a];
-        var f = new _file(path+"/"+file, false);
-        if (/~$/.test(file)) continue;
-
-        if (file == '.metadata') {
-            // try and fill in metadata values here
-            var dot_metadata = JSON.parse(f.body);
-            result.host = dot_metadata.host || result.host;
-            result.app_id = host_to_namespace(host);
-            result.app_guid = dot_metadata.guid || result.guid;
-            if (dot_metadata.write_user) {
-                result.service_metadata.write_user = dot_metadata.write_user.substr(6);
-            }
-            result.service_metadata.service_url =
-                dot_metadata.service_url || result.service_metadata.service_url;
-
-            continue;
-        }
-
-        var file_data = _extension_to_metadata(file);
-        file_data.content_id = path+'/'+file;
-        file_data.content_hash = path+"/"+file+f.mtime;
-        if (file_data.name === '') continue;
-        has_files = true;
-        result.files[file_data.name] = file_data;
-        delete f;
-    }
-
-    if (!has_files) {
-        syslog.debug({'host': host}, "appfetch.file.not_found");
-        throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
-    } else {
-        syslog.debug({'host': host}, "appfetch.file.found");
-    }
-
+    syslog.debug({'host': host}, "appfetch.file.found");
     return result;
 };
 
