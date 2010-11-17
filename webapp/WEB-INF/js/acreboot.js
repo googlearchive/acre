@@ -1854,7 +1854,7 @@ var proto_require = function(req_path, skip_cache) {
                 throw new Error("No URL provided");
             }          
 
-            var sobj = proto_require(normalize_path(path), skip_cache);
+            var sobj = proto_require(normalize_path(path, version), skip_cache);
             
             if (sobj === null) {
                 throw new Error('Could not fetch data from ' + path);
