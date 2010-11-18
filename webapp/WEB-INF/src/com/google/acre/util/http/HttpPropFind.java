@@ -16,16 +16,14 @@ package com.google.acre.util.http;
 
 import java.net.URI;
 
-import org.apache.http.annotation.NotThreadSafe;
-import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 
 /**
  * <code>PropFindMethod</code>, as specified in
  * <a href="http://www.webdav.org/specs/rfc4918.html#rfc.section.9.1">RFC 4918, Section 9.1</a>
  */
 
-@NotThreadSafe
-public class HttpPropFind extends HttpRequestBase {
+public class HttpPropFind extends HttpEntityEnclosingRequestBase {
 
     public final static String METHOD_NAME = "PROPFIND";
     
