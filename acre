@@ -247,8 +247,9 @@ case "$ACTION" in
         SCRIPT="build" 
         COMMAND="appengine-local"
         invoke
+        APPSERVER_PARAMS="--address=0.0.0.0"
         if [ "$PORT" != "" ]; then
-            APPSERVER_PARAMS="-p $PORT"
+            APPSERVER_PARAMS="${APPSERVER_PARAMS} -p $PORT"
         fi
         $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS "$WAR";;
     appengine-deploy) 
