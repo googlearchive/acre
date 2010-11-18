@@ -62,6 +62,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
 import com.google.acre.util.exceptions.AcreURLFetchException;
+import com.google.acre.util.http.HttpPropFind;
 import com.google.util.logging.MetawebLogger;
 
 /**
@@ -232,6 +233,8 @@ public class AcreFetch extends JsConvertable {
                 method = new HttpPut(request_url);
             } else if (request_method.equals("DELETE")) {
                 method = new HttpDelete(request_url);
+            } else if (request_method.equals("PROPFIND")) {
+                method = new HttpPropFind(request_url);
             } else {
                 throw new AcreURLFetchException("Failed: unsupported (so far) method " +
                                                 request_method);
