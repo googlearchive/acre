@@ -1430,7 +1430,7 @@ var webdav_inventory_path = function(url) {
     
     // app metadata
     var a = files[0];
-    var propstat        = a.getElementsByTagName('D:propstat')[0];
+    var propstat        = a.getElementsByTagNameNS("DAV:", "propstat")[0];
     var prop            = propstat.getElementsByTagName('D:prop')[0];
     p.metadata.as_of    = prop.getElementsByTagName('lp1:version-name')[0].firstChild.nodeValue;
     var repo_uuid       = prop.getElementsByTagName('lp3:repository-uuid')[0].firstChild.nodeValue;
@@ -1770,6 +1770,8 @@ var proto_require = function(req_path, skip_cache) {
         }
     };
     
+    // Not currently used... we have limited cache space
+    // and all this really adds is making acre.get_source() cached
     function content_cacher(get_content_func, skip_cache) {
         return function() {
             var ckey = "CONTENT:" + this.data.content_hash;
@@ -1803,13 +1805,13 @@ var proto_require = function(req_path, skip_cache) {
             'source':'webdav',
             'cachable':true,
             'fetcher':uberfetch_file("webDAV", webdav_resolver, webdav_inventory_path),
-            'get_content': content_cacher(webdav_get_content)
+            'get_content': webdav_get_content
         },
         {
             'source':'graph',
             'cachable':true,
             'fetcher':CacheTrampoline(uberfetch_graph, skip_cache),
-            'get_content': content_cacher(graph_get_content)
+            'get_content': graph_get_content
         }
     ];
 
