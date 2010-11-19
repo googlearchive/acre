@@ -186,7 +186,15 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
                 if ((qs_match == true || pathinfo.matches(Pattern.quote(path_match)+"(/.*)?"))
                     && check_hostname(host_match, hostval)) {
                     RequestDispatcher rd = this.servletContext.getNamedDispatcher(url_mapping[1]);
-                    String hostname = (url_mapping[2] == null) ? null : url_mapping[2] + "." + Configuration.Values.ACRE_HOST_SUFFIX.getValue() + portval;
+                    String hostname = (url_mapping[2] == null) ? null : url_mapping[2];
+                    // trailing '.' means the hostname was already fully-qualified
+                    if (hostname != null) {
+                        if (hostname.endsWith(".")) {
+                            hostname = hostname.substring(0,hostname.length()-1);
+                        } else {
+                            hostname =  hostname + "." + Configuration.Values.ACRE_HOST_SUFFIX.getValue() + portval;
+                        }                        
+                    }
 
                     req = new AcreHttpServletRequest(request, path_match, url_mapping[3], hostname);
 
