@@ -1766,7 +1766,7 @@ var proto_require = function(req_path, skip_cache) {
                 syslog.debug(this.data.content_id, "cache.content_found");
                 return JSON.parse(c);
             } 
-            c = get_content_func();
+            c = get_content_func.apply(this);
             _cache.put(ckey, JSON.stringify(c));
             return c;
         };
