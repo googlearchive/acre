@@ -510,7 +510,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             throw new RuntimeException(e);
         }
         
-        String path_info = url.getPath();
         String query_string = url.getQuery();
         
         if (query_string == null) {
