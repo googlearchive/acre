@@ -748,6 +748,18 @@ acre.xml.parse = function(xml_str) {
 };
 
 /**
+ *  Parse a string containing XML into a DOM Document object and support namespaces. <br/><br/>
+ *
+ *  The returned Document object complies to the W3C EcmaScript bindings for
+ *  the DOM.
+ *
+ *  @param xml_str the XML string to be parsed
+ */
+acre.xml.parseNS = function(xml_str) {
+    return _domparser.parse_ns_string(xml_str, "xml");
+};
+
+/**
  *  Parse a string containing HTML into a DOM Document object. <br/><br/>
  *
  *  The returned Document object complies to the W3C EcmaScript bindings for

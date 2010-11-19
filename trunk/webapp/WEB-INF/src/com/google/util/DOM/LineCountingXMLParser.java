@@ -31,13 +31,14 @@ public class LineCountingXMLParser extends DOMParser implements EntityResolver {
         super(config);
     }
 
-    public LineCountingXMLParser() throws SAXNotRecognizedException, SAXNotSupportedException {
+    public LineCountingXMLParser(boolean namespaces) throws SAXNotRecognizedException, SAXNotSupportedException {
         super();
 
+        this.setFeature("http://xml.org/sax/features/namespaces", namespaces);
+        
         this.setFeature("http://apache.org/xml/features/dom/defer-node-expansion", false);
         this.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
         this.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-        this.setFeature("http://xml.org/sax/features/namespaces", false);
         this.setFeature("http://apache.org/xml/features/create-cdata-nodes", false);
         
         this.setEntityResolver(this);

@@ -19,12 +19,14 @@ public class JSDOMParser extends JSObject {
 
     private transient DOMParser _htmlParser;
     private transient DOMParser _xmlParser;
+    private transient DOMParser _xmlParserWithNamespaces;
 
     public JSDOMParser() { }
 
     public JSDOMParser(Scriptable scope) throws Exception {
         _scope = scope;
-        _xmlParser = new LineCountingXMLParser();
+        _xmlParser = new LineCountingXMLParser(false);
+        _xmlParserWithNamespaces = new LineCountingXMLParser(true);
         _htmlParser = new LineCountingHTMLParser();
     }
 
@@ -72,4 +74,27 @@ public class JSDOMParser extends JSObject {
         }
     }
     
+    public Scriptable jsFunction_parse_ns_file(String path, String mode) throws Exception {
+        return parse_ns(new InputSource(new java.io.FileInputStream(path)),mode);
+    }
+
+    public Scriptable jsFunction_parse_ns_string(String str, String mode) throws Exception {
+        return parse_ns(new InputSource(new java.io.StringReader(str)),mode);
+    }
+
+    protected Scriptable parse_ns(InputSource source, String mode) throws Exception {
+        try {
+            if ("html".equalsIgnoreCase(mode)) {
+                throw new RuntimeException("namespace-aware mode works only for XML");
+            } else {
+                _xmlParserWithNamespaces.parse(source);
+                Document doc = _xmlParserWithNamespaces.getDocument();
+                doc.normalizeDocument();
+                return JSNode.makeByNodeType(_xmlParser.getDocument(), _scope);
+            }
+        } catch (org.xml.sax.SAXParseException e) {
+            JSDOMParserException jse = new JSDOMParserException(e.getMessage(), e.getLineNumber(), e.getColumnNumber(), _scope);
+            throw new JavaScriptException(jse.makeJSInstance(), "", 0);
+        }
+    }
 }
