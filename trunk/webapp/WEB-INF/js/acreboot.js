@@ -995,16 +995,28 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
             // pass it along and use the information contained in there to
             // simulate a 2-legged oauth
 
+            var user_cookie_parts = acre.request.cookies['metaweb-user'].split('|');
+            
+            // if the metaweb-user cookie is not already set, copy it over.
+            // NOTE: we have to re-urlencode the underscore in the usernames or they won't be able to log in!
             if (cookiestr.indexOf("metaweb-user=") < 0) {
-                cookies.push("metaweb-user=" + acre.request.cookies["metaweb-user"]);
+                var encoded_parts = [];
+                for each (var part in user_cookie_parts) {
+                    if (part.charAt(1) == '_') {
+                        encoded_parts.push(part.charAt(0) + "_" + part.substring(2).replace('_',"%5F"));
+                    } else {
+                        encoded_parts.push(part);
+                    }
+                }
+                cookies.push("metaweb-user=" + encoded_parts.join('|'));
             }
 
-            var user_cookie_parts = acre.request.cookies['metaweb-user'].split('|');
             var token = user_cookie_parts[4];
             var consumer = {
                 consumerKey    : user_cookie_parts[3].split('#')[1],
                 consumerSecret : token
             };
+            
             // XXX sometimes this fails, in that case we want to ignore it since
             // we have an auth method (the metaweb-user cookie);
             try {
