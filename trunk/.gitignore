@@ -6,11 +6,13 @@ _data
 _logs
 webapp/WEB-INF/classes
 webapp/WEB-INF/static
+webapp/META-INF/*.properties
+webapp/META-INF/*.conf
+webapp/WEB-INF/lib/mysql-connector-java-*.jar
+config/project.local.conf
 server/classes
 library/classes
 appengine/classes
-webapp/META-INF/*.properties
-webapp/META-INF/*.conf
 war/
 *~
 \#*\#
