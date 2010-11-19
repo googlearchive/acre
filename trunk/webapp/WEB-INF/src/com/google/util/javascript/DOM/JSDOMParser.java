@@ -6,7 +6,6 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
-import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 import com.google.util.DOM.LineCountingHTMLParser;
@@ -64,12 +63,8 @@ public class JSDOMParser extends JSObject {
         }
         
         if ("html".equalsIgnoreCase(mode)) {
-            Document doc = _htmlParser.getDocument();
-            doc.normalizeDocument();
             return JSNode.makeByNodeType(_htmlParser.getDocument(), _scope);
         } else {
-            Document doc = _xmlParser.getDocument();
-            doc.normalizeDocument();
             return JSNode.makeByNodeType(_xmlParser.getDocument(), _scope);
         }
     }
@@ -88,9 +83,7 @@ public class JSDOMParser extends JSObject {
                 throw new RuntimeException("namespace-aware mode works only for XML");
             } else {
                 _xmlParserWithNamespaces.parse(source);
-                Document doc = _xmlParserWithNamespaces.getDocument();
-                doc.normalizeDocument();
-                return JSNode.makeByNodeType(_xmlParser.getDocument(), _scope);
+                return JSNode.makeByNodeType(_xmlParserWithNamespaces.getDocument(), _scope);
             }
         } catch (org.xml.sax.SAXParseException e) {
             JSDOMParserException jse = new JSDOMParserException(e.getMessage(), e.getLineNumber(), e.getColumnNumber(), _scope);
