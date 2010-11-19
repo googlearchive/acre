@@ -189,6 +189,23 @@ function file_from_path(path) {
     return path.match(/^[^\/]*/)[0];
 }
 
+function extension_to_metadata(filename) {
+    var handler_map = {'sjs':'acre_script', 'mql':'mqlquery', 'mjt':'mjt',
+                       'gif':'binary',    'jpg':'binary', 'png':'binary',
+                       'crl':'binary'};
+    var media_map   = {'css':'text/css', 'js':'application/x-javascript',
+                       'html':'text/html', 'gif':'image/gif',
+                       'jpg':'image/jpeg', 'png':'image/png',
+                       'crl':'application/x-pkcs7-crl'};
+
+    fn = filename.split('.');
+    var ext = fn.pop();
+    var media_type  = media_map[ext]   || 'text/plain';
+    var handler     = handler_map[ext] || 'passthrough';
+
+    return {name:fn.join('.'),
+            handler:handler, media_type:media_type};
+}
 
 
 //--------------------------------- syslog --------------------------------------------
@@ -1212,7 +1229,7 @@ var METADATA_CACHE = {};
 
 var uberfetch_cache = function(skip_cache) {
     return function(host) {
-        syslog.info({'host':host}, 'appfetch.cache.lookup');
+        
         if (host in METADATA_CACHE) {
     	    syslog.info({'host': host, 's': 'inprocess', 'm': 'uberfetch_cache'}, 'appfetch.cache.success');
     	    return METADATA_CACHE[host];
@@ -1241,143 +1258,210 @@ var uberfetch_cache = function(skip_cache) {
     };
 };
 
-var uberfetch_file = function(host, result) {
-    // avoid infinite recursion (e.g., symlink to self)
-    var MAX_DIRECTORY_DEPTH = 5;
-    
-    function _extension_to_metadata(fn) {
-        var handler_map = {'sjs':'acre_script', 'mql':'mqlquery', 'mjt':'mjt',
-                           'gif':'binary',    'jpg':'binary', 'png':'binary',
-                           'crl':'binary'};
-        var media_map   = {'css':'text/css', 'js':'application/x-javascript',
-                           'html':'text/html', 'gif':'image/gif',
-                           'jpg':'image/jpeg', 'png':'image/png',
-                           'crl':'application/x-pkcs7-crl'};
+var uberfetch_file = function(name, resolver, inventory_path) {
+    return function(host, result) {
+        // avoid infinite recursion (e.g., symlink to self)
+        var MAX_DIRECTORY_DEPTH = 2;
 
-        fn = fn.split('.');
-        var ext = fn.pop();
-        var media_type  = media_map[ext]   || 'text/plain';
-        var handler     = handler_map[ext] || 'passthrough';
-
-        return {name:fn.join('.'),
-                handler:handler, media_type:media_type};
-    }
-    
-    function _inventory_path(disk_path) {
-        var files = _file.files(disk_path);
-        
-        var p = {
-            dirs : [],
-            files : [],
-            has_files : false,
-            metadata : null
+        function _set_app_metadata(app, md) {
+            md = md || {};
+            app.host = md.host || host;
+            app.app_id = md.app_id || host_to_namespace(host);
+            app.app_guid = md.app_guid || host;
+            app.as_of = md.as_of || null;    // XXX return the max mtime?
+            app.service_metadata = {
+                'write_user': (md.write_user ? md.write_user.substr(6) : null),
+                'service_url': (md.service_url || null)
+            };
+            app.hosts = md.hosts || [host];
+            app.versions = md.versions || [];
         };
 
-        if (!files) {
-            syslog.debug({'host': host}, "appfetch.file.not_found");
-            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
-        }
-    
-        for (var a=0; a < files.length; a++) {
-            var file = files[a];
-            var f = new _file(disk_path+"/"+file, false);
-            if (/~$/.test(file)) continue;      // skip ~ files (e.g., emacs temp files)
+        function _add_directory(app, resource, base_path, depth) {
+            depth = depth || 0;
+            base_path = base_path || "";
             
-            // .metadata files are a special case... these contain app metadata
-            if (file === '.metadata') {
-                p.metadata = JSON.parse(f.body);
-                continue;
-            }
-            
-            if (f.dir) {
-                if (/^\./.test(file)) continue;     // skip . directories (e.g., '.svn')
-                p.dirs.push(file);
-                continue;
-            }
+            var dir = inventory_path(resource);
 
-            var file_data = _extension_to_metadata(file);
-            file_data.content_id = disk_path+'/'+file;
-            file_data.content_hash = disk_path+"/"+file+f.mtime;
-            if (file_data.name === '') continue;
-            p.files.push(file_data);
-            p.has_files = true;
-            delete f;
-        }
-        
-        return p;
-    }
-    
-    function _set_app_metadata(app, md) {
-        app.host = md.host || app.host;
-        app.app_guid = md.guid || app.app_guid;
-        if (md.write_user) {
-            app.service_metadata.write_user = md.write_user.substr(6);
-        }
-        app.service_metadata.service_url =
-            md.service_url || app.service_metadata.service_url;
-    };
-    
-    function _add_directory(app, disk_path, base_path, depth) {
-        depth = depth || 0;
-        base_path = base_path || "";
-        var dir = _inventory_path(disk_path);
-        
-        // some things we only do at root-level
-        if (depth === 0) {
-            // app is empty!
-            if (!dir.has_files) {
-                syslog.debug({'host': host}, "appfetch.file.not_found");
-                throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
-            }
+            // some things we only do at root-level
+            if (depth === 0) {
+                // app is empty!
+                if (!dir.has_files) {
+                    syslog.debug({'host': host}, "appfetch." + name + ".not_found");
+                    throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
+                }
 
-            // fill in app metadata
-            if (dir.metadata) {
+                // fill in app metadata
                 _set_app_metadata(app, dir.metadata);
                 delete dir.metadata;
-            }            
-        }
-
-        // skip nested apps
-        if (!dir.metadata) {
-            for (var i=0; i < dir.files.length; i++) {
-                var file = dir.files[i];
-                app.files[base_path + file.name] = file;                
             }
-            if (depth < MAX_DIRECTORY_DEPTH) {
-                for (var d=0; d < dir.dirs.length; d++) {
-                    var subdir = dir.dirs[d];
-                    _add_directory(app, disk_path + "/" + subdir, base_path + subdir + "/", depth + 1);
+
+            // skip nested apps
+            if (!dir.metadata) {
+                for (var i=0; i < dir.files.length; i++) {
+                    var file = dir.files[i];
+                    if (/~$/.test(file)) continue;      // skip ~ files (e.g., emacs temp files)
+                    app.files[base_path + file.name] = file;                
+                }
+                if (depth < MAX_DIRECTORY_DEPTH) {
+                    for (var d=0; d < dir.dirs.length; d++) {
+                        var subdir = dir.dirs[d];
+                        if (/^\./.test(subdir)) continue;     // skip . directories (e.g., '.svn')
+                        _add_directory(app, resource + "/" + subdir, base_path + subdir + "/", depth + 1);
+                    }
                 }
             }
         }
+
+        var resource = resolver(host);
+        if (!resource) {
+            syslog.debug({'host': host}, "appfetch." + name + ".not_found");
+            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);        
+        }
+
+        result = result || {};
+        result.files = result.files || {};
+
+        // this will recurse until all files are added
+        _add_directory(result, resource);
+
+        syslog.debug({'host': host}, "appfetch." + name + ".found");
+        return result;  
+    };
+};
+
+var disk_resolver = function(host) {
+    return _hostenv.STATIC_SCRIPT_PATH + host_to_namespace(host);
+};
+
+var disk_inventory_path = function(disk_path) {
+    var p = {
+        dirs : [],
+        files : [],
+        has_files : false,
+        metadata : null
+    };
+
+    var files = _file.files(disk_path);    
+    if (!files) {
+        syslog.debug({'path': disk_path}, "appfetch.disk.not_found");
+        throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
     }
 
-    syslog.info({'host': host}, 'appfetch.file.lookup');
-    
-    result = result || {};
-    result.host = host;
-    result.app_id = host_to_namespace(host);
-    result.app_guid = host; // XXX is this going to make a mess?
-    result.as_of = null;    // XXX return the max mtime?
-    result.service_metadata = result.service_metadata ||
-        {
-            'write_user':null,
-            'service_url':null
-        };
+    for (var a=0; a < files.length; a++) {
+        var file = files[a];
+        var f = new _file(disk_path+"/"+file, false);
+        
+        // .metadata files are a special case... these contain app metadata
+        if (file === '.metadata') {
+            p.metadata = JSON.parse(f.body);
+            continue;
+        }
+        
+        if (f.dir) {
+            p.dirs.push(file);
+            continue;
+        }
 
-    result.hosts = result.hosts || [host];
-    result.versions = result.versions || [];
-    result.files = result.files || {};
+        var file_data = extension_to_metadata(file);
+        if (file_data.name === '') continue;
+        file_data.content_id = disk_path+'/'+file;
+        file_data.content_hash = disk_path+"/"+file+f.mtime;
+        p.files.push(file_data);
+        p.has_files = true;
+        delete f;
+    }
     
-    var path = _hostenv.STATIC_SCRIPT_PATH + host_to_namespace(host);
-    syslog.info(path, 'appfetch.file.disk_path');
-    
-    // this will recurse until all files are added
-    _add_directory(result, path);
+    return p;
+}
 
-    syslog.debug({'host': host}, "appfetch.file.found");
-    return result;
-};
+var webdav_resolver = function(host) {
+    // XXX This all feels a bit kludgey... 
+    var parts = host.split(".dev.");
+
+    if (parts.length < 2) {
+        return false;
+    }
+
+    var url = 'http://' + parts[1].replace(/\.$/,"") + "/" + parts[0].split(".").reverse().join("/");
+    return url;
+}
+
+var webdav_inventory_path = function(url) {
+
+    var p = {
+        dirs : [],
+        files : [],
+        has_files : false,
+        metadata : {}
+    };
+    
+    var r = _system_urlfetch(url, {
+        method : "PROPFIND",
+        headers : {
+            "Depth" : '1',
+            "Content-Type" : "text/xml; charset=UTF-8"
+        }
+    });
+    
+    var xml = acre.xml.parse(r.body);
+    var doc = xml.firstChild.nextSibling ? xml.firstChild.nextSibling : xml.firstChild;
+
+    if (doc.childNodes == null) {
+        syslog.debug({'host': host}, "appfetch.webdav.not_found");
+        throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
+    }
+
+    // XXX - need to handle namespaces for real
+    // this is too hard-coded to Google Code implementation
+    var files = doc.getElementsByTagName('D:response');
+    
+    // app metadata
+    var a = files[0];
+    var propstat        = a.getElementsByTagName('D:propstat')[0];
+    var prop            = propstat.getElementsByTagName('D:prop')[0];
+    p.metadata.as_of    = prop.getElementsByTagName('lp1:version-name')[0].firstChild.nodeValue;
+    var repo_uuid       = prop.getElementsByTagName('lp3:repository-uuid')[0].firstChild.nodeValue;
+    var repo_path       = prop.getElementsByTagName('lp3:baseline-relative-path')[0].firstChild.nodeValue;
+    p.metadata.app_guid = repo_uuid + ":" + repo_path;
+    p.metadata.versions = ["$"];    // XXX fulhack to force WebDAV to cache
+    
+    for(var i=1; i< files.length; i++) {
+        var f = files[i];
+        var href = f.getElementsByTagName('D:href')[0].firstChild.nodeValue.replace(/\/$/, '');
+        var file = split_script_id(href)[1];
+        
+        // .metadata files are a special case... these contain app metadata
+        if (file === '.metadata') {
+            var body = _system_urlfetch(url + '/' + file, {
+                headers : {
+                    "Content-Type" : "text/xml; charset=UTF-8"
+                }
+            }).body;
+            p.metadata = JSON.parse(body);
+            continue;
+        }
+        
+        var propstat     = f.getElementsByTagName('D:propstat')[0];
+        var prop         = propstat.getElementsByTagName('D:prop')[0];
+        var resourcetype = prop.getElementsByTagName('lp1:resourcetype')[0];
+        var collection   = resourcetype.getElementsByTagName('D:collection')[0];
+
+        if (collection) {
+            p.dirs.push(file);
+            continue;
+        }
+
+        var file_data = extension_to_metadata(file);
+        if (file_data.name === '') continue;
+        file_data.content_id = url + '/'+file;
+        file_data.content_hash = prop.getElementsByTagName('lp3:md5-checksum')[0].firstChild.nodeValue;
+        p.files.push(file_data);
+        p.has_files = true;
+        delete f;
+    }
+    return p;
+}
 
 var uberfetch_graph  = function(host, guid, as_of, result) {
     /* Returns:
@@ -1631,29 +1715,10 @@ var CacheTrampoline = function(f, skip_cache) {
             return res;
         }
     };
-}
+};
 
 
 var proto_require = function(req_path, skip_cache) {
-
-    function file_get_content () {
-        return {
-            'status':200,
-            'headers':{
-                'content-type':this.data.media_type
-            },
-            'body':new _file(this.data.content_id,
-                             (this.data.handler === 'binary')).body
-        };
-    }
-
-    function graph_get_content() {
-        if (this.data.handler === 'binary') {
-            return _system_freebase.get_blob(this.data.content_id, 'raw');
-        } else {
-            return _system_freebase.get_blob(this.data.content_id, 'unsafe');
-        }
-    }
 
     function cache_get_content() {
         for (var a=0; a < methods.length; a++) {
@@ -1666,6 +1731,47 @@ var proto_require = function(req_path, skip_cache) {
         throw make_uberfetch_error("Unknown method type");
     }
 
+    function disk_get_content() {
+        return {
+            'status':200,
+            'headers':{
+                'content-type':this.data.media_type
+            },
+            'body':new _file(this.data.content_id,
+                             (this.data.handler === 'binary')).body
+        };
+    }
+
+    function webdav_get_content() {
+        return _system_urlfetch(this.data.content_id, {
+            headers : {
+                "Content-Type" : "text/xml; charset=UTF-8"
+            }
+        });
+    };
+
+    function graph_get_content() {
+        if (this.data.handler === 'binary') {
+            return _system_freebase.get_blob(this.data.content_id, 'raw');
+        } else {
+            return _system_freebase.get_blob(this.data.content_id, 'unsafe');
+        }
+    };
+    
+    function content_cacher(get_content_func, skip_cache) {
+        return function() {
+            var ckey = "CONTENT:" + this.data.content_hash;
+            var c = _cache.get(ckey);
+            if (c !== null) {
+                syslog.debug(this.data.content_id, "cache.content_found");
+                return JSON.parse(c);
+            } 
+            c = get_content_func();
+            _cache.put(ckey, JSON.stringify(c));
+            return c;
+        };
+    };
+    
     // XXX the cache source is probably cachable, but for now treat it
     //     as if it were not
     var methods = [
@@ -1676,16 +1782,22 @@ var proto_require = function(req_path, skip_cache) {
             'get_content':cache_get_content
         },
         {
-            'source':'file',
+            'source':'disk',
             'cachable':true,
-            'fetcher':uberfetch_file,
-            'get_content':file_get_content
+            'fetcher':uberfetch_file("disk", disk_resolver, disk_inventory_path),
+            'get_content':disk_get_content
+        },
+        {
+            'source':'webdav',
+            'cachable':true,
+            'fetcher':uberfetch_file("webDAV", webdav_resolver, webdav_inventory_path),
+            'get_content': content_cacher(webdav_get_content)
         },
         {
             'source':'graph',
             'cachable':true,
             'fetcher':CacheTrampoline(uberfetch_graph, skip_cache),
-            'get_content':graph_get_content
+            'get_content': content_cacher(graph_get_content)
         }
     ];
 
@@ -1726,7 +1838,7 @@ var proto_require = function(req_path, skip_cache) {
         for (var l=0; l < app_data.hosts.length; l++) {
             var host = app_data.hosts[l];
             syslog.info({key:"HOST:"+host, value: ckey }, 'appfetch.cache.write.host');
-            _cache.put("HOST:"+host, ckey, 60000);
+            _cache.put("HOST:"+host, ckey, 600000);
         }
     }
 
@@ -2482,7 +2594,7 @@ var boot_acrelet = function () {
 
         if (!h) h = _DEFAULT_APP;
         if (!p) p = _DEFAULT_FILE;
-
+        
         request_path = compose_req_path(h, p);
     }
     delete _request.handler_script_path;
