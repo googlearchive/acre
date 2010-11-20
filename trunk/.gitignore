@@ -1,5 +1,6 @@
 *.DS_Store
 *.class
+*.pyc
 _build
 _dist
 _data
@@ -9,6 +10,7 @@ webapp/WEB-INF/static
 webapp/META-INF/*.properties
 webapp/META-INF/*.conf
 webapp/WEB-INF/lib/mysql-connector-java-*.jar
+webapp/WEB-INF/scripts/freebase
 config/project.local.conf
 server/classes
 library/classes
