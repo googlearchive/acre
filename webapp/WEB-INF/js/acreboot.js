@@ -198,13 +198,23 @@ function extension_to_metadata(filename) {
                        'jpg':'image/jpeg', 'png':'image/png',
                        'crl':'application/x-pkcs7-crl'};
 
-    fn = filename.split('.');
+    // special case .metadata files
+    if (filename === '.metadata') {
+        return {
+            name : filename
+        };
+    }
+    
+    var fn = filename.split('.');
     var ext = fn.pop();
     var media_type  = media_map[ext]   || 'text/plain';
     var handler     = handler_map[ext] || 'passthrough';
 
-    return {name:fn.join('.'),
-            handler:handler, media_type:media_type};
+    return {
+        name: fn.join('.'),
+        handler: handler, 
+        media_type: media_type
+    };
 }
 
 
@@ -1282,7 +1292,7 @@ var uberfetch_cache = function(skip_cache) {
     };
 };
 
-var uberfetch_file = function(name, resolver, inventory_path) {
+var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
     return function(host, result) {
         // avoid infinite recursion (e.g., symlink to self)
         var MAX_DIRECTORY_DEPTH = 2;
@@ -1310,21 +1320,29 @@ var uberfetch_file = function(name, resolver, inventory_path) {
             // some things we only do at root-level
             if (depth === 0) {
                 // app is empty!
-                if (!dir.has_files) {
+                if (!dir || !dir.files.length) {
                     syslog.debug({'host': host}, "appfetch." + name + ".not_found");
                     throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
                 }
-
+                
                 // fill in app metadata
                 _set_app_metadata(app, dir.metadata);
-                delete dir.metadata;
             }
 
-            // skip nested apps
-            if (!dir.metadata) {
+            // skip empty and nested apps
+            if (dir && (depth === 0 || !dir.has_dot_metadata)) {
                 for (var i=0; i < dir.files.length; i++) {
                     var file = dir.files[i];
                     if (/~$/.test(file)) continue;      // skip ~ files (e.g., emacs temp files)
+                    
+                    // .metadata files are a special case... these contain app metadata
+                    // so fetch immediately and patch in values
+                    if (file.name === '.metadata') {
+                        var temp = content_fetcher.apply({'data' : file});
+                        _set_app_metadata(app, JSON.parse(temp.body));
+                        continue;
+                    }
+                    
                     app.files[base_path + file.name] = file;                
                 }
                 if (depth < MAX_DIRECTORY_DEPTH) {
@@ -1359,44 +1377,35 @@ var disk_resolver = function(host) {
 };
 
 var disk_inventory_path = function(disk_path) {
-    var p = {
+    var res = {
+        metadata : null,            // metadata for disk apps can only come from .metadata
+        has_dot_metadata : false,
         dirs : [],
-        files : [],
-        has_files : false,
-        metadata : null
+        files : []
     };
 
     var files = _file.files(disk_path);    
-    if (!files) {
-        syslog.debug({'path': disk_path}, "appfetch.disk.not_found");
-        throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
-    }
+    if (!files) return null;
 
     for (var a=0; a < files.length; a++) {
         var file = files[a];
         var f = new _file(disk_path+"/"+file, false);
         
-        // .metadata files are a special case... these contain app metadata
-        if (file === '.metadata') {
-            p.metadata = JSON.parse(f.body);
+        if (f.dir) {
+            res.dirs.push(file);
             continue;
         }
         
-        if (f.dir) {
-            p.dirs.push(file);
-            continue;
-        }
-
         var file_data = extension_to_metadata(file);
         if (file_data.name === '') continue;
+        if (file_data.name === '.metadata') res.has_dot_metadata = true;
         file_data.content_id = disk_path+'/'+file;
         file_data.content_hash = disk_path+"/"+file+f.mtime;
-        p.files.push(file_data);
-        p.has_files = true;
+        res.files.push(file_data);
         delete f;
     }
     
-    return p;
+    return res;
 }
 
 var webdav_resolver = function(host) {
@@ -1412,79 +1421,99 @@ var webdav_resolver = function(host) {
 }
 
 var webdav_inventory_path = function(url) {
-
-    var p = {
-        dirs : [],
-        files : [],
-        has_files : false,
-        metadata : {}
+    // The namespaces we care about for WebDAV & SVN
+    var NS = {
+        "D" : "DAV:",
+        "SVN" : "http://subversion.tigris.org/xmlns/dav/"
     };
     
-    var r = _system_urlfetch(url, {
-        method : "PROPFIND",
-        headers : {
-            "Depth" : '1',
-            "Content-Type" : "text/xml; charset=UTF-8"
+    // a rudimentary (hacky) XML path parser
+    function getNodeVal(node, path) {
+        var segs = path.split("/");
+        var [namespace, prop] = segs.shift().split(":");
+        
+        var els = node.getElementsByTagNameNS(NS[namespace], prop);
+        if (els.length) {
+            node = els[0];
+        } else {
+            return [null, null];
         }
-    });
-    
-    var xml = acre.xml.parse(r.body);
-    var doc = xml.firstChild.nextSibling ? xml.firstChild.nextSibling : xml.firstChild;
+        
+        if (segs.length) {
+            return getNodeVal(node, segs.join("/"));
+        } else {
+            var child = node.firstChild;
+            var val = child ? child.nodeValue : null;
+            return [node, val];
+        }
+    };
 
-    if (doc.childNodes == null) {
-        syslog.debug({'host': host}, "appfetch.webdav.not_found");
-        throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
-    }
-
-    // XXX - need to handle namespaces for real
-    // this is too hard-coded to Google Code implementation
-    var files = doc.getElementsByTagName('D:response');
+    var res = {
+        metadata : {},
+        has_dot_metadata : false,
+        dirs : [],
+        files : []
+    };
     
-    // app metadata
-    var a = files[0];
-    var propstat        = a.getElementsByTagNameNS("DAV:", "propstat")[0];
-    var prop            = propstat.getElementsByTagName('D:prop')[0];
-    p.metadata.as_of    = prop.getElementsByTagName('lp1:version-name')[0].firstChild.nodeValue;
-    var repo_uuid       = prop.getElementsByTagName('lp3:repository-uuid')[0].firstChild.nodeValue;
-    var repo_path       = prop.getElementsByTagName('lp3:baseline-relative-path')[0].firstChild.nodeValue;
-    p.metadata.app_guid = repo_uuid + ":" + repo_path;
-    p.metadata.versions = ["$"];    // XXX fulhack to force WebDAV to cache
+    // fetch the directory listing
+    try {
+        var r = _system_urlfetch(url, {
+            method : "PROPFIND",
+            headers : {
+                "Depth" : '1',
+                "Content-Type" : "text/xml; charset=UTF-8"
+            }
+        });        
+    } catch (e) {
+        if (e.response.status === 301 || e.response.status === 302) {
+            return webdav_inventory_path(e.response.headers.location);
+        } else {
+            console.log(e);
+            syslog.warn(e.message, "webdav.fetch_error");
+            return null;
+        }
+    }        
     
+    var xml = acre.xml.parseNS(r.body);
+    var doc = getNodeVal(xml, "D:multistatus")[0];
+    if (!doc) return null;
+   
+   var files = doc.getElementsByTagNameNS(NS.D, "response");
+    
+    // in WebDAV, the first result is the directory itself
+    var dir = files[0];
+    var prop              = getNodeVal(dir, "D:propstat/D:prop")[0];
+    res.metadata.as_of    = getNodeVal(prop, "D:version-name")[1] || 
+                            getNodeVal(prop, "D:getlastmodified")[1];
+    var repo_uuid         = getNodeVal(prop, "SVN:repository-uid")[1];
+    var repo_path         = getNodeVal(prop, "SVN:baseline-relative-path")[1];
+    res.metadata.app_guid = (repo_uuid && repo_path) ? repo_uuid + ":" + repo_path : url;
+    res.metadata.versions = ["$"];    // XXX fulhack to force WebDAV to cache
+    
+    // now parse the contents of the directory
     for(var i=1; i< files.length; i++) {
         var f = files[i];
-        var href = f.getElementsByTagName('D:href')[0].firstChild.nodeValue.replace(/\/$/, '');
-        var file = split_script_id(href)[1];
+        var href = getNodeVal(f, "D:href")[1];
+        var file = split_script_id(href.replace(/\/$/, ''))[1];
+        var prop = getNodeVal(f, "D:propstat/D:prop")[0];
         
-        // .metadata files are a special case... these contain app metadata
-        if (file === '.metadata') {
-            var body = _system_urlfetch(url + '/' + file, {
-                headers : {
-                    "Content-Type" : "text/xml; charset=UTF-8"
-                }
-            }).body;
-            p.metadata = JSON.parse(body);
-            continue;
-        }
-        
-        var propstat     = f.getElementsByTagName('D:propstat')[0];
-        var prop         = propstat.getElementsByTagName('D:prop')[0];
-        var resourcetype = prop.getElementsByTagName('lp1:resourcetype')[0];
-        var collection   = resourcetype.getElementsByTagName('D:collection')[0];
-
-        if (collection) {
-            p.dirs.push(file);
+        // check whether it's a subdirectory
+        if (getNodeVal(prop, "D:resourcetype/D:collection")[0]) {
+            res.dirs.push(file);
             continue;
         }
 
+        // build up file metadata
         var file_data = extension_to_metadata(file);
-        if (file_data.name === '') continue;
+        if (file_data.name === '.metadata') res.has_dot_metadata = true;
         file_data.content_id = url + '/'+file;
-        file_data.content_hash = prop.getElementsByTagName('lp3:md5-checksum')[0].firstChild.nodeValue;
-        p.files.push(file_data);
-        p.has_files = true;
-        delete f;
+        file_data.content_hash = getNodeVal(prop, "SVN:md5-checksum")[1] || 
+                                 getNodeVal(prop, "D:version-name")[1] ||  
+                                 getNodeVal(prop, "D:getlastmodified")[1];
+        
+        res.files.push(file_data);
     }
-    return p;
+    return res;
 }
 
 var uberfetch_graph  = function(host, guid, as_of, result) {
@@ -1810,13 +1839,13 @@ var proto_require = function(req_path, skip_cache) {
         {
             'source':'disk',
             'cachable':true,
-            'fetcher':uberfetch_file("disk", disk_resolver, disk_inventory_path),
+            'fetcher':uberfetch_file("disk", disk_resolver, disk_inventory_path, disk_get_content),
             'get_content':disk_get_content
         },
         {
             'source':'webdav',
             'cachable':true,
-            'fetcher':uberfetch_file("webDAV", webdav_resolver, webdav_inventory_path),
+            'fetcher':uberfetch_file("webDAV", webdav_resolver, webdav_inventory_path, webdav_get_content),
             'get_content': webdav_get_content
         },
         {
