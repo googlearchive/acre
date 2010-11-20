@@ -1,51 +1,80 @@
 #!/bin/sh
-# this should be called with ./acre test to pickup the environment vars
+# this should be called with ./acre to pickup the environment vars
 # if you want to call it directly, set the env vars found in
 # tests/acre_py_tests/__init__.py
 
-cd `dirname $0`
-cd ..
-BASE=`pwd -P`
+# Normalize the current directory
+cd `dirname $0`/..
+
+ECHO="/bin/echo"
+
+$ECHO
 
 # these js acre apps are required to be deployed locally
-APPSOURCE="${BASE}/tests/acreapps/qatests"
-APPDIR="${BASE}/webapp/WEB-INF/scripts/freebase/apps"
+APPSOURCE="tests/acreapps/qatests"
+APPDIR="webapp/WEB-INF/scripts/freebase/apps"
 mkdir -p $APPDIR
-if [ ! -e ${APPDIR}/qatests ]; then
-  ln -s $APPSOURCE ${APPDIR}/qatests
+if [ ! -L ${APPDIR}/qatests ]; then
+    ln -s $APPSOURCE ${APPDIR}/qatests
 fi
 
-API_HOST="http://api.${ACRE_METAWEB_BASE_ADDR}:${ACRE_FREEBASE_SITE_ADDR_PORT}"
-echo pre-check: your local acre installation...
-RESP=`curl -s -S -m 5 http://api.qatests.apps.freebase.dev.acre.localhost:$ACRE_PORT/return_status`
-echo $RESP | grep -q "status is: 200" &> /dev/null
-RET=$?
-if [ $RET -ne 0 ]; then
-  echo $RESP
-  echo FATAL: local acre does not not seem to be running or reachable
-  exit 1
+# allow the nose executable to be configurable
+if [ -z "$NOSETESTS" ]; then
+    NOSETESTS="nosetests"
 fi
 
-echo pre-check: freebase service endpoint...
-RESP=`curl -s -S -m 5 -H "CACHE-CONTROL:no-cache" ${API_HOST}/api/service/mqlread?query=%7B%22query%22%3A%7B%22id%22%3A%22/boot%22%7D%7D` 
-RET=$?
-echo $RESP  | grep -q "/api/status/ok" &> /dev/null
-RET2=$?
-if [ $RET -ne 0 ]; then
-  echo ABORT: cannot reach $API_HOST. Cannot work under these conditions
-  exit 0
-fi
-if [ $RET2 -ne 0 ]; then
-  echo $RESP
-  echo ABORT: $API_HOST bad response from mqlread. Cannot work under these conditions
-  exit 0
-fi
-
-cd ..
-echo running actual tests...
-nosetests  -vda '!bug','!deprecated' ${BASE}/tests/acre_py_tests/$1
+$ECHO -n "CHECK: nose availability... "
+$NOSETESTS -V &> /dev/null
 RET=$?
 if [ $RET == 127 ]; then
-echo ERROR: running tests requires python-nose... see code.google.com
-exit 1
+    $ECHO "FAILED"
+    $ECHO "FATAL: $NOSETESTS doesn't seem to exist. These tests require 'nose' to be installed. Get it from http://code.google.com/p/python-nose/"
+    exit 1
+else
+    $ECHO "PASSED"
 fi
+
+$ECHO -n "CHECK: your local acre installation... "
+RESP=`curl -s -S -m 5 http://127.0.0.1:$ACRE_PORT/status 2> /dev/null | grep "Acre  status: 200 OK"`
+if [ -z "$RESP" ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: local acre does not not seem to be running or reachable"
+    exit 1
+else
+    $ECHO "PASSED"
+fi
+
+$ECHO -n "CHECK: your local DNS configurations... "
+RESP=`curl -s -S -m 5 http://api.qatests.apps.freebase.${ACRE_HOST_SUFFIX}:$ACRE_PORT/return_status 2> /dev/null | grep "status is: 200"`
+if [ -z "$RESP" ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: make sure 'api.qatests.apps.freebase.${ACRE_HOST_SUFFIX}' points to 127.0.0.1 in your DNS or /etc/host"
+    exit 1
+else
+    $ECHO "PASSED"
+fi
+
+$ECHO -n "CHECK: freebase service endpoint... "
+API_HOST="http://api.${ACRE_METAWEB_BASE_ADDR}:${ACRE_FREEBASE_SITE_ADDR_PORT}"
+RESP=`curl -s -S -m 5 -H "CACHE-CONTROL:no-cache" ${API_HOST}/api/service/mqlread?query=%7B%22query%22%3A%7B%22id%22%3A%22/boot%22%7D%7D` 
+RET=$?
+echo $RESP | grep -q "/api/status/ok" &> /dev/null
+RET2=$?
+if [ $RET -ne 0 ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: cannot reach $API_HOST. Test results won't be significant under these conditions."
+    exit 1
+elif [ $RET2 -ne 0 ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: $API_HOST bad response from mqlread. Test results won't be significant under these conditions."
+    exit 1
+else
+    $ECHO "PASSED"
+fi
+
+$ECHO
+$ECHO "Running the tests... " 
+
+$NOSETESTS -vda '!bug','!deprecated' tests/acre_py_tests/$1
+RET=$?
+exit $RET
