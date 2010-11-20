@@ -1,9 +1,11 @@
 #!/bin/sh
-# this should be called with ./acre to pickup the environment vars
+# this should be called with ./acre test to pickup the environment vars
 # if you want to call it directly, set the env vars found in
 # tests/acre_py_tests/__init__.py
 
-BASE=`python -c "import os; print os.path.abspath('.')"`
+cd `dirname $0`
+cd ..
+BASE=`pwd -P`
 
 # these js acre apps are required to be deployed locally
 APPSOURCE="${BASE}/tests/acreapps/qatests"
