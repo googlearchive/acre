@@ -3,8 +3,7 @@
 # if you want to call it directly, set the env vars found in
 # tests/acre_py_tests/__init__.py
 
-HERE=`dirname $0 | xargs readlink -f`
-BASE=`dirname $HERE`
+BASE=`python -c "import os; print os.path.abspath('.')"`
 
 # these js acre apps are required to be deployed locally
 APPSOURCE="${BASE}/tests/acreapps/qatests"
