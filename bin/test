@@ -1,0 +1,50 @@
+#!/bin/sh
+# this should be called with ./acre to pickup the environment vars
+# if you want to call it directly, set the env vars found in
+# tests/acre_py_tests/__init__.py
+
+HERE=`dirname $0 | xargs readlink -f`
+BASE=`dirname $HERE`
+
+# these js acre apps are required to be deployed locally
+APPSOURCE="${BASE}/tests/acreapps/qatests"
+APPDIR="${BASE}/webapp/WEB-INF/scripts/freebase/apps"
+mkdir -p $APPDIR
+if [ ! -e ${APPDIR}/qatests ]; then
+  ln -s $APPSOURCE ${APPDIR}/qatests
+fi
+
+API_HOST="http://api.${ACRE_METAWEB_BASE_ADDR}:${ACRE_FREEBASE_SITE_ADDR_PORT}"
+echo pre-check: your local acre installation...
+RESP=`curl -s -S -m 5 http://api.qatests.apps.freebase.dev.acre.localhost:$ACRE_PORT/return_status`
+echo $RESP | grep -q "status is: 200" &> /dev/null
+RET=$?
+if [ $RET -ne 0 ]; then
+  echo $RESP
+  echo FATAL: local acre does not not seem to be running or reachable
+  exit 1
+fi
+
+echo pre-check: freebase service endpoint...
+RESP=`curl -s -S -m 5 -H "CACHE-CONTROL:no-cache" ${API_HOST}/api/service/mqlread?query=%7B%22query%22%3A%7B%22id%22%3A%22/boot%22%7D%7D` 
+RET=$?
+echo $RESP  | grep -q "/api/status/ok" &> /dev/null
+RET2=$?
+if [ $RET -ne 0 ]; then
+  echo ABORT: cannot reach $API_HOST. Cannot work under these conditions
+  exit 0
+fi
+if [ $RET2 -ne 0 ]; then
+  echo $RESP
+  echo ABORT: $API_HOST bad response from mqlread. Cannot work under these conditions
+  exit 0
+fi
+
+cd ..
+echo running actual tests...
+nosetests  -vda '!bug','!deprecated' ${BASE}/tests/acre_py_tests/$1
+RET=$?
+if [ $RET == 127 ]; then
+echo ERROR: running tests requires python-nose... see code.google.com
+exit 1
+fi

@@ -52,11 +52,11 @@ Available Commands:
     start ............. Start Acre as a daemon
     stop .............. Stop Acre that was started as a daemon
     zap ............... Remove the Acre PID file
-
     appengine-build ... Build a WAR package of Acre to run on Google App Engine
     appengine-run ..... Run Acre in the local Google App Engine simulator (must call 'appengine-build' first)
     appengine-deploy .. Deploy Acre on Google App Engine (must call 'appengine-build' first)
-    
+
+    test .............. run a suite of integration tests (start acre first)
     clean ............. Remove all class files
     clean-whitespace .. Normalize tabs and newlines
     distclean ......... Restore everything to checkout state
@@ -230,6 +230,9 @@ case "$ACTION" in
         SCRIPT="build"
         COMMAND="distclean" 
         invoke;;
+    test) 
+        SCRIPT="test" 
+        invoke;;
     appengine-build) 
         SCRIPT="build" 
         COMMAND="appengine"
@@ -247,9 +250,8 @@ case "$ACTION" in
         SCRIPT="build" 
         COMMAND="appengine-local"
         invoke
-        APPSERVER_PARAMS="--address=0.0.0.0"
         if [ "$PORT" != "" ]; then
-            APPSERVER_PARAMS="${APPSERVER_PARAMS} -p $PORT"
+            APPSERVER_PARAMS="-p $PORT"
         fi
         $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS "$WAR";;
     appengine-deploy) 

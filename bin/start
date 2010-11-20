@@ -60,13 +60,13 @@ fi
 if [ "$ACTION" = "start" ] ; then
 
     # Execute the JVM fork the process in background
-    nohup sh -c "exec $RUN_CMD >> acre.console.log 2>&1" >/dev/null &
+    nohup sh -c "exec $RUN_CMD >> _logs/acre.console.log 2>&1" >/dev/null &
     A_PID=$!
     echo $A_PID > $ACRE_PID
 
     # Loop waiting for status
     sleep 2
-    for try in 1 2 3 ; do
+    for try in 1 2 3 4 5 ; do
         curlmsg="\nstatus=%{http_code}\n"
         result=`curl -w "$curlmsg" -s "http://127.0.0.1:$ACRE_PORT/status"`
         ret=$?
@@ -97,4 +97,3 @@ if [ "$ACTION" = "start" ] ; then
 else 
     exec $RUN_CMD
 fi
-
