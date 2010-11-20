@@ -1235,7 +1235,7 @@ acre.template.string_to_js = function (string, name) {
 // ------------------------------------------ uber fetch ------------------------------------
 
 /*
- * uberfetch_file helpers
+ * uberfetch_file() helpers
  * for different file system-ish methods
  */
 var disk_resolver = function(host) {
@@ -1384,14 +1384,6 @@ var webdav_inventory_path = function(url) {
 }
 
 
-var UBERFETCH_ERROR_NOT_FOUND = 1,
-    UBERFETCH_ERROR_MQLREAD = 2,
-    UBERFETCH_ERROR_ASOF_PARSE = 3,
-    UBERFETCH_ERROR_PERMISSIONS = 4,
-    UBERFETCH_ERROR_UNKNOWN = 5;
-
-var METADATA_CACHE = {};
-
 /* 
  * Uberfetch functions for getting app metadata 
  *   Each returns an object like:
@@ -1419,11 +1411,21 @@ var METADATA_CACHE = {};
  *   }
  * }
  *
- * which added to cache with key: METADATA:{o.guid}:{o.asof}
- * {o.links} looped over and added to cache as
- *  LINK:{o.links[i]} with value METADATA:{o.guid}:{o.asof}
+ * which is added to cache with key: 
+ *    METADATA:{o.guid}:{o.asof}
+ * {o.links} looped over and added to cache as:
+ *    LINK:{o.links[i]} with value METADATA:{o.guid}:{o.asof}
  *
  */
+ 
+var METADATA_CACHE = {};
+ 
+var UBERFETCH_ERROR_NOT_FOUND = 1,
+    UBERFETCH_ERROR_MQLREAD = 2,
+    UBERFETCH_ERROR_ASOF_PARSE = 3,
+    UBERFETCH_ERROR_PERMISSIONS = 4,
+    UBERFETCH_ERROR_UNKNOWN = 5;
+
 function make_uberfetch_error(msg, code, extend, parent) {
     msg = msg || 'Unknown Error';
     code = code || UBERFETCH_ERROR_UNKNOWN;
@@ -1781,6 +1783,7 @@ var CacheTrampoline = function(f, skip_cache) {
 };
 
 
+// ------------------------------------------ proto_require ------------------------------------
 var proto_require = function(req_path, skip_cache) {
 
     function cache_get_content() {
@@ -1886,8 +1889,7 @@ var proto_require = function(req_path, skip_cache) {
         // XXX fail! exception?
         return null;
     }
-
-    console.log(app_data);
+    
     // now cache the app_data
     var ckey = "METADATA:"+app_data.app_guid+":"+app_data.as_of;
     
