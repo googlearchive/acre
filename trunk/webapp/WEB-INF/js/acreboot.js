@@ -1234,151 +1234,19 @@ acre.template.string_to_js = function (string, name) {
 
 // ------------------------------------------ uber fetch ------------------------------------
 
-var UBERFETCH_ERROR_NOT_FOUND = 1,
-    UBERFETCH_ERROR_MQLREAD = 2,
-    UBERFETCH_ERROR_ASOF_PARSE = 3,
-    UBERFETCH_ERROR_PERMISSIONS = 4,
-    UBERFETCH_ERROR_UNKNOWN = 5;
-
-
-function make_uberfetch_error(msg, code, extend, parent) {
-    msg = msg || 'Unknown Error';
-    code = code || UBERFETCH_ERROR_UNKNOWN;
-    extend = extend || {};
-    parent = parent || null;
-
-    var e = new Error(msg);
-
-    for (var a in extend) {
-        e[a] = extend[a];
-    }
-
-    e.__code__ = code;
-    e.__parent__ = parent;
-
-    return e;
-}
-
-var METADATA_CACHE = {};
-
-var uberfetch_cache = function(skip_cache) {
-    return function(host) {
-        
-        if (host in METADATA_CACHE) {
-    	    syslog.info({'host': host, 's': 'inprocess', 'm': 'uberfetch_cache'}, 'appfetch.cache.success');
-    	    return METADATA_CACHE[host];
-        }
-        
-        if (skip_cache) {
-            syslog.info({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.skip');
-            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
-        }
-        
-        var ckey = _cache.get("HOST:"+host);
-        if (ckey == null) {
-            syslog.info({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.host.not_found');
-            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
-        }
-
-        var res = _cache.get(ckey);
-        if (res === null) {
-            syslog.info({'host': host, 'key': ckey}, 'appfetch.cache.metadata.not_found');
-            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
-        }
-
-        syslog.info({'key': ckey, 's': 'memcache', 'm': 'uberfetch_cache'}, 'appfetch.cache.success');
-
-        return JSON.parse(res);  
-    };
-};
-
-var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
-    return function(host, result) {
-        // avoid infinite recursion (e.g., symlink to self)
-        var MAX_DIRECTORY_DEPTH = 2;
-
-        function _set_app_metadata(app, md) {
-            md = md || {};
-            app.host = md.host || host;
-            app.app_id = md.app_id || host_to_namespace(host);
-            app.app_guid = md.app_guid || host;
-            app.as_of = md.as_of || null;    // XXX return the max mtime?
-            app.service_metadata = {
-                'write_user': (md.write_user ? md.write_user.substr(6) : null),
-                'service_url': (md.service_url || null)
-            };
-            app.hosts = md.hosts || [host];
-            app.versions = md.versions || [];
-        };
-
-        function _add_directory(app, resource, base_path, depth) {
-            depth = depth || 0;
-            base_path = base_path || "";
-            
-            var dir = inventory_path(resource);
-
-            // some things we only do at root-level
-            if (depth === 0) {
-                // app is empty!
-                if (!dir || !dir.files.length) {
-                    syslog.debug({'host': host}, "appfetch." + name + ".not_found");
-                    throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
-                }
-                
-                // fill in app metadata
-                _set_app_metadata(app, dir.metadata);
-            }
-
-            // skip empty and nested apps
-            if (dir && (depth === 0 || !dir.has_dot_metadata)) {
-                for (var i=0; i < dir.files.length; i++) {
-                    var file = dir.files[i];
-                    if (/~$/.test(file)) continue;      // skip ~ files (e.g., emacs temp files)
-                    
-                    // .metadata files are a special case... these contain app metadata
-                    // so fetch immediately and patch in values
-                    if (file.name === '.metadata') {
-                        var temp = content_fetcher.apply({'data' : file});
-                        _set_app_metadata(app, JSON.parse(temp.body));
-                        continue;
-                    }
-                    
-                    app.files[base_path + file.name] = file;                
-                }
-                if (depth < MAX_DIRECTORY_DEPTH) {
-                    for (var d=0; d < dir.dirs.length; d++) {
-                        var subdir = dir.dirs[d];
-                        if (/^\./.test(subdir)) continue;     // skip . directories (e.g., '.svn')
-                        _add_directory(app, resource + "/" + subdir, base_path + subdir + "/", depth + 1);
-                    }
-                }
-            }
-        }
-
-        var resource = resolver(host);
-        if (!resource) {
-            syslog.debug({'host': host}, "appfetch." + name + ".not_found");
-            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);        
-        }
-
-        result = result || {};
-        result.files = result.files || {};
-
-        // this will recurse until all files are added
-        _add_directory(result, resource);
-
-        syslog.debug({'host': host}, "appfetch." + name + ".found");
-        return result;  
-    };
-};
-
+/*
+ * uberfetch_file helpers
+ * for different file system-ish methods
+ */
 var disk_resolver = function(host) {
     return _hostenv.STATIC_SCRIPT_PATH + host_to_namespace(host);
 };
 
 var disk_inventory_path = function(disk_path) {
     var res = {
-        metadata : null,            // metadata for disk apps can only come from .metadata
+        metadata : {
+            development : true      // don't cache disk apps for now
+        },
         has_dot_metadata : false,
         dirs : [],
         files : []
@@ -1488,7 +1356,6 @@ var webdav_inventory_path = function(url) {
     var repo_uuid         = getNodeVal(prop, "SVN:repository-uid")[1];
     var repo_path         = getNodeVal(prop, "SVN:baseline-relative-path")[1];
     res.metadata.app_guid = (repo_uuid && repo_path) ? repo_uuid + ":" + repo_path : url;
-    res.metadata.versions = ["$"];    // XXX fulhack to force WebDAV to cache
     
     // now parse the contents of the directory
     for(var i=1; i< files.length; i++) {
@@ -1516,37 +1383,180 @@ var webdav_inventory_path = function(url) {
     return res;
 }
 
+
+var UBERFETCH_ERROR_NOT_FOUND = 1,
+    UBERFETCH_ERROR_MQLREAD = 2,
+    UBERFETCH_ERROR_ASOF_PARSE = 3,
+    UBERFETCH_ERROR_PERMISSIONS = 4,
+    UBERFETCH_ERROR_UNKNOWN = 5;
+
+var METADATA_CACHE = {};
+
+/* 
+ * Uberfetch functions for getting app metadata 
+ *   Each returns an object like:
+ *
+ * {
+ *   "host" : null
+ *   "app_id" : null        // deprecated
+ *   "app_guid" : null,     // metadata index 1
+ *   "as_of": null,         // metadata index 2
+ *   "development": false   // if true, metadata won't be cached
+ *   "service_metadata":
+ *     {
+ *      "write_user":null,
+ *      "service_url":null
+ *     },
+ *   "hosts":[""], // alternative hosts
+ *   "versions":[],
+ *   "files":{
+ *     name:{
+ *       "name":null,
+ *       "handler":null,
+ *       "content_id":null,
+ *       "media_type":null
+ *     }
+ *   }
+ * }
+ *
+ * which added to cache with key: METADATA:{o.guid}:{o.asof}
+ * {o.links} looped over and added to cache as
+ *  LINK:{o.links[i]} with value METADATA:{o.guid}:{o.asof}
+ *
+ */
+function make_uberfetch_error(msg, code, extend, parent) {
+    msg = msg || 'Unknown Error';
+    code = code || UBERFETCH_ERROR_UNKNOWN;
+    extend = extend || {};
+    parent = parent || null;
+
+    var e = new Error(msg);
+
+    for (var a in extend) {
+        e[a] = extend[a];
+    }
+
+    e.__code__ = code;
+    e.__parent__ = parent;
+
+    return e;
+}
+
+var uberfetch_cache = function(skip_cache) {
+    return function(host) {
+        
+        if (host in METADATA_CACHE) {
+    	    syslog.info({'host': host, 's': 'inprocess', 'm': 'uberfetch_cache'}, 'appfetch.cache.success');
+    	    return METADATA_CACHE[host];
+        }
+        
+        if (skip_cache) {
+            syslog.info({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.skip');
+            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
+        }
+        
+        var ckey = _cache.get("HOST:"+host);
+        if (ckey == null) {
+            syslog.info({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.host.not_found');
+            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
+        }
+
+        var res = _cache.get(ckey);
+        if (res === null) {
+            syslog.info({'host': host, 'key': ckey}, 'appfetch.cache.metadata.not_found');
+            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
+        }
+
+        syslog.info({'key': ckey, 's': 'memcache', 'm': 'uberfetch_cache'}, 'appfetch.cache.success');
+
+        return JSON.parse(res);  
+    };
+};
+
+var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
+    return function(host, result) {
+        // avoid infinite recursion (e.g., symlink to self)
+        var MAX_DIRECTORY_DEPTH = 2;
+
+        function _set_app_metadata(app, md) {
+            md = md || {};
+            app.host = md.host || host;
+            app.app_id = md.app_id || host_to_namespace(host);
+            app.app_guid = md.app_guid || host;
+            app.as_of = md.as_of || null;    // XXX return the max mtime?
+            app.development = md.development || false;
+            
+            app.service_metadata = {
+                'write_user': (md.write_user ? md.write_user.substr(6) : null),
+                'service_url': (md.service_url || null)
+            };
+            
+            app.hosts = md.hosts || [host];
+            app.versions = md.versions || [];
+        };
+
+        function _add_directory(app, resource, base_path, depth) {
+            depth = depth || 0;
+            base_path = base_path || "";
+            
+            var dir = inventory_path(resource);
+
+            // some things we only do at root-level
+            if (depth === 0) {
+                // app is empty!
+                if (!dir || !dir.files.length) {
+                    syslog.debug({'host': host}, "appfetch." + name + ".not_found");
+                    throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
+                }
+                
+                // fill in app metadata
+                _set_app_metadata(app, dir.metadata);
+            }
+
+            // skip empty and nested apps
+            if (dir && (depth === 0 || !dir.has_dot_metadata)) {
+                for (var i=0; i < dir.files.length; i++) {
+                    var file = dir.files[i];
+                    if (/~$/.test(file)) continue;      // skip ~ files (e.g., emacs temp files)
+                    
+                    // .metadata files are a special case... these contain app metadata
+                    // so fetch immediately and patch in values
+                    if (file.name === '.metadata') {
+                        var temp = content_fetcher.apply({'data' : file});
+                        _set_app_metadata(app, JSON.parse(temp.body));
+                        continue;
+                    }
+                    
+                    app.files[base_path + file.name] = file;                
+                }
+                if (depth < MAX_DIRECTORY_DEPTH) {
+                    for (var d=0; d < dir.dirs.length; d++) {
+                        var subdir = dir.dirs[d];
+                        if (/^\./.test(subdir)) continue;     // skip . directories (e.g., '.svn')
+                        _add_directory(app, resource + "/" + subdir, base_path + subdir + "/", depth + 1);
+                    }
+                }
+            }
+        }
+
+        var resource = resolver(host);
+        if (!resource) {
+            syslog.debug({'host': host}, "appfetch." + name + ".not_found");
+            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);        
+        }
+
+        result = result || {};
+        result.files = result.files || {};
+
+        // this will recurse until all files are added
+        _add_directory(result, resource);
+
+        syslog.debug({'host': host}, "appfetch." + name + ".found");
+        return result;  
+    };
+};
+
 var uberfetch_graph  = function(host, guid, as_of, result) {
-    /* Returns:
-     *
-     * {
-     *   "host" : null
-     *   "app_id" : null      // deprecated
-     *   "app_guid" : null,  // metadata index 1
-     *   "as_of":null,       // metadata index 2
-     *   "service_metadata":
-     *     {
-     *      "write_user":null,
-     *      "service_url":null
-     *     },
-     *   "hosts":[""], // alternative hosts
-     *   "versions":[],
-     *   "files":{
-     *     name:{
-     *       "name":null,
-     *       "handler":null,
-     *       "content_id":null,
-     *       "media_type":null
-     *     }
-     *   }
-     * }
-     *
-     * added to cache with key: METADATA:{o.guid}:{o.asof}
-     * {o.links} looped over and added to cache as
-     *  LINK:{o.links[i]} with value METADATA:{o.guid}:{o.asof}
-     *
-     */
-     
      as_of = as_of || null;
      result = result || {};
 
@@ -1622,7 +1632,6 @@ var uberfetch_graph  = function(host, guid, as_of, result) {
          UBERFETCH_ERROR_ASOF_PARSE, e);
      }
 
-
      try {
          var res = _system_freebase.mqlread(q, envelope).result;
      } catch (e) {
@@ -1696,6 +1705,7 @@ var uberfetch_graph  = function(host, guid, as_of, result) {
      result.app_id = res.id;
      result.app_guid = res.guid;
      result.as_of = as_of;
+     result.development = (result.versions && result.versions.length) ? false : true;
 
      result.service_metadata = result.service_metadata || {};
      result.service_metadata.write_user = (res['/type/domain/owners'] != null ?
@@ -1877,10 +1887,11 @@ var proto_require = function(req_path, skip_cache) {
         return null;
     }
 
+    console.log(app_data);
     // now cache the app_data
     var ckey = "METADATA:"+app_data.app_guid+":"+app_data.as_of;
     
-    if (method.cachable && app_data.versions.length > 0) {
+    if (method.cachable && !app_data.development) {
         // cache the metadata in the long-term cache, the metadata is
         // cached permaneltly (or until overriden).
         _cache.put(ckey, JSON.stringify(app_data));
