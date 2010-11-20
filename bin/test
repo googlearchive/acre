@@ -15,7 +15,7 @@ APPSOURCE="tests/acreapps/qatests"
 APPDIR="webapp/WEB-INF/scripts/freebase/apps"
 mkdir -p $APPDIR
 if [ ! -L ${APPDIR}/qatests ]; then
-    ln -s $APPSOURCE ${APPDIR}/qatests
+    ln -s ../../../../../${APPSOURCE} ${APPDIR}/qatests
 fi
 
 # allow the nose executable to be configurable
