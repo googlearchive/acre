@@ -94,9 +94,9 @@ class TestController(ExtraAsserts):
         self.headers = None
 
         config = os.environ
-        self.server_host = "dev.acre.localhost"
-        self.server_base= "acre.localhost"
-        self.server_name = "api.qatests.apps.freebase.dev.acre.localhost"
+        self.server_base = config.get("ACRE_HOST_BASE")
+        self.server_host = "dev." + self.server_base
+        self.server_name = "api.qatests.apps.freebase." + self.server_host
         self.script_namespace = "/freebase/apps/qatests/api"
 
         self.port = int(config.get("ACRE_PORT"))
@@ -105,8 +105,8 @@ class TestController(ExtraAsserts):
             self.server_url += ':%d' % self.port
 
         self.host = self.server_url;
-        self.username= config.get("TEST_USERNAME")
-        self.password= config.get("TEST_PASSWORD")
+        self.username = config.get("TEST_USERNAME")
+        self.password = config.get("TEST_PASSWORD")
 
         base_addr = config.get("ACRE_METAWEB_BASE_ADDR")
         port_str = config.get("ACRE_FREEBASE_SITE_ADDR_PORT")
@@ -122,7 +122,7 @@ class TestController(ExtraAsserts):
             print "tests are going nowhere with the env var: ACRE_METAWEB_BASE_ADDR"
             sys.exit(1)
 
-        self.appeditor_service_url= None
+        self.appeditor_service_url = None
         if self.appeditor_host:
             self.appeditor_service_url = self.appeditor_host + "/appeditor/services"
 
