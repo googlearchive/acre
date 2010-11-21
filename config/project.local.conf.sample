@@ -6,7 +6,6 @@
 # 
 
 ####### select what URL acre expects to be responding to (your DNS or /etc/host should mount *.acre.z to 127.0.0.1)
-ACRE_HOST_SUFFIX="dev.acre.z"
 ACRE_HOST_BASE="acre.z"
 ACRE_FREEBASE_SITE_ADDR="devel.$ACRE_METAWEB_BASE_ADDR:8115"
 

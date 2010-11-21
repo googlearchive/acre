@@ -39,7 +39,7 @@ $filename =~ s/\.[^\.]+$//; # remove file extensions (.sjs .mjt)
 find_config();
 
 my $script_base = get_prop("ACRE_WEBAPP") . '/' . get_prop("STATIC_SCRIPT_PATH");
-my $hostname    = get_prop("ACRE_HOST_SUFFIX") . ':' . get_prop("ACRE_PORT");
+my $hostname    = get_prop("ACRE_HOST_DELIMETER_PATH") . '.' . get_prop("ACRE_HOST_SUFFIX") . ':' . get_prop("ACRE_PORT");
 my $api_addr    = get_prop("ACRE_METAWEB_API_ADDR") . ':' . get_prop("ACRE_METAWEB_API_ADDR_PORT");
 # do we need ACRE_WEBAPP_ROOT?
 chdir($ENV{'PWD'}); # return to original dir

@@ -298,7 +298,7 @@ public class KeyStoreServlet extends HttpServlet {
             RequestDispatcher rd = getServletContext().getNamedDispatcher("DispatchServlet");
             
             AcreHttpServletRequest req = (AcreHttpServletRequest) request;
-            req.setHostname("local." + Configuration.Values.ACRE_HOST_SUFFIX.getValue());
+            req.setHostname("local." + Configuration.Values.ACRE_HOST_DELIMETER_PATH.getValue() + "." + Configuration.Values.ACRE_HOST_BASE.getValue());
             req.setMappings("/acre/keystore", "/admin_check");
 
             req.setParameter("app_guid", appid.substring(1));
