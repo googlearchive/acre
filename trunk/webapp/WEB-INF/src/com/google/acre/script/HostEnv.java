@@ -99,7 +99,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     private static String ACRE_METAWEB_API_ADDR = Configuration.Values.ACRE_METAWEB_API_ADDR.getValue();
     private static String ACRE_FREEBASE_SITE_ADDR = Configuration.Values.ACRE_FREEBASE_SITE_ADDR.getValue();
     private static String ACRE_HOST_BASE = Configuration.Values.ACRE_HOST_BASE.getValue();
-    private static String ACRE_HOST_DELIMITER_HOST = Configuration.Values.ACRE_HOST_DELIMITER_HOST.getValue();
     private static String ACRE_HOST_DELIMITER_PATH = Configuration.Values.ACRE_HOST_DELIMITER_PATH.getValue();
 
     private static final String DEFAULT_HOST_PATH = "//default." + ACRE_HOST_DELIMITER_PATH;
