@@ -51,12 +51,13 @@ if (typeof _topscope.XML != 'undefined') {
 
 //---------------------------- globals / utils ---------------------------------------
 
+var _DELIMITER_HOST = _hostenv.ACRE_HOST_DELIMITER_HOST;
+var _DELIMITER_PATH = _hostenv.ACRE_HOST_DELIMITER_PATH;
+
 var _DEFAULT_HOSTS_PATH = '/freebase/apps/hosts';
 var _DEFAULT_ACRE_HOST_PATH = "/z/acre";
-var _DELIMETER_HOST = _hostenv.ACRE_HOST_DELIMETER_HOST || "host";
-var _DELIMETER_PATH = _hostenv.ACRE_HOST_DELIMETER_PATH || "dev";
 
-var _DEFAULT_APP = "release.apps.site.freebase." + _DELIMETER_PATH;
+var _DEFAULT_APP = "release.apps.site.freebase." + _DELIMITER_PATH;
 var _DEFAULT_FILE = "index";
 
 function escape_re(s) {
@@ -81,7 +82,7 @@ function namespace_to_host(namespace) {
             namespace = namespace.replace(acre_host_re, "").replace(/^\//, "");
         }
     } else {
-        namespace = _DELIMETER_PATH + namespace;
+        namespace = _DELIMITER_PATH + namespace;
     }
     return namespace.split("/").reverse().join(".");
 }
@@ -91,7 +92,7 @@ function host_to_namespace(host) {
     
     var host_parts = host.split(".");
     var trailing_host_part = host_parts.pop();
-    if (trailing_host_part === 'dev') {
+    if (trailing_host_part === _DELIMITER_PATH) {
         path = "/" + host_parts.reverse().join("/");
     } else if (trailing_host_part === '') {
         path = _DEFAULT_HOSTS_PATH + "/" + host_parts.reverse().join("/");
@@ -145,7 +146,7 @@ function decompose_req_path(req_path) {
         
         // normalize host relative to current acre host
         var acre_host_re = new RegExp("^((.*)\.)?" + escape_re(_request.server_host_base) + "$");
-        var foreign_host_re = new RegExp("^(.*\.)" + _DELIMETER_HOST + "$");
+        var foreign_host_re = new RegExp("^(.*\.)" + _DELIMITER_HOST + "$");
         
         var m = host.match(acre_host_re);
         if (m) {
@@ -1303,7 +1304,7 @@ var disk_inventory_path = function(disk_path) {
 }
 
 var webdav_resolver = function(host) {
-    var parts = host.split("." + _DELIMETER_PATH + ".");
+    var parts = host.split("." + _DELIMITER_PATH + ".");
 
     if (parts.length < 2) {
         return false;
