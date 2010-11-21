@@ -2,50 +2,38 @@
 // It passes the unescaped, JSON-parsed value to mqlread, and returns
 // the mqlread response in the Acre response.
 
-var params = acre.environ.params;
+var params = acre.request.params;
 
-status = params["status"];
-query = params["q"];
-envelope = params["envelope"];
-headers = params["headers"];
+var status = params["status"] || "200";
+var headers = params["headers"] || { "content-type": "text/plain; charset=utf-8" };
+var string = params["string"];
 
-if ( envelope ) {
-   envelope = JSON.parse(envelope)
+var query = params["q"];
+var envelope = params["envelope"];
+
+if (envelope) {
+  envelope = JSON.parse(envelope);
 }
 if (query) {
   query = JSON.parse(query);
 }
 
-if ( String(status) == "undefined" ) {
-    status = "200";
-}
-
-if ( String(headers) == "undefined" ) {
-    headers  = { "content-type": "text/plain; charset=utf-8"} ;
-}
-
-
-var response;
 try {
-  console.info( "SENDING QUERY: " + JSON.stringify(query) );
+  console.info("SENDING QUERY: " + JSON.stringify(query));
   if (envelope) {
-    console.info( "ENVELOPE: " + JSON.stringify(envelope ));
-    response = acre.freebase.mqlread( query, envelope );
+    console.info("ENVELOPE: " + JSON.stringify(envelope));
+    var response = acre.freebase.mqlread(query, envelope);
   } else if (query) {
-    response = acre.freebase.mqlread(query);
+    var response = acre.freebase.mqlread(query);
   } else {
-    response = acre.freebase.mqlread();
+    var response = acre.freebase.mqlread();
   }
 } catch (e) {
-  response = e;
-  console.error("Caught an exception: " + e );
+  var response = e;
+  console.error("Caught an exception: " + e);
 }
 
-  acre.response.status = status;
-  acre.response.headers = headers;
+acre.response.status = status;
+acre.response.headers = headers;
 
-acre.write( JSON.stringify(response) +"\n" );
-
-
-
-
+acre.write(JSON.stringify(response) + "\n");

@@ -6,12 +6,9 @@ from unittest import TestCase
 from urllib2 import HTTPError
 
 class test_class(TestController):
-
-    #@tag(bug=True, who="alexbl")
-    #def test_require_query_parse_err(self):
    
     def test_require_query_not_unique(self):
-        data ={ "url": "freebase:/freebase/apps/qatests/api/mqlread_not_unique" } 
+        data ={ "url": "/freebase/apps/qatests/api/mqlread_not_unique" } 
         self.set_acre_script("require_query", data);
         expected_result =[{"type":"/music/artist", "id":"/en/blonde_redhead"}, {"type":"/music/artist", "id":"/en/bruce_cockburn"}, {"type":"/music/artist", "id":"/en/buck_owens"}]  ;
 
@@ -27,6 +24,7 @@ class test_class(TestController):
             # verify the retreived file's properties: name
             print "Got name: %s" % result['query']['name'];
             self.assert_(result['query']['name'] == "mqlread_not_unique", "Got an unexpected name.  Got: %s Expected: %s " % ( result['query']['name'], "mqlread_not_unique") );             
+            
             # verify the query result
             print "Verifying result: %s" % (result['mqlread']['result'])
             self.assert_(result['mqlread']['result'] == expected_result, "Got an unexpected result.  Got: %s. Expected %s" % (result['mqlread']['result'], expected_result) );

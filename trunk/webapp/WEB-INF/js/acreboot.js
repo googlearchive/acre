@@ -60,6 +60,10 @@ var _DEFAULT_ACRE_HOST_PATH = "/z/acre";
 var _DEFAULT_APP = "helloworld.examples." + _DELIMITER_PATH;
 var _DEFAULT_FILE = "index";
 
+// these values are copied here to avoid triggering a deprecation warning when they are accessed later.
+var server_host_base = _request.server_host_base;
+var freebase_service_url = _request.freebase_service_url;
+
 function escape_re(s) {
   var specials = /[.*+?|()\[\]{}\\]/g;
   return s.replace(specials, '\\$&');
@@ -145,8 +149,8 @@ function decompose_req_path(req_path) {
         host = host.replace(/\:\d*$/,"");
         
         // normalize host relative to current acre host
-        var acre_host_re = new RegExp("^((.*)\.)?" + escape_re(_request.server_host_base) + "$");
-        var foreign_host_re = new RegExp("^(.*\.)" + _DELIMITER_HOST + "$");
+        var acre_host_re = new RegExp("^((.*)\.)?" + escape_re(server_host_base) + "$");
+        var foreign_host_re = new RegExp("^(.*\.)" + _DELIMETER_HOST + "$");
         
         var m = host.match(acre_host_re);
         if (m) {
@@ -1736,10 +1740,8 @@ var uberfetch_graph  = function(host, guid, as_of, result) {
      result.development = (result.versions && result.versions.length) ? false : true;
 
      result.service_metadata = result.service_metadata || {};
-     result.service_metadata.write_user = (res['/type/domain/owners'] != null ?
-     res['/type/domain/owners'].member.id.substr(6) : null);
-     result.service_metadata.service_url =
-     result.service_metadata.service_url || _request.freebase_service_url;
+     result.service_metadata.write_user = (res['/type/domain/owners'] != null ? res['/type/domain/owners'].member.id.substr(6) : null);
+     result.service_metadata.service_url = result.service_metadata.service_url || freebase_service_url;
 
      result.versions = result.versions || [];
      result.hosts = result.hosts || [host];

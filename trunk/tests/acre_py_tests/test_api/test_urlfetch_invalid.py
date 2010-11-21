@@ -9,7 +9,7 @@ class test_class(TestController):
     @tag(bug=False, oldbugs=["ACRE-823", "ACRE-210"])
     def test_urlfetch_invalid_protocol(self):
         freebase_server = re.compile("http://").sub("", self.freebase_service)
-        self.set_acre_script("urlfetch_args", {
+        self.set_acre_script("urlfetch", {
             "method":"GET",
             "url":"telnet://%s" % freebase_server
         })
@@ -38,7 +38,7 @@ class test_class(TestController):
     @tag(bug=False, bugid="ACRE-210")
     def test_urlfetch_invalid_method(self):
         freebase_server = re.compile("http://").sub("", self.freebase_service)
-        self.set_acre_script("urlfetch_args", {
+        self.set_acre_script("urlfetch", {
             "method":"foo",
             "url":"http://%s" % freebase_server
         })

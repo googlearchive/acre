@@ -2,19 +2,15 @@
 // The query string is parsed, and each name/value pair is written to the log 
 // in a separate acre.log statement.
 
-
 parse_query_string();
 
-
-function parse_query_string () {
-    var qs  = acre.environ.query_string;
-    messages = qs.split( "&" );
-    for (var m=0; m < messages.length; m++ ) {
-        console.warn( messages[m] );
+function parse_query_string() {
+    var qs = acre.request.query_string;
+    var messages = qs.split("&");
+    for (var m = 0; m < messages.length; m++) {
+        console.warn(messages[m]);
     }
-
 }
 
 // return ok so that the test driver knows that evaluation succeeded.
-acre.write( "ok")
-
+acre.write("ok");

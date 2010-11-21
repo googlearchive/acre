@@ -232,7 +232,7 @@ case "$ACTION" in
         invoke;;
     test) 
         SCRIPT="test" 
-        invoke;;
+        invoke $*;;
     appengine-build) 
         SCRIPT="build" 
         COMMAND="appengine"

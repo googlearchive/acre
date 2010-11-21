@@ -8,10 +8,10 @@ from urllib2 import HTTPError
 class test_class(TestController):
 
     def test_require_freebase_id(self):
-        data ={ "url": "freebase:/freebase/apps/qatests/api/mql_query_test" };
+        data ={ "url": "/freebase/apps/qatests/api/mql_query_test" };
         self.set_acre_script("require", self.encode_data(data));
         expected_query =  { "id":"/user/acretestbot", "type":[] }; 
-        expected_result = {"url":"freebase:/freebase/apps/qatests/api/mql_query_test","name":"mql_query_test","query":{"id":"/user/acretestbot","type":[]}}
+        expected_result = {"url":"/freebase/apps/qatests/api/mql_query_test","name":"mql_query_test","query":{"id":"/user/acretestbot","type":[]}}
 
         try: 
             self.get();

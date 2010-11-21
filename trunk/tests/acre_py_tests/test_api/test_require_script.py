@@ -8,7 +8,7 @@ from urllib2 import HTTPError
 class test_class(TestController):
 
     def test_require_script_simple(self):
-        self.set_acre_script("require", { "url": "freebase:/freebase/apps/qatests/api/script_js", "eval_string" : "result.add([1,2,3,4,5])" })
+        self.set_acre_script("require", { "url": "/freebase/apps/qatests/api/script_js", "eval_string" : "result.add([1,2,3,4,5])" })
         expected_eval_result = 15;
 
         try: 
@@ -41,7 +41,7 @@ class test_class(TestController):
 
     @tag(bug=False, bugid="ACRE-237")
     def test_require_script_parse_err(self):
-        self.set_acre_script("require_script", { "url":"freebase:/freebase/apps/qatests/api/js_parse_error" })
+        self.set_acre_script("require_script", { "url":"/freebase/apps/qatests/api/js_parse_error" })
 
         expected_msg = "missing \; before statement"
         msg_pattern = re.compile(expected_msg);
