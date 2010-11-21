@@ -142,8 +142,26 @@ function decompose_req_path(req_path) {
         
         // normalize host relative to current acre host
         var acre_host_re = new RegExp("^((.*)\.)?" + escape_re(_request.server_host_base) + "$");
+        var foreign_host_re = new RegExp("^(.*\.)" + "host" + "$");
         var m = host.match(acre_host_re);
-        host = m ? (m[2]||null) : host + ".";
+        if (m) {
+            if (m[2]) {
+                var h = m[2].match(foreign_host_re);
+                if (h) {
+                    // unregistered absolute host (e.g., trunk.svn.dev.acre-fmdb.googlecode.com.)
+                    host = h[1];
+                } else {
+                    // registered short hostname (e.g., fmdb)
+                    host = m[2];
+                }
+            } else {
+                // special case: host is ACRE_HOST_BASE
+                host = null;
+            }
+        } else {
+            // registered absolute host (e.g., tippify.com.)
+            host = host + ".";
+        }
     }
     
     return [host, path, query_string];
