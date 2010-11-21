@@ -1363,10 +1363,9 @@ var webdav_inventory_path = function(url) {
             }
         });        
     } catch (e) {
-        if (e.response.status === 301 || e.response.status === 302) {
+        if (e && e.response && (e.response.status === 301 || e.response.status === 302)) {
             return webdav_inventory_path(e.response.headers.location);
         } else {
-            console.log(e);
             syslog.warn(e.message, "webdav.fetch_error");
             return null;
         }
