@@ -150,7 +150,7 @@ function decompose_req_path(req_path) {
         
         // normalize host relative to current acre host
         var acre_host_re = new RegExp("^((.*)\.)?" + escape_re(server_host_base) + "$");
-        var foreign_host_re = new RegExp("^(.*\.)" + _DELIMETER_HOST + "$");
+        var foreign_host_re = new RegExp("^(.*\.)" + _DELIMITER_HOST + "$");
         
         var m = host.match(acre_host_re);
         if (m) {
