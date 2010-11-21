@@ -25,10 +25,13 @@ import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 
+import com.google.acre.Configuration;
 import com.google.util.javascript.JSON;
 import com.google.util.javascript.JSONException;
 
 public class OneTrueConfig {
+    
+    private static String PATH_DELIMITER = Configuration.Values.ACRE_HOST_DELIMITER_PATH.getValue();
 	
     public OneTrueConfig() {
     }
@@ -93,14 +96,24 @@ public class OneTrueConfig {
             throw new OneTrueConfigException("No Location provided in script "+
                                              "route: "+JSON.stringify(to));
         }
-
-        String[] path_parts = location.split("/");
-        int i = 0;
-        for (i = 0; i < path_parts.length-1; i++) {
-            if (!(host.equals(""))) host = "."+host;
-            host  = path_parts[i]+host;
+        
+        if (location.startsWith("//")) {
+            // parse new require paths
+            String[] loc_parts = location.split("/", 4);
+            host = loc_parts[2];
+            path = "/"+loc_parts[3];
+        } else {
+            // parse old require paths
+            String[] path_parts = location.split("/");
+            int i = 0;
+            for (i = 0; i < path_parts.length-1; i++) {
+                if (!(host.equals(""))) host = "."+host;
+                host  = path_parts[i]+host;
+            }
+            host = host + "." + PATH_DELIMITER;
+            path = "/"+path_parts[i];            
         }
-        path = "/"+path_parts[i];
+
 
         out.put("servlet", "DispatchServlet");
         out.put("host", host);
@@ -116,12 +129,20 @@ public class OneTrueConfig {
 
         if (location == null) {
             host = null;
+        } else if (location.startsWith("//")) {
+            // parse new require paths
+            String[] loc_parts = location.split("/", 4);
+            host = loc_parts[2];
+            if (loc_parts.length > 3)
+                path = "/"+loc_parts[3];
         } else {
+            // parse old require paths
             String[] path_parts = location.split("/");
             for (int i = 0; i < path_parts.length; i++) {
                 if (!(host.equals(""))) host = "."+host;
                 host  = path_parts[i]+host;
             }
+            host = host + "." + PATH_DELIMITER;
         }
 
         out.put("servlet", "DispatchServlet");
