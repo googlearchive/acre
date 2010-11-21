@@ -1,56 +1,41 @@
 /*
-
-<static> acre.urlfetch(method, url, content, content_type)
-allows an acre script to fetch data from an external url. this may not be part of the standard api, we will probably want to restrict which urls are available to prevent abuse. note that response.body is a javascript string, which means it has already been decoded. there are bugs in this process, because we don't sniff for here. returns a response object, e.g.: { status: 200, headers: { content-length: "14", content-type: "text/plain; charset=UTF-8", }, content_type: "text/plain", body: "hocus.\npocus.\n" } XXX method should be second arg instead of first, default to GET
-
-Parameters:
-method
-url
-content
-content_type 
-
-*/
+ * <static> acre.urlfetch(url, method, headers, content, params)
+ */
 
 // This unescapes the query string, passes the result to acre.urlfetch,
 // and returns the result.
 
-var params = acre.environ.params;
+var params = acre.request.params;
 
-status = params["status"];
-content_type = params["content_type"];
-query = params["q"];
-method = params["method"] ? params["method"] : "GET";
-url  = params["url"];
+var status = params["status"] || "200";
+var content_type = params["content_type"] || "text/plain; charset=utf-8";
 
-if ( String(status) == "undefined" ) {
-    status = "200";
-}
-
-if ( String(content_type) == "undefined" ) {
-    content_type = "text/plain; charset=utf-8";
-}
-    
+var url  = params["url"];
+var method = params["method"] || "GET";
+var url_headers = params["url_headers"] ? JSON.parse(params["url_headers"]) : {};
+var url_params = params["url_params"]; 
+var content = params['content'];
 
 acre.response.status = status;
 acre.response.headers['content-type'] = content_type;
 
-console.info( "Attempting to fetch url:" + url );
+console.info( "Attempting to fetch url:" + url);
 
-r = {};
+var response = {};
+var r = {};
 
 try {
-  response = acre.urlfetch(url, "GET");
+  response = acre.urlfetch(url, method);
   console.info("typeof response: " + typeof response);
   r['message'] = "no exception thrown";
-  for ( p in response ) {
-    r[p]  = response[p];
+  for (p in response) {
+    r[p] = response[p];
   }
- } catch (e) {
- for ( p in e ) {
+} catch (e) {
+  for (p in e) {
     r[p] = e[p];
   }
-  console.info( "Caught an exception trying to get or read urlfetch response:\n");
+  console.info("Caught an exception trying to get or read urlfetch response:\n");
 }
 
-acre.write( JSON.stringify(r));
-
+acre.write(JSON.stringify(r));

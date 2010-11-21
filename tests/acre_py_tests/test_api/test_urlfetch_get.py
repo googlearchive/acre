@@ -5,13 +5,11 @@ import simplejson
 from unittest import TestCase
 
 class test_class(TestController):
+
     @tag(bug=False, oldbugs=["ACRE-211"], bugid="ME-1410")
     def test_urlfetch_get_jpg(self):
-        """
-        test_urlfetch_get.test_class.test_urlfetch_get_jpg: urlfetch a resource whose content-type is img/jpg
-        """
         freebase_server = re.compile("http://").sub("", self.freebase_service)
-        self.set_acre_script("urlfetch_args", {
+        self.set_acre_script("urlfetch", {
             "method":"GET",
             "url":"http://%s/api/trans/raw/freebase/apps/qatests/mjt/cupcake" % freebase_server
         })
@@ -45,13 +43,9 @@ class test_class(TestController):
         except Exception, e:
             self.assert_(False, "Got unexpected exception %s" % e );
             raise;
-
     
     @tag(bug=False, oldbugs=["ACRE-211"], bugid="ACRE-1321", slow=True)
     def test_urlfetch_get_image(self):
-        """
-        test_urlfetch.test_class.test_urlfetch_get_image: ACRE-211 - disallow image/* content types
-        """
         self.set_acre_script("urlfetch_binary", 
              data={
                  "method":"GET",
@@ -85,7 +79,6 @@ class test_class(TestController):
             print (e.fp.read());
             self.assert_(False, "Got unexpected exception %s" % e );
             raise;
-            
 
     @tag(slow=True, bug=False, oldbugs=["ACRE-1102"], bugid="CLI-8734")
     def test_urlfetch_html_arnold_schwarznegger(self):
@@ -95,13 +88,13 @@ class test_class(TestController):
             "method":"GET",
             "url":"%s/view/en/arnold_schwarzenegger" % self.freebase_service
         }
-        self.set_acre_script("urlfetch_args", self.data)
+        self.set_acre_script("urlfetch", self.data)
 
         try: 
             response = self.request_url( 
                   url="http://api.qatests.apps.freebase.%s" % self.server_host,
                   port = self.port,
-                  path= "urlfetch_args?%s" % self.data
+                  path= "urlfetch?%s" % self.data
             );
             #response = unicode(response, errors="ignore");
             #response = simplejson.loads(response);

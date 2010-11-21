@@ -8,10 +8,10 @@ class test_class(TestController):
 
     @tag(bug=False, bugid="ACRE-210")
     def test_urlfetch_post_with_headers(self):
-        self.set_acre_script("urlfetch_args", {
+        self.set_acre_script("urlfetch", {
             "method":"POST",
             "url":"%s/%s" % (self.host, "urlfetch_response"),
-            "url_headers": {"x-note":"sent by urlfetch_args" }
+            "url_headers": {"x-note":"sent by urlfetch" }
         })
         try: 
             self.get();
@@ -34,7 +34,7 @@ class test_class(TestController):
     @tag(bug=False, bugid="ACRE-209")
     def test_urlfetch_freebase_search(self):
         freebase_server = re.compile("http://").sub("", self.freebase_service)
-        self.set_acre_script("urlfetch_args", {
+        self.set_acre_script("urlfetch", {
                 "method":"GET",
                 "url":"http://%s/api/service/search?limit=1&start=0&query=rza" % freebase_server,
                 #"params": {"limit":1, "start":0, "query":"rza" }
@@ -44,7 +44,7 @@ class test_class(TestController):
             response = simplejson.loads(self.response.read());
             body = response['body'];
             headers = response['headers'];
-            status =response['status']
+            status = response['status']
             result = simplejson.loads( body );
 
             print "Got response %s" % body;
@@ -70,7 +70,7 @@ class test_class(TestController):
 
     @tag(bug=False, bugid="ACRE-209")
     def test_urlfetch_get_with_params(self):
-        self.set_acre_script("urlfetch_args", {
+        self.set_acre_script("urlfetch", {
            "method":"GET",
            #"url_params": {"foo":"bar"},
            "url":"%s/%s" % (self.host, "urlfetch_response?foo=bar")
@@ -84,7 +84,7 @@ class test_class(TestController):
             headers = response['headers'];
 
             # verify request method
-            method = body['request_method'];
+            method = body['method'];
             self.assert_(method == "GET", "Did not find expected request method GET.  Got: %s " % method);
 
             # verify params
@@ -101,14 +101,14 @@ class test_class(TestController):
          
 
         except Exception, e:
-            print "logs from urlfetch_args request:\n%s" % self.log;
+            print "logs from urlfetch request:\n%s" % self.log;
             print(self.log);
             self.assert_(False, "test threw unexpected error. %s" % e);
 
 
     @tag(bug=False, bugid="ACRE-209")
-    def test_urlfetch_args(self):
-        self.set_acre_script("urlfetch_args", { 
+    def test_urlfetch_with_args(self):
+        self.set_acre_script("urlfetch", { 
             "method":"POST",
             #"url_params": {"foo":"bar"},
             #"url_headers": { "content-type":"text/plain" },
@@ -122,20 +122,20 @@ class test_class(TestController):
             print "Got response %s" % response;
 
             # verify request method
-            headers =  response['headers'];
+            headers = response['headers'];
             print "Headers %s" % headers;
 
             # get request body
-            body =  simplejson.loads(response['body']);
+            body = simplejson.loads(response['body']);
             print "Body: %s" % body;
 
             # verify request method
-            method = body['request_method'];
+            method = body['method'];
             print 
             self.assert_(method == "POST", "Did not find expected request method POST.  Got: %s " % method);
 
             # verify request_body
-            request_body = body['request_body'];
+            request_body = body['body'];
             print "Got request_body %s" % request_body;
             exp_request_body = re.compile("hello world");
             self.assert_(exp_request_body.search(request_body), "Did not find expected request body.  Got: %s Expected %s" % (request_body, "hello world\\n" ));
@@ -153,7 +153,7 @@ class test_class(TestController):
             self.assert_(query_string == exp_query_string, "Did not get expected query_string. Got: %s Expected: %s" % (query_string, exp_query_string));
 
         except Exception, e:
-            print "logs from urlfetch_args request:\n%s" % self.log;
+            print "logs from urlfetch request:\n%s" % self.log;
             #XTINE: WILL: do we need? print("logs from urlfetch_response request:\n\n" % self.get_log(headers['x-metaweb-tid']));
             self.assert_(False, "test threw unexpected error. %s" % e);
 

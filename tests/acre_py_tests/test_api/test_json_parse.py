@@ -114,9 +114,6 @@ class test_class(TestController):
 	    if not (a == "fail29.json" or a == "fail30.json" or a == "fail31.json"):
                 yield test_fail, a
 
-    #@tag(bug=True, bugid="ACRE-1167")
-    #def test_json_checker_known_fail_cases_failures(self):
-
     @tag(bug=False, bugid="ACRE-397")
     def test_json_check_log_for_err_msg(self):
         from urllib2 import HTTPError

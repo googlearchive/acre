@@ -14,38 +14,30 @@
   *
   */
 
-var params = acre.environ.params;
-var url = params['url']
-var eval_string = params['eval_string']
+var params = acre.request.params;
 
+var status = params["status"] || "200";
+var headers = params["headers"] || { "content-type": "text/plain; charset=utf-8" };
 
-if ( String(params["status"]) == "undefined" ) {
-    status = "200";
-}
-if (String(params["content_type"]) == "undefined" ) {
-    content_type = "text/plain; charset=utf-8";
-}
+var url = params['url'];
+var eval_string = params['eval_string'];
 
 var result = {};
 
 try { 
-   result = acre.require(  url );
-   console.log( "acre.require returned " + result +"\n");
-   result['eval_result'] = eval(eval_string);
+  result = acre.require(url);
+  console.log("acre.require returned " + result + "\n");
+  result['eval_result'] = eval(eval_string);
 } catch (e) {
   result['result'] = "FAIL";
   result['description'] = "error passing " + url + " to acre.require";
-  for ( p in e ) {
-     console.log( "exception: " + p +": " + e[p]+"\n" );
-     result[p] = e[p];
+  for (p in e) {
+    console.log("exception: " + p + ": " + e[p] + "\n");
+    result[p] = e[p];
   }
 }
 
-  acre.response.status = status;
-  acre.response.headers['content-type'] = content_type;
+acre.response.status = status;
+acre.response.headers = headers;
 
-acre.write( JSON.stringify(result) +"\n" );
-
-
-
-
+acre.write(JSON.stringify(result) + "\n");

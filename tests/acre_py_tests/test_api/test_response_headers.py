@@ -16,7 +16,7 @@ class test_class(TestController):
         headers = {
             "X-Metaweb-TID":"an invalid value",
         };
-        self.set_acre_script("start_response_headers", { "status":status, "headers":headers})
+        self.set_acre_script("response_headers", { "status":status, "headers":headers})
         try:
             self.get()
             actual_code = "200"
@@ -57,7 +57,7 @@ class test_class(TestController):
         from urllib2 import HTTPError 
         from unittest import TestCase
 
-        self.set_acre_script("start_response_headers", { "status":status, "headers":headers})
+        self.set_acre_script("response_headers", { "status":status, "headers":headers})
         try:
             self.get()
             actual_code = "200"
