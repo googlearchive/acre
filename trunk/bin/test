@@ -46,10 +46,10 @@ else
 fi
 
 $ECHO -n "CHECK: your local DNS configurations... "
-RESP=`curl -s -S -m 5 http://api.qatests.apps.freebase.${ACRE_HOST_SUFFIX}:$ACRE_PORT/return_status 2> /dev/null | grep "status is: 200"`
+RESP=`curl -s -S -m 5  http://api.qatests.apps.freebase.dev.${ACRE_HOST_BASE}:$ACRE_PORT/return_status 2> /dev/null | grep "status is: 200"`
 if [ -z "$RESP" ]; then
     $ECHO "FAILED"
-    $ECHO "FATAL: make sure 'api.qatests.apps.freebase.${ACRE_HOST_SUFFIX}' points to 127.0.0.1 in your DNS or /etc/host"
+    $ECHO "FATAL: make sure 'api.qatests.apps.freebase.dev.${ACRE_HOST_BASE}' points to 127.0.0.1 in your DNS or /etc/host"
     exit 1
 else
     $ECHO "PASSED"
