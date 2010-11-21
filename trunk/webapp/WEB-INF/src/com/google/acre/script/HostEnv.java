@@ -98,10 +98,11 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     
     private static String ACRE_METAWEB_API_ADDR = Configuration.Values.ACRE_METAWEB_API_ADDR.getValue();
     private static String ACRE_FREEBASE_SITE_ADDR = Configuration.Values.ACRE_FREEBASE_SITE_ADDR.getValue();
-    private static String ACRE_HOST_SUFFIX = Configuration.Values.ACRE_HOST_SUFFIX.getValue();
     private static String ACRE_HOST_BASE = Configuration.Values.ACRE_HOST_BASE.getValue();
+    private static String ACRE_HOST_DELIMETER_HOST = Configuration.Values.ACRE_HOST_DELIMETER_HOST.getValue();
+    private static String ACRE_HOST_DELIMETER_PATH = Configuration.Values.ACRE_HOST_DELIMETER_PATH.getValue();
 
-    private static final String DEFAULT_HOST_PATH = "//default.dev";
+    private static final String DEFAULT_HOST_PATH = "//default." + ACRE_HOST_DELIMETER_PATH;
 
     //private static boolean HIDE_INTERNAL_JS_STACK = Configuration.Values.HIDE_ACREBOOT_STACK.getBoolean();
     private static boolean ENABLE_SUPERVISOR = Configuration.Values.ACRE_SUPERVISOR_THREAD.getBoolean();
@@ -384,7 +385,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     public void bootScript() {
 
-        req.server_host = ACRE_HOST_SUFFIX;
+        req.server_host = ACRE_HOST_DELIMETER_PATH + "." + ACRE_HOST_BASE;
         req.server_host_base = ACRE_HOST_BASE;
         req.freebase_service_url = "http://" + ACRE_METAWEB_API_ADDR;
         req.freebase_site_host = "http://" + ACRE_FREEBASE_SITE_ADDR;
@@ -393,6 +394,10 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         this.put("ACRE_HOST_BASE", this,
                  Configuration.Values.ACRE_HOST_BASE.getValue());
+        this.put("ACRE_HOST_DELIMETER_HOST", this,
+                 Configuration.Values.ACRE_HOST_DELIMETER_HOST.getValue());
+        this.put("ACRE_HOST_DELIMETER_PATH", this,
+                 Configuration.Values.ACRE_HOST_DELIMETER_PATH.getValue());
         this.put("STATIC_SCRIPT_PATH", this,
                  Configuration.Values.STATIC_SCRIPT_PATH.getValue());
         this.put("ACRE_ALLOW_MWAUTH_HOST_SUFFIX", this,

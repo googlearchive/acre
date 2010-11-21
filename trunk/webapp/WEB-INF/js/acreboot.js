@@ -51,10 +51,13 @@ if (typeof _topscope.XML != 'undefined') {
 
 //---------------------------- globals / utils ---------------------------------------
 
-var _DEFAULT_APP = "release.apps.site.freebase.dev";
-var _DEFAULT_FILE = "index";
 var _DEFAULT_HOSTS_PATH = '/freebase/apps/hosts';
 var _DEFAULT_ACRE_HOST_PATH = "/z/acre";
+var _DELIMETER_HOST = _hostenv.ACRE_HOST_DELIMETER_HOST || "host";
+var _DELIMETER_PATH = _hostenv.ACRE_HOST_DELIMETER_PATH || "dev";
+
+var _DEFAULT_APP = "release.apps.site.freebase." + _DELIMETER_PATH;
+var _DEFAULT_FILE = "index";
 
 function escape_re(s) {
   var specials = /[.*+?|()\[\]{}\\]/g;
@@ -78,7 +81,7 @@ function namespace_to_host(namespace) {
             namespace = namespace.replace(acre_host_re, "").replace(/^\//, "");
         }
     } else {
-        namespace = "dev" + namespace;
+        namespace = _DELIMETER_PATH + namespace;
     }
     return namespace.split("/").reverse().join(".");
 }
@@ -142,7 +145,7 @@ function decompose_req_path(req_path) {
         
         // normalize host relative to current acre host
         var acre_host_re = new RegExp("^((.*)\.)?" + escape_re(_request.server_host_base) + "$");
-        var foreign_host_re = new RegExp("^(.*\.)" + "host" + "$");
+        var foreign_host_re = new RegExp("^(.*\.)" + _DELIMETER_HOST + "$");
         
         var m = host.match(acre_host_re);
         if (m) {
@@ -1300,8 +1303,7 @@ var disk_inventory_path = function(disk_path) {
 }
 
 var webdav_resolver = function(host) {
-    // XXX This all feels a bit kludgey... 
-    var parts = host.split(".dev.");
+    var parts = host.split("." + _DELIMETER_PATH + ".");
 
     if (parts.length < 2) {
         return false;
@@ -2682,7 +2684,7 @@ var boot_acrelet = function () {
     // 2. Otherwise, get from request:
     } else {
         var [h, p] = decompose_req_path('http://' + _request.server_name.toLowerCase() + _request.path_info);
-
+        
         if (!h) h = _DEFAULT_APP;
         if (!p) p = _DEFAULT_FILE;
         

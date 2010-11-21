@@ -4,7 +4,6 @@
 cd `dirname $0`/..
 
 if [ "$ACTION" = "run_app" ] ; then
-    ACRE_HOST_SUFFIX="localhost"
     ACRE_HOST_BASE="localhost"
 fi
 
@@ -51,7 +50,7 @@ LOCAL_SERVER_CLASSES="-DACRE_CACHE_CLASS=com.google.acre.script.WhirlycottCache 
 
 RUN_CMD="$JAVA $JVM_MEM $JVM_PERM_MEM $JVM_JMX $DEBUG -cp $classpath -DconfigDir=webapp/META-INF $LOCAL_SERVER_CLASSES -DSTATIC_SCRIPT_PATH=webapp/WEB-INF/scripts $EXTRA_CONF com.google.acre.Main"
 
-echo "Starting 'Acre $ACRE_VERSION' mounted at '*.$ACRE_HOST_SUFFIX' over '$ACRE_METAWEB_API_ADDR' "    
+echo "Starting 'Acre $ACRE_VERSION' mounted at '*.$ACRE_HOST_BASE' over '$ACRE_METAWEB_API_ADDR' "    
 
 if [ ! -z "$DEBUG" ]; then
     echo "with DEBUG parameters: $DEBUG"

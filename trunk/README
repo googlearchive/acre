@@ -72,8 +72,7 @@ The simplest way to do this is by adding the following to your /etc/hosts file:
 each app you want your local acre to serve)
 
 I you want to use a different base URL (for example, once you deploy Acre on your own server), 
-update 'ACRE_HOST_BASE' and 'ACRE_HOST_SUFFIX' in your 'config/project.local.conf' file, and 
-restart Acre.
+update 'ACRE_HOST_BASE' in your 'config/project.local.conf' file, and restart Acre.
 
 You can use subdirectories for different versions of your apps, staging, etc.
 The directory structure is the same as the namespace path in freebase.com, so

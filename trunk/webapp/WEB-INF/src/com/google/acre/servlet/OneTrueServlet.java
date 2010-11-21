@@ -192,7 +192,7 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
                         if (hostname.endsWith(".")) {
                             hostname = hostname.substring(0,hostname.length()-1);
                         } else {
-                            hostname =  hostname + "." + Configuration.Values.ACRE_HOST_SUFFIX.getValue() + portval;
+                            hostname =  hostname + "." + Configuration.Values.ACRE_HOST_DELIMETER_PATH.getValue() + "." + Configuration.Values.ACRE_HOST_BASE.getValue() + portval;
                         }                        
                     }
 
