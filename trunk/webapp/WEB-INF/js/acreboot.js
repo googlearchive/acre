@@ -57,7 +57,7 @@ var _DELIMITER_PATH = _hostenv.ACRE_HOST_DELIMITER_PATH;
 var _DEFAULT_HOSTS_PATH = '/freebase/apps/hosts';
 var _DEFAULT_ACRE_HOST_PATH = "/z/acre";
 
-var _DEFAULT_APP = "release.apps.site.freebase." + _DELIMITER_PATH;
+var _DEFAULT_APP = "helloworld.examples." + _DELIMITER_PATH;
 var _DEFAULT_FILE = "index";
 
 function escape_re(s) {
