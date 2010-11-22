@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# Normalize the current directory
+cd `dirname $0`/..
+
+version="5.1.13"
+
+curl "http://mirrors.ibiblio.org/pub/mirrors/maven2/mysql/mysql-connector-java/${version}/mysql-connector-java-${version}.jar" -o webapp/WEB-INF/lib/mysql-connector-java-${version}.jar
