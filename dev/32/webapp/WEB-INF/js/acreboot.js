@@ -1536,7 +1536,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
             if (depth === 0) {
                 // app is empty!
                 if (!dir || !dir.files.length) {
-                    syslog.debug({'host': host}, "appfetch." + name + ".not_found");
+                    syslog.debug({'host': host, 'resource': resource}, "appfetch." + name + ".not_found");
                     throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
                 }
                 
