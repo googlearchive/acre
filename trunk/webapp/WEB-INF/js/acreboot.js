@@ -1505,7 +1505,6 @@ var uberfetch_cache = function(skip_cache) {
 };
 
 var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
-    
     return function(host, result) {
         // avoid infinite recursion (e.g., symlink to self)
         var MAX_DIRECTORY_DEPTH = 2;
@@ -1537,7 +1536,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
             if (depth === 0) {
                 // app is empty!
                 if (!dir || !dir.files.length) {
-                    syslog.debug({'host': host}, "appfetch." + name + ".not_found");
+                    syslog.debug({'host': host, 'resource': resource}, "appfetch." + name + ".not_found");
                     throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
                 }
                 
@@ -1573,7 +1572,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
 
         var resource = resolver(host);
         if (!resource) {
-            syslog.debug({'host': host, 'resource': resource }, "appfetch." + name + ".not_found");
+            syslog.debug({'host': host}, "appfetch." + name + ".not_found");
             throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);      
         }
 
