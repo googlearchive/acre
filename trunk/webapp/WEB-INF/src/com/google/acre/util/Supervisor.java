@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import com.google.acre.util.exceptions.AcreThreadDeath;
+import com.google.acre.script.exceptions.AcreThreadDeath;
 import com.google.util.logging.MetawebLogger;
 
 /**

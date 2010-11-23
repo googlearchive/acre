@@ -237,11 +237,11 @@ case "$ACTION" in
         SCRIPT="build" 
         COMMAND="appengine"
         check_appengine
-        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" 
+        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
         invoke;;
     appengine-run) 
         check_appengine
-        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" 
+        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
         if [ ! -d "$WAR" ]; then
             SCRIPT="build" 
             COMMAND="appengine"
@@ -250,8 +250,8 @@ case "$ACTION" in
         SCRIPT="build" 
         COMMAND="appengine-local"
         invoke
-        if [ "$PORT" != "" ]; then
-            APPSERVER_PARAMS="-p $PORT"
+        if [ "$ACRE_PORT" != "" ]; then
+            APPSERVER_PARAMS="-p $ACRE_PORT"
         fi
         $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS "$WAR";;
     appengine-deploy) 

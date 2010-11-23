@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+package com.google.acre.classstore;
 
-package com.google.acre.script;
-
-import com.google.acre.script.ClassStore;
-import com.google.acre.script.StoredClass;
 import com.google.appengine.api.memcache.MemcacheService;
 import com.google.appengine.api.memcache.MemcacheServiceFactory;
 
 public class AppEngineClassStore implements ClassStore {
+
     private MemcacheService _cache;
 
     public AppEngineClassStore() {

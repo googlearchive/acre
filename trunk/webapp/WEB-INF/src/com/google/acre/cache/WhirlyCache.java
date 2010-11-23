@@ -12,28 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-package com.google.acre.script;
+package com.google.acre.cache;
 
 import com.whirlycott.cache.Cache;
 import com.whirlycott.cache.CacheException;
 import com.whirlycott.cache.CacheManager;
 
-public class WhirlycottCache implements com.google.acre.util.Cache {
-    private Cache _cache;
-    private static com.google.acre.util.Cache _singleton;
-    
-    public static synchronized com.google.acre.util.Cache getCache() {
+public class WhirlyCache implements com.google.acre.cache.Cache {
+
+    private static com.google.acre.cache.Cache _singleton;
+
+    public static synchronized com.google.acre.cache.Cache getCache() {
         if (_singleton == null) {
-            _singleton = new WhirlycottCache();
+            _singleton = new WhirlyCache();
         }
         return _singleton;
     }
 
-    private WhirlycottCache() {
+    // ---------------------------------------------------------------------------
+    
+    private Cache _cache;
+    
+    private WhirlyCache() {
         try {
-            CacheManager cm = CacheManager.getInstance();
-            _cache = cm.getCache();
+            _cache = CacheManager.getInstance().getCache();
         } catch (CacheException e) {
             throw new RuntimeException(e);
         }

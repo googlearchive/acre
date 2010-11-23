@@ -15,10 +15,8 @@
 
 package com.google.acre.script;
 
-import java.lang.reflect.Method;
-
-import com.google.acre.Configuration;
-import com.google.acre.util.Cache;
+import com.google.acre.AcreFactory;
+import com.google.acre.cache.Cache;
 import com.google.util.javascript.JSObject;
 
 public class JSCache extends JSObject {
@@ -28,13 +26,8 @@ public class JSCache extends JSObject {
     private static Cache _cache;
 
     static {
-        String cache_class = 
-            Configuration.Values.ACRE_CACHE_CLASS.getValue();
-
         try {
-            Class<?> cls = Class.forName(cache_class);
-            Method method = cls.getMethod("getCache", new Class[0]);
-            _cache = (Cache)method.invoke(null, new Object[0]);
+            _cache = AcreFactory.getCache();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

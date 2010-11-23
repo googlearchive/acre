@@ -49,9 +49,11 @@ import org.mozilla.javascript.Scriptable;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
+import com.google.acre.script.exceptions.JSURLTimeoutError;
 import com.google.util.logging.MetawebLogger;
 
-class NHttpAsyncUrlfetch implements AsyncUrlfetch {
+public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
+    
     private AcreResponse _response;
     private Scriptable _scope;
     private NHttpClient _nhttp;

@@ -26,8 +26,11 @@ import org.mozilla.javascript.GeneratedClassLoader;
 import org.mozilla.javascript.Script;
 import org.mozilla.javascript.optimizer.ClassCompiler;
 
+import com.google.acre.AcreFactory;
 import com.google.acre.Configuration;
-import com.google.acre.util.exceptions.AcreInternalError;
+import com.google.acre.classstore.ClassStore;
+import com.google.acre.classstore.StoredClass;
+import com.google.acre.script.exceptions.AcreInternalError;
 import com.google.util.logging.MetawebLogger;
 
 public class ScriptManager {
@@ -46,11 +49,9 @@ public class ScriptManager {
         _compiler = createCompiler();
         _classLoader = createClassLoader();
         try {
-          _class_store = (ClassStore)
-              Class.forName("com.google.acre.script.AppEngineClassStore")
-              .newInstance();
+            _class_store = AcreFactory.getClassStore();
         } catch (Exception e) {
-            _class_store = null;
+            throw new RuntimeException(e);
         }
     }
 

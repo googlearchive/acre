@@ -13,19 +13,17 @@
 // limitations under the License.
 
 
-package com.google.acre.util.exceptions;
+package com.google.acre.script.exceptions;
 
 /**
- * Error to be reported as a general error page - no stack (except for dev) 
+ * Script error that can not be caught or handled by script
+ * but is reported to the user with stack trace
+ * 
  */
-public class AcreInternalError extends java.lang.Error {
-    private static final long serialVersionUID = 1L;
-    
-    public AcreInternalError(String msg) {
-        super(msg);
-    }
+public class AcreDeadlineError extends Error {
+    private static final long serialVersionUID = -4809352651085923170L;
 
-    public AcreInternalError(String msg, Throwable t) {
-        super(msg, t);
+    public AcreDeadlineError(String msg) {
+        super(msg);
     }
 }

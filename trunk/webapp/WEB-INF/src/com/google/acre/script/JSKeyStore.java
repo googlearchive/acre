@@ -14,7 +14,6 @@
 
 package com.google.acre.script;
 
-import java.lang.reflect.Method;
 import java.util.List;
 
 import org.mozilla.javascript.Context;
@@ -22,8 +21,9 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
-import com.google.acre.Configuration;
-import com.google.acre.util.KeyStore;
+import com.google.acre.AcreFactory;
+import com.google.acre.keystore.KeyStore;
+import com.google.acre.script.exceptions.JSConvertableException;
 import com.google.util.javascript.JSObject;
 import com.google.util.logging.MetawebLogger;
 
@@ -35,16 +35,11 @@ public class JSKeyStore extends JSObject {
     private static MetawebLogger _logger = new MetawebLogger();
 
     static {
-        String keystore_class = 
-            Configuration.Values.ACRE_KEYSTORE_CLASS.getValue();
         try {
-            Class<?> cls = Class.forName(keystore_class);
-            Method method = cls.getMethod("getKeyStore", new Class[0]);
-            _keystore = (KeyStore)method.invoke(null, new Object[0]);
+            _keystore = AcreFactory.getKeyStore();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
     public JSKeyStore() { }

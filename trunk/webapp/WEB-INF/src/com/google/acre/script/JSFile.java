@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-package com.google.acre.util;
+package com.google.acre.script;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,7 +26,6 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
-import com.google.acre.script.JSBinary;
 import com.google.util.javascript.JSObject;
 
 public class JSFile extends JSObject {

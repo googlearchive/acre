@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre;
 
 import java.io.File;
@@ -38,7 +37,7 @@ public class Configuration implements ConfigurationMBean {
     private static final String DEFAULT_NAME = "acre";
 
     public static enum Values {
-
+        
         // strings
         ACRE_VERSION("[default]"),
         ACRE_HOST(DEFAULT_HOST),
@@ -59,8 +58,7 @@ public class Configuration implements ConfigurationMBean {
         ACRE_TEMPSTORE_DIR("_logs/"), 
         ACRE_GMETRIC_CMD("gmetric"), 
         SERVICE_NAME(DEFAULT_NAME),
-        ACRE_CACHE_CLASS("com.google.acre.script.AppEngineCache"),
-        ACRE_KEYSTORE_CLASS("com.google.acre.util.AppEngineKeyStore"),
+        
         ACRE_SQL_DRIVER("com.mysql.jdbc.Driver"),
         ACRE_SQL_USER("acre"),
         ACRE_SQL_TABLE("acre_keystore"),
@@ -156,7 +154,7 @@ public class Configuration implements ConfigurationMBean {
     private static String _configDir;
     private Map<String, String> _params = new HashMap<String, String>();
 
-    public static Configuration _instance;
+    static Configuration _instance;
 
     public static String getConfDir() {
         return _configDir;
@@ -169,7 +167,7 @@ public class Configuration implements ConfigurationMBean {
     }
 
     static void load(String dir, Configuration conf) {
-        // load peroperties from disk
+        // load properties from disk
         File file = new File(dir, "acre.properties");
         try {
             FileInputStream is = new FileInputStream(file);
@@ -197,6 +195,10 @@ public class Configuration implements ConfigurationMBean {
         return _instance._params.get(name);
     }
 
+    public static boolean isAppEngine() {
+        return (_instance._params.get("com.google.appengine.runtime.version") != null);
+    }
+    
     void put(String name, String value) {
         _params.put(name, value);
     }

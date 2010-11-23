@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-package com.google.acre.util;
+package com.google.acre.client;
 
 import java.net.InetAddress;
 import java.net.Socket;
@@ -29,6 +28,7 @@ import org.apache.http.conn.scheme.SocketFactory;
 import org.apache.http.params.HttpParams;
 
 public class AppEngineClientConnectionManager implements ClientConnectionManager {
+
     private SchemeRegistry schemes;
 
     class NoopSocketFactory implements SocketFactory {

@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.servlet;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,8 +31,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.acre.AcreFactory;
 import com.google.acre.Configuration;
-import com.google.acre.util.KeyStore;
+import com.google.acre.keystore.KeyStore;
 import com.google.util.javascript.JSON;
 import com.google.util.javascript.JSONException;
 import com.google.util.logging.MetawebLogger;
@@ -79,12 +78,8 @@ public class KeyStoreServlet extends HttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
 
-        String keystore_class = 
-            Configuration.Values.ACRE_KEYSTORE_CLASS.getValue();
         try {
-            Class<?> cls = Class.forName(keystore_class);
-            Method method = cls.getMethod("getKeyStore", new Class[0]);
-            _store = (KeyStore)method.invoke(null, new Object[0]);
+            _store = AcreFactory.getKeyStore();
         } catch (Exception e) {
             throw new ServletException("Error initializing the key store", e);
         }

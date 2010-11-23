@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-package com.google.acre.util;
+package com.google.acre.client;
 
 import static com.google.appengine.api.urlfetch.FetchOptions.Builder.allowTruncate;
 
@@ -44,6 +43,7 @@ import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 
 class AppEngineClientConnection implements ManagedClientConnection {
+
     // Managed is the composition of ConnectionReleaseTrigger,
     //     HttpClientConnection, HttpConnection, HttpInetConnection
 
@@ -197,14 +197,12 @@ class AppEngineClientConnection implements ManagedClientConnection {
         }
 
         HTTPMethod method = HTTPMethod.valueOf(apache_request.getRequestLine().getMethod());
-        _appengine_hrequest = new HTTPRequest(request_url, method, allowTruncate()
-                                              .doNotFollowRedirects());
+        _appengine_hrequest = new HTTPRequest(request_url, method, allowTruncate().doNotFollowRedirects());
 
         Header[] apache_headers = apache_request.getAllHeaders();
         for (int i = 0; i < apache_headers.length; i++) {
             Header h = apache_headers[i];
-            _appengine_hrequest
-                .setHeader(new HTTPHeader(h.getName(), h.getValue()));
+            _appengine_hrequest.setHeader(new HTTPHeader(h.getName(), h.getValue()));
         }
     }
 

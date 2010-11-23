@@ -18,6 +18,10 @@
         <not><isset property="revision"/></not>
     </condition>
 
+    <condition property="revision" value="appengine">
+        <not><isset property="config.file"/></not>
+    </condition>
+
 	<property name="name" value="acre" />
     <property name="fullname" value="${name}-${version}-${revision}" />
 
@@ -180,7 +184,7 @@
     <target name="copy-appengine-configs">
       <exec executable="${basedir}/acre">
         <arg value="-c" />
-        <arg value="appengine" />
+        <arg value="${config.file}" />
         <arg value="make-configs"/>
       </exec>
 

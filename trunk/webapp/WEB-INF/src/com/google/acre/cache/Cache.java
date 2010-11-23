@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+package com.google.acre.cache;
 
-package com.google.acre.script;
-
-public class JSURLTimeoutError extends JSConvertableException {
-    protected static String error_constructor = "URLTimeoutError";
-
-    public JSURLTimeoutError(String message) {
-        super(message);
-    }
-
+public interface Cache {
+    //    public Cache getCache();
+    public String get(String key);
+    public void put(String key, String value);
+    public void put(String key, String value, long expires);
+    public String delete(String key);
 }

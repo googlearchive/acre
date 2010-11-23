@@ -12,17 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+package com.google.acre.script.exceptions;
 
-package com.google.acre.util.exceptions;
+public class JSURLTimeoutError extends JSConvertableException {
+    protected static String error_constructor = "URLTimeoutError";
 
-public class AcreURLFetchException extends RuntimeException {
-    
-    private static final long serialVersionUID = 1L;
-    
-    public AcreURLFetchException(String msg) {
-        super(msg);
+    public JSURLTimeoutError(String message) {
+        super(message);
     }
-    public AcreURLFetchException(String msg, Throwable cause) {
-        super(msg, cause);
-    }
+
 }

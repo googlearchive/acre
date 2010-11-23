@@ -823,7 +823,7 @@ var _request_app_guid = null;
 acre.keystore.get = function (name) {
     if (_request_app_guid !== null) {
         return _ks.get_key(name, _request_app_guid);
-     } else {
+    } else {
         return null;
     }
 };
@@ -1505,6 +1505,7 @@ var uberfetch_cache = function(skip_cache) {
 };
 
 var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
+    
     return function(host, result) {
         // avoid infinite recursion (e.g., symlink to self)
         var MAX_DIRECTORY_DEPTH = 2;
