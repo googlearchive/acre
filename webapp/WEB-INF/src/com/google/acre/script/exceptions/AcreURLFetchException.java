@@ -13,18 +13,16 @@
 // limitations under the License.
 
 
-package com.google.acre.util;
+package com.google.acre.script.exceptions;
 
-import java.util.List;
-import java.util.Map;
-
-public interface KeyStore {
-    //    public KeyStore getKeyStore();
-    public void put_key(String keyname, String appid, String token,
-                                 String secret);
-    public void put_key(String keyname, String appid, String token);
-    public void delete_key(String keyname, String appid);
-    public String[] get_key(String keyname, String appid);
-    public List<Map<String,String>> get_full_keys(String appid);
-    public List<String> get_keys(String appid);
+public class AcreURLFetchException extends RuntimeException {
+    
+    private static final long serialVersionUID = 1L;
+    
+    public AcreURLFetchException(String msg) {
+        super(msg);
+    }
+    public AcreURLFetchException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
 }

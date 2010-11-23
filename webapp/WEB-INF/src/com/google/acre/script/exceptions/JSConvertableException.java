@@ -14,11 +14,14 @@
 
 
 
-package com.google.acre.script;
+package com.google.acre.script.exceptions;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.Scriptable;
+
+import com.google.acre.script.HostEnv;
+import com.google.acre.script.JsConvertable;
 
 
 //

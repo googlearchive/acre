@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-package com.google.acre.script;
+package com.google.acre.classstore;
 
 public interface ClassStore {
     public StoredClass new_storedclass();
     public StoredClass new_storedclass(String name, byte[] code);
-
     public StoredClass get(String name);
     public void set(String name, StoredClass klass);
 }

@@ -26,7 +26,7 @@ import org.mozilla.javascript.ScriptableObject;
 
 import com.google.acre.script.AnnotatedForJS;
 import com.google.acre.script.JS_Function;
-import com.google.acre.util.exceptions.AcreInternalError;
+import com.google.acre.script.exceptions.AcreInternalError;
 
 public class JSUtil {
     

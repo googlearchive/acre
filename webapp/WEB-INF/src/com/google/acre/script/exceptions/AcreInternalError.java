@@ -13,36 +13,19 @@
 // limitations under the License.
 
 
-package com.google.acre.script;
+package com.google.acre.script.exceptions;
 
-public class StoredClass implements java.io.Serializable {
-
-    private static final long serialVersionUID = 2597519550018861584L;
-
-    private String _name;
-    private byte[] _code;
-
-    public StoredClass() {
+/**
+ * Error to be reported as a general error page - no stack (except for dev) 
+ */
+public class AcreInternalError extends java.lang.Error {
+    private static final long serialVersionUID = 1L;
+    
+    public AcreInternalError(String msg) {
+        super(msg);
     }
 
-    public StoredClass(String name, byte[] code) {
-        _name = name;
-        _code = code;
-    }
-
-    public String name() {
-        return _name;
-    }
-
-    public void name(String name) {
-        _name = name;
-    }
-
-    public byte[] code() {
-        return _code;
-    }
-
-    public void code(byte[] code) {
-        _code = code;
+    public AcreInternalError(String msg, Throwable t) {
+        super(msg, t);
     }
 }

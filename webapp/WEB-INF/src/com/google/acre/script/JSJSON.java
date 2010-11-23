@@ -21,6 +21,7 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 
+import com.google.acre.script.exceptions.JSConvertableException;
 import com.google.util.javascript.JSON;
 import com.google.util.javascript.JSONException;
 import com.google.util.javascript.JSObject;

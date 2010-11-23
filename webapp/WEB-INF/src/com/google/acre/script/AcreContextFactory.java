@@ -21,7 +21,7 @@ import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
 import com.google.acre.Configuration;
-import com.google.acre.util.exceptions.AcreScriptError;
+import com.google.acre.script.exceptions.AcreScriptError;
 import com.google.util.logging.MetawebLogger;
 
 /**

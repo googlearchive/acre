@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.script;
 
 import static com.google.appengine.api.urlfetch.FetchOptions.Builder.disallowTruncate;
@@ -53,10 +52,10 @@ import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 
-class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
+public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
+
     class AsyncRequest {
-        public AsyncRequest(URL url, 
-                            Future<HTTPResponse> request, Function callback) {
+        public AsyncRequest(URL url, Future<HTTPResponse> request, Function callback) {
             _url = url;
             _request = request;
             _callback = callback;

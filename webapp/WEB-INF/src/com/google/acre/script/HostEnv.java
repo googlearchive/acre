@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.script;
 
 import java.io.BufferedReader;
@@ -52,17 +51,18 @@ import org.mozilla.javascript.Script;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
+import com.google.acre.AcreFactory;
 import com.google.acre.Configuration;
 import com.google.acre.script.AcreContextFactory.AcreContext;
+import com.google.acre.script.exceptions.AcreDeadlineError;
+import com.google.acre.script.exceptions.AcreInternalError;
+import com.google.acre.script.exceptions.AcreScriptError;
+import com.google.acre.script.exceptions.AcreThreadDeath;
+import com.google.acre.script.exceptions.AcreURLFetchException;
+import com.google.acre.script.exceptions.JSConvertableException;
 import com.google.acre.thread.AllocationLimitedThread;
-import com.google.acre.util.JSFile;
 import com.google.acre.util.JSUtil;
 import com.google.acre.util.Supervisor;
-import com.google.acre.util.exceptions.AcreDeadlineError;
-import com.google.acre.util.exceptions.AcreInternalError;
-import com.google.acre.util.exceptions.AcreScriptError;
-import com.google.acre.util.exceptions.AcreThreadDeath;
-import com.google.acre.util.exceptions.AcreURLFetchException;
 import com.google.util.javascript.JSON;
 import com.google.util.javascript.JSONException;
 import com.google.util.javascript.DOM.JSAttr;
@@ -252,21 +252,21 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         try {
             ScriptableObject.defineClass(scope, JSKeyStore.class, false, true);
         } catch (IllegalAccessException e) {
-            syslog(Level.ERROR, "hostenv.keystore.init.failed", "Failed to load KeyStore bridge: " + e);
+            syslog(Level.ERROR, "hostenv.keystore.init.failed", "Failed to load KeyStore object: " + e);
         } catch (InstantiationException e) {
-            syslog(Level.ERROR, "hostenv.keystore.init.failed", "Failed to load KeyStore bridge: " + e);
+            syslog(Level.ERROR, "hostenv.keystore.init.failed", "Failed to load KeyStore object: " + e);
         } catch (InvocationTargetException e) {
-            syslog(Level.ERROR, "hostenv.keystore.init.failed", "Failed to load KeyStore bridge: " + e);
+            syslog(Level.ERROR, "hostenv.keystore.init.failed", "Failed to load KeyStore object: " + e);
         }
-
+        
         try {
             ScriptableObject.defineClass(scope, JSCache.class, false, true);
         } catch (IllegalAccessException e) {
-            syslog(Level.ERROR, "hostenv.cache.init.failed", "Failed to load KeyStore bridge: " + e);
+            syslog(Level.ERROR, "hostenv.cache.init.failed", "Failed to load Cache object: " + e);
         } catch (InstantiationException e) {
-            syslog(Level.ERROR, "hostenv.cache.init.failed", "Failed to load KeyStore bridge: " + e);
+            syslog(Level.ERROR, "hostenv.cache.init.failed", "Failed to load Cache object: " + e);
         } catch (InvocationTargetException e) {
-            syslog(Level.ERROR, "hostenv.cache.init.failed", "Failed to load KeyStore bridge: " + e);
+            syslog(Level.ERROR, "hostenv.cache.init.failed", "Failed to load Cache object: " + e);
         }
 
         try {
@@ -298,11 +298,28 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             syslog(Level.ERROR, "hostenv.dom.init.failed", "Failed to load DOM: " + e);
         }
 
+        try {
+            @SuppressWarnings("unchecked")
+            Class<? extends Scriptable> jsDataStoreClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.script.JSDataStore");
+            try {
+                ScriptableObject.defineClass(scope, jsDataStoreClass, false, true);
+            } catch (IllegalAccessException e) {
+                syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
+            } catch (InstantiationException e) {
+                syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
+            } catch (InvocationTargetException e) {
+                syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
+            }
+        } catch (ClassNotFoundException e1) {
+            syslog(Level.INFO, "hostenv.datastore.init.failed", "DataStore provider not present and will not be present");
+        }
+        
         return scope;
     }
 
     // note that this may be called re-entrantly to handle error pages
     public void run() {
+        
         Thread thread = Thread.currentThread();
 
         // if the supervisor is there and enabled,
@@ -320,36 +337,22 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
 
         try {
+
             _context = _contextFactory.enterContext();
             if (_context instanceof AcreContext) {
                 ((AcreContext) _context).deadline = req._deadline;
             }
             _scope = initAcreStandardObjects();
 
-            try {
-                _async_fetch = (AsyncUrlfetch)
-                    Class.forName("com.google.acre.script.AppEngineAsyncUrlfetch")
-                    .newInstance();
-                _async_fetch.response(res);
-                _async_fetch.scope(_scope);
-            } catch (Exception e) {
-                try {
-                    _async_fetch = (AsyncUrlfetch)
-                        Class.forName("com.google.acre.script.NHttpAsyncUrlfetch")
-                        .newInstance();
-
-                    _async_fetch.response(res);
-                    _async_fetch.scope(_scope);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    _async_fetch = null;
-                    // pass
-                }
-            }
+            _async_fetch = AcreFactory.getAsyncUrlfetch();
+            _async_fetch.response(res);
+            _async_fetch.scope(_scope);
 
             // let's do it!
             bootScript();
 
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         } finally {
 
             // if the thread supports it, clear the memory quota and log the memory costs
@@ -705,7 +708,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         // handle any failure
         long net_deadline = req._deadline - NETWORK_DEADLINE_ADVANCE;
 
-        AcreFetch fetch = new AcreFetch(urlStr, method, net_deadline, res);
+        AcreFetch fetch = new AcreFetch(urlStr, method, net_deadline, res, AcreFactory.getClientConnectionManager());
+        
         if (headers != null) {
             Object[] ids = headers.getIds();
             for (int i = 0; i < ids.length; i++) {

@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+package com.google.acre.keystore;
 
-package com.google.acre.util.exceptions;
+import java.util.List;
+import java.util.Map;
 
-/**
- * Script error that can not be caught or handled by script
- * but is reported to the user with stack trace
- * 
- */
-public class AcreDeadlineError extends Error {
-    private static final long serialVersionUID = -4809352651085923170L;
-
-    public AcreDeadlineError(String msg) {
-        super(msg);
-    }
+public interface KeyStore {
+    // public KeyStore getKeyStore();
+    public void put_key(String keyname, String appid, String token, String secret);
+    public void put_key(String keyname, String appid, String token);
+    public void delete_key(String keyname, String appid);
+    public String[] get_key(String keyname, String appid);
+    public List<Map<String,String>> get_full_keys(String appid);
+    public List<String> get_keys(String appid);
 }

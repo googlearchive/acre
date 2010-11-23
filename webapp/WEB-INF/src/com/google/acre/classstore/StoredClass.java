@@ -12,16 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+package com.google.acre.classstore;
 
-package com.google.acre.script;
+public class StoredClass implements java.io.Serializable {
 
-import com.google.acre.script.exceptions.JSConvertableException;
+    private static final long serialVersionUID = 2597519550018861584L;
 
-public class JSURLError extends JSConvertableException {
-    protected static String error_constructor = "URLError";
+    private String _name;
+    private byte[] _code;
 
-    public JSURLError(String message) {
-        super(message);
+    public StoredClass() {
     }
 
+    public StoredClass(String name, byte[] code) {
+        _name = name;
+        _code = code;
+    }
+
+    public String name() {
+        return _name;
+    }
+
+    public void name(String name) {
+        _name = name;
+    }
+
+    public byte[] code() {
+        return _code;
+    }
+
+    public void code(byte[] code) {
+        _code = code;
+    }
 }

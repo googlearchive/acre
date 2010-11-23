@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-package com.google.acre.util.exceptions;
+package com.google.acre.script.exceptions;
 
 /**
  * Script error that can not be caught or handled by script

@@ -51,8 +51,6 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.params.AllClientPNames;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
@@ -61,7 +59,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
-import com.google.acre.util.exceptions.AcreURLFetchException;
+import com.google.acre.script.exceptions.AcreURLFetchException;
 import com.google.acre.util.http.HttpPropFind;
 import com.google.util.logging.MetawebLogger;
 
@@ -97,13 +95,15 @@ public class AcreFetch extends JsConvertable {
     private AcreResponse _acre_response;
     private long _deadline;
     private boolean _internal;
-
-    public AcreFetch(String url, String method, long deadline, AcreResponse response) {
+    private ClientConnectionManager _connectionManager;
+    
+    public AcreFetch(String url, String method, long deadline, AcreResponse response, ClientConnectionManager connectionManager) {
         request_url = url;
         request_method = method;
         _deadline = deadline;
         _internal = isInternal(url);
         _acre_response = response;
+        _connectionManager = connectionManager;
 
         request_headers = new HashMap<String, String>();
         request_body = null;
@@ -145,18 +145,8 @@ public class AcreFetch extends JsConvertable {
                                    + request_url.substring(0, 40) + " ..." );
         }
 
-        DefaultHttpClient client;
-
-        try {
-            ClientConnectionManager cm = (ClientConnectionManager)
-                Class.forName("com.google.acre.util.AppEngineClientConnectionManager").newInstance();
-            client = new DefaultHttpClient(cm, null);
-        } catch (Exception e) {
-            SSLSocketFactory.getSocketFactory()
-                .setHostnameVerifier(new AllowAllHostnameVerifier());
-            client = new DefaultHttpClient();
-        }
-
+        DefaultHttpClient client = new DefaultHttpClient(_connectionManager, null);
+        
         // pass the deadline down to the invoked service.
         // this will be ignored unless we are fetching from another
         // acre server.

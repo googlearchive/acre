@@ -13,14 +13,13 @@
 // limitations under the License.
 
 
-package com.google.acre.script;
+package com.google.acre.cache;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.codec.binary.Hex;
 
-import com.google.acre.util.Cache;
 import com.google.appengine.api.memcache.Expiration;
 import com.google.appengine.api.memcache.MemcacheService;
 import com.google.appengine.api.memcache.MemcacheServiceFactory;
