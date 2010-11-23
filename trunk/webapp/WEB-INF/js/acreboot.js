@@ -1573,8 +1573,8 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
 
         var resource = resolver(host);
         if (!resource) {
-            syslog.debug({'host': host}, "appfetch." + name + ".not_found");
-            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);        
+            syslog.debug({'host': host, 'resource': resource }, "appfetch." + name + ".not_found");
+            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);      
         }
 
         result = result || {};
