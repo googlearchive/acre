@@ -1283,8 +1283,11 @@ var disk_inventory_path = function(disk_path) {
         files : []
     };
 
-    var files = _file.files(disk_path);    
-    if (!files) return null;
+    var files = _file.files(disk_path);
+    if (!files) {
+        delete files;
+        return null;
+    }
 
     for (var a=0; a < files.length; a++) {
         var file = files[a];
@@ -1292,11 +1295,15 @@ var disk_inventory_path = function(disk_path) {
         
         if (f.dir) {
             res.dirs.push(file);
+            delete f;
             continue;
         }
         
         var file_data = extension_to_metadata(file);
-        if (file_data.name === '') continue;
+        if (file_data.name === '') {
+            delete f;
+            continue;
+        }
         if (file_data.name === '.metadata') res.has_dot_metadata = true;
         file_data.content_id = disk_path+'/'+file;
         file_data.content_hash = disk_path+"/"+file+f.mtime;
@@ -1825,14 +1832,17 @@ var proto_require = function(req_path, skip_cache) {
     }
 
     function disk_get_content() {
-        return {
+        var f = new _file(this.data.content_id,
+                         (this.data.handler === 'binary'));
+        var res = {
             'status':200,
             'headers':{
                 'content-type':this.data.media_type
             },
-            'body':new _file(this.data.content_id,
-                             (this.data.handler === 'binary')).body
+            'body':f.body
         };
+        delete f;
+        return res;
     }
 
     function webdav_get_content() {
