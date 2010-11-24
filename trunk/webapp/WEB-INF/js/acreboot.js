@@ -1284,33 +1284,28 @@ var disk_inventory_path = function(disk_path) {
     };
 
     var files = _file.files(disk_path);
-    if (!files) {
-        delete files;
-        return null;
-    }
+    
+    if (files) {
+        for (var a=0; a < files.length; a++) {
+            var file = files[a];
+            var f = new _file(disk_path+"/"+file, false);
+            var file_data = extension_to_metadata(file);
 
-    for (var a=0; a < files.length; a++) {
-        var file = files[a];
-        var f = new _file(disk_path+"/"+file, false);
-        
-        if (f.dir) {
-            res.dirs.push(file);
+            if (f.dir) {
+                res.dirs.push(file);
+            } else if (file_data.name !== '') {
+                if (file_data.name === '.metadata') res.has_dot_metadata = true;
+                file_data.content_id = disk_path+'/'+file;
+                file_data.content_hash = disk_path+"/"+file+f.mtime;
+                res.files.push(file_data);            
+            }
             delete f;
-            continue;
         }
-        
-        var file_data = extension_to_metadata(file);
-        if (file_data.name === '') {
-            delete f;
-            continue;
-        }
-        if (file_data.name === '.metadata') res.has_dot_metadata = true;
-        file_data.content_id = disk_path+'/'+file;
-        file_data.content_hash = disk_path+"/"+file+f.mtime;
-        res.files.push(file_data);
-        delete f;
+    } else {
+        res = null;
     }
     
+    delete files;
     return res;
 }
 
