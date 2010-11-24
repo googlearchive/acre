@@ -57,6 +57,7 @@ Available Commands:
     appengine-deploy .. Deploy Acre on Google App Engine (must call 'appengine-build' first)
 
     test .............. run a suite of integration tests (start acre first)
+    freebase_check .... basic check of the freebase api endpoint
     clean ............. Remove all class files
     clean-whitespace .. Normalize tabs and newlines
     distclean ......... Restore everything to checkout state
@@ -232,6 +233,9 @@ case "$ACTION" in
         invoke;;
     test) 
         SCRIPT="test" 
+        invoke $*;;
+    freebase_check) 
+        SCRIPT="freebase_check" 
         invoke $*;;
     appengine-build) 
         SCRIPT="build" 
