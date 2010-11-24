@@ -1907,14 +1907,15 @@ var proto_require = function(req_path, skip_cache) {
             if (method.cachable)
                 app_data.__source__ = method.source;
             break;
-         } catch (e if e.__code__ == UBERFETCH_ERROR_NOT_FOUND) {
-             app_data = null;
-             continue;
-         }
+        } catch (e if e.__code__ == UBERFETCH_ERROR_NOT_FOUND) {
+            app_data = null;
+            continue;
+        }
     }
 
     if (app_data === null) {
-        // XXX fail! exception?
+        // cache complete misses in the request cache
+        METADATA_CACHE[host] = null;
         return null;
     }
     
