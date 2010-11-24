@@ -79,7 +79,7 @@ if [ "$ACTION" = "start" ] ; then
     done
     
     # if we get here, there was an error, so we should kill
-    . ./stop
+    ./acre stop
     
     echo
     echo "giving up, last /status check returned:"
