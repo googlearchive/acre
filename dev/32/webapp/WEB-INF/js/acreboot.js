@@ -823,7 +823,7 @@ var _request_app_guid = null;
 acre.keystore.get = function (name) {
     if (_request_app_guid !== null) {
         return _ks.get_key(name, _request_app_guid);
-     } else {
+    } else {
         return null;
     }
 };
@@ -1283,24 +1283,22 @@ var disk_inventory_path = function(disk_path) {
         files : []
     };
 
-    var files = _file.files(disk_path);    
+    var files = _file.files(disk_path);
     if (!files) return null;
 
     for (var a=0; a < files.length; a++) {
         var file = files[a];
         var f = new _file(disk_path+"/"+file, false);
+        var file_data = extension_to_metadata(file);
         
         if (f.dir) {
             res.dirs.push(file);
-            continue;
+        } else if (file_data.name !== '') {
+            if (file_data.name === '.metadata') res.has_dot_metadata = true;
+            file_data.content_id = disk_path+'/'+file;
+            file_data.content_hash = disk_path+"/"+file+f.mtime;
+            res.files.push(file_data);            
         }
-        
-        var file_data = extension_to_metadata(file);
-        if (file_data.name === '') continue;
-        if (file_data.name === '.metadata') res.has_dot_metadata = true;
-        file_data.content_id = disk_path+'/'+file;
-        file_data.content_hash = disk_path+"/"+file+f.mtime;
-        res.files.push(file_data);
         delete f;
     }
     
@@ -1573,7 +1571,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
         var resource = resolver(host);
         if (!resource) {
             syslog.debug({'host': host}, "appfetch." + name + ".not_found");
-            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);        
+            throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);      
         }
 
         result = result || {};
@@ -1825,14 +1823,17 @@ var proto_require = function(req_path, skip_cache) {
     }
 
     function disk_get_content() {
-        return {
+        var f = new _file(this.data.content_id,
+                         (this.data.handler === 'binary'));
+        var res = {
             'status':200,
             'headers':{
                 'content-type':this.data.media_type
             },
-            'body':new _file(this.data.content_id,
-                             (this.data.handler === 'binary')).body
+            'body':f.body
         };
+        delete f;
+        return res;
     }
 
     function webdav_get_content() {
@@ -1906,14 +1907,15 @@ var proto_require = function(req_path, skip_cache) {
             if (method.cachable)
                 app_data.__source__ = method.source;
             break;
-         } catch (e if e.__code__ == UBERFETCH_ERROR_NOT_FOUND) {
-             app_data = null;
-             continue;
-         }
+        } catch (e if e.__code__ == UBERFETCH_ERROR_NOT_FOUND) {
+            app_data = null;
+            continue;
+        }
     }
 
     if (app_data === null) {
-        // XXX fail! exception?
+        // cache complete misses in the request cache
+        METADATA_CACHE[host] = null;
         return null;
     }
     
