@@ -66,7 +66,7 @@ public class AppEngineKeyStore implements KeyStore {
                 return;
             }
         } catch (EntityNotFoundException e) {
-            app = new Entity("App", KeyFactory.createKey("app", appid));
+            app = new Entity("App", KeyFactory.createKey("App", appid));
             _datastore.put(app);
         }
 
