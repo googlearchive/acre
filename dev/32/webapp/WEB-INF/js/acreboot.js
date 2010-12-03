@@ -2680,6 +2680,9 @@ var boot_acrelet = function () {
     
     // Determine what path we're running:
     var request_path = null;
+    
+    // also need to track the "original" path for situations like "/acre/" URLs
+    var source_path = null;
 
     // 1. If it's an internal redirect (acre.route(), error page, etc.), get from handler_script_path:
     if (typeof _request.handler_script_path == 'string' && _request.handler_script_path != '') {
@@ -2723,7 +2726,16 @@ var boot_acrelet = function () {
             skip_cache = true;
         }
     }
-
+    
+    // XXX support /acre/ special case
+    if (_request.request_url.split('/')[3] == 'acre') {
+        var [h, p] = decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
+        var source_app = proto_require(compose_req_path(h), skip_cache);
+        if (source_app !== null) {
+            source_path = compose_req_path(h, p);
+            _request_app_guid = source_app.app_guid;
+        }
+    }
 
     // Set up the list of paths we're going to try before failing altogether, 
     // (routes, not_found, default scripts, etc.)
@@ -2821,7 +2833,7 @@ var boot_acrelet = function () {
     }
 
     // View Source link:
-    var source_path = request_path;
+    source_path = source_path || request_path;
     if ('error' in acre && 'script_path' in acre.error) { // error page is a special case
         source_path = acre.error.script_path;       
     }
