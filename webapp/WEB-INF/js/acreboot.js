@@ -2684,20 +2684,19 @@ var boot_acrelet = function () {
     // also need to track the "original" path for situations like "/acre/" URLs
     var source_path = null;
 
-    // 1. If it's an internal redirect (acre.route(), error page, etc.), get from handler_script_path:
+    // If it's an internal redirect (acre.route(), error page, etc.), get from handler_script_path:
     if (typeof _request.handler_script_path == 'string' && _request.handler_script_path != '') {
         request_path = _request.handler_script_path;
-
-    // 2. Otherwise, get from request:
-    } else {
-        var [h, p] = decompose_req_path('http://' + _request.server_name.toLowerCase() + _request.path_info);
-        
-        if (!h) h = _DEFAULT_APP;
-        if (!p) p = _DEFAULT_FILE;
-        
-        request_path = compose_req_path(h, p);
     }
     delete _request.handler_script_path;
+    
+    // Otherwise, get from request:
+    var [h, p] = decompose_req_path(request_path || ('http://' + _request.server_name.toLowerCase() + _request.path_info));
+    
+    if (!h) h = _DEFAULT_APP;
+    if (!p) p = _DEFAULT_FILE;
+    
+    request_path = compose_req_path(h, p);
     
     
     // if we get 'cache-control: no-cache' in the request headers
