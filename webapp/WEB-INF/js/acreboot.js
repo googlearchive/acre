@@ -1317,17 +1317,6 @@ var webdav_resolver = function(host) {
     return 'http://' + parts[1].replace(/\.$/,"") + "/" + parts[0].split(".").reverse().join("/");
 }
 
-var codesite_webdav_resolver = function(host) {
-    var parts = host.split(".");
-    if (parts.pop() !== "googlecode") return false;
-    
-    var project = parts.pop();
-    var repo = parts.pop();
-    var path = parts.reverse().join("/");
-
-    return "http://" + project + ".googlecode.com/" + repo + "/" + path + "/";
-};
-
 var webdav_inventory_path = function(url) {
     // The namespaces we care about for WebDAV & SVN
     var NS = {
@@ -1424,10 +1413,25 @@ var webdav_inventory_path = function(url) {
     return res;
 }
 
-var codesite_json_resolver = function(host) {
-    var parts = host.split(".");
+var codesite_re = new RegExp(escape_re(".googlecode." + _DELIMITER_PATH));
+
+var codesite_webdav_resolver = function(host) {
+    var m = host.match(codesite_re);
+    if (!m) return false;
     
-    return (parts.pop() === "googlecode") ? parts.join(".") : false;
+    var parts = m[1].split(".");
+    var project = parts.pop();
+    var repo = parts.pop();
+    var path = parts.reverse().join("/");
+
+    return "http://" + project + ".googlecode.com/" + repo + "/" + path + "/";
+};
+
+var codesite_json_resolver = function(host) {
+    var m = host.match(codesite_re);
+    if (!m) return false;
+    
+    return m[1];
 }
 
 var codesite_json_inventory_path = function(resource, dir) {
