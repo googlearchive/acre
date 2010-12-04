@@ -1279,8 +1279,8 @@ var disk_inventory_path = function(disk_path) {
             development : true      // don't cache disk apps for now
         },
         has_dot_metadata : false,
-        dirs : [],
-        files : []
+        dirs : {},
+        files : {}
     };
 
     var files = _file.files(disk_path);
@@ -1292,12 +1292,14 @@ var disk_inventory_path = function(disk_path) {
         var file_data = extension_to_metadata(file);
         
         if (f.dir) {
-            res.dirs.push(file);
+            // false means we don't know what's in the directory
+            // so will have to recursively fetch
+            res.dirs[file] = false;
         } else if (file_data.name !== '') {
             if (file_data.name === '.metadata') res.has_dot_metadata = true;
             file_data.content_id = disk_path+'/'+file;
             file_data.content_hash = disk_path+"/"+file+f.mtime;
-            res.files.push(file_data);            
+            res.files[file] = file_data;
         }
         delete f;
     }
@@ -1305,16 +1307,26 @@ var disk_inventory_path = function(disk_path) {
     return res;
 }
 
-var webdav_resolver = function(host) {
+var webdav_resolver = function(host) {    
     var parts = host.split("." + _DELIMITER_PATH + ".");
 
     if (parts.length < 2) {
         return false;
     }
 
-    var url = 'http://' + parts[1].replace(/\.$/,"") + "/" + parts[0].split(".").reverse().join("/");
-    return url;
+    return 'http://' + parts[1].replace(/\.$/,"") + "/" + parts[0].split(".").reverse().join("/");
 }
+
+var codesite_webdav_resolver = function(host) {
+    var parts = host.split(".");
+    if (parts.pop() !== "googlecode") return false;
+    
+    var project = parts.pop();
+    var repo = parts.pop();
+    var path = parts.reverse().join("/");
+
+    return "http://" + project + ".googlecode.com/" + repo + "/" + path + "/";
+};
 
 var webdav_inventory_path = function(url) {
     // The namespaces we care about for WebDAV & SVN
@@ -1347,8 +1359,8 @@ var webdav_inventory_path = function(url) {
     var res = {
         metadata : {},
         has_dot_metadata : false,
-        dirs : [],
-        files : []
+        dirs : {},
+        files : {}
     };
     
     // fetch the directory listing
@@ -1393,7 +1405,9 @@ var webdav_inventory_path = function(url) {
         
         // check whether it's a subdirectory
         if (getNodeVal(prop, "D:resourcetype/D:collection")[0]) {
-            res.dirs.push(file);
+            // false means we don't know what's in the directory
+            // so will have to recursively fetch
+            res.dirs[file] = false;
             continue;
         }
 
@@ -1405,11 +1419,75 @@ var webdav_inventory_path = function(url) {
                                  getNodeVal(prop, "D:version-name")[1] ||  
                                  getNodeVal(prop, "D:getlastmodified")[1];
         
-        res.files.push(file_data);
+        res.files[file] = file_data;
     }
     return res;
 }
 
+var codesite_json_resolver = function(host) {
+    var parts = host.split(".");
+    
+    return (parts.pop() === "googlecode") ? parts.join(".") : false;
+}
+
+var codesite_json_inventory_path = function(resource, dir) {
+    var res = {
+        metadata : {},
+        has_dot_metadata : false,
+        dirs : {},
+        files : {}
+    };
+    
+    // we need to go fetch it
+    if (!dir) {
+        var segs = resource.split("/");
+        var host = segs.shift();
+        var parts = host.split(".");
+        var project = parts.pop();
+        var repo = parts.pop();
+        var path = parts.reverse().join("/") + (segs.length ? "/" + segs.join("/") : "");
+
+        var dir_url = "http://code.google.com/p/" + project + "/source/dirfeed?p=/" + path;
+        var source_url = "http://" + project + ".googlecode.com/" + repo + "/" + path + "/";
+
+        try {
+            var r = _system_urlfetch(dir_url);
+        } catch (e) {
+            syslog.warn(e.message, "codesite.fetch_error");
+            return null;
+        }
+
+        try {
+            var o = JSON.parse(r.body);
+        } catch(e) {
+            syslog.warn(e.message, "codesite.parse_error");
+            return null;
+        }
+
+        dir = o[path];
+        if (!dir || dir.error) return null;
+
+        res.metadata.as_of    = null;
+        res.metadata.app_guid = source_url;
+    }
+    
+    var files = dir.filePage.files;
+    for (var file in files) {
+        var f = files[file];
+        var file_data = extension_to_metadata(file);
+        if (file_data.name === '.metadata') res.has_dot_metadata = true;
+        file_data.content_id = source_url + "/" + file;
+        file_data.content_hash = f[1];  // revision number
+        res.files[file] = file_data;
+    }
+
+    for (var d in dir.subdirs) {
+        var subdir = dir.subdirs[d];
+        res.dirs[d] = (subdir && subdir.filePage) ? subdir : false;
+    }
+
+    return res;
+}
 
 /* 
  * Uberfetch functions for getting app metadata 
@@ -1524,16 +1602,16 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
             app.versions = md.versions || [];
         };
 
-        function _add_directory(app, resource, base_path, depth) {
+        function _add_directory(app, resource, resource_obj, base_path, depth) {
             depth = depth || 0;
             base_path = base_path || "";
             
-            var dir = inventory_path(resource);
+            var dir = inventory_path(resource, resource_obj);
 
             // some things we only do at root-level
             if (depth === 0) {
                 // app is empty!
-                if (!dir || !dir.files.length) {
+                if (!dir) {
                     syslog.debug({'host': host, 'resource': resource}, "appfetch." + name + ".not_found");
                     throw make_uberfetch_error("Not Found Error", UBERFETCH_ERROR_NOT_FOUND);
                 }
@@ -1544,9 +1622,9 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
 
             // skip empty and nested apps
             if (dir && (depth === 0 || !dir.has_dot_metadata)) {
-                for (var i=0; i < dir.files.length; i++) {
-                    var file = dir.files[i];
-                    if (/~$/.test(file)) continue;      // skip ~ files (e.g., emacs temp files)
+                for (var f in dir.files) {
+                    if (/~$/.test(f)) continue;      // skip ~ files (e.g., emacs temp files)
+                    var file = dir.files[f];
                     
                     // .metadata files are a special case... these contain app metadata
                     // so fetch immediately and patch in values
@@ -1556,13 +1634,13 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
                         continue;
                     }
                     
-                    app.files[base_path + file.name] = file;                
+                    app.files[base_path + file.name] = file;
                 }
                 if (depth < MAX_DIRECTORY_DEPTH) {
-                    for (var d=0; d < dir.dirs.length; d++) {
+                    for (var d in dir.dirs) {
+                        if (/^\./.test(d)) continue;     // skip . directories (e.g., '.svn')
                         var subdir = dir.dirs[d];
-                        if (/^\./.test(subdir)) continue;     // skip . directories (e.g., '.svn')
-                        _add_directory(app, resource + "/" + subdir, base_path + subdir + "/", depth + 1);
+                        _add_directory(app, resource + "/" + d, subdir, base_path + d + "/", depth + 1);
                     }
                 }
             }
@@ -1836,7 +1914,7 @@ var proto_require = function(req_path, skip_cache) {
         return res;
     }
 
-    function webdav_get_content() {
+    function url_get_content() {
         return _system_urlfetch(this.data.content_id, {
             headers : {
                 "Content-Type" : "text/xml; charset=UTF-8"
@@ -1884,10 +1962,22 @@ var proto_require = function(req_path, skip_cache) {
             'get_content':disk_get_content
         },
         {
+            'source':'codesite_json',
+            'cachable':true,
+            'fetcher':uberfetch_file("codesite_json", codesite_json_resolver, codesite_json_inventory_path, url_get_content),
+            'get_content': url_get_content
+        },
+        {
+            'source':'codesite_webdav',
+            'cachable':true,
+            'fetcher':uberfetch_file("codesite_webDAV", codesite_webdav_resolver, webdav_inventory_path, url_get_content),
+            'get_content': url_get_content
+        },
+        {
             'source':'webdav',
             'cachable':true,
-            'fetcher':uberfetch_file("webDAV", webdav_resolver, webdav_inventory_path, webdav_get_content),
-            'get_content': webdav_get_content
+            'fetcher':uberfetch_file("webDAV", webdav_resolver, webdav_inventory_path, url_get_content),
+            'get_content': url_get_content
         },
         {
             'source':'graph',
@@ -2691,7 +2781,8 @@ var boot_acrelet = function () {
     delete _request.handler_script_path;
     
     // Otherwise, get from request:
-    var [h, p] = decompose_req_path(request_path || ('http://' + _request.server_name.toLowerCase() + _request.path_info));
+    request_path = request_path || ('http://' + _request.server_name.toLowerCase() + _request.path_info);
+    var [h, p] = decompose_req_path(request_path);
     
     if (!h) h = _DEFAULT_APP;
     if (!p) p = _DEFAULT_FILE;
@@ -2726,7 +2817,9 @@ var boot_acrelet = function () {
         }
     }
     
-    // XXX support /acre/ special case
+    // support /acre/ special case -- these are OTS routing rules 
+    // that allow certain global scripts to run within the context of any app
+    // e.g., keystore, auth, test, etc.
     if (_request.request_url.split('/')[3] == 'acre') {
         var [h, p] = decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
         var source_app = proto_require(compose_req_path(h), skip_cache);
@@ -2827,6 +2920,7 @@ var boot_acrelet = function () {
 
     // before the script is actually run, we want to set the app_guid aside
     // if we didn't already do so
+    // app_guid is primarily used for accessing the kyestore
     if (_request_app_guid === null) {
         _request_app_guid = script.app.app_guid;
     }
