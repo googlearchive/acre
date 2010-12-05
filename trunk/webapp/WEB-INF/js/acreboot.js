@@ -1413,7 +1413,7 @@ var webdav_inventory_path = function(url) {
     return res;
 }
 
-var codesite_re = new RegExp(escape_re(".googlecode." + _DELIMITER_PATH));
+var codesite_re = new RegExp("(.*)" + escape_re(".googlecode." + _DELIMITER_PATH));
 
 var codesite_webdav_resolver = function(host) {
     var m = host.match(codesite_re);
