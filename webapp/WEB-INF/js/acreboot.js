@@ -1022,7 +1022,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     headers['user-agent'] = 'Acre/' + acre.version + ' ' + acre.request.server_name;
     if (acre.current_script)
         headers['x-acre-app'] = (acre.current_script.app &&
-                                 acre.current_script.app.id) ? acre.current_script.app.id : '/freebase/apps';
+                                 acre.current_script.app.id) ? acre.current_script.app.id :  _hostenv.DEFAULT_HOST_PATH;
 
     // pass through Cache-Control: and Pragma: headers.
     // this is useful when a user clicks shift-reload in the browser.
