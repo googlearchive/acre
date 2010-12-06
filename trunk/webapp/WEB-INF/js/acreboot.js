@@ -498,8 +498,7 @@ var AcreResponse_max_age = 0;
 var AcreResponse_vary = [];
 var AcreResponse_vary_cookies = {};
 
-// AcreResponse methods are exposed to user scripts as acre.response.*
-AcreResponse.prototype.set_header = function (name, value) {
+var AcreResponse_validate_header = function(name, value) {
     // according to http://www.w3.org/Protocols/rfc2616/rfc2616-sec2.html#sec2
     var http_token_re = /[-a-zA-Z0-9!#$%&'*+.^_`|~]+/; // ']
 
@@ -513,6 +512,16 @@ AcreResponse.prototype.set_header = function (name, value) {
     if (/[\r\n]/.test(value)) {
         throw new Error('newline is illegal in HTTP header value');
     }
+};
+
+// AcreResponse methods are exposed to user scripts as acre.response.*
+AcreResponse.prototype.set_header = function (name, value) {
+    AcreResponse_validate_header(name, value);
+    this.headers[name] = value;
+};
+
+AcreResponse.prototype.add_header = function (name, value) {
+    AcreResponse_validate_header(name, value);
 
     // RFC2616 sec 4.2: It MUST be possible to combine the multiple
     //   header fields into one "field-name: field-value" pair, without
