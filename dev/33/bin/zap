@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Normalize the current directory
+cd `dirname $0`/..
+
+# Fixup settings
+. bin/fixup-settings
+
+if [ -f $ACRE_DATADIR/acre.pid ]; then
+    rm $ACRE_DATADIR/acre.pid
+fi
