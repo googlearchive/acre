@@ -262,7 +262,7 @@ case "$ACTION" in
         check_appengine
         SCRIPT="build" 
         COMMAND="appengine"
-        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\"" 
+        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
         invoke
         $APPENGINE_HOME/bin/appcfg.sh update "$WAR";;
     *) 
