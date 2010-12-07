@@ -149,6 +149,12 @@
         </fileset>
       </copy>
 
+      <copy todir="${war.lib.dir}" flatten="true">
+        <fileset dir="${sdk.dir}/lib/user">
+          <include name="**/*.jar" />
+        </fileset>
+      </copy>
+
       <copy todir="${war.dir}/WEB-INF/js">
         <fileset dir="${webapp.dir}/WEB-INF/js">
           <include name="**/*.js" />
@@ -169,14 +175,6 @@
       <copy todir="${war.dir}/WEB-INF/global_static">
         <fileset dir="${webapp.dir}/WEB-INF/global_static">
           <include name="**/*" />
-        </fileset>
-      </copy>
-    </target>
-
-    <target name="appengine-local">
-      <copy todir="${war.lib.dir}" flatten="true">
-        <fileset dir="${sdk.dir}/lib/user">
-          <include name="**/*.jar" />
         </fileset>
       </copy>
     </target>
