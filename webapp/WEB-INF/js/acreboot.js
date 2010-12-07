@@ -1461,7 +1461,7 @@ var codesite_json_inventory_path = function(resource, dir) {
         var path = parts.reverse().join("/") + (segs.length ? "/" + segs.join("/") : "");
 
         var dir_url = "http://code.google.com/p/" + project + "/source/dirfeed?p=/" + path;
-        var source_url = "http://" + project + ".googlecode.com/" + repo + "/" + path + "/";
+        var source_url = "http://" + project + ".googlecode.com/" + repo + "/" + path;
 
         try {
             var r = _system_urlfetch(dir_url);
