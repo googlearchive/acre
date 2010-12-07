@@ -122,6 +122,13 @@ invoke() {
     fi
 }
 
+build_appengine() {
+    SCRIPT="build" 
+    COMMAND="appengine"
+    export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
+    invoke
+}
+
 # -------------------------------------------------------------------------------------
 
 # We called without arguments print the usage -------------
@@ -238,32 +245,22 @@ case "$ACTION" in
         SCRIPT="freebase_check" 
         invoke $*;;
     appengine-build) 
-        SCRIPT="build" 
-        COMMAND="appengine"
         check_appengine
-        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
-        invoke;;
+        build_appengine;;
     appengine-run) 
         check_appengine
-        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
         if [ ! -d "$WAR" ]; then
-            SCRIPT="build" 
-            COMMAND="appengine"
-            invoke
+            build_appengine
         fi
-        SCRIPT="build" 
-        COMMAND="appengine-local"
-        invoke
         if [ "$ACRE_PORT" != "" ]; then
             APPSERVER_PARAMS="-p $ACRE_PORT"
         fi
         $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS "$WAR";;
     appengine-deploy) 
         check_appengine
-        SCRIPT="build" 
-        COMMAND="appengine"
-        export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
-        invoke
+        if [ ! -d "$WAR" ]; then
+            build_appengine
+        fi
         $APPENGINE_HOME/bin/appcfg.sh update "$WAR";;
     *) 
         SCRIPT="$ACTION" 
