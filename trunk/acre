@@ -249,18 +249,14 @@ case "$ACTION" in
         build_appengine;;
     appengine-run) 
         check_appengine
-        if [ ! -d "$WAR" ]; then
-            build_appengine
-        fi
+        build_appengine
         if [ "$ACRE_PORT" != "" ]; then
             APPSERVER_PARAMS="-p $ACRE_PORT"
         fi
         $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS "$WAR";;
     appengine-deploy) 
         check_appengine
-        if [ ! -d "$WAR" ]; then
-            build_appengine
-        fi
+        build_appengine
         $APPENGINE_HOME/bin/appcfg.sh update "$WAR";;
     *) 
         SCRIPT="$ACTION" 
