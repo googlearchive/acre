@@ -212,12 +212,12 @@ fi
 case "$ACTION" in
     help) 
         usage ;;
+    run) 
+        SCRIPT="start" 
+        invoke;;
     build) 
         SCRIPT="build"
         COMMAND="compile" 
-        invoke;;
-    run) 
-        SCRIPT="start" 
         invoke;;
     war) 
         SCRIPT="build" 
@@ -238,12 +238,6 @@ case "$ACTION" in
         SCRIPT="build"
         COMMAND="distclean" 
         invoke;;
-    test) 
-        SCRIPT="test" 
-        invoke $*;;
-    freebase_check) 
-        SCRIPT="freebase_check" 
-        invoke $*;;
     appengine-build) 
         check_appengine
         build_appengine;;
