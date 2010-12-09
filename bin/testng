@@ -1,0 +1,60 @@
+#!/bin/sh
+
+# this should be called with ./acre to pickup the environment vars 
+
+# Normalize the current directory
+cd `dirname $0`/..
+
+ECHO="/bin/echo"
+
+$ECHO
+
+# these js acre apps are required to be deployed locally
+APPSOURCE="tests/acre_js_tests"
+APPDIR="webapp/WEB-INF/scripts"
+mkdir -p $APPDIR
+if [ ! -L ${APPDIR}/qa ]; then
+    ln -s ../../../${APPSOURCE} ${APPDIR}/qa
+fi
+
+$ECHO -n "CHECK: python availability... "
+python -V &> /dev/null
+RET=$?
+if [ $RET == 127 ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: These tests require 'python' to be in your path"
+    exit 1
+else
+    $ECHO "PASSED"
+fi
+
+$ECHO -n "CHECK: your local acre installation... "
+RESP=`curl -s -S -m 5 http://127.0.0.1:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
+if [ -z "$RESP" ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: local acre does not not seem to be running or reachable"
+    exit 1
+else
+    $ECHO "PASSED"
+fi
+
+$ECHO -n "CHECK: your local DNS configurations... "
+RESP=`curl -s -S -m 5  http://qa.dev.${ACRE_HOST_BASE}:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
+if [ -z "$RESP" ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: make sure 'qa.dev.${ACRE_HOST_BASE}' points to 127.0.0.1 in your DNS or /etc/hosts"
+    exit 1
+else
+    $ECHO "PASSED"
+fi
+
+bin/freebase_check
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+$ECHO
+
+python bin/test_driver.py qa
+
+exit $?

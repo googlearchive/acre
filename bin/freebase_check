@@ -1,5 +1,5 @@
 #!/bin/sh
-ECHO=echo
+ECHO=/bin/echo
 $ECHO -n "CHECK: freebase service endpoint... "
 API_HOST="http://api.${ACRE_METAWEB_BASE_ADDR}:${ACRE_FREEBASE_SITE_ADDR_PORT}"
 RESP=`curl -s -S -m 5 -H "CACHE-CONTROL:no-cache" ${API_HOST}/api/service/mqlread?query=%7B%22query%22%3A%7B%22id%22%3A%22/boot%22%7D%7D`
