@@ -587,16 +587,11 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         int pathIndex = script.lastIndexOf('/');
         String script_name = (pathIndex == -1) ? script : script.substring(pathIndex + 1);
 
-        String content = openResourceFile(script);
-        String content_hash = hash("SHA1", content, true);
-
-        Scriptable newScope = load_script_from_cache(script_name, content_hash, scope,
-                                                     false);
+        Scriptable newScope = load_script_from_cache(script_name, script_name, scope, false);
 
         if (newScope == null) {
-            newScope = load_script_from_string(openResourceFile(script),
-                                               script_name, content_hash, scope, null,
-                                               false);
+            String content = openResourceFile(script);
+            newScope = load_script_from_string(content, script_name, script_name, scope, null, false);
         }
 
         return newScope;
