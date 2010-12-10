@@ -1600,21 +1600,33 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
 
         function _set_app_metadata(app, md) {
             md = md || {};
-            app.host = md.host || host;
-            app.app_id = md.app_id || host_to_namespace(host);
-            app.app_guid = md.app_guid || host;
-            app.as_of = md.as_of || null;    // XXX return the max mtime?
-            app.development = md.development || false;
-            
-            app.service_metadata = {
-                'write_user': (md.write_user ? md.write_user.substr(6) : null),
-                'service_url': (md.service_url || null)
-            };
-            
-            app.hosts = md.hosts || [host];
-            app.versions = md.versions || [];
-        };
 
+            // don't allow apps to override values
+            // that could create security issues
+            delete md.host;
+            delete md.hosts;
+            delete md.app_guid;
+            delete md.write_user;
+
+            // copy remaining metadata specified in .metadata
+            for (var key in md) {
+                app[key] = md[key];
+            }
+
+            // initialize values used by acre
+            app.app_id = app.app_id || host_to_namespace(app.host);
+            app.as_of = app.as_of || null;    // XXX return the max mtime?
+            app.development = app.development || false;
+            app.versions = app.versions || [];
+            app.files = app.files || {};
+            app.service_metadata = {
+                'write_user': (app.write_user || null),
+                'service_url': (app.service_url || null)
+            };
+            delete app.write_user;
+            delete app.service_url;
+        };
+        
         function _add_directory(app, resource, resource_obj, base_path, depth) {
             depth = depth || 0;
             base_path = base_path || "";
@@ -1666,7 +1678,8 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
         }
 
         result = result || {};
-        result.files = result.files || {};
+        result.host = host;
+        result.hosts = [host];
 
         // this will recurse until all files are added
         _add_directory(result, resource);
