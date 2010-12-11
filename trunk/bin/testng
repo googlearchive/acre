@@ -55,6 +55,6 @@ fi
 
 $ECHO
 
-python bin/test_driver.py qa
+python bin/test_driver.py $* qa
 
 exit $?

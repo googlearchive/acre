@@ -254,7 +254,7 @@ case "$ACTION" in
         $APPENGINE_HOME/bin/appcfg.sh update "$WAR";;
     *) 
         SCRIPT="$ACTION" 
-        invoke;;
+        invoke $*;;
 esac
 
 exit $result
