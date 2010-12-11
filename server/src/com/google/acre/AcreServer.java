@@ -57,7 +57,7 @@ public class AcreServer extends Server {
         
         threadPool = new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveTime, TimeUnit.SECONDS, queue, threadFactory);
         threadPool.allowCoreThreadTimeOut(true);
-        int threads = threadPool.prestartAllCoreThreads();
+        threadPool.prestartAllCoreThreads();
 
         this.setThreadPool(new ThreadPoolExecutorAdapter(threadPool));
 
