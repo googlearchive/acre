@@ -47,6 +47,7 @@ public class AcreServer extends Server {
     
     public AcreServer() throws Exception  {
 
+        int coreThreads = Configuration.Values.ACRE_POOL_CORE_THREADS.getInteger();
         int maxThreads = Configuration.Values.ACRE_POOL_MAX_THREADS.getInteger();
         int maxQueue = Configuration.Values.ACRE_POOL_MAX_QUEUE.getInteger();
         long keepAliveTime = Configuration.Values.ACRE_POOL_IDLE_TIME.getInteger();
@@ -54,8 +55,9 @@ public class AcreServer extends Server {
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(maxQueue);
         ThreadFactory threadFactory = new AllocationLimitedThreadFactory(); 
         
-        threadPool = new ThreadPoolExecutor(maxThreads, maxQueue, keepAliveTime, TimeUnit.SECONDS, queue, threadFactory);
+        threadPool = new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveTime, TimeUnit.SECONDS, queue, threadFactory);
         threadPool.allowCoreThreadTimeOut(true);
+        int threads = threadPool.prestartAllCoreThreads();
 
         this.setThreadPool(new ThreadPoolExecutorAdapter(threadPool));
 
