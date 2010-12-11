@@ -477,12 +477,6 @@ function serialize_cookiejar(cjar) {
     return out.join(':');
 }
 
-// ------------------------------- acre.environ -----------------------------------------
-
-acre.environ = _request; // deprecated
-if (acre.request.user_info) {
-    acre.environ.user_info = acre.request.user_info; // deprecated
-}
 
 // ------------------------------- acre.respose -----------------------------------------
 
@@ -725,6 +719,15 @@ var AcreResponse_set_metaweb_vary = function (that) {
 acre.response = new AcreResponse();
 
 
+// ------------------------------------------- scripts ------------------------------------
+
+/*
+ * Keep track of files used in processing the request
+ */
+acre.current_script = null;
+acre.scripts = [];
+
+
 // -------------------------------------------- errors ------------------------------------
 
 /*
@@ -775,6 +778,15 @@ _topscope.URLError = acre.errors.URLError; // deprecated
 
 _hostenv.Error = Error;
 
+
+// ------------------------------- acre.environ -----------------------------------------
+
+acre.environ = _request; // deprecated
+if (acre.request.user_info) {
+    acre.environ.user_info = acre.request.user_info; // deprecated
+}
+
+
 // ------------------------------ xml/html parsers ----------------------------
 
 if (typeof acre.xml == 'undefined') {
@@ -821,6 +833,7 @@ acre.html.parse = function(html_str) {
     return _domparser.parse_string(html_str, "html");
 };
 
+
 // ------------------------ keystore --------------------------------------
 
 if (typeof acre.keystore == 'undefined') {
@@ -850,6 +863,7 @@ acre.keystore.remove = function (name) {
         _ks.delete_key(name, _request_app_guid);
     }
 };
+
 
 // ------------------------ acre.hash ------------------------------
 
@@ -888,6 +902,7 @@ acre.hash.hex_hmac_md5 = function (key, data) {
 acre.hash.b64_hmac_md5 = function (key, data) {
     return _hostenv.hmac("HmacMD5", key, data, false);
 };
+
 
 // ------------------------------ urlfetch -----------------------------------
 
@@ -1914,7 +1929,7 @@ var CacheTrampoline = function(f, skip_cache) {
 
 // ------------------------------------------ proto_require ------------------------------------
 var proto_require = function(req_path, skip_cache) {
-
+    
     function cache_get_content() {
         for (var a=0; a < methods.length; a++) {
             var method = methods[a];
@@ -2040,7 +2055,7 @@ var proto_require = function(req_path, skip_cache) {
     
     if (method.cachable && !app_data.development) {
         // cache the metadata in the long-term cache, the metadata is
-        // cached permaneltly (or until overriden).
+        // cached permanently (or until overriden).
         _cache.put(ckey, JSON.stringify(app_data));
         
         // we want to build an index of ids to the metadata block
@@ -2140,7 +2155,11 @@ var proto_require = function(req_path, skip_cache) {
         }
         
         // XXX this depends on scope_augmentation being run after we figure out 'filename'
-        aug_scope.acre.current_script = assembleScriptObj(app_data, app_data.files[filename]);
+        var current_script = assembleScriptObj(app_data, app_data.files[filename]);
+        aug_scope.acre.current_script = current_script;
+        _topscope.acre.scripts.push(current_script);
+        
+        // Stuff we only do for the top-level requested script:
         if (aug_scope == _topscope && app_data.files[filename].name != 'not_found') {
             aug_scope.acre.request.script = aug_scope.acre.current_script;
 
@@ -2202,7 +2221,7 @@ var proto_require = function(req_path, skip_cache) {
 
         // XXX to_http_response() is largely unimplemented
         aug_scope.acre.include = function(path, version) {
-            var scope = (this !== aug_scope.acre) ? this : scope;
+            var scope = (this !== aug_scope.acre) ? this : undefined;
 
             var sobj = get_sobj(path, version);
 
@@ -2210,7 +2229,7 @@ var proto_require = function(req_path, skip_cache) {
         };
 
         aug_scope.acre.require = function(path, version) {
-            var scope = (this !== aug_scope.acre) ? this : scope;
+            var scope = (this !== aug_scope.acre) ? this : undefined;
 
             var sobj = get_sobj(path, version);
 
@@ -2313,14 +2332,14 @@ var proto_require = function(req_path, skip_cache) {
                 scope.acre = {};
                 scope.acre.__proto__ = _topscope.acre;
             }
-
+            
             var compiler_env = {
                 'scope':scope_augmentation(scope || make_scope()),
                 'swizzle':false,
                 'class_name': compose_req_path(script.app.host, script.name),
                 'content_hash':script.data.content_hash
             };
-
+            
             switch (script.data.handler) {
                 case 'mqlquery':
                     res = _hostenv.load_script_from_cache(compiler_env.class_name,
@@ -2409,6 +2428,7 @@ var proto_require = function(req_path, skip_cache) {
                 default:
                     throw make_uberfetch_error("Unsupported Handler Type");
             }
+            
             return res;
         };
 
@@ -2465,7 +2485,7 @@ var proto_require = function(req_path, skip_cache) {
 
             return res;
         };
-
+        
         return script;
     }
 
