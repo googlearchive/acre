@@ -55,6 +55,7 @@ public class AcreServer extends Server {
         ThreadFactory threadFactory = new AllocationLimitedThreadFactory(); 
         
         threadPool = new ThreadPoolExecutor(maxThreads, maxQueue, keepAliveTime, TimeUnit.SECONDS, queue, threadFactory);
+        threadPool.allowCoreThreadTimeOut(true);
 
         this.setThreadPool(new ThreadPoolExecutorAdapter(threadPool));
 
