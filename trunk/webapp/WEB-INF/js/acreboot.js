@@ -2798,6 +2798,7 @@ var assembleScriptObj = function(app, file) {
         app : {
             id : app.app_id,
             path : compose_req_path(app.host),
+            source: app.__source__,
             guid : app.app_guid,
             version :(app.versions.length > 0 ? app.versions[0] : null),
             versions : app.versions,
