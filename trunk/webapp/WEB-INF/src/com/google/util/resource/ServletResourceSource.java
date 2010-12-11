@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.util.resource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 
 import javax.servlet.ServletContext;
 
@@ -30,6 +30,15 @@ public class ServletResourceSource implements ResourceSource {
 
     public InputStream getResourceAsStream(String path) throws IOException {
         return _servletContext.getResourceAsStream(path);
+    }
+
+    public long getLastModifiedTime(String path) throws IOException {
+        URL resource = _servletContext.getResource(path);
+        if (resource != null) {
+            return resource.openConnection().getLastModified();
+        } else {
+            throw new RuntimeException("Resource " + path + " could not be found");
+        }
     }
 
 }

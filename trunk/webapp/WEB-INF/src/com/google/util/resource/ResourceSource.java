@@ -12,19 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.util.resource;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * This should help decouple the HostEnv from running inside a servlet container vs. command line
- * @author Yuiry Grinberg
- *
+ * This interface helps decouple the HostEnv from running inside a servlet container vs. command line
  */
 public interface ResourceSource {
 
     InputStream getResourceAsStream(String path) throws IOException;
+    
+    long getLastModifiedTime(String path) throws IOException;
 
 }

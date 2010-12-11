@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.util.resource;
 
 import java.io.File;
@@ -29,8 +28,14 @@ public class FileResourceSource implements ResourceSource {
     }
 
     public InputStream getResourceAsStream(String path) throws IOException {
-        File file = new File(_appPath + path);
-        return new FileInputStream(file);
+        return new FileInputStream(getFile(path));
     }
 
+    public long getLastModifiedTime(String path) throws IOException {
+        return getFile(path).lastModified();
+    }
+
+    private File getFile(String path) {
+        return new File(_appPath + path);
+    }
 }

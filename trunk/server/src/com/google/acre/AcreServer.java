@@ -130,9 +130,6 @@ public class AcreServer extends Server {
 
         scanList.add(new File(contextRoot, "WEB-INF/web.xml"));
         findFiles(".class", new File(contextRoot, "WEB-INF"), scanList);
-        findFiles(".js", new File(contextRoot, "WEB-INF"), scanList);
-        findFiles(".sjs", new File(contextRoot, "WEB-INF"), scanList);
-        findFiles(".mjt", new File(contextRoot, "WEB-INF"), scanList);
 
         Log.info("Starting autoreloading scanner...");
 
