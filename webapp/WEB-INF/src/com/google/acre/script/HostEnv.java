@@ -100,6 +100,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     private static String ACRE_FREEBASE_SITE_ADDR = Configuration.Values.ACRE_FREEBASE_SITE_ADDR.getValue();
     private static String ACRE_HOST_BASE = Configuration.Values.ACRE_HOST_BASE.getValue();
     private static String ACRE_HOST_DELIMITER_PATH = Configuration.Values.ACRE_HOST_DELIMITER_PATH.getValue();
+    private static boolean ACRE_AUTORELOADING = Configuration.Values.ACRE_AUTORELOADING.getBoolean();
 
     private static final String DEFAULT_HOST_PATH = "//default." + ACRE_HOST_DELIMITER_PATH;
 
@@ -465,6 +466,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             closeResponse();
 
         } catch (RhinoException rexc) {
+            rexc.printStackTrace();
             renderErrorPage("Unhandled exception", rexc, "hostenv.script.error.jsexception");
         } catch (AcreScriptError ase) {
             renderErrorPage("Unrecoverable error: " + ase.getMessage(), ase, "hostenv.script.error.acrescripterror");
@@ -583,15 +585,19 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     @JS_Function
     public Scriptable load_system_script(String script, Scriptable scope) {
-
+        
         int pathIndex = script.lastIndexOf('/');
         String script_name = (pathIndex == -1) ? script : script.substring(pathIndex + 1);
 
-        Scriptable newScope = load_script_from_cache(script_name, script_name, scope, false);
+        String script_id = (ACRE_AUTORELOADING) ? script + lastModifiedTime(script) : script;
+
+        String script_id_hash = Integer.toHexString(script_id.hashCode());
+                
+        Scriptable newScope = load_script_from_cache(script_name, script_id_hash, scope, false);
 
         if (newScope == null) {
             String content = openResourceFile(script);
-            newScope = load_script_from_string(content, script_name, script_name, scope, null, false);
+            newScope = load_script_from_string(content, script_name, script_id_hash, scope, null, false);
         }
 
         return newScope;
@@ -963,9 +969,24 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
     }
 
+    private String expandJavascriptPath(String file) {
+        return "/WEB-INF/js/" + file;
+    }
+    
+    private long lastModifiedTime(String file) {
+
+        String path = expandJavascriptPath(file);
+
+        try {
+            return _resourceSource.getLastModifiedTime(path);
+        } catch (IOException e) {
+            throw new JSConvertableException("error reading resource: " + path).newJSException(this);
+        }
+    }
+    
     private String openResourceFile(String file) {
 
-        file = "/WEB-INF/js/" + file;
+        String path = expandJavascriptPath(file);
 
         InputStream in = null;
         BufferedReader reader = null;
@@ -973,9 +994,9 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         StringBuilder buf = new StringBuilder();
 
         try {
-            in = _resourceSource.getResourceAsStream(file);
+            in = _resourceSource.getResourceAsStream(path);
             if (in == null) {
-                throw new JSURLError("unable to open resource: " + file).newJSException(this);
+                throw new JSURLError("unable to open resource: " + path).newJSException(this);
             }
 
             reader = new BufferedReader(new InputStreamReader(in, Charset.forName("UTF-8")));
@@ -986,13 +1007,13 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 buf.append("\n");
             }
         } catch (IOException e) {
-            throw new JSConvertableException("error reading resource: " + file).newJSException(this);
+            throw new JSConvertableException("error reading resource: " + path).newJSException(this);
         } finally {
             try {
                 if (reader != null) reader.close();
                 if (in != null) in.close();
             } catch (IOException e) {
-                throw new JSConvertableException("error closing file: " + file).newJSException(this);
+                throw new JSConvertableException("error closing file: " + path).newJSException(this);
             }
         }
 

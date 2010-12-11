@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.util.logging;
 
 import java.io.IOException;
@@ -41,9 +40,6 @@ import org.apache.log4j.spi.LoggingEvent;
  * most log rotation schemes. Ideally a link should be created to point to the
  * latest log file, however that would have to shelled out and would not be
  * platform independent so has not been implemented.
- *
- * @author Aseem Mohanty, Metaweb Technologies Inc.
- * @author Yuriy Grinberg, Metaweb Technologies Inc.
  */ 
 public class PreRotatingFileAppender extends FileAppender {
 
