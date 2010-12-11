@@ -79,6 +79,7 @@ public class Configuration implements ConfigurationMBean {
         ACRE_MAX_CACHED_SCRIPT_CLASSES("1000"), 
         ACRE_METAWEB_API_ADDR_PORT("80"), 
         ACRE_FREEBASE_SITE_ADDR_PORT("80"),
+        ACRE_POOL_CORE_THREADS("10"), // lowest amount of available threads in the pool
         ACRE_POOL_MAX_THREADS("500"), // max amount of concurrently running threads
         ACRE_POOL_MAX_QUEUE("5000"), // max size of waiting queue
         ACRE_POOL_IDLE_TIME("30"), // in sec, time an idle thread remains in the pool before being GCed
