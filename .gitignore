@@ -11,6 +11,7 @@ webapp/META-INF/*.properties
 webapp/META-INF/*.conf
 webapp/WEB-INF/lib/mysql-connector-java-*.jar
 webapp/WEB-INF/scripts/freebase
+webapp/WEB-INF/scripts/qa
 config/project.local.conf
 server/classes
 library/classes
