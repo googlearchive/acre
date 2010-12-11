@@ -1,10 +1,13 @@
 
-__usage__ = """Usage: %(program)s [-l log_level] [-h] app
+__usage__ = """Usage: %(program)s [-l log_level] [-n] [-h] app
 
 Where OPTIONS is one or more of:
 
     -l,--log
         log level (DEBUG, INFO, WARNING, ERROR)
+
+    -n,--no-color
+        avoid using color in output
                 
     -h,--help
         show usage and exit
@@ -37,7 +40,7 @@ def drive_test(url):
     test = urllib2.urlopen(url + "?output=jsonsummary")
     return simplejson.loads(test.read())
                 
-def drive_app(app):
+def drive_app(app,color):
     out = sys.stdout
     
     acre_host = os.environ["ACRE_HOST_BASE"]
@@ -61,23 +64,27 @@ def drive_app(app):
         total_failures += failures
         test_name = test_url.split("test_")[1] + " "
         out.write(test_name.ljust(40,'.'))
-        if failures == 0:
-            out.write(colors.OK)
-        else:
-            out.write(colors.FAIL)
+        if color:
+            if failures == 0:
+                out.write(colors.OK)
+            else:
+                out.write(colors.FAIL)
         out.write(" %i/%i" % (failures, tests))
-        out.write(colors.RESET)
+        if color:
+            out.write(colors.RESET)
         out.write("\n")
         
     out.write("\n")
     
     out.write("Total: ")
-    if total_failures == 0:
-        out.write(colors.OK)
-    else:
-        out.write(colors.FAIL)
+    if color:
+        if total_failures == 0:
+            out.write(colors.OK)
+        else:
+            out.write(colors.FAIL)
     out.write("%i/%i" % (total_failures, total_tests))
-    out.write(colors.RESET)
+    if color:
+        out.write(colors.RESET)
     out.write("\n")
         
 #-----------------------------------------------------------------------# 
@@ -92,9 +99,10 @@ def usage(msg=''):
 def main():
 
     LOG_LEVEL = logging.ERROR
- 
+    color = True
+    
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hl:", ["help", "log="])
+        opts, args = getopt.getopt(sys.argv[1:], "hnl:", ["help", "no-color", "log="])
     except getopt.GetoptError, msg:
         usage(msg)
         sys.exit(1)
@@ -109,12 +117,14 @@ def main():
         if o in ("-h", "--help"):
             usage()
             sys.exit()
+        if o in ("-n", "--no-color"):
+            color = False
         if o in ("-l", "--log"):
             LOG_LEVEL = eval('logging.' + a)
 
     logger.setLevel(LOG_LEVEL)
                 
-    drive_app(app)
+    drive_app(app,color)
     
 #-----------------------------------------------------------------------# 
 
