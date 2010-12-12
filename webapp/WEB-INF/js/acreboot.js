@@ -966,8 +966,8 @@ if (!acre.error) {
     acre.async.urlfetch = function(url, method, headers, content, sign) {
         throw new Error('acre.async.urlfetch() is restricted in error scripts');
     };
-    acre.async.run = function () {
-        throw new Error('acre.async.run() is restricted in error scripts');
+    acre.async.wait_on_results = function () {
+        throw new Error('acre.async.wait_on_results() is restricted in error scripts');
     };
 }
 
