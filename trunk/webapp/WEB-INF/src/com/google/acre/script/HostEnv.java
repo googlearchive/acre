@@ -466,7 +466,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             closeResponse();
 
         } catch (RhinoException rexc) {
-            rexc.printStackTrace();
             renderErrorPage("Unhandled exception", rexc, "hostenv.script.error.jsexception");
         } catch (AcreScriptError ase) {
             renderErrorPage("Unrecoverable error: " + ase.getMessage(), ase, "hostenv.script.error.acrescripterror");
