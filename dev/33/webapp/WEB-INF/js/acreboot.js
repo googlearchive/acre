@@ -477,12 +477,6 @@ function serialize_cookiejar(cjar) {
     return out.join(':');
 }
 
-// ------------------------------- acre.environ -----------------------------------------
-
-acre.environ = _request; // deprecated
-if (acre.request.user_info) {
-    acre.environ.user_info = acre.request.user_info; // deprecated
-}
 
 // ------------------------------- acre.respose -----------------------------------------
 
@@ -725,6 +719,14 @@ var AcreResponse_set_metaweb_vary = function (that) {
 acre.response = new AcreResponse();
 
 
+// ------------------------------------------- scripts ------------------------------------
+
+/*
+ * Keep track of files used in processing the request
+ */
+acre.current_script = null;
+
+
 // -------------------------------------------- errors ------------------------------------
 
 /*
@@ -775,6 +777,15 @@ _topscope.URLError = acre.errors.URLError; // deprecated
 
 _hostenv.Error = Error;
 
+
+// ------------------------------- acre.environ -----------------------------------------
+
+acre.environ = _request; // deprecated
+if (acre.request.user_info) {
+    acre.environ.user_info = acre.request.user_info; // deprecated
+}
+
+
 // ------------------------------ xml/html parsers ----------------------------
 
 if (typeof acre.xml == 'undefined') {
@@ -821,6 +832,7 @@ acre.html.parse = function(html_str) {
     return _domparser.parse_string(html_str, "html");
 };
 
+
 // ------------------------ keystore --------------------------------------
 
 if (typeof acre.keystore == 'undefined') {
@@ -850,6 +862,7 @@ acre.keystore.remove = function (name) {
         _ks.delete_key(name, _request_app_guid);
     }
 };
+
 
 // ------------------------ acre.hash ------------------------------
 
@@ -888,6 +901,7 @@ acre.hash.hex_hmac_md5 = function (key, data) {
 acre.hash.b64_hmac_md5 = function (key, data) {
     return _hostenv.hmac("HmacMD5", key, data, false);
 };
+
 
 // ------------------------------ urlfetch -----------------------------------
 
@@ -951,8 +965,8 @@ if (!acre.error) {
     acre.async.urlfetch = function(url, method, headers, content, sign) {
         throw new Error('acre.async.urlfetch() is restricted in error scripts');
     };
-    acre.async.run = function () {
-        throw new Error('acre.async.run() is restricted in error scripts');
+    acre.async.wait_on_results = function () {
+        throw new Error('acre.async.wait_on_results() is restricted in error scripts');
     };
 }
 
@@ -1480,7 +1494,7 @@ var codesite_json_inventory_path = function(resource, dir) {
         dir = o[path];
         if (!dir || dir.error) return null;
 
-        res.metadata.as_of    = null;
+        res.metadata.as_of    = null;   // use revision id?
         res.metadata.app_guid = source_url;
     }
     
@@ -1530,7 +1544,7 @@ var codesite_json_inventory_path = function(resource, dir) {
  * }
  *
  * which is added to cache with key: 
- *    METADATA:{o.guid}:{o.asof}
+ *    METADATA:{o.app_guid}:{o.asof}
  * {o.links} looped over and added to cache as:
  *    LINK:{o.links[i]} with value METADATA:{o.guid}:{o.asof}
  *
@@ -1598,23 +1612,41 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
         // avoid infinite recursion (e.g., symlink to self)
         var MAX_DIRECTORY_DEPTH = 2;
 
-        function _set_app_metadata(app, md) {
+        function _set_app_metadata(app, md, system) {
             md = md || {};
-            app.host = md.host || host;
-            app.app_id = md.app_id || host_to_namespace(host);
-            app.app_guid = md.app_guid || host;
-            app.as_of = md.as_of || null;    // XXX return the max mtime?
-            app.development = md.development || false;
+
+            delete md.host;
+            
+            if (!system) {
+                // don't allow .metadata files to override values
+                // that could create security issues
+                delete md.hosts;
+                delete md.app_guid;
+                delete md.write_user;         
+            }
+
+            // copy remaining metadata specified in .metadata
+            for (var key in md) {
+                app[key] = md[key];
+            }
+
+            // initialize values used by acre
+            app.hosts = app.hosts || [app.host];
+            app.app_id = app.app_id || host_to_namespace(app.host);
+            app.app_guid = app.app_guid || app.host;
+            app.as_of = app.as_of || null;    // XXX return the max mtime?
+            app.development = app.development || false;
+            app.versions = app.versions || [];
+            app.files = app.files || {};
             
             app.service_metadata = {
-                'write_user': (md.write_user ? md.write_user.substr(6) : null),
-                'service_url': (md.service_url || null)
+                'write_user': (app.write_user || null),
+                'service_url': (app.service_url || null)
             };
-            
-            app.hosts = md.hosts || [host];
-            app.versions = md.versions || [];
+            delete app.write_user;
+            delete app.service_url;
         };
-
+        
         function _add_directory(app, resource, resource_obj, base_path, depth) {
             depth = depth || 0;
             base_path = base_path || "";
@@ -1630,7 +1662,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
                 }
                 
                 // fill in app metadata
-                _set_app_metadata(app, dir.metadata);
+                _set_app_metadata(app, dir.metadata, true);
             }
 
             // skip empty and nested apps
@@ -1643,7 +1675,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
                     // so fetch immediately and patch in values
                     if (file.name === '.metadata') {
                         var temp = content_fetcher.apply({'data' : file});
-                        _set_app_metadata(app, JSON.parse(temp.body));
+                        _set_app_metadata(app, JSON.parse(temp.body), false);
                         continue;
                     }
                     
@@ -1666,7 +1698,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
         }
 
         result = result || {};
-        result.files = result.files || {};
+        result.host = host;
 
         // this will recurse until all files are added
         _add_directory(result, resource);
@@ -1901,7 +1933,7 @@ var CacheTrampoline = function(f, skip_cache) {
 
 // ------------------------------------------ proto_require ------------------------------------
 var proto_require = function(req_path, skip_cache) {
-
+    
     function cache_get_content() {
         for (var a=0; a < methods.length; a++) {
             var method = methods[a];
@@ -2027,7 +2059,7 @@ var proto_require = function(req_path, skip_cache) {
     
     if (method.cachable && !app_data.development) {
         // cache the metadata in the long-term cache, the metadata is
-        // cached permaneltly (or until overriden).
+        // cached permanently (or until overriden).
         _cache.put(ckey, JSON.stringify(app_data));
         
         // we want to build an index of ids to the metadata block
@@ -2127,9 +2159,12 @@ var proto_require = function(req_path, skip_cache) {
         }
         
         // XXX this depends on scope_augmentation being run after we figure out 'filename'
-        aug_scope.acre.current_script = assembleScriptObj(app_data, app_data.files[filename]);
+        var current_script = assembleScriptObj(app_data, app_data.files[filename]);
+        aug_scope.acre.current_script = current_script;
+        
+        // Stuff we only do for the top-level requested script:
         if (aug_scope == _topscope && app_data.files[filename].name != 'not_found') {
-            aug_scope.acre.request.script = aug_scope.acre.current_script;
+            aug_scope.acre.request.script = current_script;
 
             if (app_data.service_metadata.write_user !== null) {
                 _hostenv.write_user = app_data.service_metadata.write_user;
@@ -2189,7 +2224,7 @@ var proto_require = function(req_path, skip_cache) {
 
         // XXX to_http_response() is largely unimplemented
         aug_scope.acre.include = function(path, version) {
-            var scope = (this !== aug_scope.acre) ? this : scope;
+            var scope = (this !== aug_scope.acre) ? this : undefined;
 
             var sobj = get_sobj(path, version);
 
@@ -2197,7 +2232,7 @@ var proto_require = function(req_path, skip_cache) {
         };
 
         aug_scope.acre.require = function(path, version) {
-            var scope = (this !== aug_scope.acre) ? this : scope;
+            var scope = (this !== aug_scope.acre) ? this : undefined;
 
             var sobj = get_sobj(path, version);
 
@@ -2300,14 +2335,14 @@ var proto_require = function(req_path, skip_cache) {
                 scope.acre = {};
                 scope.acre.__proto__ = _topscope.acre;
             }
-
+            
             var compiler_env = {
                 'scope':scope_augmentation(scope || make_scope()),
                 'swizzle':false,
                 'class_name': compose_req_path(script.app.host, script.name),
                 'content_hash':script.data.content_hash
             };
-
+            
             switch (script.data.handler) {
                 case 'mqlquery':
                     res = _hostenv.load_script_from_cache(compiler_env.class_name,
@@ -2396,6 +2431,7 @@ var proto_require = function(req_path, skip_cache) {
                 default:
                     throw make_uberfetch_error("Unsupported Handler Type");
             }
+            
             return res;
         };
 
@@ -2452,7 +2488,7 @@ var proto_require = function(req_path, skip_cache) {
 
             return res;
         };
-
+        
         return script;
     }
 
@@ -2765,6 +2801,7 @@ var assembleScriptObj = function(app, file) {
         app : {
             id : app.app_id,
             path : compose_req_path(app.host),
+            source: app.__source__,
             guid : app.app_guid,
             version :(app.versions.length > 0 ? app.versions[0] : null),
             versions : app.versions,
