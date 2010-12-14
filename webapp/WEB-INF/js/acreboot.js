@@ -1495,7 +1495,7 @@ var codesite_json_inventory_path = function(resource, dir) {
         dir = o[path];
         if (!dir || dir.error) return null;
 
-        res.metadata.as_of    = null;
+        res.metadata.as_of    = null;   // use revision id?
         res.metadata.app_guid = source_url;
     }
     
@@ -1616,10 +1616,11 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
         function _set_app_metadata(app, md, system) {
             md = md || {};
 
+            delete md.host;
+            
             if (!system) {
-                // don't allow apps to override values
+                // don't allow .metadata files to override values
                 // that could create security issues
-                delete md.host;
                 delete md.hosts;
                 delete md.app_guid;
                 delete md.write_user;         
@@ -1631,12 +1632,14 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
             }
 
             // initialize values used by acre
+            app.hosts = app.hosts || [app.host];
             app.app_id = app.app_id || host_to_namespace(app.host);
             app.app_guid = app.app_guid || app.host;
             app.as_of = app.as_of || null;    // XXX return the max mtime?
             app.development = app.development || false;
             app.versions = app.versions || [];
             app.files = app.files || {};
+            
             app.service_metadata = {
                 'write_user': (app.write_user || null),
                 'service_url': (app.service_url || null)
@@ -1697,7 +1700,6 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
 
         result = result || {};
         result.host = host;
-        result.hosts = [host];
 
         // this will recurse until all files are added
         _add_directory(result, resource);
