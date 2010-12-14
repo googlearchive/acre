@@ -1545,7 +1545,7 @@ var codesite_json_inventory_path = function(resource, dir) {
  * }
  *
  * which is added to cache with key: 
- *    METADATA:{o.guid}:{o.asof}
+ *    METADATA:{o.app_guid}:{o.asof}
  * {o.links} looped over and added to cache as:
  *    LINK:{o.links[i]} with value METADATA:{o.guid}:{o.asof}
  *
@@ -1613,15 +1613,17 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
         // avoid infinite recursion (e.g., symlink to self)
         var MAX_DIRECTORY_DEPTH = 2;
 
-        function _set_app_metadata(app, md) {
+        function _set_app_metadata(app, md, system) {
             md = md || {};
 
-            // don't allow apps to override values
-            // that could create security issues
-            delete md.host;
-            delete md.hosts;
-            delete md.app_guid;
-            delete md.write_user;
+            if (!system) {
+                // don't allow apps to override values
+                // that could create security issues
+                delete md.host;
+                delete md.hosts;
+                delete md.app_guid;
+                delete md.write_user;         
+            }
 
             // copy remaining metadata specified in .metadata
             for (var key in md) {
@@ -1630,6 +1632,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
 
             // initialize values used by acre
             app.app_id = app.app_id || host_to_namespace(app.host);
+            app.app_guid = app.app_guid || app.host;
             app.as_of = app.as_of || null;    // XXX return the max mtime?
             app.development = app.development || false;
             app.versions = app.versions || [];
@@ -1657,7 +1660,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
                 }
                 
                 // fill in app metadata
-                _set_app_metadata(app, dir.metadata);
+                _set_app_metadata(app, dir.metadata, true);
             }
 
             // skip empty and nested apps
@@ -1670,7 +1673,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
                     // so fetch immediately and patch in values
                     if (file.name === '.metadata') {
                         var temp = content_fetcher.apply({'data' : file});
-                        _set_app_metadata(app, JSON.parse(temp.body));
+                        _set_app_metadata(app, JSON.parse(temp.body), false);
                         continue;
                     }
                     
