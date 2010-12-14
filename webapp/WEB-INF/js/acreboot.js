@@ -725,7 +725,7 @@ acre.response = new AcreResponse();
  * Keep track of files used in processing the request
  */
 acre.current_script = null;
-acre.scripts = [];
+//acre.scripts = [];
 
 
 // -------------------------------------------- errors ------------------------------------
@@ -2162,11 +2162,11 @@ var proto_require = function(req_path, skip_cache) {
         // XXX this depends on scope_augmentation being run after we figure out 'filename'
         var current_script = assembleScriptObj(app_data, app_data.files[filename]);
         aug_scope.acre.current_script = current_script;
-        _topscope.acre.scripts.push(current_script);
+        //_topscope.acre.scripts.push(current_script);
         
         // Stuff we only do for the top-level requested script:
         if (aug_scope == _topscope && app_data.files[filename].name != 'not_found') {
-            aug_scope.acre.request.script = aug_scope.acre.current_script;
+            aug_scope.acre.request.script = current_script;
 
             if (app_data.service_metadata.write_user !== null) {
                 _hostenv.write_user = app_data.service_metadata.write_user;
