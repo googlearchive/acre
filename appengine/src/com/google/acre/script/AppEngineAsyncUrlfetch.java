@@ -55,39 +55,23 @@ import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
 
     class AsyncRequest {
-        public AsyncRequest(URL url, Future<HTTPResponse> request, Function callback) {
-            _url = url;
-            _request = request;
-            _callback = callback;
+        public AsyncRequest(URL url, Future<HTTPResponse> request, Function callback, long start_time, boolean system, boolean log_to_user, String response_encoding) {
+            this.url = url;
+            this.request = request;
+            this.callback = callback;
+            this.start_time = start_time;
+            this.system = system;
+            this.log_to_user = log_to_user;
+            this.response_encoding = response_encoding;
         }
 
-        private Future<HTTPResponse> _request;
-        private Function _callback;
-        private URL _url;
-
-        public Future<HTTPResponse> request() {
-            return _request;
-        }
-
-        public void request(Future<HTTPResponse> futr) {
-            _request = futr;
-        }
-
-        public Function callback() {
-            return _callback;
-        }
-
-        public void callback(Function cb) {
-            _callback = cb;
-        }
-
-        public URL url() {
-            return _url;
-        }
-
-        public void url(URL url) {
-            _url = url;
-        }
+        Future<HTTPResponse> request;
+        Function callback;
+        URL url;
+        long start_time;
+        boolean system;
+        boolean log_to_user;
+        String response_encoding;
     }
 
     private AcreResponse _response;
@@ -126,12 +110,15 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
     public void scope(Scriptable scope) {
         _scope = scope;
     }
-
+    
     public void make_request(String url,
                              String method,
                              long timeline,
                              Map<String, String> headers,
                              Object body,
+                             boolean system,
+                             boolean log_to_user,
+                             String response_encoding,
                              Function callback) {
         URL requrl;
         try {
@@ -145,8 +132,10 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         HTTPRequest req = new HTTPRequest(requrl, HTTPMethod.valueOf(method),
                                           disallowTruncate()
                                           .setDeadline(dbl_deadline));
+        StringBuffer request_header_log = new StringBuffer();
         for (Map.Entry<String,String> entry : headers.entrySet()) {
             req.addHeader(new HTTPHeader(entry.getKey(), entry.getValue()));
+            request_header_log.append(entry.getKey() + ": " + entry.getValue() + ", ");
         }
 
         if (body != null) {
@@ -158,21 +147,28 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         }
         Future<HTTPResponse> futr = _urlfetch_service.fetchAsync(req);
         
-        _requests.add(new AsyncRequest(requrl, futr, callback));
+        if (!system && log_to_user) {
+            _response.userlog4j("DEBUG", "urlfetch.request.async",
+                                "Http.req.method", method,
+                                "Http.url", url,
+                                "Http.req.hdr", request_header_log);
+        }
+        
+        final long start_time = System.currentTimeMillis();
+        
+        _requests.add(new AsyncRequest(requrl, futr, callback, start_time, system, log_to_user, response_encoding));
     }
 
-    private Scriptable callback_result(URL init_url, HTTPResponse res) {
+    private Scriptable callback_result(AsyncRequest req, HTTPResponse res) {    
         URL furl = res.getFinalUrl();
         if (furl == null) {
-            furl = init_url;
+            furl = req.url;
         }
 
         BrowserCompatSpecFactory bcsf = new BrowserCompatSpecFactory();
         CookieSpec cspec = bcsf.newInstance(null);
         String protocol = furl.getProtocol();
-        boolean issecure = false;
-        if (protocol != null)
-            issecure = (protocol.equals("https") ? true : false);
+        boolean issecure = ("https".equals(protocol));
         int port = furl.getPort();
         if (port == -1) port = 80;
         CookieOrigin origin = new CookieOrigin(furl.getHost(), port,
@@ -188,6 +184,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         out.put("headers", out, headers);
         out.put("cookies", out, cookies);
 
+        StringBuffer response_header_log = new StringBuffer();
         for (HTTPHeader h : res.getHeaders()) {
             if (h.getName().equalsIgnoreCase("set-cookie")) {
                 String set_cookie = h.getValue();
@@ -210,8 +207,21 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
             }
 
             headers.put(h.getName(), headers, h.getValue());
+            response_header_log.append(h.getName() + ": " + h.getValue() + ", ");
         }
 
+        boolean system = req.system;
+        boolean log_to_user = req.log_to_user;
+                
+        if (system && log_to_user) {
+            _response.userlog4j("DEBUG", "urlfetch.response.async",
+                                "Http.url", furl.toString(),
+                                "Http.rep.status", Integer.toString(res.getResponseCode()),
+                                "Http.rep.hdr", response_header_log);
+        }
+        
+        _response.collect((system) ? "asuc":"auuc");
+        
         return out;
     }
 
@@ -229,20 +239,20 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
 
             if (time != -1 && endtime <= System.currentTimeMillis()) {
                 for (AsyncRequest r : _requests) {
-                    r.request().cancel(true);
+                    r.request.cancel(true);
                 }
                 throw new JSURLError("Time limit exceeded").newJSException(_scope);
             }
 
             AsyncRequest asyncreq = _requests.get(i);
-            Future<HTTPResponse> futr = asyncreq.request();
-            Function callback = asyncreq.callback();
+            Future<HTTPResponse> futr = asyncreq.request;
+            Function callback = asyncreq.callback;
             if (futr.isCancelled()) {
                 _requests.remove(i);
                 JSURLError jse = new JSURLError("Request cancelled");
 
                 callback.call(ctx, _scope, null, new Object[] {
-                        asyncreq.url().toString(),
+                        asyncreq.url.toString(),
                         jse.toJSError(_scope)
                     });
                 continue;
@@ -252,8 +262,8 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                 HTTPResponse res = futr.get(10, TimeUnit.MILLISECONDS);
                 callback.call(ctx, _scope, null,
                               new Object[] { 
-                                  asyncreq.url().toString(),
-                                  callback_result(asyncreq.url(), res) 
+                                  asyncreq.url.toString(),
+                                  callback_result(asyncreq, res) 
                               });
                 _requests.remove(i);
                 continue;
@@ -265,14 +275,14 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                 JSURLError jse = new JSURLError(e.getMessage());
                 
                 callback.call(ctx, _scope, null, new Object[] {
-                        asyncreq.url().toString(),
+                        asyncreq.url.toString(),
                         jse.toJSError(_scope)
                     });
             } catch (InterruptedException e) {
                                 JSURLError jse = new JSURLError(e.getMessage());
                 
                                 callback.call(ctx, _scope, null, new Object[] {
-                                        asyncreq.url().toString(),
+                                        asyncreq.url.toString(),
                                         jse.toJSError(_scope)
                 });
             }
