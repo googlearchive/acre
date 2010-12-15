@@ -171,7 +171,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
             request_header_log.append("content-length: " +
                                       Integer.toString(rbody.length)+"\r\n");
         }
-
+        
         String httpreqhdr = request_header_log.toString();
         _logger.syslog4j(Level.DEBUG, "urlfetch.request.async",
                          "Http.req.method", method,

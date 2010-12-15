@@ -159,8 +159,8 @@ public class AcreFetch extends JsConvertable {
         // whatever settings they might have tried to change for this value
         // (which could be a security hazard)
         long sub_deadline = _deadline - HostEnv.SUBREQUEST_DEADLINE_ADVANCE;
-        int reentrances = _reentries + 1;
-        request_headers.put(HostEnv.ACRE_QUOTAS_HEADER, "td=" + sub_deadline + ",r=" + reentrances);
+        int reentries = _reentries + 1;
+        request_headers.put(HostEnv.ACRE_QUOTAS_HEADER, "td=" + sub_deadline + ",r=" + reentries);
 
         // if this is not an internal call, we need to invoke the call thru a proxy
         if (!_internal) {

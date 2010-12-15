@@ -1,31 +1,36 @@
 acre.require('/test/lib').enable(this);
 
-function do_test(results) {
+var u = acre.require("__utils__");
 
-    // make sure that the web sites urlfetched correctly by looking into the domain of the cookie they set
-    // which is the least likely part of their web page to change over time. Freebase doesn't set a tracking cookie
-    // so we just use the metaweb_tid one. Note that the test is designed to pass if any one of those sites
-    // returns with a status code that is not 200. This is not bad because we're testing urlfetch, not these websites
+// --------------------- sync urlfetch ---------------------------------
 
-    var google = results.google;
-    ok(((google.status == 200 && google.cookies.PREF.domain.indexOf(".google.com") > -1) || google.status != 200),  "google.com");
-
-    var youtube = results.youtube;
-    ok(((youtube.status == 200 && youtube.cookies.GEO.domain.indexOf(".youtube.com") > -1) || youtube.status != 200), "youtube.com");
-
-    var freebase = results.freebase;
-    ok(((freebase.status == 200 && freebase.cookies.metaweb_tid.domain.indexOf(".freebase.com") > -1) || freebase.status != 200),  "freebase.com");
-}
-
-test('acre.urlfetch',function() {
+test('acre.urlfetch works',function() {
     var results = {};
     results.google    = acre.urlfetch("http://www.google.com/");
     results.youtube   = acre.urlfetch("http://www.youtube.com/");
-    results.freebase  = acre.urlfetch("http://www.freebase.com/");    
-    do_test(results);
+    u.has_correct_domain(results.google, "PREF", ".google.com");
+    u.has_correct_domain(results.youtube, "GEO", ".youtube.com");
 });
 
-test('acre.async.urlfetch',function() {
+test('acre.urlfetch can re-enter once',function() {
+    var response = acre.urlfetch(acre.request.base_url + "sync_urlfetch");
+    var results = JSON.parse(response.body);
+    ok("google" in results && "youtube" in results)
+});
+
+test('acre.urlfetch fails with recursive re-entry',function() {
+    try {
+        acre.urlfetch(acre.request.base_url + "recursive_sync_urlfetch");
+        ok(false,"exception wasn't triggered");
+    } catch (e) {
+        console.log(e);
+        ok(true,"exception was triggered");
+    }
+});
+
+// --------------------- async urlfetch ---------------------------------
+
+test('parallel acre.async.urlfetch works',function() {
     var results = {};
     acre.async.urlfetch("http://www.google.com/", {
         'callback' : function (res) {
@@ -37,13 +42,54 @@ test('acre.async.urlfetch',function() {
             results.youtube = res;
         }
     });
-    acre.async.urlfetch("http://www.freebase.com/", {
+    acre.async.wait_on_results();
+    u.has_correct_domain(results.google, "PREF", ".google.com");
+    u.has_correct_domain(results.youtube, "GEO", ".youtube.com");
+});
+
+test('chained acre.async.urlfetch works',function() {
+    var results = {};
+    acre.async.urlfetch("http://www.google.com/", {
         'callback' : function (res) {
-            results.freebase = res;
+            results.google = res;
+            acre.async.urlfetch("http://www.youtube.com/", {
+                'callback' : function (res) {
+                    results.youtube = res;
+                }
+            });
         }
     });
     acre.async.wait_on_results();
-    do_test(results);
+    u.has_correct_domain(results.google, "PREF", ".google.com");
+    u.has_correct_domain(results.youtube, "GEO", ".youtube.com");
+});
+
+test('acre.async.urlfetch can re-enter once',function() {
+    var response = null;
+    acre.async.urlfetch(acre.request.base_url + "async_urlfetch", {
+        'callback' : function (res) {
+            response = res;
+        }
+    });
+    acre.async.wait_on_results();
+    var results = JSON.parse(response.body);
+    ok("google" in results && "youtube" in results)
+});
+
+test('acre.async.urlfetch fails with recursive re-entry',function() {
+    var response = null;
+    try {
+        acre.async.urlfetch(acre.request.base_url + "recursive_async_urlfetch", {
+            'callback' : function (res) {
+                response = res;
+            }
+        });
+        acre.async.wait_on_results();
+        ok(false,"exception wasn't triggered");
+    } catch (e) {
+        console.log(e);
+        ok(true,"exception was triggered");
+    }
 });
 
 acre.test.report();
