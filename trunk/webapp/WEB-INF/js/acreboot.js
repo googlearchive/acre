@@ -953,8 +953,7 @@ if (!acre.error) {
         return _urlfetch(false,url,method,headers,content,sign);
     };
     acre.async.urlfetch = function(url, method, headers, content, sign) {
-        return _urlfetch(false,url,method,headers,content,sign,
-                         _hostenv.urlOpenAsync);
+        return _urlfetch(false,url,method,headers,content,sign,_hostenv.urlOpenAsync);
     };
     acre.async.wait_on_results = function (timeout) {
         _hostenv.async_wait(timeout);
@@ -1190,21 +1189,19 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
 
     // XXX TODO _hostenv.urlOpen should interpret and strip any charset=
     //  in the response content-type - all we see is a javascript string.
+    
     var response = {};
     if (_urlopener == _hostenv.urlOpen) {
-//    public Scriptable urlOpen(String urlStr, String method,
-//                              Object content, Scriptable headers,
-//                              boolean system, boolean log_to_user,
-//                              Object response_encoding) {
 
-        response = _hostenv.urlOpen(url, method, content, headers, system,
-                                  log_to_user, response_encoding);
+        response = _hostenv.urlOpen(
+          url, method, content, headers, system, log_to_user, response_encoding
+        );
         response = response_processor(url, response);
 
         if (response instanceof acre.errors.URLError)
             throw response;
     } else if (_urlopener == _hostenv.urlOpenAsync) {
-        _hostenv.urlOpenAsync(url, method, content, headers, timeout,
+        _hostenv.urlOpenAsync(url, method, content, headers, timeout, system, log_to_user, response_encoding,
                               function(url, res) {
                                   response_processor(url, res, callback, errback);
                               });

@@ -758,10 +758,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                                        system, log_to_user, response_encoding);
 
         try {
-            if (response_encoding == null) {
-                response_encoding = "ISO-8859-1";
-            }
-            fetch.fetch(system, (String)response_encoding, log_to_user);
+            if (response_encoding == null) response_encoding = "ISO-8859-1";
+            fetch.fetch(system, (String) response_encoding, log_to_user);
             return fetch.toJsObject(_scope);
         } catch (AcreURLFetchException e) {
             throw new JSURLError(e.getMessage()).newJSException(this);
@@ -773,6 +771,9 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                              Object content,
                              Scriptable headers,
                              Double timeout_ms,
+                             boolean system,
+                             boolean log_to_user,
+                             Object response_encoding,
                              Function callback) {
         if (_async_fetch == null)
             throw new JSConvertableException("Async Urlfetch not supported in "+
@@ -795,6 +796,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         	timeout = timeout_ms.longValue();
         }
 
+        if (response_encoding == null) response_encoding = "ISO-8859-1";
+         
         Map<String, String> header_map = new HashMap<String, String>();
         if (headers != null) {
             Object[] ids = headers.getIds();
@@ -805,8 +808,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             }
         }
 
-        _async_fetch.make_request(url, method, timeout, header_map, content,
-                                  callback);
+        _async_fetch.make_request(url, method, timeout, header_map, content, system, log_to_user, (String) response_encoding, callback);
     }
 
     @JS_Function

@@ -33,9 +33,9 @@ public interface AsyncUrlfetch {
                              long timeout,
                              Map<String, String> headers,
                              Object body,
-                             /* String response_encoding, */
-                             /* boolean system, */
-                             /* boolean log_to_user, */
+                             boolean system,
+                             boolean log_to_user,
+                             String response_encoding,
                              Function callback);
     public void wait_on_result();
     public void wait_on_result(long time, TimeUnit tunit);

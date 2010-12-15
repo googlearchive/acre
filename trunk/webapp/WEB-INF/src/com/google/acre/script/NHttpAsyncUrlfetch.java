@@ -123,6 +123,9 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
                              long timeout,
                              Map<String, String> headers,
                              Object body,
+                             final boolean system,
+                             final boolean log_to_user,
+                             final String response_encoding,
                              final Function callback) {
 
         String content_charset = "UTF-8";
@@ -175,7 +178,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
                          "Http.url", url,
                          "Http.req.hdr", httpreqhdr);
 
-        if (true /* !system && log_to_user */) {
+        if (!system && log_to_user) {
             _response.userlog4j("DEBUG", "urlfetch.request.async",
                                 "Http.req.method", method,
                                 "Http.url", url,
@@ -194,7 +197,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
                                  callback.call(ctx, _scope, null,
                                                new Object[] {
                                                    url.toString(),
-                                                   callback_result(start_time, url, res)
+                                                   callback_result(start_time, url, res, system, log_to_user, response_encoding)
                                                });
                              }
 
@@ -225,7 +228,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
 
     }
 
-    private Scriptable callback_result(long start_time, URL url, HttpResponse res) {
+    private Scriptable callback_result(long start_time, URL url, HttpResponse res, boolean system, boolean log_to_user, String response_encoding) {
         BrowserCompatSpecFactory bcsf = new BrowserCompatSpecFactory();
         CookieSpec cspec = bcsf.newInstance(null);
         String protocol = url.getProtocol();
@@ -290,8 +293,8 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
             }
         }
             
-        if (charset == null) charset = "UTF-8";
-            
+        if (charset == null) charset = response_encoding;
+        
         // read body
         HttpEntity ent = res.getEntity();
         try {
@@ -364,7 +367,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
                                  "reading_time", reading_time,
                                  "waiting_time", waiting_time);
 
-                if (true /* !system && log_to_user */) {
+                if (system && log_to_user) {
                     _response.userlog4j("DEBUG", "urlfetch.response.async",
                                         "Http.url", url.toString(),
                                         "Http.rep.status", Integer.toString(status),
@@ -381,10 +384,10 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
                                                           first_byte_time,
                                                           end_time);
 
-                _response
-                    .collect("auuc")
-                    .collect("auuw", waiting_time)
-                    .collect("auur", reading_time);
+                _response.collect((system) ? "asuc":"auuc")
+                    .collect((system) ? "asuw":"auuw", waiting_time)
+                    .collect((system) ? "asur":"auur", reading_time);
+                
             }
 
 
