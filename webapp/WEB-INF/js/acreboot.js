@@ -1622,8 +1622,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
                 // don't allow .metadata files to override values
                 // that could create security issues
                 delete md.hosts;
-                delete md.app_guid;
-                delete md.write_user;         
+                delete md.app_guid; 
             }
 
             // copy remaining metadata specified in .metadata
