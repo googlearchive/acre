@@ -4,6 +4,7 @@ function do_test(response,expected_cost) {
 
     // first make sure that all three urlfetches performed were counted in the metaweb costs
     var costs = response["headers"]["x-metaweb-cost"];
+    console.log(costs);
     ok(costs.indexOf(expected_cost) > -1, "user urlfetches count in metaweb costs");
 
     // get the result from the test by parsing the body as JSON payload
@@ -29,9 +30,11 @@ test('acre.urlfetch',function() {
     do_test(acre.urlfetch(url),"auuc=4"); // TODO: find out why there is one more here!
 });
 
-test('acre.async.urlfetch',function() {
-    var url = acre.request.base_url + "async_urlfetch";
-    do_test(acre.urlfetch(url),"auuc=3");
-});
+if (acre._dev) { // async urlfetch can't call recursively in regular mode so this test would fail
+    test('acre.async.urlfetch',function() {
+        var url = acre.request.base_url + "async_urlfetch";
+        do_test(acre.urlfetch(url),"auuc=3");
+    });
+}
 
 acre.test.report();
