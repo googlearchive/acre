@@ -754,8 +754,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                               boolean system, boolean log_to_user,
                               Object response_encoding) {
 
-        System.out.println("sync: " + url.split("?")[0] + (system ? "[system]" : ""));
-
         AcreFetch fetch = prepareFetch(url, method, content, headers, system, log_to_user, response_encoding);
 
         try {
@@ -776,9 +774,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                              boolean log_to_user,
                              Object response_encoding,
                              Function callback) {
-        
-        System.out.println("async: " + url.split("?")[0] + (system ? "[system]" : ""));
-        
+                
         if (_async_fetch == null) {
             throw new JSConvertableException(
                 "Async Urlfetch not supported in this enviornment"
