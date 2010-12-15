@@ -1474,7 +1474,7 @@ var codesite_json_inventory_path = function(resource, dir) {
 
         var dir_url = "http://code.google.com/p/" + project + "/source/dirfeed?p=/" + path;
         var source_url = "http://" + project + ".googlecode.com/" + repo + "/" + path;
-
+        
         try {
             var r = _system_urlfetch(dir_url);
         } catch (e) {
@@ -1957,11 +1957,9 @@ var proto_require = function(req_path, skip_cache) {
     }
 
     function url_get_content() {
-        return _system_urlfetch(this.data.content_id, {
-            headers : {
-                "Content-Type" : "text/xml; charset=UTF-8"
-            }
-        });
+        var fetch = _system_urlfetch(this.data.content_id);
+        fetch.headers['content-type'] = this.data.media_type;
+        return fetch;
     };
 
     function graph_get_content() {
