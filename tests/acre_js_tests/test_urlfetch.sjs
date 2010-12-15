@@ -1,14 +1,6 @@
 acre.require('/test/lib').enable(this);
 
-function do_test(response,expected_cost) {
-
-    // first make sure that all three urlfetches performed were counted in the metaweb costs
-    var costs = response["headers"]["x-metaweb-cost"];
-    console.log(costs);
-    ok(costs.indexOf(expected_cost) > -1, "user urlfetches count in metaweb costs");
-
-    // get the result from the test by parsing the body as JSON payload
-    var results = JSON.parse(response.body);
+function do_test(results) {
 
     // make sure that the web sites urlfetched correctly by looking into the domain of the cookie they set
     // which is the least likely part of their web page to change over time. Freebase doesn't set a tracking cookie
@@ -26,15 +18,32 @@ function do_test(response,expected_cost) {
 }
 
 test('acre.urlfetch',function() {
-    var url = acre.request.base_url + "sync_urlfetch";
-    do_test(acre.urlfetch(url),"auuc=4"); // TODO: find out why there is one more here!
+    var results = {};
+    results.google    = acre.urlfetch("http://www.google.com/");
+    results.youtube   = acre.urlfetch("http://www.youtube.com/");
+    results.freebase  = acre.urlfetch("http://www.freebase.com/");    
+    do_test(results);
 });
 
-if (acre._dev) { // async urlfetch can't call recursively in regular mode so this test would fail
-    test('acre.async.urlfetch',function() {
-        var url = acre.request.base_url + "async_urlfetch";
-        do_test(acre.urlfetch(url),"auuc=3");
+test('acre.async.urlfetch',function() {
+    var results = {};
+    acre.async.urlfetch("http://www.google.com/", {
+        'callback' : function (res) {
+            results.google = res;
+        }
     });
-}
+    acre.async.urlfetch("http://www.youtube.com/", {
+        'callback' : function (res) {
+            results.youtube = res;
+        }
+    });
+    acre.async.urlfetch("http://www.freebase.com/", {
+        'callback' : function (res) {
+            results.freebase = res;
+        }
+    });
+    acre.async.wait_on_results();
+    do_test(results);
+});
 
 acre.test.report();
