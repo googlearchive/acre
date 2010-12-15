@@ -702,7 +702,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                               boolean system, boolean log_to_user,
                               Object response_encoding) {
 
-        System.out.println("sync: " + url.split("\\?")[0] + (system ? "[system]" : ""));
+        //System.out.println("sync: " + url.split("\\?")[0] + (system ? "[system]" : ""));
 
         if (req._reentries > 1) {
             throw new JSConvertableException("Urlfetch is allowed to re-enter only once").newJSException(this);
@@ -771,7 +771,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                              Object response_encoding,
                              Function callback) {
 
-        System.out.println("async: " + url.split("\\?")[0] + (system ? "[system]" : "") + " [reentries: " + req._reentries + "]");
+        //System.out.println("async: " + url.split("\\?")[0] + (system ? "[system]" : "") + " [reentries: " + req._reentries + "]");
         
         if (_async_fetch == null) {
             throw new JSConvertableException(
