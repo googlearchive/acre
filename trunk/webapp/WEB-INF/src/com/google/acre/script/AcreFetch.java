@@ -94,13 +94,15 @@ public class AcreFetch extends JsConvertable {
 
     private AcreResponse _acre_response;
     private long _deadline;
+    private int _reentries;
     private boolean _internal;
     private ClientConnectionManager _connectionManager;
     
-    public AcreFetch(String url, String method, long deadline, AcreResponse response, ClientConnectionManager connectionManager) {
+    public AcreFetch(String url, String method, long deadline, int reentries, AcreResponse response, ClientConnectionManager connectionManager) {
         request_url = url;
         request_method = method;
         _deadline = deadline;
+        _reentries = reentries;
         _internal = isInternal(url);
         _acre_response = response;
         _connectionManager = connectionManager;
@@ -157,7 +159,8 @@ public class AcreFetch extends JsConvertable {
         // whatever settings they might have tried to change for this value
         // (which could be a security hazard)
         long sub_deadline = _deadline - HostEnv.SUBREQUEST_DEADLINE_ADVANCE;
-        request_headers.put(HostEnv.ACRE_QUOTAS_HEADER, "td=" + sub_deadline);
+        int reentrances = _reentries + 1;
+        request_headers.put(HostEnv.ACRE_QUOTAS_HEADER, "td=" + sub_deadline + ",r=" + reentrances);
 
         // if this is not an internal call, we need to invoke the call thru a proxy
         if (!_internal) {

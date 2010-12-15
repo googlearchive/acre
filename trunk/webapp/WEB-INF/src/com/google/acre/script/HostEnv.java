@@ -101,7 +101,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     private static String ACRE_HOST_BASE = Configuration.Values.ACRE_HOST_BASE.getValue();
     private static String ACRE_HOST_DELIMITER_PATH = Configuration.Values.ACRE_HOST_DELIMITER_PATH.getValue();
     private static boolean ACRE_AUTORELOADING = Configuration.Values.ACRE_AUTORELOADING.getBoolean();
-
+    private static boolean ACRE_DEVELOPER_MODE = Configuration.Values.ACRE_DEVELOPER_MODE.getBoolean();
+    
     private static final String DEFAULT_HOST_PATH = "//default." + ACRE_HOST_DELIMITER_PATH;
 
     //private static boolean HIDE_INTERNAL_JS_STACK = Configuration.Values.HIDE_ACREBOOT_STACK.getBoolean();
@@ -407,8 +408,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                  Configuration.Values.ACRE_ALLOW_MWAUTH_HOST_SUFFIX.getValue());
         this.put("ACRE_MWLT_MODE_COOKIE_SCOPE", this,
                  Configuration.Values.ACRE_MWLT_MODE_COOKIE_SCOPE.getValue());
-        this.put("ACRE_DEVELOPER_MODE", this,
-                 Configuration.Values.ACRE_DEVELOPER_MODE.getBoolean());
+        this.put("ACRE_DEVELOPER_MODE", this, ACRE_DEVELOPER_MODE);
         this.put("DEFAULT_HOST_PATH", this, DEFAULT_HOST_PATH);
 
         _scope.put("ACRE_REQUEST", _scope, req.toJsObject(_scope));
@@ -708,7 +708,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         // handle any failure
         long net_deadline = req._deadline - NETWORK_DEADLINE_ADVANCE;
 
-        AcreFetch fetch = new AcreFetch(urlStr, method, net_deadline, res, AcreFactory.getClientConnectionManager());
+        AcreFetch fetch = new AcreFetch(urlStr, method, net_deadline, req._reentries, res, AcreFactory.getClientConnectionManager());
         
         if (headers != null) {
             Object[] ids = headers.getIds();
@@ -749,13 +749,14 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     }
 
     @JS_Function
-    public Scriptable urlOpen(String urlStr, String method,
+    public Scriptable urlOpen(String url, String method,
                               Object content, Scriptable headers,
                               boolean system, boolean log_to_user,
                               Object response_encoding) {
 
-        AcreFetch fetch = prepareFetch(urlStr, method, content, headers,
-                                       system, log_to_user, response_encoding);
+        System.out.println("sync: " + url.split("?")[0] + (system ? "[system]" : ""));
+
+        AcreFetch fetch = prepareFetch(url, method, content, headers, system, log_to_user, response_encoding);
 
         try {
             if (response_encoding == null) response_encoding = "ISO-8859-1";
@@ -775,14 +776,20 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                              boolean log_to_user,
                              Object response_encoding,
                              Function callback) {
-        if (_async_fetch == null)
-            throw new JSConvertableException("Async Urlfetch not supported in "+
-                                             "this enviornment")
-                .newJSException(this);
+        
+        System.out.println("async: " + url.split("?")[0] + (system ? "[system]" : ""));
+        
+        if (_async_fetch == null) {
+            throw new JSConvertableException(
+                "Async Urlfetch not supported in this enviornment"
+            ).newJSException(this);
+        }
 
-        if (req._has_quotas)
-            throw new JSConvertableException("Async Urlfetch not available on reentry")
-                .newJSException(this);
+        if (req._reentries > 1) {
+            throw new JSConvertableException(
+                "Async Urlfetch is allowed to re-enter only once"
+            ).newJSException(this);
+        }
 
         if (System.currentTimeMillis() > req._deadline) {
             throw new RuntimeException("Cannot call urlfetch, the script ran out of time");
@@ -803,7 +810,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             Object[] ids = headers.getIds();
             for (int i = 0; i < ids.length; i++) {
                 String id = ids[i].toString();
-
                 header_map.put(id, headers.get(id, headers).toString());
             }
         }
@@ -1298,7 +1304,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         // the js entry point shouldn't be visible to user scripts
         // unless developer mode is enabled, but double-check it
         // here too.
-        if (!Configuration.Values.ACRE_DEVELOPER_MODE.getBoolean()) {
+        if (!ACRE_DEVELOPER_MODE) {
             return "";
         }
 

@@ -83,6 +83,7 @@ public class AcreRequest extends JsConvertable {
     // deadline (in msec as returned by System.currentTimeMillis()
     public long _deadline;
     public boolean _has_quotas;
+    public int _reentries;
     
     public int _logtype = 0;
 
@@ -125,6 +126,7 @@ public class AcreRequest extends JsConvertable {
             } catch (NumberFormatException e) {
                 _deadline = max_deadline;
             }
+            _reentries = quotas.containsKey("r") ? Integer.parseInt(quotas.get("r")) : 0;
         }
         
         Matcher m = hostValidator.matcher(server_name);
