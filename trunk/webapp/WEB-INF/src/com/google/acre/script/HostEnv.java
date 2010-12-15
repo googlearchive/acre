@@ -696,19 +696,33 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         return execute(script, scope, swizzle);
     }
 
-    public AcreFetch prepareFetch(String urlStr, String method, Object content,
-                                  Scriptable headers, boolean system,
-                                  boolean log_to_user, Object response_encoding) {
+    @JS_Function
+    public Scriptable urlOpen(String url, String method,
+                              Object content, Scriptable headers,
+                              boolean system, boolean log_to_user,
+                              Object response_encoding) {
 
-    	if (System.currentTimeMillis() > req._deadline) {
+        System.out.println("sync: " + url.split("\\?")[0] + (system ? "[system]" : ""));
+
+        if (req._reentries > 1) {
+            throw new JSConvertableException("Urlfetch is allowed to re-enter only once").newJSException(this);
+        }
+        
+        if (System.currentTimeMillis() > req._deadline) {
             throw new RuntimeException("Cannot call urlfetch, the script ran out of time");
         }
 
-        // give the subrequest a shorter deadline so this request can
-        // handle any failure
+        URL _url;
+        try {
+            _url = new URL(url);
+        } catch (MalformedURLException e) {
+            throw new JSURLError("Malformed URL: " + url).newJSException(this);
+        }
+        
+        // give the subrequest a shorter deadline so this request can handle any failure
         long net_deadline = req._deadline - NETWORK_DEADLINE_ADVANCE;
 
-        AcreFetch fetch = new AcreFetch(urlStr, method, net_deadline, req._reentries, res, AcreFactory.getClientConnectionManager());
+        AcreFetch fetch = new AcreFetch(url, method, net_deadline, req._reentries, res, AcreFactory.getClientConnectionManager());
         
         if (headers != null) {
             Object[] ids = headers.getIds();
@@ -721,16 +735,9 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         fetch.request_body = content;
 
-        URL url;
-        try {
-            url = new URL(urlStr);
-        } catch (MalformedURLException e) {
-            throw new JSURLError("Malformed URL: " + urlStr).newJSException(this);
-        }
+        String host = _url.getHost();
 
-        String fqhn = url.getHost();
-
-        if (fqhn.equals(ACRE_METAWEB_API_ADDR)) {
+        if (host.equals(ACRE_METAWEB_API_ADDR)) {
             fetch.request_headers.put("X-Metaweb-TID", req._metaweb_tid);
 
             syslog(Level.DEBUG, "hostenv.urlopen.attached.tid",
@@ -744,18 +751,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 }
             }
         }
-
-        return fetch;
-    }
-
-    @JS_Function
-    public Scriptable urlOpen(String url, String method,
-                              Object content, Scriptable headers,
-                              boolean system, boolean log_to_user,
-                              Object response_encoding) {
-
-        AcreFetch fetch = prepareFetch(url, method, content, headers, system, log_to_user, response_encoding);
-
+        
         try {
             if (response_encoding == null) response_encoding = "ISO-8859-1";
             fetch.fetch(system, (String) response_encoding, log_to_user);
@@ -774,7 +770,9 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                              boolean log_to_user,
                              Object response_encoding,
                              Function callback) {
-                
+
+        System.out.println("async: " + url.split("\\?")[0] + (system ? "[system]" : "") + " [reentries: " + req._reentries + "]");
+        
         if (_async_fetch == null) {
             throw new JSConvertableException(
                 "Async Urlfetch not supported in this enviornment"
@@ -782,9 +780,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
 
         if (req._reentries > 1) {
-            throw new JSConvertableException(
-                "Async Urlfetch is allowed to re-enter only once"
-            ).newJSException(this);
+            throw new JSConvertableException("Urlfetch is allowed to re-enter only once").newJSException(this);
         }
 
         if (System.currentTimeMillis() > req._deadline) {
@@ -810,6 +806,10 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             }
         }
 
+        long sub_deadline = req._deadline - HostEnv.SUBREQUEST_DEADLINE_ADVANCE;
+        int reentrances = req._reentries + 1;
+        header_map.put(HostEnv.ACRE_QUOTAS_HEADER, "td=" + sub_deadline + ",r=" + reentrances);
+        
         _async_fetch.make_request(url, method, timeout, header_map, content, system, log_to_user, (String) response_encoding, callback);
     }
 
