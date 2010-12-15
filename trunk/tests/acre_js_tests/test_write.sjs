@@ -1,6 +1,6 @@
 acre.require('/test/lib').enable(this);
 
-test('Test acre.write',function() {
+test('acre.write',function() {
   equal("ok",acre.test.urlfetch().body);
 });
 
