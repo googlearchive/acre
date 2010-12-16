@@ -17,6 +17,7 @@ package com.google.acre;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -34,9 +35,8 @@ import org.mortbay.jetty.webapp.WebAppContext;
 import org.mortbay.log.Log;
 import org.mortbay.util.Scanner;
 
-import com.google.acre.thread.ThreadPoolExecutorAdapter;
-import com.google.acre.Configuration;
 import com.google.acre.thread.AllocationLimitedThreadFactory;
+import com.google.acre.thread.ThreadPoolExecutorAdapter;
 
 public class AcreServer extends Server {
 
@@ -56,8 +56,22 @@ public class AcreServer extends Server {
         ThreadFactory threadFactory = new AllocationLimitedThreadFactory(); 
         
         threadPool = new ThreadPoolExecutor(coreThreads, maxThreads, keepAliveTime, TimeUnit.SECONDS, queue, threadFactory);
-        threadPool.allowCoreThreadTimeOut(true);
         threadPool.prestartAllCoreThreads();
+        
+        try {
+            // NOTE(SM): the code belows is a reflective version of invoking "threadPool.allowCoreThreadTimeOut(true)"
+            // which, for some weird reason, can't compile on MacOSX 10.5.x.
+            Method[] allMethods = threadPool.getClass().getDeclaredMethods();
+            for (Method m : allMethods) {
+                if ("allowCoreThreadTimeOut".equals(m.getName())) {
+                    m.invoke(threadPool, Boolean.TRUE);
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.warn("Warning: failed to invoke 'allowCoreThreadTimeOut' on the threadPool");
+        }
 
         this.setThreadPool(new ThreadPoolExecutorAdapter(threadPool));
 
