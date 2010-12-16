@@ -1671,8 +1671,12 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
                     // .metadata files are a special case... these contain app metadata
                     // so fetch immediately and patch in values
                     if (file.name === '.metadata') {
-                        var temp = content_fetcher.apply({'data' : file});
-                        _set_app_metadata(app, JSON.parse(temp.body), false);
+                        try {
+                            var temp = content_fetcher.apply({'data' : file});
+                            _set_app_metadata(app, JSON.parse(temp.body), false);                            
+                        } catch(e) {
+                            syslog.warn(e.message || "error processing app metadata", "appfetch.dot_metadata.error");
+                        }
                         continue;
                     }
                     
