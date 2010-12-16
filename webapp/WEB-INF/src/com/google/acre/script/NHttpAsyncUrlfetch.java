@@ -314,8 +314,8 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
                 long end_time = 0;
                 if (content_type_header != null && 
                     (content_type_header.getValue().startsWith("image/") ||
-                     content_type_header.getValue()
-                     .startsWith("multipart/form-data"))) {
+                     content_type_header.getValue().startsWith("application/octet-stream") ||
+                     content_type_header.getValue().startsWith("multipart/form-data"))) {
                     // HttpClient's InputStream doesn't support mark/reset, so
                     // wrap it with one that does.
                     BufferedInputStream bufis = new BufferedInputStream(res_stream);

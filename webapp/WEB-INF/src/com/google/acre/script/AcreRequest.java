@@ -213,6 +213,7 @@ public class AcreRequest extends JsConvertable {
 
             if (content_type != null &&
                 (content_type.startsWith("image/") ||
+                content_type.startsWith("application/octet-stream") ||
                  content_type.startsWith("multipart/form-data"))) {
                     byte[] data = IOUtils.toByteArray(is);
 

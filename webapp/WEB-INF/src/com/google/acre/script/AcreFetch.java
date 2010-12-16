@@ -391,6 +391,7 @@ public class AcreFetch extends JsConvertable {
                 long endTime = 0;
                 if (content_type != null &&
                     (content_type.startsWith("image/") ||
+                     content_type.startsWith("application/octet-stream") ||
                      content_type.startsWith("multipart/form-data"))) {
                     // HttpClient's InputStream doesn't support mark/reset, so
                     // wrap it with one that does.
