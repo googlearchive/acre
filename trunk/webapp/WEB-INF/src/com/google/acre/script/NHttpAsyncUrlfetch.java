@@ -232,9 +232,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
         BrowserCompatSpecFactory bcsf = new BrowserCompatSpecFactory();
         CookieSpec cspec = bcsf.newInstance(null);
         String protocol = url.getProtocol();
-        boolean issecure = false;
-        if (protocol != null)
-            issecure = (protocol.equals("https") ? true : false);
+        boolean issecure = ("https".equals(protocol));
         int port = url.getPort();
         if (port == -1) port = 80;
         CookieOrigin origin = new CookieOrigin(url.getHost(), port,
