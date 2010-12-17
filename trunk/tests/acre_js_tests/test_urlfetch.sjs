@@ -23,7 +23,6 @@ test('acre.urlfetch fails with recursive re-entry',function() {
         acre.urlfetch(acre.request.base_url + "recursive_sync_urlfetch");
         ok(false,"exception wasn't triggered");
     } catch (e) {
-        console.log(e);
         ok(true,"exception was triggered");
     }
 });
@@ -87,9 +86,32 @@ test('acre.async.urlfetch fails with recursive re-entry',function() {
         acre.async.wait_on_results();
         ok(false,"exception wasn't triggered");
     } catch (e) {
-        console.log(e);
         ok(true,"exception was triggered");
     }
+});
+
+// --------------------------- mixed ----------------------------------------
+
+test('sync and async urlfetch obtain the same cookies',function() {
+    var sync_response = acre.urlfetch(acre.request.base_url + "sync_urlfetch");
+    var sync_results = JSON.parse(sync_response.body);
+
+    var async_response = acre.urlfetch(acre.request.base_url + "async_urlfetch");
+    var async_results = JSON.parse(async_response.body);
+
+    // check google cookies ---------------------
+
+    var sync_google_cookies = u.cookie_names(sync_results.google);
+    var async_google_cookies = u.cookie_names(async_results.google);
+
+    equal(sync_google_cookies,async_google_cookies);
+
+    // check google cookies ---------------------
+
+    var sync_youtube_cookies = u.cookie_names(sync_results.youtube);
+    var async_youtube_cookies = u.cookie_names(async_results.youtube);
+
+    equal(sync_youtube_cookies,async_youtube_cookies);
 });
 
 acre.test.report();
