@@ -1423,10 +1423,11 @@ var webdav_inventory_path = function(url) {
 
         // build up file metadata
         var file_data = extension_to_metadata(file);
+        var revision = getNodeVal(prop, "D:version-name")[1];
         if (file_data.name === '.metadata') res.has_dot_metadata = true;
-        file_data.content_id = url + '/'+file;
+        file_data.content_id = url + '/'+file + "?r=" + revision;
         file_data.content_hash = getNodeVal(prop, "SVN:md5-checksum")[1] || 
-                                 getNodeVal(prop, "D:version-name")[1] ||  
+                                 revision ||  
                                  getNodeVal(prop, "D:getlastmodified")[1];
         
         res.files[file] = file_data;
@@ -1499,10 +1500,11 @@ var codesite_json_inventory_path = function(resource, dir) {
     var files = dir.filePage.files;
     for (var file in files) {
         var f = files[file];
+        var revision = f[1];
         var file_data = extension_to_metadata(file);
         if (file_data.name === '.metadata') res.has_dot_metadata = true;
-        file_data.content_id = source_url + "/" + file;
-        file_data.content_hash = f[1];  // revision number
+        file_data.content_id = source_url + "/" + file + "?r=" + revision;
+        file_data.content_hash = revision;  // revision number
         res.files[file] = file_data;
     }
 
