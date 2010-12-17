@@ -588,7 +588,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         int pathIndex = script.lastIndexOf('/');
         String script_name = (pathIndex == -1) ? script : script.substring(pathIndex + 1);
 
-        String script_id = (ACRE_AUTORELOADING) ? script + lastModifiedTime(script) : script;
+        //String script_id = (ACRE_AUTORELOADING) ? script + lastModifiedTime(script) : script;
+        String script_id = script + lastModifiedTime(script);
 
         String script_id_hash = Integer.toHexString(script_id.hashCode());
                 
