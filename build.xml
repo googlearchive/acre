@@ -25,12 +25,14 @@
 	<property name="name" value="acre" />
     <property name="fullname" value="${name}-${version}-${revision}" />
 
-    <property name="config.dir" value="config" />
     
     <property name="build.dir" value="_build" />
     <property name="dist.dir" value="_dist" />
     <property name="data.dir" value="_data" />
     <property name="logs.dir" value="_logs" />
+    
+    <property name="config.dir" value="${basedir}/config" />
+    <property name="tests.dir" value="${basedir}/tests" />
 
     <property name="library.dir" value="${basedir}/library"/>
     <property name="library.src.dir" value="${library.dir}/src" />
@@ -215,6 +217,19 @@
         <fileset dir="${war.lib.dir}" includes="**/mysql*"/>
         <fileset dir="${war.classes.dir}" includes="**/MySQL*"/>
       </delete>
+    </target>
+    
+    <target name="appengine-test-prepare">
+      <copy todir="${war.dir}/WEB-INF/scripts/qa">
+        <fileset dir="${tests.dir}/acre_js_tests">
+          <include name="**/*" />
+        </fileset>
+      </copy>
+      <copy todir="${war.dir}/WEB-INF/scripts/freebase/apps">
+        <fileset dir="${tests.dir}/acreapps">
+          <include name="**/*" />
+        </fileset>
+      </copy>
     </target>
 
 	<target name="dist" description="Build the acre distribution" depends="compile">
