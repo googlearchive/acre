@@ -697,12 +697,15 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     }
 
     @JS_Function
-    public Scriptable urlOpen(String url, String method,
-                              Object content, Scriptable headers,
-                              boolean system, boolean log_to_user,
-                              Object response_encoding) {
+    public Scriptable urlOpen(String url, 
+                              String method,
+                              Object content, 
+                              Scriptable headers,
+                              boolean system, 
+                              boolean log_to_user,
+                              String response_encoding) {
 
-        //System.out.println("sync: " + url.split("\\?")[0] + (system ? "[system]" : ""));
+        //System.out.println((system ? "[system] " : "") + "sync: " + url.split("\\?")[0] + " [reentries: " + req._reentries + "]");
 
         if (req._reentries > 1) {
             throw new JSConvertableException("Urlfetch is allowed to re-enter only once").newJSException(this);
@@ -754,7 +757,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         
         try {
             if (response_encoding == null) response_encoding = "ISO-8859-1";
-            fetch.fetch(system, (String) response_encoding, log_to_user);
+            fetch.fetch(system, response_encoding, log_to_user);
             return fetch.toJsObject(_scope);
         } catch (AcreURLFetchException e) {
             throw new JSURLError(e.getMessage()).newJSException(this);
@@ -762,16 +765,17 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     }
 
     @JS_Function
-    public void urlOpenAsync(String url, String method,
+    public void urlOpenAsync(String url, 
+                             String method,
                              Object content,
                              Scriptable headers,
                              Double timeout_ms,
                              boolean system,
                              boolean log_to_user,
-                             Object response_encoding,
+                             String response_encoding,
                              Function callback) {
 
-        //System.out.println("async: " + url.split("\\?")[0] + (system ? "[system]" : "") + " [reentries: " + req._reentries + "]");
+        //System.out.println((system ? "[system] " : "") + "async: " + url.split("\\?")[0] + " [reentries: " + req._reentries + "]");
         
         if (_async_fetch == null) {
             throw new JSConvertableException(
@@ -810,7 +814,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         int reentrances = req._reentries + 1;
         header_map.put(HostEnv.ACRE_QUOTAS_HEADER, "td=" + sub_deadline + ",r=" + reentrances);
         
-        _async_fetch.make_request(url, method, timeout, header_map, content, system, log_to_user, (String) response_encoding, callback);
+        _async_fetch.make_request(url, method, timeout, header_map, content, system, log_to_user, response_encoding, callback);
     }
 
     @JS_Function
