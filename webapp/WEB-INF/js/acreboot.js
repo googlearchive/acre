@@ -59,7 +59,7 @@ var _DEFAULT_ACRE_HOST_PATH = "/z/acre";
 
 var _DEFAULT_APP = "helloworld.examples." + _DELIMITER_PATH;
 var _DEFAULT_FILE = "index";
-var _METADATA_FILE = "METADATA.json"
+var _METADATA_FILE = "METADATA.json";
 
 // these values are copied here to avoid triggering a deprecation warning when they are accessed later.
 var server_host_base = _request.server_host_base;
