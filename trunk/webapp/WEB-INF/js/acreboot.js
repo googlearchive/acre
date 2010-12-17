@@ -1964,6 +1964,7 @@ var proto_require = function(req_path, skip_cache) {
     }
 
     function url_get_content() {
+        syslog.debug(this.data.content_id, "url.get.content");
         var fetch = _system_urlfetch(this.data.content_id);
         fetch.headers['content-type'] = this.data.media_type;
         return fetch;
