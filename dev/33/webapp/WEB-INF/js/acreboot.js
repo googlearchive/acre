@@ -1613,7 +1613,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
         var MAX_DIRECTORY_DEPTH = 2;
 
         function _set_app_metadata(app, md, system) {
-            md = md || {};
+            md = (typeof md === 'object') ? md : {};
 
             delete md.host;
             
@@ -1627,6 +1627,8 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
             // copy remaining metadata specified in .metadata
             for (var key in md) {
                 app[key] = md[key];
+                if (md.hasOwnProperty(key))
+                    app[key.toLowerCase()] = md[key];
             }
 
             // initialize values used by acre
@@ -1634,7 +1636,6 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
             app.app_id = app.app_id || host_to_namespace(app.host);
             app.app_guid = app.app_guid || app.host;
             app.as_of = app.as_of || null;    // XXX return the max mtime?
-            app.development = app.development || false;
             app.versions = app.versions || [];
             app.files = app.files || {};
             
@@ -1670,11 +1671,15 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
                     if (/~$/.test(f)) continue;      // skip ~ files (e.g., emacs temp files)
                     var file = dir.files[f];
                     
-                    // .metadata files are a special case... these contain app metadata
+                    // METADATA.json files are a special case... these contain app metadata
                     // so fetch immediately and patch in values
-                    if (file.name === '.metadata') {
-                        var temp = content_fetcher.apply({'data' : file});
-                        _set_app_metadata(app, JSON.parse(temp.body), false);
+                    if (file.name === 'METADATA.json') {
+                        try {
+                            var temp = content_fetcher.apply({'data' : file});
+                            _set_app_metadata(app, JSON.parse(temp.body), false);                            
+                        } catch(e) {
+                            syslog.warn(e.message || "error processing app metadata", "appfetch.dot_metadata.error");
+                        }
                         continue;
                     }
                     
@@ -1856,7 +1861,7 @@ var uberfetch_graph  = function(host, guid, as_of, result) {
      result.app_id = res.id;
      result.app_guid = res.guid;
      result.as_of = as_of;
-     result.development = (result.versions && result.versions.length) ? false : true;
+     result.ttl = (result.versions && result.versions.length) ? null : 0;
 
      result.service_metadata = result.service_metadata || {};
      result.service_metadata.write_user = (res['/type/domain/owners'] != null ? res['/type/domain/owners'].member.id.substr(6) : null);
@@ -1959,11 +1964,9 @@ var proto_require = function(req_path, skip_cache) {
     }
 
     function url_get_content() {
-        return _system_urlfetch(this.data.content_id, {
-            headers : {
-                "Content-Type" : "text/xml; charset=UTF-8"
-            }
-        });
+        var fetch = _system_urlfetch(this.data.content_id);
+        fetch.headers['content-type'] = this.data.media_type;
+        return fetch;
     };
 
     function graph_get_content() {
@@ -2055,8 +2058,9 @@ var proto_require = function(req_path, skip_cache) {
     
     // now cache the app_data
     var ckey = "METADATA:"+app_data.app_guid+":"+app_data.as_of;
+    var ttl = (typeof app_data.ttl === "number") ? app_data.ttl : 600000;
     
-    if (method.cachable && !app_data.development) {
+    if (method.cachable && (app_data.ttl !== 0)) {
         // cache the metadata in the long-term cache, the metadata is
         // cached permanently (or until overriden).
         _cache.put(ckey, JSON.stringify(app_data));
@@ -2068,8 +2072,12 @@ var proto_require = function(req_path, skip_cache) {
         // shift+refresh to refresh.
         for (var l=0; l < app_data.hosts.length; l++) {
             var host = app_data.hosts[l];
-            syslog.info({key:"HOST:"+host, value: ckey }, 'appfetch.cache.write.host');
-            _cache.put("HOST:"+host, ckey, 600000);
+            if (ttl < 0) {
+                _cache.put("HOST:"+host, ckey);
+            } else {
+                _cache.put("HOST:"+host, ckey, ttl);
+            }
+            syslog.info({key:"HOST:"+host, value: ckey, ttl: ttl }, 'appfetch.cache.write.host');
         }
     }
 
