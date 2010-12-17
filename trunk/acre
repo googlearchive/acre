@@ -44,26 +44,30 @@ Available Options:
 Available Commands:
 
     build ............. Build Acre
-    
     war ............... Build a WAR package of Acre to run on a regular servlet container
-    
+
     run ............... Run Acre
     run_app <dir> ..... Run Acre with a local app from disk
     start ............. Start Acre as a daemon
     stop .............. Stop Acre that was started as a daemon
     zap ............... Remove the Acre PID file
+    
     appengine-build ... Build a WAR package of Acre to run on Google App Engine
     appengine-run ..... Run Acre in the local Google App Engine simulator (must call 'appengine-build' first)
     appengine-deploy .. Deploy Acre on Google App Engine (must call 'appengine-build' first)
 
     test .............. run a suite of integration tests (start acre first)
-    freebase_check .... basic check of the freebase api endpoint
+    testng ............ run the next generation suite of integration tests (start acre first)
+    
+    appengine-prepare-tests .... Copy tests over to the appengine local directory for execution
+
     clean ............. Remove all class files
     clean-whitespace .. Normalize tabs and newlines
     distclean ......... Restore everything to checkout state
     
     setup-keystore .... Initialize the KeyStore SQL tables
     get-mysql-driver .. Obtain the MySQL JDBC Driver
+    freebase_check .... basic check of the freebase api endpoint
 
     dist <version> .... Builds a tar.gz distribution for acre
     
@@ -125,6 +129,13 @@ invoke() {
 build_appengine() {
     SCRIPT="build" 
     COMMAND="appengine"
+    export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
+    invoke
+}
+
+test_prepare_appengine() {
+    SCRIPT="build" 
+    COMMAND="appengine-test-prepare"
     export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
     invoke
 }
@@ -248,6 +259,10 @@ case "$ACTION" in
             APPSERVER_PARAMS="-p $ACRE_PORT"
         fi
         $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS "$WAR";;
+    appengine-prepare-tests) 
+        check_appengine
+        build_appengine
+        test_prepare_appengine;;
     appengine-deploy) 
         check_appengine
         build_appengine
