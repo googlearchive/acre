@@ -1619,7 +1619,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
                 // don't allow .metadata files to override values
                 // that could create security issues
                 delete md.hosts;
-                delete md.app_guid; 
+                delete md.app_guid;
             }
 
             // copy remaining metadata specified in .metadata
@@ -1668,9 +1668,9 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
                     if (/~$/.test(f)) continue;      // skip ~ files (e.g., emacs temp files)
                     var file = dir.files[f];
                     
-                    // .metadata files are a special case... these contain app metadata
+                    // METADATA.json files are a special case... these contain app metadata
                     // so fetch immediately and patch in values
-                    if (file.name === '.metadata') {
+                    if (file.name === 'METADATA.json') {
                         try {
                             var temp = content_fetcher.apply({'data' : file});
                             _set_app_metadata(app, JSON.parse(temp.body), false);                            
