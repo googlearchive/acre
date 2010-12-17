@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.script;
 
 import javax.servlet.http.Cookie;
@@ -49,24 +48,7 @@ public class AcreCookie extends JsConvertable {
     // max-age=0 means clear the cookie
     public int max_age;
 
-    public AcreCookie(String cookie_name, String cookie_value) {
-        name = cookie_name;
-        value = cookie_value;
-        max_age = -1;
-    }
-
-    public AcreCookie(String cookie_name, String cookie_value, String cookie_domain, String cookie_path,
-            boolean cookie_secure, int cookie_max_age) {
-        name = cookie_name;
-        value = cookie_value;
-        domain = cookie_domain;
-        path = cookie_path;
-        secure = cookie_secure;
-        max_age = cookie_max_age;
-    }
-
     public AcreCookie(Cookie servlet_cookie) {
-        // (String domain, String name, String value, String path, Date expires, boolean secure) 
         name = servlet_cookie.getName();
         value = servlet_cookie.getValue();
         domain = servlet_cookie.getDomain();
@@ -129,7 +111,6 @@ public class AcreCookie extends JsConvertable {
         c.setDomain(domain);
         c.setPath(path);
         c.setSecure(secure);
-        //c = new org.apache.commons.httpclient.Cookie(domain, name, value, path, max_age, secure);
         return c;
     }
 }
