@@ -97,7 +97,11 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     private static MetawebLogger _logger = new MetawebLogger();
     
     private static String ACRE_METAWEB_API_ADDR = Configuration.Values.ACRE_METAWEB_API_ADDR.getValue();
+    private static int ACRE_METAWEB_API_ADDR_PORT = Configuration.Values.ACRE_METAWEB_API_ADDR_PORT.getInteger();
+    
     private static String ACRE_FREEBASE_SITE_ADDR = Configuration.Values.ACRE_FREEBASE_SITE_ADDR.getValue();
+    private static int ACRE_FREEBASE_SITE_ADDR_PORT = Configuration.Values.ACRE_FREEBASE_SITE_ADDR_PORT.getInteger();
+    
     private static String ACRE_HOST_BASE = Configuration.Values.ACRE_HOST_BASE.getValue();
     private static String ACRE_HOST_DELIMITER_PATH = Configuration.Values.ACRE_HOST_DELIMITER_PATH.getValue();
     private static boolean ACRE_AUTORELOADING = Configuration.Values.ACRE_AUTORELOADING.getBoolean();
@@ -107,7 +111,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     //private static boolean HIDE_INTERNAL_JS_STACK = Configuration.Values.HIDE_ACREBOOT_STACK.getBoolean();
     private static boolean ENABLE_SUPERVISOR = Configuration.Values.ACRE_SUPERVISOR_THREAD.getBoolean();
-
 
     // in order to allow error scripts to handle timeouts in the main
     // script, we extend their deadline by this many msec.
@@ -160,7 +163,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     //  but we would prefer to fail within the request handling thread.
     public static final int SUPERVISOR_GRACE_PERIOD = 1000;
 
-    
     private static final AcreContextFactory _contextFactory = new AcreContextFactory();
 
     // XXX: this could be redone with individual ScriptManagers per application domain / SecurityDomain objects etc.
@@ -392,7 +394,9 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         req.server_host = ACRE_HOST_DELIMITER_PATH + "." + ACRE_HOST_BASE;
         req.server_host_base = ACRE_HOST_BASE;
         req.freebase_service_url = "http://" + ACRE_METAWEB_API_ADDR;
+        if (ACRE_METAWEB_API_ADDR_PORT != 80) req.freebase_service_url += ":" + ACRE_METAWEB_API_ADDR_PORT;
         req.freebase_site_host = "http://" + ACRE_FREEBASE_SITE_ADDR;
+        if (ACRE_FREEBASE_SITE_ADDR_PORT != 80) req.freebase_site_host += ":" + ACRE_FREEBASE_SITE_ADDR_PORT;
 
         _scope.put("PROTECTED_HOSTENV", _scope, this);
 
