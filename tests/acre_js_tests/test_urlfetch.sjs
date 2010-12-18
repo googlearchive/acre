@@ -8,8 +8,8 @@ test('acre.urlfetch works',function() {
     var results = {};
     results.google    = acre.urlfetch("http://www.google.com/");
     results.youtube   = acre.urlfetch("http://www.youtube.com/");
-    u.has_correct_domain(results.google, "PREF", ".google.com");
-    u.has_correct_domain(results.youtube, "GEO", ".youtube.com");
+    u.has_content(results.google = "Google");
+    u.has_content(results.google = "YouTube");
 });
 
 test('acre.urlfetch can re-enter once',function() {
@@ -42,8 +42,8 @@ test('parallel acre.async.urlfetch works',function() {
         }
     });
     acre.async.wait_on_results();
-    u.has_correct_domain(results.google, "PREF", ".google.com");
-    u.has_correct_domain(results.youtube, "GEO", ".youtube.com");
+    u.has_content(results.google = "Google");
+    u.has_content(results.google = "YouTube");
 });
 
 test('chained acre.async.urlfetch works',function() {
@@ -59,8 +59,8 @@ test('chained acre.async.urlfetch works',function() {
         }
     });
     acre.async.wait_on_results();
-    u.has_correct_domain(results.google, "PREF", ".google.com");
-    u.has_correct_domain(results.youtube, "GEO", ".youtube.com");
+    u.has_content(results.google = "Google");
+    u.has_content(results.google = "YouTube");
 });
 
 test('acre.async.urlfetch can re-enter once',function() {

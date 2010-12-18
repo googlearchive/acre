@@ -157,13 +157,40 @@ class AppEngineClientConnection implements ManagedClientConnection {
                                   _appengine_hresponse.getResponseCode(),
                                   null);
 
+        // WARNING(SM): appengine condenses multiple HTTP headers with the same name into
+        // one single comma-separated string. Unfortunately it doesn't escape the commas
+        // already present in the header value, making it a realy pain to write a header
+        // parsing code that is not special-casing the various headers. Since the only
+        // header we're having trouble with is set-cookie, we're special-casing that one
+        // but there could be others lurking and waiting to bite us in the rear later.
+        
         for (HTTPHeader h : _appengine_hresponse.getHeaders()) {
-            apache_response.addHeader(h.getName(), h.getValue());
+            if ("set-cookie".equalsIgnoreCase(h.getName())) {
+                splitCookies(h.getValue(), apache_response);
+            } else {
+                apache_response.addHeader(h.getName(), h.getValue());
+            }
         }
 
         return apache_response;
     }
-
+    
+    private void splitCookies(String str, org.apache.http.HttpResponse response) {
+        str = str.replace("expires=Mon, ", "expires=Mon{@_#_@} ");
+        str = str.replace("expires=Tue, ", "expires=Tue{@_#_@} ");
+        str = str.replace("expires=Wed, ", "expires=Wed{@_#_@} ");
+        str = str.replace("expires=Thu, ", "expires=Thu{@_#_@} ");
+        str = str.replace("expires=Fri, ", "expires=Fri{@_#_@} ");
+        str = str.replace("expires=Sat, ", "expires=Sat{@_#_@} ");
+        str = str.replace("expires=Sun, ", "expires=Sun{@_#_@} ");
+        String[] parts = str.split(",");
+        
+        for (String s : parts) {
+            s = s.replace("{@_#_@}", ",");
+            response.addHeader("set-cookie", s);
+        }
+    }
+    
     public void sendRequestEntity(org.apache.http.HttpEntityEnclosingRequest request) {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
 
