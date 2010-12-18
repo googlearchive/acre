@@ -12,8 +12,16 @@ function script_under_test() {
  * This is not bad because we're testing acre's urlfetching machinery, not the availability of these websites
  */
 function has_correct_domain(res,cookie_name,domain) {
-    console.log(res);
     ok(((res.status == 200 && res.cookies[cookie_name].domain.indexOf(domain) > -1) || response.status != 200),  domain);
+}
+
+/*
+ * make sure that a URL got fetched correctly by looking into the body of the response for the given content fragment
+ * Note that the test is designed to pass if the URL fetching returns with a status code that is not 200. 
+ * This is not bad because we're testing acre's urlfetching machinery, not the availability of these websites
+ */
+function has_content(res,fragment) {
+    ok(((res.status == 200 && res.body.indexOf(fragment) > -1) || response.status != 200),  fragment);
 }
 
 /*
@@ -45,10 +53,16 @@ function metaweb_costs(response) {
     return costs;
 }
 
+/*
+ * Remove leading and trailing whitespace from the given string
+ */
 function trim(str) {
     return str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
 }
 
+/*
+ * Return false if the browser sent a request with a 'cache-control: no-cache' header (normally triggered by hitting shift-reload)
+ */
 function is_caching() {
     return !(acre.request.headers['cache-control'] == 'no-cache');
 }

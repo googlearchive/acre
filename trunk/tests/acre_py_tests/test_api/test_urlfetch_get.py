@@ -39,12 +39,8 @@ class test_class(TestController):
             print (e.fp.read());
             self.assert_(False, "Got unexpected exception %s" % e );
             raise;
-            
-        except Exception, e:
-            self.assert_(False, "Got unexpected exception %s" % e );
-            raise;
-    
-    @tag(bug=False, oldbugs=["ACRE-211"], bugid="ACRE-1321", slow=True)
+                
+    @tag(bug=True, oldbugs=["ACRE-211"], bugid="ACRE-1321", slow=True)
     def test_urlfetch_get_image(self):
         self.set_acre_script("urlfetch_binary", 
              data={
@@ -77,6 +73,10 @@ class test_class(TestController):
  
         except urllib2.HTTPError, e:
             print (e.fp.read());
+            self.assert_(False, "Got unexpected exception %s" % e );
+            raise;
+
+        except Exception, e:
             self.assert_(False, "Got unexpected exception %s" % e );
             raise;
 
