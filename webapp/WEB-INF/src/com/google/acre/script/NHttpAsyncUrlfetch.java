@@ -68,8 +68,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
     // Note It's easier to just call this with introspection
     // and then set the _scope and _response variables after instantiation
     public NHttpAsyncUrlfetch() {
-        _nhttp = new NHttpClient(Configuration.Values
-                                 .ACRE_MAX_ASYNC_CONNECTIONS.getInteger());
+        _nhttp = new NHttpClient(Configuration.Values.ACRE_MAX_ASYNC_CONNECTIONS.getInteger());
 
         String proxy_host = Configuration.Values.HTTP_PROXY_HOST.getValue();
         Integer proxy_port = null;
@@ -78,16 +77,13 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
             NHttpClient.NHttpProxyHost proxy = 
                 new NHttpClient.NHttpProxyHost(proxy_host, proxy_port) {
                     public boolean use_proxy(String surl) {
-                        String ACRE_METAWEB_API_ADDR = 
-                            Configuration.Values.ACRE_METAWEB_API_ADDR.getValue();
-                        String ACRE_FREEBASE_SITE_ADDR =
-                            Configuration.Values.ACRE_FREEBASE_SITE_ADDR.getValue();
+                        String ACRE_METAWEB_API_ADDR = Configuration.Values.ACRE_METAWEB_API_ADDR.getValue();
+                        String ACRE_FREEBASE_SITE_ADDR = Configuration.Values.ACRE_FREEBASE_SITE_ADDR.getValue();
 
                         try {
                             URL url = new URL(surl);
                             String host = url.getHost();
-                            return !(ACRE_METAWEB_API_ADDR.equals(host)
-                                    || ACRE_FREEBASE_SITE_ADDR.equals(host));
+                            return !(ACRE_METAWEB_API_ADDR.equals(host) || ACRE_FREEBASE_SITE_ADDR.equals(host));
                         } catch (MalformedURLException e) {
                             // if the url parsing threw, it's safer to consider it 
                             // an external URL and let the proxy do the guarding job
