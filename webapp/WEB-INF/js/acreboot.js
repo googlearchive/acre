@@ -626,7 +626,7 @@ AcreResponse.prototype.set_policy =
 // these AcreResponse_* functions are called during _hostenv.finish_response()
 var AcreResponse_generate_date = function (d) {
     function padz(n) {
-        return n > 10 ? n : '0'+n;
+        return n > 10 ? n : '0' + n;
     }
 
     var MONTH_NAMES = [
@@ -642,16 +642,15 @@ var AcreResponse_generate_date = function (d) {
         "Saturday"
     ];
 
-    var dayname = WEEKDAY_NAMES[d.getDay()].slice(0,3);
-    var day = padz(d.getDate());
-    var monthname = MONTH_NAMES[d.getMonth()].slice(0,3);
-    var year = 1900+d.getYear();
-    var hour = padz(d.getHours());
-    var minutes = padz(d.getMinutes());
-    var seconds = padz(d.getSeconds());
+    var dayname = WEEKDAY_NAMES[d.getUTCDay()].slice(0,3);
+    var day = padz(d.getUTCDate());
+    var monthname = MONTH_NAMES[d.getUTCMonth()].slice(0,3);
+    var year = d.getUTCFullYear();
+    var hour = padz(d.getUTCHours());
+    var minutes = padz(d.getUTCMinutes());
+    var seconds = padz(d.getUTCSeconds());
 
-    return dayname +', '+ day +' ' + monthname + ' ' + year + ' ' + hour +
-        ':'+ minutes +':'+ seconds +' GMT';
+    return dayname+', '+day+' '+monthname+' '+year+' '+hour+':'+ minutes +':'+ seconds+' UTC';
 };
 
 var AcreResponse_set_expires = function (that) {
