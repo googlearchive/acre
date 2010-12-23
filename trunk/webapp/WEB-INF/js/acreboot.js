@@ -59,7 +59,7 @@ var _DEFAULT_ACRE_HOST_PATH = "/z/acre";
 
 var _DEFAULT_APP = "helloworld.examples." + _DELIMITER_PATH;
 var _DEFAULT_FILE = "index";
-var _METADATA_FILE = "METADATA.json";
+var _METADATA_FILE = "METADATA";
 
 // these values are copied here to avoid triggering a deprecation warning when they are accessed later.
 var server_host_base = _request.server_host_base;
@@ -1297,7 +1297,7 @@ var disk_resolver = function(host) {
 var disk_inventory_path = function(disk_path) {
     var res = {
         metadata : {
-            development : true      // don't cache disk apps for now
+            ttl : 0	// don't cache disk apps for now
         },
         has_dot_metadata : false,
         dirs : {},
@@ -1494,7 +1494,7 @@ var codesite_json_inventory_path = function(resource, dir) {
         if (!dir || dir.error) return null;
 
         res.metadata.as_of    = null;   // use revision id?
-        res.metadata.app_guid = source_url;
+        res.metadata.app_guid = source_url;     
     }
     
     var files = dir.filePage.files;
@@ -1504,7 +1504,7 @@ var codesite_json_inventory_path = function(resource, dir) {
         var file_data = extension_to_metadata(file);
         if (file_data.name === _METADATA_FILE) res.has_dot_metadata = true;
         file_data.content_id = source_url + "/" + file + "?r=" + revision;
-        file_data.content_hash = revision;  // revision number
+        file_data.content_hash = revision;
         res.files[file] = file_data;
     }
 
@@ -1545,8 +1545,8 @@ var codesite_json_inventory_path = function(resource, dir) {
  *
  * which is added to cache with key: 
  *    METADATA:{o.app_guid}:{o.asof}
- * {o.links} looped over and added to cache as:
- *    LINK:{o.links[i]} with value METADATA:{o.guid}:{o.asof}
+ * {o.hosts} looped over and added to cache as:
+ *    HOST:{o.hosts[i]} with value METADATA:{o.guid}:{o.asof}
  *
  */
  
@@ -1636,6 +1636,7 @@ var uberfetch_file = function(name, resolver, inventory_path, content_fetcher) {
             app.app_guid = app.app_guid || app.host;
             app.as_of = app.as_of || null;    // XXX return the max mtime?
             app.versions = app.versions || [];
+            app.mounts = app.mounts || {};
             app.files = app.files || {};
             
             app.service_metadata = {
@@ -1826,7 +1827,7 @@ var uberfetch_graph  = function(host, guid, as_of, result) {
          *
          * This would also be the correct place to detect if we're in an uberfetch
          * loop (version node pointed at a version node) by testing for the
-         * presence of result.links.
+         * presence of result.hosts.
          */
          result.host = result.host || host;
          result.versions = result.versions || [];
@@ -1857,6 +1858,7 @@ var uberfetch_graph  = function(host, guid, as_of, result) {
      // Explictly build out the metadata here, filling in any blanks, in case
      // we didn't hit a version node up front.
      result.host = result.host || host;
+     result.hosts = result.hosts || [host];
      result.app_id = res.id;
      result.app_guid = res.guid;
      result.as_of = as_of;
@@ -1867,9 +1869,7 @@ var uberfetch_graph  = function(host, guid, as_of, result) {
      result.service_metadata.service_url = result.service_metadata.service_url || freebase_service_url;
 
      result.versions = result.versions || [];
-     result.hosts = result.hosts || [host];
-     
-     var canonical_host = namespace_to_host(res.id);
+     result.mounts = result.mounts || {};
 
      result.files = result.files || {};
 
@@ -2106,7 +2106,9 @@ var proto_require = function(req_path, skip_cache) {
             // extension... now we get to support that forever!  :-P
             var fn_noext = fn.replace(/\.[^\/\.]*$/,"");
 
-            if (fn in app_data.files) {
+            if ((fn in app_data.mounts) && (path_info.length > 1)) {
+                proto_require(app_data.mounts[fn] + path_info);
+            } else if (fn in app_data.files) {
                 filename = fn;
                 break;
             } else if (fn_noext in app_data.files) {
