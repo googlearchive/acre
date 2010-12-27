@@ -124,8 +124,9 @@ function compose_req_path(host, path, query_string) {
 };
 
 function decompose_req_path(req_path) {
-    var host = null;
-        path = null;
+    var orig_req_path = req_path,
+		host = null,
+        path = null,
         query_string = null;
     
     // remove protocol if present
@@ -142,6 +143,7 @@ function decompose_req_path(req_path) {
     // split host from path
     req_path_parts = qparts[0].split("/");
     host = req_path_parts.shift();
+	if (!host) throw new Error("Path: " + orig_req_path + " is not fully-qualified");
     path = req_path_parts.join("/");
 
     // if it's a full URL we need to turn host into new require-style host
@@ -725,7 +727,6 @@ acre.response = new AcreResponse();
  * Keep track of files used in processing the request
  */
 acre.current_script = null;
-//acre.scripts = [];
 
 
 // -------------------------------------------- errors ------------------------------------
@@ -2138,9 +2139,28 @@ var proto_require = function(req_path, skip_cache) {
     }
 
     function scope_augmentation(aug_scope) {
+        // XXX this depends on scope_augmentation being run after we figure out 'filename'
+        var current_script = assembleScriptObj(app_data, app_data.files[filename]);
+        aug_scope.acre.current_script = current_script;
+        
+        // Stuff we only do for the top-level requested script:
+        if (aug_scope == _topscope && app_data.files[filename].name != 'not_found') {
+            aug_scope.acre.request.script = current_script;
+
+            if (app_data.service_metadata.write_user !== null) {
+                _hostenv.write_user = app_data.service_metadata.write_user;
+            }
+            if (app_data.service_metadata.service_url &&
+                /^http(s?):\/\//.test(app_data.service_metadata.service_url))
+                acre.freebase.set_service_url(app_data.service_metadata.service_url);
+
+            deprecate(aug_scope);
+        }
+
         // convert all forms of require syntax into fully-qualified new require syntax
         function normalize_path(path, version, new_only, app_only) {
-            if (!path) path = "";
+			path = path || "";
+            if (typeof path !== 'string') throw new Error("Path must be a string");
             var parts = path.split('//');
             
             if (parts.length >= 2) {
@@ -2162,31 +2182,24 @@ var proto_require = function(req_path, skip_cache) {
             } else {
                 if (app_only) throw new Error("Only apps are supported by this method");
                 
-                // Mode 3: relative require, so push the host back on
+                // Mode 3: relative require
+
+				// check whether there's a matching mount
+				var path_segs = path.split("/");
+		        while (path_segs.length) {
+		            var mpath = path_segs.join("/");
+		            if (mpath in current_script.app.mounts) {
+		                return current_script.app.mounts[mpath] + path.replace(mpath, "");
+		            }
+		            path_segs.pop();
+		        }
+
+				// otherwise just push current host back on
                 return compose_req_path(app_data.host, path);
             }
         }
-        
-        // XXX this depends on scope_augmentation being run after we figure out 'filename'
-        var current_script = assembleScriptObj(app_data, app_data.files[filename]);
-        aug_scope.acre.current_script = current_script;
-        //_topscope.acre.scripts.push(current_script);
-        
-        // Stuff we only do for the top-level requested script:
-        if (aug_scope == _topscope && app_data.files[filename].name != 'not_found') {
-            aug_scope.acre.request.script = current_script;
 
-            if (app_data.service_metadata.write_user !== null) {
-                _hostenv.write_user = app_data.service_metadata.write_user;
-            }
-            if (app_data.service_metadata.service_url &&
-                /^http(s?):\/\//.test(app_data.service_metadata.service_url))
-                acre.freebase.set_service_url(app_data.service_metadata.service_url);
-
-            deprecate(aug_scope);
-        }
-
-        aug_scope.acre.route = function (path) {
+        aug_scope.acre.route = function(path) {
             path = normalize_path(path, null, true);
             
             var [h, p, qs] = decompose_req_path(path);
@@ -2200,7 +2213,12 @@ var proto_require = function(req_path, skip_cache) {
             throw exit_e;
         };
 
-        aug_scope.acre.get_metadata = function(path) {
+        aug_scope.acre.mount = function(path, local_path) {
+			if (typeof local_path !== 'string') throw new Error("Mount point must be a string path");
+			current_script.app.mounts[local_path] = normalize_path(path);
+		};
+
+		aug_scope.acre.get_metadata = function(path) {
             // ensure we only have the host part
             var [host] = decompose_req_path(normalize_path(path, null, true, false));
             return proto_require(compose_req_path(host), skip_cache);
@@ -2815,6 +2833,7 @@ var assembleScriptObj = function(app, file) {
             guid : app.app_guid,
             version :(app.versions.length > 0 ? app.versions[0] : null),
             versions : app.versions,
+			mounts : app.mounts,
             base_url : acre.host.protocol + "://" + 
                 (app.host.match(/\.$/) ? app.host.replace(/\.$/, "") : (app.host + "." + acre.host.name)) +
                 (acre.host.port !== 80 ? (":" + acre.host.port) : "")
