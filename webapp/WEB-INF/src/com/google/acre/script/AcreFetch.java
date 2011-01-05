@@ -30,10 +30,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
@@ -89,8 +85,6 @@ public class AcreFetch extends JsConvertable {
 
     public String content_type;
     public String content_type_charset;
-
-    public String _write_user;
 
     private AcreResponse _acre_response;
     private long _deadline;
@@ -238,10 +232,6 @@ public class AcreFetch extends JsConvertable {
             throw new AcreURLFetchException("Unable to handle URL: " + request_url + "; this is most likely an issue with URL encoding.");
         } catch (java.lang.IllegalStateException e) {
             throw new AcreURLFetchException("Unable to handle URL: " + request_url + "; possibly an illegal protocol?");
-        }
-
-        if (!request_headers.containsKey("Authorization") && _write_user != null) {
-            request_headers.put("X-Acre-Auth", signAcreAuth());
         }
 
         StringBuffer request_header_log = new StringBuffer();
@@ -465,34 +455,4 @@ public class AcreFetch extends JsConvertable {
             method.abort();
         }
     }
-    
-    // write-user signing
-
-    private String signAcreAuth() {
-        String key = Configuration.Values.ACRE_AUTH_SECRET.getValue();
-        Mac mac;
-        try {
-            mac = Mac.getInstance("HmacSHA1");
-        } catch (java.security.NoSuchAlgorithmException e) {
-            // XXX log failure
-            return null;
-        }
-
-        try {
-            SecretKeySpec sk = new SecretKeySpec(key.getBytes(), "HmacSHA1");
-            mac.init(sk);
-        } catch (java.security.InvalidKeyException e) {
-            // XXX log failure
-            return null;
-        }
-
-        // XXX should pass through _app_id as well for additional security
-
-        byte[] hashbytes = mac.doFinal(_write_user.getBytes());
-
-        Hex hex = new Hex();
-        String aauth = new String(hex.encode(hashbytes));
-
-        return _write_user + "|" + aauth;
-    }    
 }
