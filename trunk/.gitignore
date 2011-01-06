@@ -9,6 +9,7 @@ webapp/WEB-INF/classes
 webapp/WEB-INF/static
 webapp/META-INF/*.properties
 webapp/META-INF/*.conf
+webapp/META-INF/ots.freebase.conf.in
 webapp/WEB-INF/lib/mysql-connector-java-*.jar
 webapp/WEB-INF/scripts/freebase
 webapp/WEB-INF/scripts/qa
