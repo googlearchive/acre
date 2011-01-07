@@ -18,8 +18,12 @@ import urllib
 from urllib2 import Request
 import string
 import types
+import socket
+# global socket timeout, seemed to help with a weird connection reset issue in appengine
+socket.setdefaulttimeout(60)
 
 from FirePHP import FirePHP_decode
+
 
 
 __all__ = ['TestController', 'tag']
