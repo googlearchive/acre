@@ -23,6 +23,9 @@ import getopt
 import logging
 import urllib2
 import simplejson
+import socket
+# global socket timeout, seemed to help with a weird connection reset issue in appengine
+socket.setdefaulttimeout(60)
 
 program = sys.argv[0]
 
