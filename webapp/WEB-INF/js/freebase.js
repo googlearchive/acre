@@ -1,3 +1,4 @@
+var _system_freebase;
 var URL_SIZE_LIMIT = 2047;
 
 /**
@@ -6,6 +7,12 @@ var URL_SIZE_LIMIT = 2047;
  */
 function augment(freebase, urlfetch, async_urlfetch, service_url, site_host, mwlt_mode) {
 
+    // tuck this away so we can use it in handler and appfetcher creation
+
+    // XXX - relies on augment being called for system *after* user...
+    // *and* before register_handler or register_appfetcher
+    _system_freebase = freebase;
+    
     freebase.service_url = service_url;
     freebase.site_host = site_host;
 
@@ -251,7 +258,8 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, site_host, mwl
         return fetch(url, fetch_opts);
     };
 
-    // ------------------------------------------------------------------
+
+    // -----------------------acre.freebase APIs -----------------------------------
 
     /**
      * Expose fetch API for use with the Web Services library
@@ -547,6 +555,344 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, site_host, mwl
       }
 
       return freebase.service_url + '/api/trans/image_thumb' + cid + "?" + qstr;
-};
-
+  };
 }
+
+
+
+// ------------------- mqlquery file handler ------------------------------
+
+function handler() {
+
+    function MqlQueryWrapper(name, q) {
+        function copy_h(o) {
+            var ret;
+
+            if (o && o instanceof Array) {
+                ret = [];
+                for (var i = 0; i < o.length; i++) {
+                    ret.push(copy_h(o[i]));
+                }
+            } else if (o && o instanceof Object) {
+                ret = {};
+                for (var a in o) {
+                    ret[a] = copy_h(o[a]);
+                }
+            } else {
+                ret = o;
+            }
+
+            return ret;
+        }
+
+        var that = {};
+
+        that.name = name;
+        that.query = copy_h(q);
+
+        that.extend = function(obj) {
+            var copy = copy_h(that.query);
+            return MqlQueryWrapper(
+                that.name,
+                acre.freebase.extend_query(copy, obj)
+            );
+        };
+
+        that.read = function(envelope, opts) {
+            return acre.freebase.mqlread(that.query, envelope, opts);
+        };
+
+        that.write = function(envelope, opts) {
+            return acre.freebase.mqlwrite(that.query, envelope, opts);
+        };
+
+        return that;
+    }
+
+    return {
+        'to_js': function(script) {
+            var res = {
+                name: script.name,
+                query: JSON.parse(script.get_content().body)
+            };
+            return "var module = ("+JSON.stringify(res)+");";
+        },
+        'to_module': function(compiled_js, script) {
+            return MqlQueryWrapper(compiled_js.module.name, compiled_js.module.query);
+        },
+        'to_http_response': function(module, script) {
+            var res = {'body':'', 'status':200, 'headers':{}};
+
+            var q = acre.freebase.extend_query(module.query, acre.request.params);
+            delete q.callback;
+
+            var callback = acre.request.params.callback || null;
+            if (callback !== null) {
+                res.headers['content_type'] = 'text/javascript';
+                res.body += callback+'(';
+            } else {
+                res.headers['content_type'] = 'text/plain';
+            }
+
+            try {
+                var mqlres = _system_freebase.mqlread(q);
+                res.body += JSON.stringify(mqlres.result, null, 2);
+            } catch (e) {
+                res.body += JSON.stringify(e.response, null, 2);
+            }
+
+            if (callback !== null) {
+                res.body += ')';
+            }
+
+            return res;
+        }
+    };
+}
+
+
+
+// --------------------- Freebase graph appfetcher ------------------------------
+
+// XXX - configs & utils copy/pasted from acreboot, ugh
+var _DELIMITER_PATH = "dev";
+var _DEFAULT_HOSTS_PATH = '/freebase/apps/hosts';
+var _DEFAULT_ACRE_HOST_PATH = "/z/acre";
+
+function escape_re(s) {
+  var specials = /[.*+?|()\[\]{}\\]/g;
+  return s.replace(specials, '\\$&');
+}
+
+function namespace_to_host(namespace) {
+    var host_re = new RegExp(escape_re('^' + _DEFAULT_HOSTS_PATH));
+    var acre_host_re = new RegExp(escape_re('^' + _DEFAULT_ACRE_HOST_PATH));
+
+    if (host_re.test(namespace)) {
+        namespace = namespace.replace(host_re, "");
+        if (acre_host_re.test(namespace)) {
+            namespace = namespace.replace(acre_host_re, "").replace(/^\//, "");
+        }
+    } else {
+        namespace = _DELIMITER_PATH + namespace;
+    }
+    return namespace.split("/").reverse().join(".");
+}
+
+function host_to_namespace(host) {
+    var path = null;
+
+    var host_parts = host.split(".");
+    var trailing_host_part = host_parts.pop();
+    if (trailing_host_part === _DELIMITER_PATH) {
+        path = "/" + host_parts.reverse().join("/");
+    } else if (trailing_host_part === '') {
+        path = _DEFAULT_HOSTS_PATH + "/" + host_parts.reverse().join("/");
+    } else {
+        host_parts.push(trailing_host_part);
+        path = _DEFAULT_HOSTS_PATH + _DEFAULT_ACRE_HOST_PATH + "/" + host_parts.reverse().join("/");
+    }
+
+    return path;
+}
+
+
+function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) {
+
+    var APPFETCH_ERROR_UNKNOWN = 1,
+        APPFETCH_ERROR_METHOD = 2,
+        APPFETCH_ERROR_APP = 3,
+        APPFETCH_ERROR_NOT_FOUND = 4,
+        APPFETCH_THUNK = 5;
+
+    var graph_resolver = function(host) {
+        return host_to_namespace(host);
+    };
+
+    var graph_inventory_path  = function(app, namespace) {
+        var result = {
+            dirs : {},
+            files : {}
+        };
+
+        var q = {
+            "/freebase/apps/acre_app_version/acre_app" : {
+                "/type/namespace/keys" : [{
+                    "namespace" : {
+                        "id" : namespace
+                    },
+                    "value" : null
+                    }],
+                    "id" : null,
+                    "guid": null,
+                    "optional" : true
+                },
+                "/freebase/apps/acre_app_version/service_url": null,
+                "/freebase/apps/acre_app_version/as_of_time" : null,
+                "/type/domain/owners" : {
+                    "id" : null,
+                    "limit" : 1,
+                    "member" : {
+                        "/freebase/apps/acre_write_user/apps" : {
+                            "id" : namespace
+                        },
+                        "id" : null
+                    },
+                    "optional" : true
+                },
+                "/type/namespace/keys" : [
+                {
+                    "limit":501,
+                    "namespace" : {
+                        "permission":null,
+                        "/common/document/content" : {
+                            "id" : null,
+                            "guid" : null,
+                            "media_type":null,
+                            "optional" : true
+                        },
+                        "/freebase/apps/acre_doc/handler" : {
+                            "handler_key" : null,
+                            "optional" : true
+                        },
+                        "doc:type" : "/freebase/apps/acre_doc",
+                        "guid" : null,
+                        "id" : null,
+                        "name" : null,
+                        "optional" : true
+                    },
+                    "optional" : true,
+                    "value" : null
+                }
+                ],
+                "name":null,
+                "permission":null,
+                "guid" : null,
+                "id" : namespace
+            };
+
+         // if we have an as_of time, add it to the envelope
+         try {
+             syslog.debug(app.as_of, "XXXXXXXXXXXX");
+             var envelope = (app.as_of !== null) ?
+             { 'as_of_time' : /(.*)Z/.exec(app.as_of)[1] } : null;
+         } catch (e) {
+             // Unable to parse
+             syslog.error(e, "appfetch.graph.asof.parse.error");
+             throw make_appfetch_error("as_of_time parse error", APPFETCH_ERROR_APP, e);
+         }
+
+         try {
+             var res = _system_freebase.mqlread(q, envelope).result;
+         } catch (e) {
+             syslog.error(e, "appfetch.graph.mqlread.error");
+             throw make_appfetch_error("Mqlread Error", APPFETCH_ERROR_METHOD, e);
+         }
+
+         if (res == null) {
+             syslog.debug({'fake_id':namespace}, "appfetch.graph.not_found");
+             throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
+         }
+
+         if ('permission' in res && res['permission'] === '/boot/all_permission') {
+             console.error("Script has /boot/all_permission as permission node and " +
+             "thus cannot be run");
+             throw make_appfetch_error("Boot permission used", APPFETCH_ERROR_APP);
+         }
+
+         var app_version_t = res["/freebase/apps/acre_app_version/acre_app"];
+         if (app_version_t !== null) {
+             // Handle the case that we've hit a version node
+             var target_host = namespace_to_host(app_version_t['id']);
+             app.app_guid = app_version_t['guid'];
+             app.as_of = res['/freebase/apps/acre_app_version/as_of_time'];
+
+             /*
+             * We want to add links nodes to the result for the namespace for which
+             * the uberfetch request was initiated, as well as ids in the form of:
+             *  {real_app_namespace}/{versions[i]}
+             *
+             * this should cover the case of release and version number for the
+             * link table.
+             *
+             * This would also be the correct place to detect if we're in an uberfetch
+             * loop (version node pointed at a version node) by testing for the
+             * presence of result.hosts.
+             */
+             var target_versions = app_version_t['/type/namespace/keys'];
+
+             for (var a=0; a < target_versions.length; a++) {
+                 var version = target_versions[a].value;
+                 app.versions.push(version);
+
+                 var vhost = version + '.' + target_host;
+                 if (vhost !== app.host) app.hosts.push(vhost);
+             }
+
+             var canonical_host = namespace_to_host(res.id);
+             if (canonical_host !== app.host) {
+                 app.hosts.push(canonical_host);
+             }
+
+             var servurl = res['/freebase/apps/acre_app_version/service_url'];
+             if (servurl !== null) {
+                 app.freebase = app.freebase || {};
+                 app.freebase.service_url = servurl;
+             }
+
+             // thunkety, thunk, thunk
+             throw make_appfetch_error(null, APPFETCH_THUNK, {method:"freebase", args:[target_host, app]});
+         }
+
+         // Explictly build out the metadata here, filling in any blanks, in case
+         // we didn't hit a version node up front.
+         app.app_id = res.id;
+         app.app_guid = res.guid;
+         app.ttl = (app.versions && app.versions.length) ? 600000 : 0;
+
+         app.freebase = app.freebase || {};
+         app.freebase.write_user = (res['/type/domain/owners'] != null ? res['/type/domain/owners'].member.id.substr(6) : null);
+
+         for (var a=0; a < res['/type/namespace/keys'].length; a++) {
+             var f = res['/type/namespace/keys'][a];
+
+             if (f.namespace !== null) {
+                 var file_data = f.namespace;
+                 var file_result = {};
+                 if (file_data.permission !== res['permission']) {
+                     console.warn("bad permission metadata for "+ namespace +
+                     "/" + f.value +", skipping...");
+                     continue;
+                 }
+
+                 if (file_data['/common/document/content'] != null) {
+                     file_result.name = _system_freebase.mqlkey_unquote(f.value);
+                     var handler = file_data['/freebase/apps/acre_doc/handler'];
+                     file_result.handler = (handler && 'handler_key' in handler ?
+                                            handler.handler_key : 'passthrough');
+                     file_result.media_type =
+                        file_data['/common/document/content'].media_type.substr(12);
+                    file_result.content_id = file_data['/common/document/content'].id;
+                     file_result.content_hash =
+                        file_data['/common/document/content'].guid.substr(1);
+
+                     app.files[file_result.name] = file_result;
+                 } else {
+                     syslog.warn({"filename":f.value}, "appfetch.not_a_file");
+                 }
+             }
+         }
+
+         return app;
+     };
+
+     var graph_get_content = function() {
+         if (this.data.handler === 'binary') {
+             return _system_freebase.get_blob(this.data.content_id, 'raw');
+         } else {
+             return _system_freebase.get_blob(this.data.content_id, 'unsafe');
+         }
+     };
+
+     register_appfetcher("freebase", graph_resolver, graph_inventory_path, graph_get_content);
+ };
