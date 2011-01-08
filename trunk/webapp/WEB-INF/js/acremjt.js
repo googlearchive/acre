@@ -56,10 +56,10 @@ mjt.acre.compile_string = function (body, doc_id) {
         console.warn("DEPRECATED use of XML acre:doc without <?xml?>: you must specify an XML processing instruction if you want to parse a template as XML.");
         doc = acre.xml.parse(body);
     } else {
-    	if (!/^\s*<acre:doc/.test(body)) {
-    		body = '<acre:block toplevel="1">' + body + '</acre:block>\n';
-    	}
-    	doc = acre.html.parse(body);
+        if (!/^\s*<acre:doc/.test(body)) {
+            body = '<acre:block toplevel="1">' + body + '</acre:block>\n';
+        }
+        doc = acre.html.parse(body);
     }
 
     pkg.compile_document(doc.documentElement, compiler);
@@ -67,6 +67,27 @@ mjt.acre.compile_string = function (body, doc_id) {
     return pkg;
 };
 
+// XXX - we'll delete this in acreboot right after loading on acre.handlers
+mjt.acre.handler = function() {
+    return {
+        'to_js': function(script) {
+            var cpkg = _mjt.acre.compile_string(script.get_content().body, script.class_name);
+            script.linemap = cpkg.debug_locs;
+            return 'var pkgdef = (' + cpkg.toJS() +');';
+        },
+        'to_module': function(compiled_js, script) {
+            return (new _mjt.TemplatePackage()).init_from_js(compiled_js.pkgdef).toplevel();
+        },
+        'to_http_response': function(module, script) {
+            var res = {'body': '', 'status':200, 'headers':{}};
+            var pkg = module._main.prototype.tpackage;
+            var pkgtop = pkg.tcall;
+            res.headers['content-type'] = pkgtop.doc_content_type || 'text/html';
+            res.body = pkgtop;
+            return res;
+        }
+    };
+};
 
 })();
 
