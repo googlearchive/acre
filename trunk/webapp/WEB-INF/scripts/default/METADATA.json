@@ -1,38 +1,38 @@
 {
-	"ttl": 600000,
-	"extensions": {
-		"sjs": {
-			"handler": "acre_script"
-		},
-		"js": {
-			"handler": "passthrough",
-			"media_type": "application/x-javascript"
-		},
-		"css": {
-			"handler": "passthrough",
-			"media_type": "text/css"
-		},
-		"html": {
-			"handler": "passthrough",
-			"media_type": "text/html"
-		},
-		"gif": {
-			"handler": "binary",
-			"media_type": "image/gif"
-		},
-		"png": {
-			"handler": "binary",
-			"media_type": "image/png"
-		},
-		"jpg": {
-			"handler": "binary",
-			"media_type": "image/jpg"
-		},
-		"mjt": {
-			"handler": "mjt"
-		},
-		"mql": {
-			"handler": "mqlquery"
-		}
-	}
+    "ttl": 600000,
+    "extensions": {
+        "sjs": {
+            "handler": "acre_script"
+        },
+        "js": {
+            "handler": "passthrough",
+            "media_type": "application/x-javascript"
+        },
+        "css": {
+            "handler": "passthrough",
+            "media_type": "text/css"
+        },
+        "html": {
+            "handler": "passthrough",
+            "media_type": "text/html"
+        },
+        "gif": {
+            "handler": "binary",
+            "media_type": "image/gif"
+        },
+        "png": {
+            "handler": "binary",
+            "media_type": "image/png"
+        },
+        "jpg": {
+            "handler": "binary",
+            "media_type": "image/jpg"
+        },
+        "mjt": {
+            "handler": "mjt"
+        },
+        "mql": {
+            "handler": "mqlquery"
+        }
+    }
 }
