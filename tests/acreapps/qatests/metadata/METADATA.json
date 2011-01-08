@@ -1,0 +1,19 @@
+{
+	"ttl" : 1,
+	"mounts": {
+		"metadata": "//metadata.qatests.apps.freebase.dev"
+	},
+	"handlers" : {
+		"custom" : "cst_handler"
+	},
+	"extensions" : {
+		"cst" : {
+			"handler" : "custom"
+		}
+	},
+	"files" : {
+		"not_custom": {
+			"handler": "custom"
+		}
+	}
+}
