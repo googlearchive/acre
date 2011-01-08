@@ -1284,18 +1284,16 @@ var _load_handler = function(script, handler_name) {
     if (!handler) {
         // check whether it's a custom handler declared in a metadata file
         if ((typeof script.app.handlers === 'object') && script.app.handlers[handler_name]) {
-            try {
-                var handler_path = script.app.handlers[handler_name];
-                handler = script.scope.acre.require(handler_path).handler();
-                script.scope.acre.handlers[handler_name] = handler;
-            } catch(e) {
-                console.log(e);
-                throw new Error("Failed to require custom handler " + handler_path, APPFETCH_ERROR_APP);
-            }
+            var handler_path = script.app.handlers[handler_name];
+            handler = script.scope.acre.require(handler_path).handler();
+            script.scope.acre.handlers[handler_name] = handler;
         } else {
             throw make_appfetch_error("Unsupported handler: " + handler_name, APPFETCH_ERROR_APP);
         }
     }
+    
+    handler.name = handler_name;
+    handler.path = handler_path || handler_name;
 
     // fill in defaults from acre_script
     var acre_script = acre.handlers.acre_script;
@@ -1779,8 +1777,7 @@ var proto_require = function(req_path, default_metadata) {
             aug_scope.acre.request.script = current_script;
 
             // XXX - freebase appfetch method-specific hacks
-            if (app_data.freebase && 
-                (app_data.freebase.write_user !== null)) {
+            if (app_data.freebase && app_data.freebase.write_user) {
                 _hostenv.write_user = app_data.freebase.write_user;
             }
             if (app_data.freebase &&
@@ -1918,8 +1915,6 @@ var proto_require = function(req_path, default_metadata) {
     // geenrate output (http request, acre.include)
     function Script(app_data, name, path_info) {
         var data = app_data.files[name];
-        var class_name = compose_req_path(app_data.host, name);
-        var hash = data.content_hash;
 
         // for appfetch methods that have no way to associate 
         // metadata with files, we have to rely on extensions.
@@ -1946,7 +1941,6 @@ var proto_require = function(req_path, default_metadata) {
             'data': data,
             'app': app_data,
             'get_content': method.get_content,
-            'class_name': class_name,
             'linemap': null
         };
 
@@ -1968,6 +1962,11 @@ var proto_require = function(req_path, default_metadata) {
 
             // now that the scope's all set up, we can finally load our handler
             this.handler = _load_handler(this, this.data.handler);
+            
+            // let's make sure we don't end up with the cached compiled_js 
+            // from a different file version or different handler
+            var class_name = compose_req_path(app_data.host, name);
+            var hash =  data.content_hash + "." + this.handler.path;
 
             // get compiled javascript, either directly from the class cache or 
             // by generating raw javascript and compiling (and caching the result)
