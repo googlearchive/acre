@@ -101,13 +101,9 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
             }
 
             // build up file metadata
-            var fn = file.split('.');
-            var ext = fn.pop();
             var file_data = {
-                name: fn.join('.'),
-                ext: ext
+                name: file
             };
-
             var revision = getNodeVal(prop, "D:version-name")[1];
             file_data.content_id = url + '/'+file + "?r=" + revision;
             file_data.content_hash = getNodeVal(prop, "SVN:md5-checksum")[1] || 

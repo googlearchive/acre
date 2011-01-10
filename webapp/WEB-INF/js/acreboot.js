@@ -1350,7 +1350,7 @@ function make_appfetch_error(msg, code, extend, parent) {
 
 function register_appfetch_method(name, resolver, inventory_path, get_content) {
 
-    var appfetcher = function(host, result) {
+    var appfetcher = function(host, app) {
         // avoid infinite recursion (e.g., symlink to self)
         var MAX_DIRECTORY_DEPTH = 2;
         
@@ -1372,7 +1372,23 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
                     if (/~$/.test(f)) continue;         // skip ~ files (e.g., emacs temp files)
                     var file = dir.files[f];
                     file.method = name;
-                    app.files[base_path + file.name] = file;
+                    var fn = base_path + file.name;
+                    app.files[fn] = file;
+                    
+                    // also build up a filename lookup dict
+                    // so we can support legacy on-disk apps
+                    // that expect stripped extensions
+                    function add_filename(lookup_name, name, ext) {
+                        app.filenames[lookup_name] = app.filenames[lookup_name] || {};
+                        app.filenames[lookup_name][ext] = name;
+                    }
+                    add_filename(fn, fn, "none");
+                    var exts = file.name.split(".");
+                    if (exts.length > 1) {
+                        var ext = exts.pop();
+                        var fn_noext = base_path + exts.join(".");
+                        add_filename(fn_noext, fn, ext);
+                    }
                 }
                 if (depth < MAX_DIRECTORY_DEPTH) {
                     for (var d in dir.dirs) {
@@ -1391,11 +1407,11 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
         }
 
         // this will recurse until all files are added or MAX_DIRECTORY_DEPTH reached
-        _add_directory(result, resource);
+        app.filenames = {};
+        _add_directory(app, resource);
 
         syslog.debug({'host': host}, "appfetch." + name + ".found");
-
-        return result;  
+        return app;  
     };
 
     // if method throws an appfetch thunk, check the cache before re-calling
@@ -1589,12 +1605,8 @@ var disk_inventory_path = function(app, disk_path) {
     for (var a=0; a < files.length; a++) {
         var file = files[a];
         var f = new _file(disk_path+"/"+file, false);
-
-        var fn = file.split('.');
-        var ext = fn.pop();
         var file_data = {
-            name: fn.join('.'),
-            ext: ext
+            name: file
         };
 
         if (f.dir) {
@@ -1650,7 +1662,7 @@ for (var i=0; i < custom_methods.length; i++) {
 
 // ------------------------------------------ proto_require ------------------------------------
 
-var proto_require = function(req_path, default_metadata) {
+var proto_require = function(req_path, default_metadata, resolve_only) {
     var [host, path] = decompose_req_path(req_path);
 
     // setup default app metadata
@@ -1681,14 +1693,67 @@ var proto_require = function(req_path, default_metadata) {
         METADATA_CACHE[host] = null;
         return null;
     }
+    
+    
+    /*
+     * utility for resolving filenames to files
+     * using the filenames lookup hash built 
+     * at appfetch time.
+     * 
+     * we look for a match in several ways:
+     *  1. foo.ext --> foo.ext
+     *  2. foo.ext --> foo
+     *  3. foo --> foo.ext 
+     *
+     * with preferred values of ext for #3 (.sjs, .mjt).
+     */ 
+    function get_file(fn) {
+        var filename, filenames;
+        
+        // Early-on acre didn't support extensions, so it would resolve 
+        // requests for filenames with extensions to the filename w/out an 
+        // extension... now we get to support that forever!  :-P
+        var fn_noext = fn.replace(/\.[^\/\.]*$/,"");
+        if (app_data.filenames[fn]) {
+            filenames = app_data.filenames[fn];
+        } else if (app_data.filenames[fn_noext]) {
+            filenames = app_data.filenames[fn_noext];
+        } else {
+            return null;
+        }
+
+        // Reverse direction now... look for files with an extra
+        // extension from when on-disk apps stripped extensions
+
+        // is there a "preferred" extension?
+        var ext_order = ["none", "sjs", "mjt"];
+        for (var e=0; e < ext_order.length; e++) {
+            var ext = ext_order[e];
+            if (filenames[ext]) {
+                filename = filenames[ext];
+                break;
+            }
+        }
+
+        // otherwise grab first
+        if (!filename) {
+          for (var ext in filenames) {
+              filename = filenames[ext];
+              break;
+          }          
+        }
+
+        return filename;
+    };
 
     // splice in metadata file before caching app
-    if ((_METADATA_FILE in app_data.files) && method.cachable) {
-        var md_file = Script(app_data, _METADATA_FILE).to_module();
+    var md_filename = get_file(_METADATA_FILE);
+    if (md_filename && method.cachable) {
+        var md_file = Script(app_data, md_filename).to_module();
         try {
-            var md = JSON.parse(md_file.body);
-        } catch(e) {
-            throw new Error("Metadata file in //" + host + " is not valid JSON.  " + e);
+          var md = md_file[_METADATA_FILE] || JSON.parse(md_file.body);
+        } catch (e) {
+          throw new Error("Metadata file in //" + host + " is not valid. "  + e);
         }
         set_app_metadata(app_data, md);
     }
@@ -1733,25 +1798,19 @@ var proto_require = function(req_path, default_metadata) {
     var filename, path_info;
     if (path) {
         var path_segs = path.split("/");
-
+        
         while (path_segs.length) {
             var fn = path_segs.join("/");
             path_info = file_in_path(fn, path)[0];
 
-            // Early-on acre didn't support extensions, so it would resolve 
-            // requests for filenames with extensions to the filename w/out an 
-            // extension... now we get to support that forever!  :-P
-            var fn_noext = fn.replace(/\.[^\/\.]*$/,"");
-            
-            if ((fn in app_data.mounts) && (path_info.length > 1)) {
-                return proto_require(app_data.mounts[fn] + path_info);
-            } else if (fn in app_data.files) {
-                filename = fn;
-                break;
-            } else if (fn_noext in app_data.files) {
-                filename = fn_noext;
-                break;
+            if (app_data.mounts[fn] && (path_info.length > 1)) {
+                return proto_require(app_data.mounts[fn] + path_info, default_metadata, resolve_only);
             }
+            
+            var fn_noext = fn.replace(/\.[^\/\.]*$/,"");
+            filename = get_file(fn) || get_file(fn_noext);
+            
+            if(filename) break;
             path_segs.pop();
         }
         
@@ -1760,6 +1819,12 @@ var proto_require = function(req_path, default_metadata) {
         // Provide the app metadata if proto_require is called
         // without a path.  Used by acre.get_metadata().
         return app_data;
+    }
+    
+    
+    // return just found path for acre.resolve()
+    if (resolve_only) {
+        return "//" + app_data.host + "/" + filename;
     }
 
 
@@ -1830,6 +1895,21 @@ var proto_require = function(req_path, default_metadata) {
             }
         }
 
+        aug_scope.acre.get_metadata = function(path) {
+            // ensure we only have the host part
+            var [host] = decompose_req_path(normalize_path(path, null, true, false));
+            return proto_require(compose_req_path(host), default_metadata);
+        };
+
+        aug_scope.acre.mount = function(path, local_path) {
+            if (typeof local_path !== 'string') throw new Error("Mount point must be a string path");
+            current_script.app.mounts[local_path] = normalize_path(path);
+        };
+        
+        aug_scope.acre.resolve = function(path) {
+            return proto_require(normalize_path(path), default_metadata, true);
+        };
+        
         aug_scope.acre.route = function(path) {
             path = normalize_path(path, null, true);
             
@@ -1842,17 +1922,6 @@ var proto_require = function(req_path, default_metadata) {
             exit_e.route_to = path;
             exit_e.skip_routes = (hostpath == h);
             throw exit_e;
-        };
-
-        aug_scope.acre.mount = function(path, local_path) {
-            if (typeof local_path !== 'string') throw new Error("Mount point must be a string path");
-            current_script.app.mounts[local_path] = normalize_path(path);
-        };
-
-        aug_scope.acre.get_metadata = function(path) {
-            // ensure we only have the host part
-            var [host] = decompose_req_path(normalize_path(path, null, true, false));
-            return proto_require(compose_req_path(host), default_metadata);
         };
 
         aug_scope.acre.response.set_error_handler = function(path) {
@@ -1916,22 +1985,21 @@ var proto_require = function(req_path, default_metadata) {
     function Script(app_data, name, path_info) {
         var data = app_data.files[name];
 
-        // for appfetch methods that have no way to associate 
-        // metadata with files, we have to rely on extensions.
-        // here we backfill (not override) file metadata based 
+        // backfill (not override) file metadata based 
         // on the 'extensions' dictionary in app metadata.
-
-        // Extensions are currently popped off at appfetch time
-        // and added to the file metadata for this lookup
-
-        // XXX - TODO switch to not popping off the extension and 
-        // using the filename will require renaming the local files 
-        // for everything in scripts directory
-        if (data.ext && app_data.extensions && app_data.extensions[data.ext]) {
-            var backfill = app_data.extensions[data.ext] || {};
-            for (var attr in backfill) {
-                data[attr] = data[attr] || backfill[attr];
-            }
+        // match from longest to shortest (i.e., .mf.css before .css)
+        var exts = name.split(".");
+        exts.shift();
+        while (exts.length) {
+          var ext = exts.join(".");
+          if (ext && app_data.extensions && app_data.extensions[ext]) {
+              var backfill = app_data.extensions[ext] || {};
+              for (var attr in backfill) {
+                  data[attr] = data[attr] || backfill[attr];
+              }
+              break;
+          }
+          exts.shift();
         }
 
         var script =  {
@@ -1962,7 +2030,7 @@ var proto_require = function(req_path, default_metadata) {
 
             // now that the scope's all set up, we can finally load our handler
             this.handler = _load_handler(this, this.data.handler);
-            
+
             // let's make sure we don't end up with the cached compiled_js 
             // from a different file version or different handler
             var class_name = compose_req_path(app_data.host, name);
@@ -1973,7 +2041,7 @@ var proto_require = function(req_path, default_metadata) {
             var compiled_js = _hostenv.load_script_from_cache(class_name, hash, 
                                                               scope, false);
             if (compiled_js == null) {
-                var jsstr = this.handler.to_js.apply(scope, [this]);
+                var jsstr = this.handler.to_js(this);
                 if (jsstr) {
                     compiled_js = _hostenv.load_script_from_string(jsstr, class_name, hash, 
                                                                    scope, this.linemap, false);
@@ -1981,7 +2049,7 @@ var proto_require = function(req_path, default_metadata) {
             }
 
             // have the handler run our compiled js
-            return this.handler.to_module.apply(scope, [compiled_js, this]);
+            return this.handler.to_module(compiled_js, this);
         };
 
         script.to_http_response = function(scope) {
@@ -1989,7 +2057,7 @@ var proto_require = function(req_path, default_metadata) {
             acre.request.path_info = this.path_info;
 
             var module = this.to_module(scope);
-            return this.handler.to_http_response.apply(this.scope, [module, this]);
+            return this.handler.to_http_response(module, this);
         };
 
         return script;
