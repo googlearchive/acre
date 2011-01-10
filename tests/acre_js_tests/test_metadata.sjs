@@ -12,7 +12,7 @@ test('metadata file loading',function() {
     ok(md.handlers.custom, "custom handler missing");
     ok(md.extensions.cst, "cst extension missing");
     ok(md.extensions.html, "lost html extension");
-    var file = md.files["not_custom"];
+    var file = md.files["not_custom.html"];
     ok(file.handler === 'custom', "handler wasn't set");
 });
 
@@ -30,6 +30,7 @@ test('custom handler triggering',function() {
     ok(ext_file.body == 'success', "extension-triggered handler didn't work");
 
     var md_file = acre.require('//metadata.qatests.apps.freebase.dev/not_custom');
+    console.log(acre.get_metadata('//metadata.qatests.apps.freebase.dev'))
     ok(md_file.body == 'success', "metadata-triggered handler didn't work");
 });
 
