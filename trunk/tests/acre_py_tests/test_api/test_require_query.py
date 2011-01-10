@@ -9,7 +9,7 @@ class test_class(TestController):
    
     def test_require_query_not_unique(self):
         data ={ "url": "/freebase/apps/qatests/api/mqlread_not_unique" } 
-        self.set_acre_script("require_query", data);
+        self.set_acre_script("require_query.sjs", data);
         expected_result =[{"type":"/music/artist", "id":"/en/blonde_redhead"}, {"type":"/music/artist", "id":"/en/bruce_cockburn"}, {"type":"/music/artist", "id":"/en/buck_owens"}]  ;
 
         try: 
@@ -23,7 +23,7 @@ class test_class(TestController):
          
             # verify the retreived file's properties: name
             print "Got name: %s" % result['query']['name'];
-            self.assert_(result['query']['name'] == "mqlread_not_unique", "Got an unexpected name.  Got: %s Expected: %s " % ( result['query']['name'], "mqlread_not_unique") );             
+            self.assert_(result['query']['name'] == "mqlread_not_unique.mql", "Got an unexpected name.  Got: %s Expected: %s " % ( result['query']['name'], "mqlread_not_unique.mql") );             
             
             # verify the query result
             print "Verifying result: %s" % (result['mqlread']['result'])

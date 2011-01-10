@@ -48,11 +48,8 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
         var files = dir.filePage.files;
         for (var file in files) {
             var f = files[file];
-            var fn = file.split('.');
-            var ext = fn.pop();
             var file_data = {
-                name: fn.join('.'),
-                ext: ext
+                name: file
             };
 
             var revision = f[1];

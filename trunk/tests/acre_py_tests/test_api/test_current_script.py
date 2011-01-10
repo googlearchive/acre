@@ -6,7 +6,7 @@ import re
 class test_class(TestController):
 
     def test_current_script(self):
-        self.set_acre_script("current_script");
+        self.set_acre_script("current_script.sjs");
         self.request_method = "GET";
 
         try:
@@ -16,7 +16,7 @@ class test_class(TestController):
             result = simplejson.loads(self.response_body, encoding='utf-8')
 
             print "Verify acre.current_script.id"
-            self.assert_( result['id'] == "%s/current_script" % self.script_namespace, "Did not get expected value for acre.current_script.id. Expected: %s Got: %s" % ("%s/current_script" % self.script_namespace, result['id'] ));
+            self.assert_( result['id'] == "%s/current_script.sjs" % self.script_namespace, "Did not get expected value for acre.current_script.id. Expected: %s Got: %s" % ("%s/current_script.sjs" % self.script_namespace, result['id'] ));
             print "Verify acre.current_script.app.id"
             self.assert_( result['app']['id'] == self.script_namespace, "Did not get expected value for  acre.current_script.app.id. Expected: %s Got: %s" % (self.script_namespace, result['app']['id'] ));
 

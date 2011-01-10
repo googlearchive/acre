@@ -6,7 +6,7 @@ import re
 class test_class(TestController):
 
     def test_request(self):
-        self.set_acre_script("request");
+        self.set_acre_script("request.sjs");
         self.request_method = "GET";
 
         try:
@@ -25,13 +25,13 @@ class test_class(TestController):
 
     @tag(bug=False, bugid="ACRE-189")
     def test_request_2(self):
-        self.set_acre_script("request_2", "foo=bar")
+        self.set_acre_script("request_2.sjs", "foo=bar")
         self.get()
         self.check();
 
     @tag(bug=False, bugid="ACRE-173")
     def test_request_query_string(self):
-        self.set_acre_script("request_2",{ "foo":"bar" })
+        self.set_acre_script("request_2.sjs",{ "foo":"bar" })
         expected_response= re.compile("get_query_string - OK");
         try:
             self.get()
