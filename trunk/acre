@@ -131,6 +131,8 @@ build_appengine() {
     COMMAND="appengine"
     export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
     invoke
+
+    copy_appengine_config
 }
 
 test_prepare_appengine() {
@@ -139,6 +141,21 @@ test_prepare_appengine() {
     export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
     invoke
 }
+
+copy_appengine_config() { 
+
+    #copy the project.<app_key>.conf and appengine-web.<app_key>.xml files from the given 
+    #directory to the appropriate acre directory
+    if [ -f "$CONF_DIR/project.$CONF.conf" ] && [ -f "$CONF_DIR/appengine-web.$CONF.xml" ]; then
+       cp $CONF_DIR/project.$CONF.conf config/
+       cp $CONF_DIR/appengine-web.$CONF.xml webapp/WEB-INF/appengine-web.xml
+    else
+	   error "Cannot find configuration files $CONF_DIR/project.$CONF.conf and $CONF_DIR/appengine-web.$CONF.xml"
+    fi
+
+}
+
+
 
 # -------------------------------------------------------------------------------------
 
@@ -163,6 +180,11 @@ while [ $# -ne 0 ] ; do
     
     -c) shift 
         export CONF="$1" 
+        shift
+        continue;;
+
+    -d) shift 
+        export CONF_DIR="$1" 
         shift
         continue;;
         
@@ -190,12 +212,16 @@ done
 
 # Overwrite defaults with cli config ----------------------
 if [ "$CONF" != "" ]; then
-    if [ -f $CONF ]; then
-        load $CONF
+    #unfortunately, the first appengine app we set-up has the id 'acre'
+    #which conflicts with the acre script - so handle this case here
+    if [ "$CONF_DIR" != "" ] && [ -f "$CONF_DIR/project.$CONF.conf" ]; then
+	  load "$CONF_DIR/project.$CONF.conf"
+    elif [ -f $CONF ]; then
+      load $CONF
     elif [ -f "config/project.$CONF.conf" ]; then    
-        load "config/project.$CONF.conf"
+      load "config/project.$CONF.conf"
     else 
-        error "configuration file project.$CONF.conf not found";
+      error "configuration file project.$CONF.conf not found";
     fi
 fi
 
