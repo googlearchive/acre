@@ -773,7 +773,6 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
 
          // if we have an as_of time, add it to the envelope
          try {
-             syslog.debug(app.as_of, "XXXXXXXXXXXX");
              var envelope = (app.as_of !== null) ?
              { 'as_of_time' : /(.*)Z/.exec(app.as_of)[1] } : null;
          } catch (e) {
