@@ -146,11 +146,13 @@ copy_appengine_config() {
 
     #copy the project.<app_key>.conf and appengine-web.<app_key>.xml files from the given 
     #directory to the appropriate acre directory
-    if [ -f "$CONF_DIR/project.$CONF.conf" ] && [ -f "$CONF_DIR/appengine-web.$CONF.xml" ]; then
-       cp $CONF_DIR/project.$CONF.conf config/
-       cp $CONF_DIR/appengine-web.$CONF.xml webapp/WEB-INF/appengine-web.xml
-    else
-	   error "Cannot find configuration files $CONF_DIR/project.$CONF.conf and $CONF_DIR/appengine-web.$CONF.xml"
+    if [ "$CONF_DIR" != "" ]; then
+      if [ -f "$CONF_DIR/project.$CONF.conf" ] && [ -f "$CONF_DIR/appengine-web.$CONF.xml" ]; then
+        cp $CONF_DIR/project.$CONF.conf config/
+        cp $CONF_DIR/appengine-web.$CONF.xml webapp/WEB-INF/appengine-web.xml
+      else
+	    error "Cannot find configuration files $CONF_DIR/project.$CONF.conf and $CONF_DIR/appengine-web.$CONF.xml"
+      fi
     fi
 
 }
