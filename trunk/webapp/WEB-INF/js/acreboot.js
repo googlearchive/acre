@@ -1278,18 +1278,16 @@ var _load_handler = function(script, handler_name) {
     // default to passthrough handler (safest)
     handler_name = handler_name || "passthrough";
 
-    // check to see if it's already loaded
-    var handler = script.scope.acre.handlers[handler_name];
-
-    if (!handler) {
-        // check whether it's a custom handler declared in a metadata file
-        if ((typeof script.app.handlers === 'object') && script.app.handlers[handler_name]) {
-            var handler_path = script.app.handlers[handler_name];
-            handler = script.scope.acre.require(handler_path).handler();
-            script.scope.acre.handlers[handler_name] = handler;
-        } else {
-            throw make_appfetch_error("Unsupported handler: " + handler_name, APPFETCH_ERROR_APP);
-        }
+    // check whether it's a custom handler declared in a metadata file
+    // ... or one of the built-in handlers
+    if ((typeof script.app.handlers === 'object') && script.app.handlers[handler_name]) {
+        var handler_path = script.app.handlers[handler_name];
+        handler = script.scope.acre.require(handler_path).handler();
+        script.scope.acre.handlers[handler_name] = handler;
+    } else if (script.scope.acre.handlers[handler_name]){
+        handler = script.scope.acre.handlers[handler_name];
+    } else {
+        throw make_appfetch_error("Unsupported handler: " + handler_name, APPFETCH_ERROR_APP);
     }
     
     handler.name = handler_name;
