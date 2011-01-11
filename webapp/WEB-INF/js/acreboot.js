@@ -1836,7 +1836,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         var current_script = aug_scope.acre.current_script;
         
         // Stuff we only do for the top-level requested script:
-        if (aug_scope == _topscope && app_data.files[filename].name != 'not_found') {
+        if (aug_scope == _topscope && script.name.indexOf("not_found.") !== 0) {
             aug_scope.acre.request.script = current_script;
 
             // XXX - freebase appfetch method-specific hacks
@@ -2562,13 +2562,12 @@ var handle_request = function () {
         acre.write('No valid acre script found at ' + request_path + ' (or defaults)\n');
         acre.exit();
     }
-    
-    
+
     // Time to set up the rest of the environment...
     var [req_host, req_path, req_query_string] = decompose_req_path(request_path);
     var script_id = req_path_to_script_id(request_path);            // for deprecated stuff
     var [namespace, script_name] = split_script_id(script_id);      // for deprecated stuff
-    
+
     // This information is needed by the error page
     _hostenv.script_name = script.name;
     _hostenv.script_path = compose_req_path(script.app.host, script.name);
