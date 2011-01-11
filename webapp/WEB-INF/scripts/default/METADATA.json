@@ -12,6 +12,10 @@
             "handler": "passthrough",
             "media_type": "text/css"
         },
+        "json": {
+          "handler": "passthrough",
+          "media_type": "text/plain"
+        },
         "html": {
             "handler": "passthrough",
             "media_type": "text/html"
