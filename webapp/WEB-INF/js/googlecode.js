@@ -14,18 +14,18 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
             files : {}
         };
 
+        var segs = resource.split("/");
+        var host = segs.shift();
+        var parts = host.split(".");
+        var project = parts.pop();
+        var repo = parts.pop();
+        var path = parts.reverse().join("/") + (segs.length ? "/" + segs.join("/") : "");
+
+        var dir_url = "http://code.google.com/p/" + project + "/source/dirfeed?p=/" + path;
+        var source_url = "http://" + project + ".googlecode.com/" + repo + "/" + path;
+
         // we need to go fetch it
         if (!dir) {
-            var segs = resource.split("/");
-            var host = segs.shift();
-            var parts = host.split(".");
-            var project = parts.pop();
-            var repo = parts.pop();
-            var path = parts.reverse().join("/") + (segs.length ? "/" + segs.join("/") : "");
-
-            var dir_url = "http://code.google.com/p/" + project + "/source/dirfeed?p=/" + path;
-            var source_url = "http://" + project + ".googlecode.com/" + repo + "/" + path;
-
             try {
                 var r = _system_urlfetch(dir_url);
                 var o = JSON.parse(r.body);
