@@ -1369,8 +1369,9 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
                 for (var f in dir.files) {
                     if (/~$/.test(f)) continue;         // skip ~ files (e.g., emacs temp files)
                     var file = dir.files[f];
-                    file.method = name;
                     var fn = base_path + file.name;
+                    file.name = fn;
+                    file.method = name;
                     app.files[fn] = file;
                     
                     // also build up a filename lookup dict
@@ -1384,7 +1385,7 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
                     var exts = file.name.split(".");
                     if (exts.length > 1) {
                         var ext = exts.pop();
-                        var fn_noext = base_path + exts.join(".");
+                        var fn_noext = exts.join(".");
                         add_filename(fn_noext, fn, ext);
                     }
                 }
