@@ -1662,42 +1662,12 @@ for (var i=0; i < custom_methods.length; i++) {
 // ------------------------------------------ proto_require ------------------------------------
 
 var proto_require = function(req_path, default_metadata, resolve_only) {
-    var [host, path] = decompose_req_path(req_path);
-
-    // setup default app metadata
-    var app_defaults = {
-        host: host
-    };
-    default_metadata = default_metadata || {};
-    set_app_metadata(app_defaults, default_metadata);
-
-    // retrieve app metadata using appfetchers
-    var app_data = null;
-    var method = {};
-    for (var a=0; a < appfetch_methods.length; a++) {
-        method = appfetch_methods[a];
-        try {
-            app_data = method.fetcher(host, app_defaults);
-            if (method.cachable)
-                app_data.__method__ = method.name;
-            break;
-        } catch (e if e.__code__ == APPFETCH_ERROR_NOT_FOUND) {
-            app_data = null;
-            continue;
-        }
-    }
-
-    if (app_data === null) {
-        // cache complete misses in the request cache
-        METADATA_CACHE[host] = null;
-        return null;
-    }
-    
+    // NOTE: get_file and normalize_path both rely 
+    // on app_data already having been defined
     
     /*
      * utility for resolving filenames to files
-     * using the filenames lookup hash built 
-     * at appfetch time.
+     * using the filenames lookup hash in app_data
      * 
      * we look for a match in several ways:
      *  1. foo.ext --> foo.ext
@@ -1744,6 +1714,83 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
 
         return filename;
     };
+    
+    /*
+     * utility for converting all paths relative to an app
+     * into fully-qualified paths (for acre.require, etc.)
+     */
+    function normalize_path(path, version, new_only, app_only) {
+        path = path || "";
+        if (typeof path !== 'string') throw new Error("Path must be a string");
+        var parts = path.split('//');
+        
+        if (parts.length >= 2) {
+            
+            // Mode 1: new require syntax                
+            return path;
+            
+        } else if (/^(freebase:)?\//.test(path)) {
+            if (new_only) throw new Error("Freebase ID syntax is not supported for this method.  Use URL syntax.");
+            
+            // Mode 2: old require syntax
+            var namespace = path.replace(/^freebase:/,"").split('/');
+            var script = namespace.pop();
+            if (version) namespace.push(version);
+            namespace = namespace.join('/');
+            path = compose_req_path(namespace_to_host(namespace), script);
+            return path;
+            
+        } else {
+            if (app_only) throw new Error("Only apps are supported by this method");
+            
+            // Mode 3: relative require
+
+            // check whether there's a matching mount
+            var path_segs = path.split("/");
+            while (path_segs.length) {
+                var mpath = path_segs.join("/");
+                if (mpath in app_data.mounts) {
+                    return app_data.mounts[mpath] + path.replace(mpath, "");
+                }
+                path_segs.pop();
+            }
+
+            // otherwise just push current host back on
+            return compose_req_path(app_data.host, path);
+        }
+    }
+    
+    // parse path
+    var [host, path] = decompose_req_path(req_path);
+
+    // setup default app metadata
+    var app_defaults = {
+        host: host
+    };
+    default_metadata = default_metadata || {};
+    set_app_metadata(app_defaults, default_metadata);
+
+    // retrieve app metadata using appfetchers
+    var app_data = null;
+    var method = {};
+    for (var a=0; a < appfetch_methods.length; a++) {
+        method = appfetch_methods[a];
+        try {
+            app_data = method.fetcher(host, app_defaults);
+            if (method.cachable)
+                app_data.__method__ = method.name;
+            break;
+        } catch (e if e.__code__ == APPFETCH_ERROR_NOT_FOUND) {
+            app_data = null;
+            continue;
+        }
+    }
+
+    if (app_data === null) {
+        // cache complete misses in the request cache
+        METADATA_CACHE[host] = null;
+        return null;
+    }
 
     // splice in metadata file before caching app
     var md_filename = get_file(_METADATA_FILE);
@@ -1801,9 +1848,10 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         while (path_segs.length) {
             var fn = path_segs.join("/");
             path_info = file_in_path(fn, path)[0];
-
+            
             if (app_data.mounts[fn] && (path_info.length > 1)) {
-                return proto_require(app_data.mounts[fn] + path_info, default_metadata, resolve_only);
+                var mount_path = normalize_path(app_data.mounts[fn] + path_info);
+                return proto_require(mount_path, default_metadata, resolve_only);
             }
             
             var fn_noext = fn.replace(/\.[^\/\.]*$/,"");
@@ -1826,7 +1874,10 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         return "//" + app_data.host + "/" + filename;
     }
 
-
+    
+    // we've found our script, now we need to:
+    // set up its scope and run it
+     
     /*
      * augment the script's scope with context-sensitive APIs
      *
@@ -1854,48 +1905,6 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
                 acre.freebase.set_service_url(app_data.freebase.service_url);
 
             deprecate(aug_scope);
-        }
-
-        // convert all forms of require syntax into fully-qualified new require syntax
-        function normalize_path(path, version, new_only, app_only) {
-            path = path || "";
-            if (typeof path !== 'string') throw new Error("Path must be a string");
-            var parts = path.split('//');
-            
-            if (parts.length >= 2) {
-                
-                // Mode 1: new require syntax                
-                return path;
-                
-            } else if (/^(freebase:)?\//.test(path)) {
-                if (new_only) throw new Error("Freebase ID syntax is not supported for this method.  Use URL syntax.");
-                
-                // Mode 2: old require syntax
-                var namespace = path.replace(/^freebase:/,"").split('/');
-                var script = namespace.pop();
-                if (version) namespace.push(version);
-                namespace = namespace.join('/');
-                path = compose_req_path(namespace_to_host(namespace), script);
-                return path;
-                
-            } else {
-                if (app_only) throw new Error("Only apps are supported by this method");
-                
-                // Mode 3: relative require
-
-                // check whether there's a matching mount
-                var path_segs = path.split("/");
-                while (path_segs.length) {
-                    var mpath = path_segs.join("/");
-                    if (mpath in current_script.app.mounts) {
-                        return current_script.app.mounts[mpath] + path.replace(mpath, "");
-                    }
-                    path_segs.pop();
-                }
-
-                // otherwise just push current host back on
-                return compose_req_path(app_data.host, path);
-            }
         }
 
         aug_scope.acre.get_metadata = function(path) {
@@ -2065,6 +2074,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
 
         return script;
     }
+
 
     return Script(app_data, filename, path_info);
 };
