@@ -2627,7 +2627,7 @@ var handle_request = function () {
 
     var res = script.to_http_response(_topscope);
     if (res !== null) {
-        acre.response.status = res.status;
+        acre.response.status = res.status || acre.response.status;
         for (var k in res.headers) {
             var v = res.headers[k];
             acre.response.set_header(k.toLowerCase(), v);
