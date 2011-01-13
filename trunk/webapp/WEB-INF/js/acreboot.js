@@ -1839,6 +1839,10 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         // Stuff we only do for the top-level requested script:
         if (aug_scope == _topscope && script.name.indexOf("not_found.") !== 0) {
             aug_scope.acre.request.script = current_script;
+            
+            if (app_data.handlers && app_data.handlers.error) {
+              _hostenv.error_handler_path = normalize_path(app_data.handlers.error);
+            }
 
             // XXX - freebase appfetch method-specific hacks
             if (app_data.freebase && app_data.freebase.write_user) {
