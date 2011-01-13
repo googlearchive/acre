@@ -1,0 +1,148 @@
+<acre:script>
+  acre.response.status = 500;
+  acre.response.headers['vary'] = 'Accept';
+
+  var einfo = acre.error;
+  var acre_server = acre.host.protocol + "://" + acre.host.name + 
+      ((acre.host.port === "80") ? "" : ":" + acre.host.port);
+</acre:script>
+
+<acre:block if="('accept' in acre.request.headers && acre.request.headers['accept'].indexOf('text/html') > -1)">
+<html>
+  <head>
+    <title>Error in <acre:block if="einfo">$einfo.script_path</acre:block></title>
+    <link href='$acre_server/acre/static/style.css' rel='stylesheet' type='text/css'>
+  </head>
+  <body>
+    <div id='body'>
+    
+      <acre:block if="!einfo">
+        <h3>This page is only intended to render an error caused by processing another script</h3>
+        <p><b>error info is UNDEFINED</b></p>
+      </acre:block>
+    
+      <acre:block else="">
+        <acre:script>
+          function is_user_script(filename) {
+              return !!(/^\//).exec(filename);
+          }
+        
+          function highlight(str) {
+              var s = str.split('"error_inside" : "."');
+              if (s.length === 2) {
+                  if (s[1].charAt(0) === ',') { s[1] = s[1].substring(1); }
+                  return s[0] + acre.markup.bless(error_span()) + s[1];
+              } else {
+                  return s;
+              }
+          }
+
+          var user_script = is_user_script(einfo.filename);
+        </acre:script>
+        
+        <span acre:def="error_span()" class="error">**** the error is here ****</span>
+        
+        <acre:block def="sourcelink(filename, line, user_script)">
+          <acre:block if="!user_script">
+            $filename: $line
+          </acre:block>
+          <acre:block else="">
+            <acre:script>
+              var url = acre.freebase.site_host + '/appeditor/#!path=' + filename + '&line=' + acre.form.quote(line);
+            </acre:script>
+            <a target="_blank" href="$url">$filename</a>: $line
+          </acre:block>
+        </acre:block>
+        
+        <h1>Error in <span class="script">$einfo.script_path</span></h1>
+      
+        <p class="msg">${acre.html.encode(einfo.message)}</p>
+        
+        <p acre:if="user_script">
+          frat ${sourcelink(einfo.filename, einfo.line, user_script)}
+        </p>
+    
+        <ul>
+          <acre:block for="frame in einfo.stack">
+            <acre:script>
+              var filename = frame.filename;
+              var line = frame.line;
+              var user_script = is_user_script(filename);
+            </acre:script>
+            <li acre:attrs="user_script?{}:{'class':'internal'}">
+              ${sourcelink(filename, line, user_script)}
+            </li>
+          </acre:block>
+        </ul>
+      
+        <acre:block if="einfo.info">
+      
+          <acre:block if="einfo.info.messages && einfo.info.messages[0].query">
+            <h4>Query</h4>
+            <pre class="query">
+              ${highlight(JSON.stringify(einfo.info.messages[0].query,null,2))}
+            </pre>
+          </acre:block>
+
+          <acre:block elif="einfo.info.body">
+            <acre:script>
+              var body = einfo.info.body;
+              delete einfo.info.body;
+            </acre:script>
+            <h4>Headers</h4>
+            <pre class="result">
+              ${JSON.stringify(einfo.info, null, 2)}
+            </pre>
+            <h4>Response Body</h4>
+            <pre class="body">
+              ${acre.html.encode(body.replace('\\n','\n'))}
+            </pre>
+          </acre:block>
+
+          <acre:block else="">
+            <pre class="query">
+              ${acre.html.encode(JSON.stringify(einfo.info,null,2))}
+            </pre>
+          </acre:block>
+
+        </acre:block>
+    
+        <div acre:if="'x-metaweb-tid' in acre.request.headers" class='tid'>
+          <a target='_new' href="http://stats.metaweb.com/query/transaction?tid=$acre.request.headers['x-metaweb-tid']">
+            TID</a>
+        </div>
+      </acre:block>
+      
+    </div>
+  </body>
+</html>
+</acre:block>
+
+<acre:block else="">
+  <acre:script>
+    acre.response.headers['content-type'] = 'text/plain';
+  </acre:script>
+  <acre:block if="!einfo">
+    This page is only intended to render an error caused by processing another script.
+  </acre:block>
+  <acre:block else="">
+    Error in $einfo.script_path
+    
+    $einfo.message
+    
+    <acre:block if="'x-metaweb-tid' in acre.request.headers">
+      TID: ${acre.request.headers['x-metaweb-tid']}
+    </acre:block>
+    
+    at $einfo.filename: $einfo.line
+    
+    <acre:block for="frame in einfo.stack">
+      $frame.filename:  $frame.line
+    </acre:block>
+    
+    <acre:block if="einfo.info">
+      ${JSON.stringify(einfo.info,null,2)}
+    </acre:block>
+    
+  </acre:block>
+</acre:block>
