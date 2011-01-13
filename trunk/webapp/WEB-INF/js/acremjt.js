@@ -79,7 +79,7 @@ mjt.acre.handler = function() {
             return (new _mjt.TemplatePackage()).init_from_js(compiled_js.pkgdef).toplevel();
         },
         'to_http_response': function(module, script) {
-            var res = {'body': '', 'status': (acre.response.status || 200), 'headers':{}};
+            var res = {'body': '', 'headers':{}};
             var pkg = module._main.prototype.tpackage;
             var pkgtop = pkg.tcall;
             res.headers['content-type'] = pkgtop.doc_content_type || 'text/html';
