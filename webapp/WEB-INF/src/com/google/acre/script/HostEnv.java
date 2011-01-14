@@ -1194,7 +1194,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                     req.request_body = "";
                 } else if (req.error_info == null) {
                     // try the app's error handler or one specified by the app 
-                    // using acre.response.set_error_handler(path)
+                    // using acre.response.set_error_page(path)
+                    // or error_page in metadata file
                     if ("UNKNOWN".equals(error_handler_path)) {
                         error_script_path = script_host_path + "/" + ERROR_PAGE;
                     } else {
