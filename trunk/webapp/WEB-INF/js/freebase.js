@@ -886,10 +886,10 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
      };
 
      var graph_get_content = function() {
-         if (this.data.handler === 'binary') {
-             return _system_freebase.get_blob(this.data.content_id, 'raw');
+         if (this.metadata.handler === 'binary') {
+             return _system_freebase.get_blob(this.metadata.content_id, 'raw');
          } else {
-             return _system_freebase.get_blob(this.data.content_id, 'unsafe');
+             return _system_freebase.get_blob(this.metadata.content_id, 'unsafe');
          }
      };
 

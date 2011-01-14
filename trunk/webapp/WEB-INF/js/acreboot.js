@@ -1446,9 +1446,9 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
     };
 
     var url_get_content = function() {
-        syslog.debug(this.data.content_id, "url.get.content");
-        var fetch = _system_urlfetch(this.data.content_id);
-        fetch.headers['content-type'] = this.data.media_type;
+        syslog.debug(this.metadata.content_id, "url.get.content");
+        var fetch = _system_urlfetch(this.metadata.content_id);
+        fetch.headers['content-type'] = this.metadata.media_type;
         return fetch;
     }
 
@@ -1624,13 +1624,13 @@ var disk_inventory_path = function(app, disk_path) {
 }
 
 var disk_get_content = function() {
-    syslog.debug(this.data.content_id, "disk.get.content");
-    var f = new _file(this.data.content_id,
-                     (this.data.handler === 'binary'));
+    syslog.debug(this.metadata.content_id, "disk.get.content");
+    var f = new _file(this.metadata.content_id,
+                     (this.metadata.handler === 'binary'));
     var res = {
         'status':200,
         'headers':{
-            'content-type':this.data.media_type
+            'content-type':this.metadata.media_type
         },
         'body':f.body
     };
@@ -1995,7 +1995,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
     // used to create modules (acre.require) or
     // geenrate output (http request, acre.include)
     function Script(app_data, name, path_info) {
-        var data = app_data.files[name];
+        var metadata = app_data.files[name];
 
         // backfill (not override) file metadata based 
         // on the 'extensions' dictionary in app metadata.
@@ -2007,7 +2007,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
           if (ext && app_data.extensions && app_data.extensions[ext]) {
               var backfill = app_data.extensions[ext] || {};
               for (var attr in backfill) {
-                  data[attr] = data[attr] || backfill[attr];
+                  metadata[attr] = metadata[attr] || backfill[attr];
               }
               break;
           }
@@ -2015,10 +2015,10 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         }
 
         var script =  {
-            '__method__': data.method,
+            '__method__': metadata.method,
             'name': name,
             'path_info': path_info,
-            'data': data,
+            'metadata': metadata,
             'app': app_data,
             'get_content': method.get_content,
             'linemap': null
@@ -2037,16 +2037,16 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
 
             // build up the script's scope
             scope = scope || make_scope();
-            scope.acre.current_script = assembleScriptObj(this.app, this.data);
+            scope.acre.current_script = assembleScriptObj(this.app, this.metadata);
             this.scope = scope = scope_augmentation(this, scope);
 
             // now that the scope's all set up, we can finally load our handler
-            this.handler = _load_handler(this, this.data.handler);
+            this.handler = _load_handler(this, this.metadata.handler);
 
             // let's make sure we don't end up with the cached compiled_js 
             // from a different file version or different handler
             var class_name = compose_req_path(app_data.host, name);
-            var hash =  data.content_hash + "." + this.handler.path;
+            var hash =  metadata.content_hash + "." + this.handler.path;
 
             // get compiled javascript, either directly from the class cache or 
             // by generating raw javascript and compiling (and caching the result)
