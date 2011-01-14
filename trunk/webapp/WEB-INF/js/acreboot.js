@@ -1891,8 +1891,8 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         if (aug_scope == _topscope && script.name.indexOf("not_found.") !== 0) {
             aug_scope.acre.request.script = current_script;
             
-            if (app_data.handlers && app_data.handlers.error) {
-              _hostenv.error_handler_path = normalize_path(app_data.handlers.error);
+            if (app_data.error_page) {
+              _hostenv.error_handler_path = normalize_path(app_data.error_page);
             }
 
             // XXX - freebase appfetch method-specific hacks
@@ -1936,7 +1936,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
             throw exit_e;
         };
 
-        aug_scope.acre.response.set_error_handler = function(path) {
+        aug_scope.acre.response.set_error_page = function(path) {
             path = normalize_path(path, null, true);
             _hostenv.error_handler_path = path;
         };
