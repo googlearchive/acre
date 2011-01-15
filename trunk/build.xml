@@ -183,12 +183,6 @@
     </target>
     
     <target name="copy-appengine-configs">
-      <exec executable="${basedir}/acre">
-        <arg value="-c" />
-        <arg value="${config.file}" />
-        <arg value="make-configs"/>
-      </exec>
-
       <copy todir="${war.config.dir}" overwrite="true">
         <fileset dir="${webapp.config.dir}">
           <include name="**/*.properties"/>

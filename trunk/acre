@@ -31,9 +31,12 @@ Available Options:
   -c <conf> ........... The configuration file that acre should use
                         (or name in config/project.<name>.conf)
                         [default: sandbox]
+                        
+  -d <dir> ............ The directory to use to look for additional configuration files
+                        [default: none]
 
   -p <port> ........... The port acre should listen to
-                        [default:  8115]
+                        [default: 8115]
 
   -v <level> .......... Log verbosity level (one of "DEBUG,INFO,WARN,ERROR")
                         [default: INFO]
@@ -127,37 +130,33 @@ invoke() {
 }
 
 build_appengine() {
+    copy_appengine_config
+    . bin/make-configs
     SCRIPT="build" 
     COMMAND="appengine"
     export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
     invoke
-
-    copy_appengine_config
 }
 
 test_prepare_appengine() {
+    . bin/make-configs
     SCRIPT="build" 
     COMMAND="appengine-test-prepare"
     export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
     invoke
 }
 
+# copy the project.<app_key>.conf and appengine-web.<app_key>.xml files from the given 
+# directory to the appropriate acre directory
 copy_appengine_config() { 
-
-    #copy the project.<app_key>.conf and appengine-web.<app_key>.xml files from the given 
-    #directory to the appropriate acre directory
     if [ "$CONF_DIR" != "" ]; then
-      if [ -f "$CONF_DIR/project.$CONF.conf" ] && [ -f "$CONF_DIR/appengine-web.$CONF.xml" ]; then
-        cp $CONF_DIR/project.$CONF.conf config/
-        cp $CONF_DIR/appengine-web.$CONF.xml webapp/WEB-INF/appengine-web.xml
-      else
-	    error "Cannot find configuration files $CONF_DIR/project.$CONF.conf and $CONF_DIR/appengine-web.$CONF.xml"
-      fi
+        if [ -f "$CONF_DIR/appengine-web.$CONF.xml" ]; then
+            cp $CONF_DIR/appengine-web.$CONF.xml webapp/WEB-INF/appengine-web.xml
+        else
+	        error "Cannot find configuration file $CONF_DIR/appengine-web.$CONF.xml"
+        fi
     fi
-
 }
-
-
 
 # -------------------------------------------------------------------------------------
 
@@ -174,9 +173,14 @@ else
     error "Missing 'project.conf'"
 fi
 
-# Extract the options -------------------------------------
+# Default Values ------------------------------------------
+
 export CONF="sandbox"
-while [ $# -ne 0 ] ; do
+export WAR="_build/war"
+
+# Extract the options -------------------------------------
+
+while [ $# -ne 0 ]; do
   case "$1" in
     -h) usage;;
     
@@ -214,27 +218,20 @@ done
 
 # Overwrite defaults with cli config ----------------------
 if [ "$CONF" != "" ]; then
-    #unfortunately, the first appengine app we set-up has the id 'acre'
-    #which conflicts with the acre script - so handle this case here
     if [ "$CONF_DIR" != "" ] && [ -f "$CONF_DIR/project.$CONF.conf" ]; then
 	  load "$CONF_DIR/project.$CONF.conf"
     elif [ -f $CONF ]; then
       load $CONF
-    elif [ -f "config/project.$CONF.conf" ]; then    
-      load "config/project.$CONF.conf"
+    elif [ -f "config/project.$CONF.conf" ]; then
+  	  load "config/project.$CONF.conf"
     else 
-      error "configuration file project.$CONF.conf not found";
+      error "configuration file config/project.$CONF.conf not found";
     fi
 fi
 
 # Overload the port if it was set -------------------------
 if [ "$PORT" != "" ]; then
     export ACRE_PORT="$PORT"
-fi
-
-# War location --------------------------------------------
-if [ "$WAR" = "" ]; then
-    WAR="_build/war"
 fi
 
 # Assign the wanted action --------------------------------
