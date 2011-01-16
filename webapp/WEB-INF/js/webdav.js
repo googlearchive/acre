@@ -82,8 +82,7 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
                           getNodeVal(prop, "D:getlastmodified")[1];
         var repo_uuid   = getNodeVal(prop, "SVN:repository-uid")[1];
         var repo_path   = getNodeVal(prop, "SVN:baseline-relative-path")[1];
-        app.app_guid    = app.app_guid ||
-                          ((repo_uuid && repo_path) ? repo_uuid + ":" + repo_path : url);
+        app.guid = app.guid || ((repo_uuid && repo_path) ? repo_uuid + ":" + repo_path : url);
 
         // now parse the contents of the directory
         for(var i=1; i< files.length; i++) {
