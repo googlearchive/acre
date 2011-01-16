@@ -305,8 +305,17 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         try {
             @SuppressWarnings("unchecked")
             Class<? extends Scriptable> jsDataStoreClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.script.JSDataStore");
+
+            @SuppressWarnings("unchecked")
+            Class<? extends Scriptable> jsDataStoreResultsClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.script.JSDataStoreResults");
+
+            @SuppressWarnings("unchecked")
+            Class<? extends Scriptable> jsDataStoreResultsIteratorClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.script.JSDataStoreResultsIterator");
+            
             try {
                 ScriptableObject.defineClass(scope, jsDataStoreClass, false, true);
+                ScriptableObject.defineClass(scope, jsDataStoreResultsClass, false, true);
+                ScriptableObject.defineClass(scope, jsDataStoreResultsIteratorClass, false, true);
             } catch (IllegalAccessException e) {
                 syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
             } catch (InstantiationException e) {
@@ -315,7 +324,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
             }
         } catch (ClassNotFoundException e1) {
-            syslog(Level.INFO, "hostenv.datastore.init.failed", "DataStore provider not present and will not be present");
+            syslog(Level.INFO, "hostenv.datastore.init.failed", "DataStore provider not found and will not be present");
         }
         
         return scope;
