@@ -41,7 +41,7 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
             if (!dir || dir.error) return null;
 
             app.as_of    = null;   // use revision id?
-            app.app_guid = app.app_guid || source_url;
+            app.guid = app.guid || source_url;
             // XXX - default app.ttl based on 'trunk' etc. in path?
         }
 

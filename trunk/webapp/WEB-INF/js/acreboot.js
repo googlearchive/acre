@@ -159,6 +159,73 @@ function file_in_path(filename, path) {
     return [path_info, in_path];
 }
 
+// self-contained version of $.extend() from jQuery
+function extend() {
+    var options, name, src, copy, copyIsArray, clone,
+        target = arguments[0] || {},
+        i = 1,
+        length = arguments.length,
+        deep = false;
+    
+    function isFunction(o){
+        return typeof o === "function";
+    }
+    
+    function isArray(o) {
+        return o instanceof Array;
+    };
+    
+    function isPlainObject(o) {
+        if (!o || typeof (o) !== "object") {
+            return false;
+        }
+
+        var key;
+        for ( key in o ) {}
+
+        return key === undefined || Object.prototype.hasOwnProperty.call(o, key);
+    };
+
+    // Handle a deep copy situation
+    if ( typeof target === "boolean" ) {
+        deep = target;
+        target = arguments[1] || {};
+        // skip the boolean and the target
+        i = 2;
+    }
+
+    // Handle case when target is a string or something (possible in deep copy)
+    if ( typeof target !== "object" && !isFunction(target) ) {
+        target = {};
+    }
+
+    for ( ; i < length; i++ ) {
+        if ( (options = arguments[ i ]) != null ) {
+            for ( name in options ) {
+                src = target[ name ];
+                copy = options[ name ];
+                // Prevent never-ending loop
+                if ( target === copy ) {
+                    continue;
+                }
+                if ( deep && copy && ( isPlainObject(copy) || (copyIsArray = isArray(copy)) ) ) {
+                    if ( copyIsArray ) {
+                        copyIsArray = false;
+                        clone = src && isArray(src) ? src : [];
+                    } else {
+                        clone = src && isPlainObject(src) ? src : {};
+                    }
+                    target[ name ] = extend( deep, clone, copy );
+                } else if ( copy !== undefined ) {
+                    target[ name ] = copy;
+                }
+            }
+        }
+    }
+
+    return target;
+};
+
 function make_scope(start, style) {
     // XXX find a more elegant way to do this
 
@@ -1292,30 +1359,24 @@ acre.handlers.binary = {
 };
 
 // helper for .to_module() in proto_require
-var _load_handler = function(script, handler_name) {
+var _load_handler = function(scope, handler_name, handlers /* optional dict of handler paths */) {
     // default to passthrough handler (safest)
     handler_name = handler_name || "passthrough";
 
     // check whether it's a custom handler declared in a metadata file
     // ... or one of the built-in handlers
-    if ((typeof script.app.handlers === 'object') && script.app.handlers[handler_name]) {
-        var handler_path = script.app.handlers[handler_name];
-        handler = script.scope.acre.require(handler_path).handler();
-        script.scope.acre.handlers[handler_name] = handler;
-    } else if (script.scope.acre.handlers[handler_name]){
-        handler = script.scope.acre.handlers[handler_name];
+    if (handlers && handlers[handler_name]) {
+        var handler_path = handlers[handler_name];
+        handler = scope.acre.require(handler_path).handler();
+        scope.acre.handlers[handler_name] = handler;
+    } else if (scope.acre.handlers[handler_name]){
+        handler = scope.acre.handlers[handler_name];
     } else {
         throw make_appfetch_error("Unsupported handler: " + handler_name, APPFETCH_ERROR_APP);
     }
     
     handler.name = handler_name;
     handler.path = handler_path || handler_name;
-
-    // fill in defaults from acre_script
-    var acre_script = acre.handlers.acre_script;
-    handler.to_js            = handler.to_js            || acre_script.to_js;
-    handler.to_module        = handler.to_module        || acre_script.to_module;
-    handler.to_http_response = handler.to_http_response || acre_script.to_http_response;
 
     return handler;
 };
@@ -1329,7 +1390,7 @@ var _load_handler = function(script, handler_name) {
  *  - called from proto_require()
  *  - each registered appfetch method is called until one succeeds
  *  - successful results are added to cache with key: 
- *      METADATA:{app.app_guid}:{app.as_of}
+ *      METADATA:{app.guid}:{app.as_of}
  *  - app_data.hosts as pointers to results also cached:
  *      HOST:{app.hosts[i]} with value METADATA:{app.guid}:{app.asof}
  */
@@ -1389,7 +1450,7 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
                     var file = dir.files[f];
                     var fn = base_path + file.name;
                     file.name = fn;
-                    file.method = name;
+                    file.source = name;
                     app.files[fn] = file;
                     
                     // also build up a filename lookup dict
@@ -1424,6 +1485,7 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
         }
 
         // this will recurse until all files are added or MAX_DIRECTORY_DEPTH reached
+        app.source = name;
         app.filenames = {};
         _add_directory(app, resource);
 
@@ -1440,7 +1502,7 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
                 if (!acre.request.skip_cache) {
                     // check cache and optionally call the thunk...
                     var app = e.args[0];
-                    var ckey = "METADATA:"+app.app_guid+":"+app.as_of;
+                    var ckey = "METADATA:"+app.guid+":"+app.as_of;
                     if (ckey in METADATA_CACHE) {
                         syslog({'s' : 'inprocess', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
                         return METADATA_CACHE[ckey];
@@ -1464,9 +1526,9 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
     };
 
     var url_get_content = function() {
-        syslog.debug(this.metadata.content_id, "url.get.content");
-        var fetch = _system_urlfetch(this.metadata.content_id);
-        fetch.headers['content-type'] = this.metadata.media_type;
+        syslog.debug(this.content_id, "url.get.content");
+        var fetch = _system_urlfetch(this.content_id);
+        fetch.headers['content-type'] = this.media_type;
         return fetch;
     }
 
@@ -1507,12 +1569,12 @@ function set_app_metadata(app, md) {
     // don't allow metadata files to override values
     // that could create security issues or catastrophic failures
     var skip_keys = {
-        '__method__': true,
+        'source': true,
         'host': true,
         'hosts': true,
-        'app_guid': true,
+        'guid': true,
         'as_of': true,
-        'app_id': true
+        'id': true
     };
 
     // splice remaining metadata onto the app
@@ -1535,9 +1597,10 @@ function set_app_metadata(app, md) {
     // initialize values used by acre
     if (app.host) {
         app.hosts = app.hosts || [app.host];
-        app.app_guid = app.app_guid || app.host;
+        app.guid = app.guid || app.host;
         app.as_of = app.as_of || null; 
-        app.app_id = app.app_id || host_to_namespace(app.host);
+        app.path = app.path || compose_req_path(app.host);
+        app.id = app.id || host_to_namespace(app.host);
     }
     app.versions = app.versions || [];
     app.mounts = app.mounts || {};
@@ -1583,9 +1646,9 @@ var appfetch_cache = function(host) {
 };
 
 var cache_get_content = function() {
-    var method = get_appfetch_method(this.__method__);
+    var method = get_appfetch_method(this.source);
     if (!method) {
-        throw make_appfetch_error("No appfetch method " + this.__method__, APPFETCH_ERROR_METHOD);
+        throw make_appfetch_error("No appfetch method " + this.source, APPFETCH_ERROR_METHOD);
     }
 
     return method.get_content.apply(this);
@@ -1642,13 +1705,12 @@ var disk_inventory_path = function(app, disk_path) {
 }
 
 var disk_get_content = function() {
-    syslog.debug(this.metadata.content_id, "disk.get.content");
-    var f = new _file(this.metadata.content_id,
-                     (this.metadata.handler === 'binary'));
+    syslog.debug(this.content_id, "disk.get.content");
+    var f = new _file(this.content_id, (this.handler === 'binary'));
     var res = {
         'status':200,
         'headers':{
-            'content-type':this.metadata.media_type
+            'content-type':this.media_type
         },
         'body':f.body
     };
@@ -1795,8 +1857,6 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         method = appfetch_methods[a];
         try {
             app_data = method.fetcher(host, app_defaults);
-            if (method.cachable)
-                app_data.__method__ = method.name;
             break;
         } catch (e if e.__code__ == APPFETCH_ERROR_NOT_FOUND) {
             app_data = null;
@@ -1823,7 +1883,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
     }
 
     // now cache the app metadata
-    var ckey = "METADATA:"+app_data.app_guid+":"+app_data.as_of;
+    var ckey = "METADATA:"+app_data.guid+":"+app_data.as_of;
     var ttl = (typeof app_data.ttl === "number") ? app_data.ttl : 0;
 
     if (method.cachable && (ttl !== 0)) {
@@ -1903,11 +1963,11 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
      *   because of relative references
      */
     function scope_augmentation(script, aug_scope) {
-        var current_script = aug_scope.acre.current_script;
+        aug_scope.acre.current_script = script;
         
         // Stuff we only do for the top-level requested script:
         if (aug_scope == _topscope && script.name.indexOf("not_found.") !== 0) {
-            aug_scope.acre.request.script = current_script;
+            aug_scope.acre.request.script = script;
             
             if (app_data.error_page) {
               _hostenv.error_handler_path = normalize_path(app_data.error_page);
@@ -1924,25 +1984,29 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
 
             deprecate(aug_scope);
         }
-
+    
         aug_scope.acre.get_metadata = function(path) {
             // ensure we only have the host part
             var [host] = decompose_req_path(normalize_path(path, null, true, false));
-            return proto_require(compose_req_path(host), default_metadata);
+            var md = proto_require(compose_req_path(host), default_metadata);
+            
+            // XXX - probably should make a deep copy
+            // return extend(true, {}, md);
+            return md;
         };
 
         aug_scope.acre.mount = function(path, local_path) {
             if (typeof local_path !== 'string') throw new Error("Mount point must be a string path");
-            current_script.app.mounts[local_path] = normalize_path(path);
+            script.app.mounts[local_path] = normalize_path(path);
         };
-        
+    
         aug_scope.acre.resolve = function(path) {
             return proto_require(normalize_path(path), default_metadata, true);
         };
-        
+    
         aug_scope.acre.route = function(path) {
             path = normalize_path(path, null, true);
-            
+        
             var [h, p, qs] = decompose_req_path(path);
             var hostpath = app_data.host;
 
@@ -1959,19 +2023,19 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
             _hostenv.error_handler_path = path;
         };
 
-        
+    
         function get_sobj(path, version) {
             if (!path) {
                 throw new Error("No URL provided");
-            }          
-            
+            }    
+              
             var sobj = proto_require(normalize_path(path, version), default_metadata);
-            
+        
             if (sobj === null) {
                 throw new Error('Could not fetch data from ' + path);
             }
 
-            if (compose_req_path(sobj.app.host, sobj.name) === aug_scope.acre.current_script.path) {
+            if (compose_req_path(sobj.app.host, sobj.name) === script.path) {
                 throw new Error("A script can not require itself");                
             }
 
@@ -1982,10 +2046,9 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
             var scope = (this !== aug_scope.acre) ? this : undefined;
 
             var sobj = get_sobj(path, version);
-
             return sobj.to_module(scope);
         };
-        
+    
         // XXX to_http_response() is largely unimplemented
         aug_scope.acre.include = function(path, version) {
             var scope = (this !== aug_scope.acre) ? this : undefined;
@@ -2012,35 +2075,60 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
     // Acre's internal representation of a script 
     // used to create modules (acre.require) or
     // geenrate output (http request, acre.include)
-    function Script(app_data, name, path_info) {
-        var metadata = app_data.files[name];
-
-        // backfill (not override) file metadata based 
-        // on the 'extensions' dictionary in app metadata.
+    function Script(app_data, name, path_info) {        
+        // look whether there's relevant backfill metadata in 
+        // the 'extensions' dictionary in the app metadata.
         // match from longest to shortest (i.e., .mf.css before .css)
         var exts = name.split(".");
         exts.shift();
         while (exts.length) {
           var ext = exts.join(".");
+          var ext_data = {};
           if (ext && app_data.extensions && app_data.extensions[ext]) {
-              var backfill = app_data.extensions[ext] || {};
-              for (var attr in backfill) {
-                  metadata[attr] = metadata[attr] || backfill[attr];
-              }
+              ext_data = app_data.extensions[ext];
               break;
           }
           exts.shift();
         }
 
-        var script =  {
-            '__method__': metadata.method,
-            'name': name,
-            'path_info': path_info,
-            'metadata': metadata,
-            'app': app_data,
-            'get_content': method.get_content,
-            'linemap': null
+        // Create a good looking copy of script metadata 
+        // this will be used in acre.current_script, etc.
+        var script_data = extend({}, ext_data, app_data.files[name]);
+        script_data.path_info = path_info;
+        script_data.path = "//" + app_data.host + "/" + name;
+        script_data.id = host_to_namespace(app_data.host) + "/" + name;
+        // so.source_url ?
+        
+        // only copy some of the app metadata
+        script_data.app = {
+          source: app_data.source,
+          path: "//" + app_data.host,
+          host: app_data.host,
+          hosts: app_data.hosts,
+          guid: app_data.guid,
+          as_of: app_data.as_of,
+          id: app_data.id,
+          app_id: app_data.id,       /* XXX - remove once freebase-site deployed */
+          app_guid: app_data.guid,   /* XXX - remove once freebase-site deployed */
+          mounts: app_data.mounts,
+          version: (app_data.versions.length > 0 ? app_data.versions[0] : null),
+          versions: app_data.versions,
+          base_url : acre.host.protocol + "://" + 
+              (app_data.host.match(/\.$/) ? app_data.host.replace(/\.$/, "") : (app_data.host + "." + acre.host.name)) +
+              (acre.host.port !== 80 ? (":" + acre.host.port) : "")              
         };
+
+        // private variable for storing the handler we'll use to 
+        // process the script. the exact handler will depend on the 
+        // scope the script is loaded into, however, so we don't
+        // actually load it until to_module
+        var _handler;
+
+        // copy script_data into a new object that we can decorate 
+        // with methods for internal and handler use
+        var script = extend({}, script_data);
+                
+        script.get_content = get_appfetch_method(script.source).get_content;
 
         script.to_module = function(scope) {
             // We do this, so that .apply()d scopes will be able
@@ -2052,26 +2140,26 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
                 scope.acre = {};
                 scope.acre.__proto__ = _topscope.acre;
             }
-
+            
             // build up the script's scope
             scope = scope || make_scope();
-            scope.acre.current_script = assembleScriptObj(this.app, this.metadata);
-            this.scope = scope = scope_augmentation(this, scope);
+            this.scope = scope = scope_augmentation(script_data, scope);
 
             // now that the scope's all set up, we can finally load our handler
-            this.handler = _load_handler(this, this.metadata.handler);
+            _handler = _load_handler(scope, this.handler, app_data.handlers);
 
             // let's make sure we don't end up with the cached compiled_js 
             // from a different file version or different handler
             var class_name = compose_req_path(app_data.host, name);
-            var hash =  metadata.content_hash + "." + this.handler.path;
+            var hash =  this.content_hash + "." + _handler.path;
+            this.linemap = null;
 
             // get compiled javascript, either directly from the class cache or 
             // by generating raw javascript and compiling (and caching the result)
             var compiled_js = _hostenv.load_script_from_cache(class_name, hash, 
                                                               scope, false);
             if (compiled_js == null) {
-                var jsstr = this.handler.to_js(this);
+                var jsstr = _handler.to_js(this);
                 if (jsstr) {
                     compiled_js = _hostenv.load_script_from_string(jsstr, class_name, hash, 
                                                                    scope, this.linemap, false);
@@ -2079,7 +2167,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
             }
 
             // have the handler run our compiled js
-            return this.handler.to_module(compiled_js, this);
+            return _handler.to_module(compiled_js, this);
         };
 
         script.to_http_response = function(scope) {
@@ -2087,7 +2175,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
             acre.request.path_info = this.path_info;
 
             var module = this.to_module(scope);
-            return this.handler.to_http_response(module, this);
+            return _handler.to_http_response(module, this);
         };
 
         return script;
@@ -2428,38 +2516,8 @@ for (var name in _topscope) {
 }
 
 
-//--------------------------------------- boot ------------------------------------
+//----------------------------------- top-level ---------------------------------
 
-/*
- * Create a good looking script context object based on
- * the flat metadata used inside appfetch
- */
-var assembleScriptObj = function(app, file) {
-    return {
-        id : app.app_id + '/' + file.name,
-        path: compose_req_path(app.host, file.name),
-        name : file.name,
-        content_id : file.content_id,
-        handler : file.handler,
-        media_type : file.media_type,
-        app : {
-            id : app.app_id,
-            path : compose_req_path(app.host),
-            source: app.__source__,
-            guid : app.app_guid,
-            version :(app.versions.length > 0 ? app.versions[0] : null),
-            versions : app.versions,
-            mounts : app.mounts,
-            base_url : acre.host.protocol + "://" + 
-                (app.host.match(/\.$/) ? app.host.replace(/\.$/, "") : (app.host + "." + acre.host.name)) +
-                (acre.host.port !== 80 ? (":" + acre.host.port) : "")
-        }
-    };
-};
-
-/*
- * top-level function
- */
 var handle_request = function () {
     
     // Determine what path we're running:
@@ -2526,7 +2584,7 @@ var handle_request = function () {
         var source_app = proto_require(compose_req_path(h), default_metadata);
         if (source_app !== null) {
             source_path = compose_req_path(h, p);
-            _topscope._request_app_guid = source_app.app_guid;
+            _topscope._request_app_guid = source_app.guid;
         }
     }
 
@@ -2618,11 +2676,11 @@ var handle_request = function () {
         'path': request_path
     };
 
-    // before the script is actually run, we want to set the app_guid aside
+    // before the script is actually run, we want to set the app guid aside
     // if we didn't already do so
     // app_guid is primarily used for accessing the keystore and the datastore
     if (_topscope._request_app_guid === null) {
-        _topscope._request_app_guid = script.app.app_guid;
+        _topscope._request_app_guid = script.app.guid;
     }
 
     // View Source link:
@@ -2666,7 +2724,7 @@ var handle_request = function () {
 
 };
 
-// ------------------------------- let's roll ------------------------
+// ---------------------------------- let's roll --------------------------------
 
 handle_request();
 
