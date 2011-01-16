@@ -435,6 +435,10 @@ acre.host = {
 
 //-------------------------------- acre.request -----------------------------------------
 
+// We're not going to create this until later
+// but we need it to be global for comparison
+var _request_scope;
+
 acre.request = {
     server_name : _request.request_server_name,
     server_port : _request.request_server_port,
@@ -1966,7 +1970,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         aug_scope.acre.current_script = script;
         
         // Stuff we only do for the top-level requested script:
-        if (aug_scope == _topscope && script.name.indexOf("not_found.") !== 0) {
+        if (aug_scope == _request_scope && script.name.indexOf("not_found.") !== 0) {
             aug_scope.acre.request.script = script;
             
             if (app_data.error_page) {
@@ -2076,7 +2080,8 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
     // Acre's internal representation of a script 
     // used to create modules (acre.require) or
     // geenrate output (http request, acre.include)
-    function Script(app_data, name, path_info) {        
+    function Script(app_data, name, path_info) {
+        
         // look whether there's relevant backfill metadata in 
         // the 'extensions' dictionary in the app metadata.
         // match from longest to shortest (i.e., .mf.css before .css)
@@ -2132,16 +2137,6 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         script.get_content = get_appfetch_method(script.source).get_content;
 
         script.to_module = function(scope) {
-            // We do this, so that .apply()d scopes will be able
-            // to access the top-level things. This is kind of a
-            // mess, but does the job. It's a simplification of
-            // the behavior of make_scope().
-            if (scope && scope !== _topscope) {
-                scope.__proto__ = _topscope;
-                scope.acre = {};
-                scope.acre.__proto__ = _topscope.acre;
-            }
-            
             // build up the script's scope
             scope = scope || make_scope();
             this.scope = scope = scope_augmentation(script_data, scope);
@@ -2667,7 +2662,7 @@ var handle_request = function () {
 
     // We need this information to generate things like the appeditor url, and
     // to run the not_found page, it will actually get overriden with a proper
-    // version if scope_augmentation is running in _topscope
+    // version if scope_augmentation is running in _request_scope
     acre.request.script = {
         'app': {
             'id': host_to_namespace(req_host),
@@ -2712,7 +2707,9 @@ var handle_request = function () {
         acre.environ.script_namespace = host_to_namespace(script.app.host); // deprecated
     })();
 
-    var res = script.to_http_response(_topscope);
+    _request_scope = make_scope();
+    
+    var res = script.to_http_response(_request_scope);
     if (res !== null) {
         acre.response.status = res.status || acre.response.status;
         for (var k in res.headers) {

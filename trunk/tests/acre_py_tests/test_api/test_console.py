@@ -13,8 +13,6 @@ class test_class(TestController):
             print ("got response: " + self.response_body);
             result = simplejson.loads(self.response_body, encoding='utf-8')
 
-            del result['enabled'];
-
             print "result: %s" % result
 
             self.assert_ ("%s" % result == "{}", "console has unexpected visible properties: %s" % result );
