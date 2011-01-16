@@ -49,12 +49,17 @@ if (typeof _topscope.XML != 'undefined') {
     delete _topscope.XML;
 }
 
+// obtain datastore if present and remove from scope
+if (typeof DataStore != 'undefined') {
+    var _datastore = new DataStore();
+    delete DataStore;
+}
+
 // these values are copied here to avoid triggering a deprecation warning when they are accessed later.
 var server_host_base = _request.server_host_base;
 var freebase_service_url = _request.freebase_service_url;
 
-
-//-------------------------- Globals/Configs ----------------------------------
+//---------------------------- globals / utils ---------------------------------------
 
 var _DELIMITER_HOST = _hostenv.ACRE_HOST_DELIMITER_HOST;
 var _DELIMITER_PATH = _hostenv.ACRE_HOST_DELIMITER_PATH;
@@ -66,7 +71,6 @@ var _DEFAULTS_HOST = _hostenv.DEFAULT_HOST_PATH.substr(2);
 var _METADATA_FILE = "METADATA";
 var _DEFAULT_FILE = "index";
 var _DEFAULT_APP = "helloworld.examples." + _DELIMITER_PATH;
-
 
 //------------------------------- Utils ---------------------------------------
 
@@ -156,7 +160,7 @@ function file_in_path(filename, path) {
 }
 
 function make_scope(start, style) {
-    // XXX find a more elegent way to do this
+    // XXX find a more elegant way to do this
 
     var copier = object;
 
@@ -818,36 +822,50 @@ acre.html.parse = function(html_str) {
 };
 
 
+// ------------------------------------------------------------------------
+
+// used by the keystore and the datastore to partition data based on app_id
+
+_topscope._request_app_guid = null;
+
 // ------------------------ keystore --------------------------------------
 
 if (typeof acre.keystore == 'undefined') {
     acre.keystore = {};
 }
 
-var _request_app_guid = null;
-
 acre.keystore.get = function (name) {
-    if (_request_app_guid !== null) {
-        return _ks.get_key(name, _request_app_guid);
+    if (_topscope._request_app_guid !== null) {
+        return _ks.get_key(name, _topscope._request_app_guid);
     } else {
         return null;
     }
 };
 
 acre.keystore.keys = function () {
-    if (_request_app_guid !== null) {
-        return _ks.get_keys(_request_app_guid);
+    if (_topscope._request_app_guid !== null) {
+        return _ks.get_keys(_topscope._request_app_guid);
     } else {
         return null;
     }
 };
 
 acre.keystore.remove = function (name) {
-    if (_request_app_guid !== null) {
-        _ks.delete_key(name, _request_app_guid);
+    if (_topscope._request_app_guid !== null) {
+        _ks.delete_key(name, _topscope._request_app_guid);
     }
 };
 
+//------------------------ datastore --------------------------
+
+if (_datastore) { // the _ds object won't be available in all environments so we need to check first
+    var store_scope = {};
+    store_scope.syslog = syslog;
+    store_scope.store = _datastore;
+    store_scope.acreboot = _topscope;
+    _hostenv.load_system_script('datastore.js', store_scope);
+    store_scope.augment(acre);
+}
 
 // ------------------------ acre.hash ------------------------------
 
@@ -2508,7 +2526,7 @@ var handle_request = function () {
         var source_app = proto_require(compose_req_path(h), default_metadata);
         if (source_app !== null) {
             source_path = compose_req_path(h, p);
-            _request_app_guid = source_app.app_guid;
+            _topscope._request_app_guid = source_app.app_guid;
         }
     }
 
@@ -2602,9 +2620,9 @@ var handle_request = function () {
 
     // before the script is actually run, we want to set the app_guid aside
     // if we didn't already do so
-    // app_guid is primarily used for accessing the kyestore
-    if (_request_app_guid === null) {
-        _request_app_guid = script.app.app_guid;
+    // app_guid is primarily used for accessing the keystore and the datastore
+    if (_topscope._request_app_guid === null) {
+        _topscope._request_app_guid = script.app.app_guid;
     }
 
     // View Source link:
