@@ -23,7 +23,7 @@ class test_class(TestController):
   
     def test_require_freebase_service(self):
         self.set_acre_script("require", { "url":"/api/service/touch"})
-        expected_message = "Could not fetch data from /api/service/touch"
+        expected_message = "Could not fetch data from //service.api.dev/touch"
         p = re.compile(expected_message);
 
         try: 
@@ -39,7 +39,7 @@ class test_class(TestController):
  
     def test_require_file_does_not_exist(self):
         self.set_acre_script("require_error", { "url": "/freebase/apps/qatests/api/does_not_exist"})
-        expected_message = "Could not fetch data from /freebase/apps/qatests/api/does_not_exist"
+        expected_message = "Could not fetch data from //api.qatests.apps.freebase.dev/does_not_exist"
         p = re.compile(expected_message);
 
         try:
@@ -69,7 +69,7 @@ class test_class(TestController):
     def test_require_url_is_not_content(self):
         self.description = "acre.require receives an argument that is a freebase uri. uri points to an id that exists, but is not of type content.";
         self.set_acre_script("require_error", { "url":"/type/type" })
-        expected_message = "Could not fetch data from /type/type"
+        expected_message = "Could not fetch data from //type.dev/type"
 
         try:
             self.get();
