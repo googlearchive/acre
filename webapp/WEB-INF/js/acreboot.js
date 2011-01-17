@@ -76,11 +76,10 @@ var _DEFAULT_APP = "helloworld.examples." + _DELIMITER_PATH;
 
 /*
  * A subset of jQuery utils loaded as 'u':
- *   u.each, u.extend, u.isArray, u.isPlainObject, 
- *   u.isFunction
+ *   u.each, u.extend, u.isArray
  * 
  * Plus a few more:
- *   u.escape_re
+ *   u.escape_re, u.parseUri
  */
 var util_scope = {};
 _hostenv.load_system_script("util.js", util_scope);
@@ -523,7 +522,7 @@ AcreResponse.prototype.add_header = function (name, value) {
     //   subsequent field-value to the first, each separated by a comma.
     if (!(name in this.headers)) {
         this.headers[name] = value;
-    } else if (this.headers[name] instanceof Array) {
+    } else if (u.isArray(this.headers[name])) {
         this.headers[name].push(value);
     } else {
         this.headers[name] = [this.headers[name], value];
@@ -1224,25 +1223,9 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
 };
 
 function cookiejar_domain_match(url) {
-    function parseUri(str) {
-        /*
-         * This function was adapted from parseUri 1.2.1
-         * http://stevenlevithan.com/demo/parseuri/js/assets/parseuri.js
-         */
-        var o = {
-            key: ["source","protocol","authority","userInfo","user","password","host",
-                  "port","relative","path","directory","file","query","anchor"],
-            parser: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/
-        };
-        var m = o.parser.exec(str);
-        var uri = {};
-        var i = 14;
-        while (i--) uri[o.key[i]] = m[i] || "";
-        return uri;
-    }
-
-    var url_parts = parseUri(url);
+    var url_parts = u.parseUri(url);
     var hostname = url_parts.host;
+    
     for (var a in _cookie_jar) {
         if (a == hostname) {
             return [a, _cookie_jar[a]];
@@ -1508,10 +1491,7 @@ function get_appfetch_method(method_name) {
 function set_app_metadata(app, md, code) {
     // create a clean copy and delete keys that
     // could create security issues or other failures
-    var f = md.versions instanceof Array;
-    if (f) console.log("array");
     md = u.extend(true, {}, md);
-    if (f === !(md.versions instanceof Array)) console.log("flipped!")
     
     var skip_keys = {
         'source': true,
@@ -1542,7 +1522,6 @@ function set_app_metadata(app, md, code) {
     app.mounts = app.mounts || {};
     app.files = app.files || {};
     
-    //console.log(md.versions instanceof Array, app.versions.length)
     return app;
 };
 
@@ -2135,7 +2114,7 @@ _hostenv.finish_response = function () {
     var hdrs = {};
     for (var k in acre.response.headers) {
         var v = acre.response.headers[k];
-        if (v instanceof Array)
+        if (u.isArray(v))
             v = v.join('; ');
         hdrs[k.toLowerCase()] = v;
     };
