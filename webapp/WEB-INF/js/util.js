@@ -3,7 +3,9 @@ var exports = {
     parseUri: parseUri,
     extend: extend,
     each: each,
-    isArray: isArray
+    isArray: isArray,
+    isPlainObject: isPlainObject,
+    isFunction: isFunction
 };
 
 
