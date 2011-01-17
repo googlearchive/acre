@@ -59,7 +59,7 @@ if (typeof DataStore != 'undefined') {
 var server_host_base = _request.server_host_base;
 var freebase_service_url = _request.freebase_service_url;
 
-//---------------------------- globals / utils ---------------------------------------
+//----------------------------- globals ---------------------------------------
 
 var _DELIMITER_HOST = _hostenv.ACRE_HOST_DELIMITER_HOST;
 var _DELIMITER_PATH = _hostenv.ACRE_HOST_DELIMITER_PATH;
@@ -74,9 +74,45 @@ var _DEFAULT_APP = "helloworld.examples." + _DELIMITER_PATH;
 
 //------------------------------- Utils ---------------------------------------
 
-function escape_re(s) {
-  var specials = /[.*+?|()\[\]{}\\]/g;
-  return s.replace(specials, '\\$&');
+/*
+ * A subset of jQuery utils loaded as 'u':
+ *   u.each, u.extend, u.isArray, u.isPlainObject, 
+ *   u.isFunction
+ * 
+ * Plus a few more:
+ *   u.escape_re
+ */
+var util_scope = {};
+_hostenv.load_system_script("util.js", util_scope);
+var u = util_scope.exports;
+
+
+// helpers for common activities in acreboot
+function make_scope(start, style) {
+    // XXX find a more elegant way to do this
+
+    var copier = object;
+
+    if (style =='deep')
+        copier = arguments.callee;
+
+    start = start || _topscope;
+
+    function object(o) {
+        function F() {};
+        F.prototype = o;
+        return new F();
+    }
+
+    var scope = object(start);
+    for (var a in start) {
+        var o = start[a];
+        if (o && o instanceof Object && !(o instanceof Function)) {
+            scope[a] = copier(o);
+        }
+    }
+
+    return scope;
 }
 
 function compose_req_path(host, path, query_string) {
@@ -105,7 +141,7 @@ function decompose_req_path(req_path) {
         host = host.replace(/\:\d*$/,"");
         
         // normalize host relative to current acre host
-        var acre_host_re = new RegExp("^((.*)\.)?" + escape_re(server_host_base) + "$");
+        var acre_host_re = new RegExp("^((.*)\.)?" + u.escape_re(server_host_base) + "$");
         var foreign_host_re = new RegExp("^(.*\.)" + _DELIMITER_HOST + "$");
         
         var m = host.match(acre_host_re);
@@ -137,13 +173,13 @@ function decompose_req_path(req_path) {
 }
 
 function file_in_path(filename, path) {
-    var file_re = new RegExp(escape_re(filename) + "(\/.*)?$");
+    var file_re = new RegExp(u.escape_re(filename) + "(\/.*)?$");
     var in_path = false;
     var path_info = "";
     
     if (file_re.test(path)) {
         in_path = true;
-        path_info = path.replace(new RegExp("^" + escape_re(filename)),"");
+        path_info = path.replace(new RegExp("^" + u.escape_re(filename)),"");
         // XXX - add leading slash for backward-compatibility
         if (path_info === "") path_info = "/";
     } else {
@@ -159,106 +195,12 @@ function file_in_path(filename, path) {
     return [path_info, in_path];
 }
 
-// self-contained version of $.extend() from jQuery
-function extend() {
-    var options, name, src, copy, copyIsArray, clone,
-        target = arguments[0] || {},
-        i = 1,
-        length = arguments.length,
-        deep = false;
-    
-    function isFunction(o){
-        return typeof o === "function";
-    }
-    
-    function isArray(o) {
-        return o instanceof Array;
-    };
-    
-    function isPlainObject(o) {
-        if (!o || typeof (o) !== "object") {
-            return false;
-        }
-
-        var key;
-        for ( key in o ) {}
-
-        return key === undefined || Object.prototype.hasOwnProperty.call(o, key);
-    };
-
-    // Handle a deep copy situation
-    if ( typeof target === "boolean" ) {
-        deep = target;
-        target = arguments[1] || {};
-        // skip the boolean and the target
-        i = 2;
-    }
-
-    // Handle case when target is a string or something (possible in deep copy)
-    if ( typeof target !== "object" && !isFunction(target) ) {
-        target = {};
-    }
-
-    for ( ; i < length; i++ ) {
-        if ( (options = arguments[ i ]) != null ) {
-            for ( name in options ) {
-                src = target[ name ];
-                copy = options[ name ];
-                // Prevent never-ending loop
-                if ( target === copy ) {
-                    continue;
-                }
-                if ( deep && copy && ( isPlainObject(copy) || (copyIsArray = isArray(copy)) ) ) {
-                    if ( copyIsArray ) {
-                        copyIsArray = false;
-                        clone = src && isArray(src) ? src : [];
-                    } else {
-                        clone = src && isPlainObject(src) ? src : {};
-                    }
-                    target[ name ] = extend( deep, clone, copy );
-                } else if ( copy !== undefined ) {
-                    target[ name ] = copy;
-                }
-            }
-        }
-    }
-
-    return target;
-};
-
-function make_scope(start, style) {
-    // XXX find a more elegant way to do this
-
-    var copier = object;
-
-    if (style =='deep')
-        copier = arguments.callee;
-
-    start = start || _topscope;
-
-    function object(o) {
-        function F() {};
-        F.prototype = o;
-        return new F();
-    }
-
-    var scope = object(start);
-    for (var a in start) {
-        var o = start[a];
-        if (o && o instanceof Object && !(o instanceof Function)) {
-            scope[a] = copier(o);
-        }
-    }
-
-    return scope;
-}
-
 
 // helpers for backward-compatibility with the days of script_ids
 // it sure would be nice to get rid of these...
 function namespace_to_host(namespace) {
-    var host_re = new RegExp(escape_re('^' + _DEFAULT_HOSTS_PATH));
-    var acre_host_re = new RegExp(escape_re('^' + _DEFAULT_ACRE_HOST_PATH));
+    var host_re = new RegExp(u.escape_re('^' + _DEFAULT_HOSTS_PATH));
+    var acre_host_re = new RegExp(u.escape_re('^' + _DEFAULT_ACRE_HOST_PATH));
     
     if (host_re.test(namespace)) {
         namespace = namespace.replace(host_re, "");
@@ -379,10 +321,7 @@ acre.start_response = function (status, headers) {
     if (typeof headers == 'object') {
         // stupid merge - arguments override existing headers
         // some headers are patched in later though...
-        for (var k in headers) {
-            var v = headers[k];
-            acre.response.headers[k] = v;
-        }
+        u.extend(acre.response.headers, headers);
     }
 };
 
@@ -447,7 +386,7 @@ acre.request = {
     app_url : _request.request_app_url,
     protocol : _request.server_protocol, // XXX: how do we get the request protocol?
     method : _request.request_method,
-    base_path : _request.request_path_info.replace(new RegExp(escape_re(_request.path_info)+"$"), ""),
+    base_path : _request.request_path_info.replace(new RegExp(u.escape_re(_request.path_info)+"$"), ""),
     path_info : _request.path_info,                                                                 
     query_string : _request.query_string,
     headers : _request.headers,
@@ -1411,17 +1350,14 @@ var APPFETCH_ERROR_UNKNOWN = 1,
     APPFETCH_ERROR_NOT_FOUND = 4,
     APPFETCH_THUNK = 5;
 
-function make_appfetch_error(msg, code, extend, parent) {
+function make_appfetch_error(msg, code, info, parent) {
     msg = msg || 'Unknown Error';
     code = code || APPFETCH_ERROR_UNKNOWN;
-    extend = extend || {};
+    info = info || {};
     parent = parent || null;
 
     var e = new Error(msg);
-
-    for (var a in extend) {
-        e[a] = extend[a];
-    }
+    u.extend(e, info);
 
     e.__code__ = code;
     e.__parent__ = parent;
@@ -1568,35 +1504,31 @@ function get_appfetch_method(method_name) {
  *  Helper function for defaulting app metadata 
  *  and applying metadata files
  */
- 
-function set_app_metadata(app, md) {
-    // don't allow metadata files to override values
-    // that could create security issues or catastrophic failures
+
+function set_app_metadata(app, md, code) {
+    // create a clean copy and delete keys that
+    // could create security issues or other failures
+    var f = md.versions instanceof Array;
+    if (f) console.log("array");
+    md = u.extend(true, {}, md);
+    if (f === !(md.versions instanceof Array)) console.log("flipped!")
+    
     var skip_keys = {
         'source': true,
         'host': true,
         'hosts': true,
         'guid': true,
         'as_of': true,
+        'path': true,
         'id': true
     };
 
-    // splice remaining metadata onto the app
-    // be careful not to keep references to source objects
-    function splice_o(target, source) {
-        for (var key in source) {
-            if (key in skip_keys) continue;
-            if (typeof source[key] === 'object' && source[key] instanceof Array) {
-                target[key] = [].concat(source[key]);
-            } else if (typeof source[key] === 'object' && source[key] !== null) {
-                target[key] = target[key] || {};
-                splice_o(target[key], source[key]);
-            } else {
-                target[key] = source[key];
-            }
-        }
+    for (var key in skip_keys) {
+        delete md[key];
     }
-    splice_o(app, md);
+
+    // splice remaining metadata onto the app
+    u.extend(true, app, md);
 
     // initialize values used by acre
     if (app.host) {
@@ -1609,7 +1541,8 @@ function set_app_metadata(app, md) {
     app.versions = app.versions || [];
     app.mounts = app.mounts || {};
     app.files = app.files || {};
-
+    
+    //console.log(md.versions instanceof Array, app.versions.length)
     return app;
 };
 
@@ -1995,7 +1928,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
             var md = proto_require(compose_req_path(host), default_metadata);
             
             // XXX - probably should make a deep copy
-            // return extend(true, {}, md);
+            // return u.extend(true, {}, md);
             return md;
         };
 
@@ -2099,7 +2032,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
 
         // Create a good looking copy of script metadata 
         // this will be used in acre.current_script, etc.
-        var script_data = extend({}, ext_data, app_data.files[name]);
+        var script_data = u.extend({}, ext_data, app_data.files[name]);
         script_data.path_info = path_info;
         script_data.path = "//" + app_data.host + "/" + name;
         script_data.id = host_to_namespace(app_data.host) + "/" + name;
@@ -2132,7 +2065,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
 
         // copy script_data into a new object that we can decorate 
         // with methods for internal and handler use
-        var script = extend({}, script_data);
+        var script = u.extend({}, script_data);
                 
         script.get_content = get_appfetch_method(script.source).get_content;
 
@@ -2515,7 +2448,6 @@ for (var name in _topscope) {
 //----------------------------------- top-level ---------------------------------
 
 var handle_request = function () {
-    
     // Determine what path we're running:
     var request_path = null;
     
