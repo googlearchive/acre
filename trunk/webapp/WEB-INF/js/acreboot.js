@@ -1936,21 +1936,19 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
          * helper for the following functions (require, include, get_source)
          *
          * all take a path as the primary arugment, but
-         * optionally can take a metadata object in the first 
+         * optionally can take a metadata object in the second 
          * position to be spliced on to the context of the app.
          *
-         * ... or a version argument in the last position for 
-         * backward compatibility with freebase IDs
+         * ... or, for backward-compatibility, the metadata slot
+         *  can be a version string (path must be a freebase ID) 
          */
-        function get_sobj() {
-            var override_metadata,
-                path = arguments[0],
-                version = arguments[1];
-                
-            if (typeof path === "object") {
-                override_metadata = arguments[0];
-                path = arguments[1];
-                version = arguments[2];
+        function get_sobj(path, metadata) {
+            if (u.isPlainObject(metadata)) {
+                override_metadata = metadata;
+                version = undefined;
+            } else {
+                override_metadata = undefined;
+                version = metadata;
             }
             
             if (!path) {
@@ -1971,25 +1969,25 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
             return sobj;
         }
 
-        aug_scope.acre.require = function(path) {
+        aug_scope.acre.require = function(path, metadata) {
             var scope = (this !== aug_scope.acre) ? this : undefined;
 
-            var sobj = get_sobj.apply(this, arguments);
+            var sobj = get_sobj(path, metadata);
             
             return sobj.to_module(scope);
         };
     
         // XXX to_http_response() is largely unimplemented
-        aug_scope.acre.include = function(path) {
+        aug_scope.acre.include = function(path, metadata) {
             var scope = (this !== aug_scope.acre) ? this : undefined;
 
-            var sobj = get_sobj.apply(this, arguments);
+            var sobj = get_sobj(path, metadata);
 
             return sobj.to_http_response(scope).body;
         };
 
-        aug_scope.acre.get_source = function(path) {
-            var sobj = get_sobj.apply(this, arguments);
+        aug_scope.acre.get_source = function(path, metadata) {
+            var sobj = get_sobj(path, metadata);
 
             return sobj.get_content().body;
         };
