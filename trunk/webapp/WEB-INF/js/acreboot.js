@@ -329,9 +329,7 @@ acre.start_response = function (status, headers) {
  *   @param str string or markup to append
  */
 acre.write = function () {
-    for (var i = 0; i < arguments.length; i++ ) {
-        var arg = arguments[i];
-
+    u.each(arguments, function(i, arg) {
         // XXX - shouldn't have handler-specific code here
         if (typeof arg == 'object' && arg !== null &&
             (typeof arg.toMarkupList === 'function' || typeof arg.toMarkup === 'function')) {
@@ -341,8 +339,8 @@ acre.write = function () {
         if (typeof arg != 'string' && !(arg instanceof Binary))
             arg = '' + arg;
 
-        _hostenv.write(arg);
-    }
+        _hostenv.write(arg);        
+    });
 };
 
 /**
@@ -1259,8 +1257,6 @@ acre.handlers.acre_script = {
 
 acre.handlers.passthrough = {
     'to_js': function(script) {
-        // we don't need to compile in a scope for passthrough
-        delete script.scope;
         return "var module = ("+JSON.stringify(script.get_content())+");";
     },
     'to_module': function(compiled_js, script) {
@@ -1487,7 +1483,6 @@ function get_appfetch_method(method_name) {
  *  Helper function for defaulting app metadata 
  *  and applying metadata files
  */
-
 function set_app_metadata(app, md, code) {
     // create a clean copy and delete keys that
     // could create security issues or other failures
@@ -1598,8 +1593,7 @@ var disk_inventory_path = function(app, disk_path) {
     var files = _file.files(disk_path);
     if (!files) return null;
 
-    for (var a=0; a < files.length; a++) {
-        var file = files[a];
+    u.each(files, function(i, file) {
         var f = new _file(disk_path+"/"+file, false);
         var file_data = {
             name: file
@@ -1614,8 +1608,8 @@ var disk_inventory_path = function(app, disk_path) {
             file_data.content_hash = disk_path+"/"+file+f.mtime;
             res.files[file] = file_data;
         }
-        delete f;
-    }
+        delete f;        
+    });
     
     return res;
 }
@@ -1691,14 +1685,12 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         // extension from when on-disk apps stripped extensions
 
         // is there a "preferred" extension?
-        var ext_order = ["none", "sjs", "mjt"];
-        for (var e=0; e < ext_order.length; e++) {
-            var ext = ext_order[e];
+        u.each(["none", "sjs", "mjt"], function(i, ext) {
             if (filenames[ext]) {
                 filename = filenames[ext];
-                break;
+                return false;
             }
-        }
+        });
 
         // otherwise grab first
         if (!filename) {
@@ -1767,18 +1759,18 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
     set_app_metadata(app_defaults, default_metadata);
 
     // retrieve app metadata using appfetchers
-    var app_data = null;
-    var method = {};
-    for (var a=0; a < appfetch_methods.length; a++) {
-        method = appfetch_methods[a];
+    var method,
+        app_data;
+    u.each(appfetch_methods, function(i, m) {
         try {
+            method = m;
             app_data = method.fetcher(host, app_defaults);
-            break;
+            return false;
         } catch (e if e.__code__ == APPFETCH_ERROR_NOT_FOUND) {
             app_data = null;
-            continue;
-        }
-    }
+            return true;
+        }        
+    });
 
     if (app_data === null) {
         // cache complete misses in the request cache
@@ -1812,15 +1804,14 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         // only last for ten minutes, since they are considered a
         // front-line caching mechanism, and thus require a
         // shift+refresh to refresh.
-        for (var l=0; l < app_data.hosts.length; l++) {
-            var host = app_data.hosts[l];
+        u.each(app_data.hosts, function(i, host) {
             if (ttl < 0) {
               _cache.put("HOST:"+host, ckey);
             } else {
               _cache.put("HOST:"+host, ckey, ttl);
             }
             syslog.info({key:"HOST:"+host, value: ckey, ttl: ttl }, 'appfetch.cache.write.host');
-        }
+        });
     }
 
     // Always put it in the request-level cache. Using the
@@ -1828,10 +1819,9 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
     // whirlycott, for getting the same metadata in a single request
     // cycle. Metadata is directly linked to the link keys (in this
     // case, there should only be one link key)
-    for (var l=0; l < app_data.hosts.length; l++) {
-        var host = app_data.hosts[l];
+    u.each(app_data.hosts, function(i, host) {
         METADATA_CACHE[host] = app_data;
-    }
+    });
 
     // Note that we wait till after we've cached the app_data before
     // trying to find the specific file we're interested in.
@@ -2112,12 +2102,12 @@ _hostenv.finish_response = function () {
     // but we need it so we can easily modify header values
 
     var hdrs = {};
-    for (var k in acre.response.headers) {
-        var v = acre.response.headers[k];
-        if (u.isArray(v))
+    u.each(acre.response.headers, function(k, v) {
+        if (u.isArray(v)) {
             v = v.join('; ');
+        }
         hdrs[k.toLowerCase()] = v;
-    };
+    });
     acre.response.headers = hdrs;
 
     // add additional headers to the response
@@ -2534,8 +2524,7 @@ var handle_request = function () {
 
     // Work our way down the list until we find one that works:
     var script = null;
-    for (var a=0; a < fallbacks.length; a++) {
-        var fpath = fallbacks[a];
+    u.each(fallbacks, function(i, fpath) {
         try {            
             syslog(fpath, "fallbacks.route_to");
             script = proto_require(fpath, default_metadata);
@@ -2549,9 +2538,9 @@ var handle_request = function () {
             syslog(fpath, "fallbacks.not_found");
         } else {
             syslog(fpath, "fallbacks.found");
-            break;
-        }
-    }
+            return false;
+        }        
+    });
 
     // this is a catastrophic lookup failure
     if (script == null) {
