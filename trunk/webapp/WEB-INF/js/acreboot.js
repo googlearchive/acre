@@ -1483,11 +1483,11 @@ function get_appfetch_method(method_name) {
  *  Helper function for defaulting app metadata 
  *  and applying metadata files
  */
-function set_app_metadata(app, md, code) {
+function set_app_metadata(app, md) {
+    app = app || {};
+    
     // create a clean copy and delete keys that
     // could create security issues or other failures
-    md = u.extend(true, {}, md);
-    
     var skip_keys = {
         'source': true,
         'host': true,
@@ -1498,8 +1498,10 @@ function set_app_metadata(app, md, code) {
         'id': true
     };
 
-    for (var key in skip_keys) {
-        delete md[key];
+    if (md) {
+        for (var key in skip_keys) {
+            delete md[key];
+        }        
     }
 
     // splice remaining metadata onto the app
@@ -1651,7 +1653,7 @@ for (var i=0; i < custom_methods.length; i++) {
 
 // ------------------------------------------ proto_require ------------------------------------
 
-var proto_require = function(req_path, default_metadata, resolve_only) {
+var proto_require = function(req_path, default_metadata, override_metadata, resolve_only) {
     // NOTE: get_file and normalize_path both rely 
     // on app_data already having been defined
     
@@ -1734,17 +1736,19 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
             // Mode 3: relative require
 
             // check whether there's a matching mount
-            var path_segs = path.split("/");
-            while (path_segs.length) {
-                var mpath = path_segs.join("/");
-                if (mpath in app_data.mounts) {
-                    return app_data.mounts[mpath] + path.replace(mpath, "");
+            if (app && app.mounts) {
+                var path_segs = path.split("/");
+                while (path_segs.length) {
+                    var mpath = path_segs.join("/");
+                    if (mpath in app.mounts) {
+                        return app.mounts[mpath] + path.replace(mpath, "");
+                    }
+                    path_segs.pop();
                 }
-                path_segs.pop();
             }
 
             // otherwise just push current host back on
-            return compose_req_path(app_data.host, path);
+            return compose_req_path(host, path);
         }
     }
     
@@ -1752,15 +1756,10 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
     var [host, path] = decompose_req_path(req_path);
 
     // setup default app metadata
-    var app_defaults = {
-        host: host
-    };
-    default_metadata = default_metadata || {};
-    set_app_metadata(app_defaults, default_metadata);
+    var app_defaults = set_app_metadata({host: host}, default_metadata);
 
     // retrieve app metadata using appfetchers
-    var method,
-        app_data;
+    var method, app_data;
     u.each(appfetch_methods, function(i, m) {
         try {
             method = m;
@@ -1823,6 +1822,14 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         METADATA_CACHE[host] = app_data;
     });
 
+
+    // Create a clean copy and apply override metadata 
+    // do this after caching so overrides and direct 
+    // maniuplation by scripts are limited to this scope
+    var app = u.extend(true, {}, app_data);
+    set_app_metadata(app, override_metadata);
+
+
     // Note that we wait till after we've cached the app_data before
     // trying to find the specific file we're interested in.
     var filename, path_info;
@@ -1833,8 +1840,8 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
             var fn = path_segs.join("/");
             path_info = file_in_path(fn, path)[0];
             
-            if (app_data.mounts[fn] && (path_info.length > 1)) {
-                var mount_path = normalize_path(app_data.mounts[fn] + path_info);
+            if (app.mounts[fn] && (path_info.length > 1)) {
+                var mount_path = normalize_path(app.mounts[fn] + path_info);
                 return proto_require(mount_path, default_metadata, resolve_only);
             }
             
@@ -1849,13 +1856,13 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
     } else {
         // Provide the app metadata if proto_require is called
         // without a path.  Used by acre.get_metadata().
-        return app_data;
+        return app;
     }
-    
-    
+
+
     // return just found path for acre.resolve()
     if (resolve_only) {
-        return "//" + app_data.host + "/" + filename;
+        return "//" + app.host + "/" + filename;
     }
 
     
@@ -1875,46 +1882,41 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         if (aug_scope == _request_scope && script.name.indexOf("not_found.") !== 0) {
             aug_scope.acre.request.script = script;
             
-            if (app_data.error_page) {
-              _hostenv.error_handler_path = normalize_path(app_data.error_page);
+            if (app.error_page) {
+              _hostenv.error_handler_path = normalize_path(app.error_page);
             }
 
             // XXX - freebase appfetch method-specific hacks
-            if (app_data.freebase && app_data.freebase.write_user) {
-                _hostenv.write_user = app_data.freebase.write_user;
+            if (app.freebase && app.freebase.write_user) {
+                _hostenv.write_user = app.freebase.write_user;
             }
-            if (app_data.freebase &&
-                app_data.freebase.service_url &&
-                /^http(s?):\/\//.test(app_data.freebase.service_url))
-                acre.freebase.set_service_url(app_data.freebase.service_url);
+            if (app.freebase &&
+                app.freebase.service_url &&
+                /^http(s?):\/\//.test(app.freebase.service_url))
+                acre.freebase.set_service_url(app.freebase.service_url);
 
             deprecate(aug_scope);
         }
-    
+
         aug_scope.acre.get_metadata = function(path) {
             // ensure we only have the host part
             var [host] = decompose_req_path(normalize_path(path, null, true, false));
-            var md = proto_require(compose_req_path(host), default_metadata);
-            
-            // XXX - probably should make a deep copy
-            // return u.extend(true, {}, md);
-            return md;
+            return proto_require(compose_req_path(host), default_metadata);
         };
 
         aug_scope.acre.mount = function(path, local_path) {
-            if (typeof local_path !== 'string') throw new Error("Mount point must be a string path");
-            script.app.mounts[local_path] = normalize_path(path);
+            app.mounts[local_path] = normalize_path(path);
         };
-    
+
         aug_scope.acre.resolve = function(path) {
-            return proto_require(normalize_path(path), default_metadata, true);
+            return proto_require(normalize_path(path), default_metadata, null, true);
         };
-    
+
         aug_scope.acre.route = function(path) {
             path = normalize_path(path, null, true);
         
             var [h, p, qs] = decompose_req_path(path);
-            var hostpath = app_data.host;
+            var hostpath = app.host;
 
             // AcreExitException is the only mechanism we have 
             // for cleanly restarting a request
@@ -1929,14 +1931,34 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
             _hostenv.error_handler_path = path;
         };
 
-    
-        function get_sobj(path, version) {
+
+        /*
+         * helper for the following functions (require, include, get_source)
+         *
+         * all take a path as the primary arugment, but
+         * optionally can take a metadata object in the first 
+         * position to be spliced on to the context of the app.
+         *
+         * ... or a version argument in the last position for 
+         * backward compatibility with freebase IDs
+         */
+        function get_sobj() {
+            var override_metadata,
+                path = arguments[0],
+                version = arguments[1];
+                
+            if (typeof path === "object") {
+                override_metadata = arguments[0];
+                path = arguments[1];
+                version = arguments[2];
+            }
+            
             if (!path) {
                 throw new Error("No URL provided");
             }    
               
             path = normalize_path(path, version);
-            var sobj = proto_require(path, default_metadata);
+            var sobj = proto_require(path, default_metadata, override_metadata);
         
             if (sobj === null) {
                 throw new Error('Could not fetch data from ' + path);
@@ -1949,28 +1971,25 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
             return sobj;
         }
 
-        aug_scope.acre.require = function(path, version) {
+        aug_scope.acre.require = function(path) {
             var scope = (this !== aug_scope.acre) ? this : undefined;
 
-            var sobj = get_sobj(path, version);
+            var sobj = get_sobj.apply(this, arguments);
+            
             return sobj.to_module(scope);
         };
     
         // XXX to_http_response() is largely unimplemented
-        aug_scope.acre.include = function(path, version) {
+        aug_scope.acre.include = function(path) {
             var scope = (this !== aug_scope.acre) ? this : undefined;
 
-            var sobj = get_sobj(path, version);
+            var sobj = get_sobj.apply(this, arguments);
 
             return sobj.to_http_response(scope).body;
         };
 
-        aug_scope.acre.get_source = function(path, version) {
-            var sobj = get_sobj(path, version);
-
-            if (sobj === null) {
-                throw new Error('Could not fetch data from ' + path);
-            }
+        aug_scope.acre.get_source = function(path) {
+            var sobj = get_sobj.apply(this, arguments);
 
             return sobj.get_content().body;
         };
@@ -1982,7 +2001,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
     // Acre's internal representation of a script 
     // used to create modules (acre.require) or
     // geenrate output (http request, acre.include)
-    function Script(app_data, name, path_info) {
+    function Script(app, name, path_info) {
         
         // look whether there's relevant backfill metadata in 
         // the 'extensions' dictionary in the app metadata.
@@ -1992,8 +2011,8 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
         while (exts.length) {
           var ext = exts.join(".");
           var ext_data = {};
-          if (ext && app_data.extensions && app_data.extensions[ext]) {
-              ext_data = app_data.extensions[ext];
+          if (ext && app.extensions && app.extensions[ext]) {
+              ext_data = app.extensions[ext];
               break;
           }
           exts.shift();
@@ -2001,28 +2020,28 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
 
         // Create a good looking copy of script metadata 
         // this will be used in acre.current_script, etc.
-        var script_data = u.extend({}, ext_data, app_data.files[name]);
+        var script_data = u.extend({}, ext_data, app.files[name]);
         script_data.path_info = path_info;
-        script_data.path = "//" + app_data.host + "/" + name;
-        script_data.id = host_to_namespace(app_data.host) + "/" + name;
+        script_data.path = "//" + app.host + "/" + name;
+        script_data.id = host_to_namespace(app.host) + "/" + name;
         // so.source_url ?
         
         // only copy some of the app metadata
         script_data.app = {
-          source: app_data.source,
-          path: "//" + app_data.host,
-          host: app_data.host,
-          hosts: app_data.hosts,
-          guid: app_data.guid,
-          as_of: app_data.as_of,
-          id: app_data.id,
-          app_id: app_data.id,       /* XXX - remove once freebase-site deployed */
-          app_guid: app_data.guid,   /* XXX - remove once freebase-site deployed */
-          mounts: app_data.mounts,
-          version: (app_data.versions.length > 0 ? app_data.versions[0] : null),
-          versions: app_data.versions,
+          source: app.source,
+          path: "//" + app.host,
+          host: app.host,
+          hosts: app.hosts,
+          guid: app.guid,
+          as_of: app.as_of,
+          id: app.id,
+          app_id: app.id,       /* XXX - remove once freebase-site deployed */
+          app_guid: app.guid,   /* XXX - remove once freebase-site deployed */
+          mounts: app.mounts,
+          version: (app.versions.length > 0 ? app.versions[0] : null),
+          versions: app.versions,
           base_url : acre.host.protocol + "://" + 
-              (app_data.host.match(/\.$/) ? app_data.host.replace(/\.$/, "") : (app_data.host + "." + acre.host.name)) +
+              (app.host.match(/\.$/) ? app.host.replace(/\.$/, "") : (app.host + "." + acre.host.name)) +
               (acre.host.port !== 80 ? (":" + acre.host.port) : "")              
         };
 
@@ -2044,11 +2063,11 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
             this.scope = scope = scope_augmentation(script_data, scope);
 
             // now that the scope's all set up, we can finally load our handler
-            _handler = _load_handler(scope, this.handler, app_data.handlers);
+            _handler = _load_handler(scope, this.handler, app.handlers);
 
             // let's make sure we don't end up with the cached compiled_js 
             // from a different file version or different handler
-            var class_name = compose_req_path(app_data.host, name);
+            var class_name = compose_req_path(app.host, name);
             var hash =  this.content_hash + "." + _handler.path;
             this.linemap = null;
 
@@ -2080,7 +2099,7 @@ var proto_require = function(req_path, default_metadata, resolve_only) {
     }
 
 
-    return Script(app_data, filename, path_info);
+    return Script(app, filename, path_info);
 };
 
 
