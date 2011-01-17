@@ -1,10 +1,9 @@
 var exports = {
     escape_re: escape_re,
+    parseUri: parseUri,
     extend: extend,
     each: each,
-    isFunction: isFunction,
-    isArray: isArray,
-    isPlainObject: isPlainObject
+    isArray: isArray
 };
 
 
@@ -14,7 +13,28 @@ function escape_re(s) {
 }
 
 
-// self-contained version of some of the jQuery utils
+/*
+ * adapted from parseUri 1.2.1
+ * http://stevenlevithan.com/demo/parseuri/js/assets/parseuri.js
+ */
+function parseUri(str) {
+    var o = {
+        key: ["source","protocol","authority","userInfo","user","password","host",
+              "port","relative","path","directory","file","query","anchor"],
+        parser: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/
+    };
+    var m = o.parser.exec(str);
+    var uri = {};
+    var i = 14;
+    while (i--) uri[o.key[i]] = m[i] || "";
+    return uri;
+}
+
+
+/* 
+ * adaptation of some of the jQuery utils
+ * http://jquery.com
+ */
 var hasOwn = Object.prototype.hasOwnProperty,
     class2type = {};
 
