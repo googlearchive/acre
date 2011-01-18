@@ -2019,14 +2019,14 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
         // this will be used in acre.current_script, etc.
         var script_data = u.extend({}, ext_data, app.files[name]);
         script_data.path_info = path_info;
-        script_data.path = "//" + app.host + "/" + name;
+        script_data.path = compose_req_path(app.host, name);
         script_data.id = host_to_namespace(app.host) + "/" + name;
         // so.source_url ?
         
         // only copy some of the app metadata
         script_data.app = {
           source: app.source,
-          path: "//" + app.host,
+          path: compose_req_path(app.host),
           host: app.host,
           hosts: app.hosts,
           guid: app.guid,
@@ -2067,7 +2067,7 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
 
             // let's make sure we don't end up with the cached compiled_js 
             // from a different file version or different handler
-            var class_name = compose_req_path(app.host, name);
+            var class_name = this.path;
             var hash =  this.content_hash + "." + _handler.path;
             this.linemap = null;
 
@@ -2576,7 +2576,7 @@ var handle_request = function () {
 
     // This information is needed by the error page
     _hostenv.script_name = script.name;
-    _hostenv.script_path = compose_req_path(script.app.host, script.name);
+    _hostenv.script_path = script.path;
     _hostenv.script_host_path = compose_req_path(script.app.host);
 
     // We need this information to generate things like the appeditor url, and
