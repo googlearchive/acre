@@ -16,7 +16,7 @@ test('metadata file loading',function() {
     ok(file.handler === 'custom', "handler wasn't set");
 });
 
-test('test mount points',function() {
+test('mount points',function() {
     var metadata_file = acre.require(qa_app + '/metadata/mount_file');
     ok(metadata_file.body == 'success', "couldn't find mount_file at metadata mount point");
 
@@ -31,6 +31,33 @@ test('custom handler triggering',function() {
 
     var md_file = acre.require('//metadata.qatests.apps.freebase.dev/not_custom');
     ok(md_file.body == 'success', "metadata-triggered handler didn't work");
+});
+
+test('require with metadata',function() {
+    var md = {
+        "extensions" : {
+            "cst" : {
+                "handler" : "passthrough"
+            }
+        },
+        "files" : {
+            "not_custom.html": {
+                "handler": "passthrough"
+            },
+            "not_custom2.html": {
+                "handler": "custom"
+            }
+        }
+    };
+    var file1 = acre.require('//metadata.qatests.apps.freebase.dev/custom.cst', md);
+    ok(file1.body == 'fail', "metadata argument didn't override extension map");
+
+    var file2 = acre.require('//metadata.qatests.apps.freebase.dev/not_custom2.html', md);
+    ok(file2.body == 'success', "metadata argument didn't override default handler");
+
+    var file3 = acre.require('//metadata.qatests.apps.freebase.dev/not_custom.html', md);
+    ok(file3.body == 'fail', "metadata argument didn't override in-app metadata");
+
 });
 
 acre.test.report();
