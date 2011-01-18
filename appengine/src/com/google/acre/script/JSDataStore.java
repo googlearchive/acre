@@ -207,7 +207,6 @@ public class JSDataStore extends JSObject {
                 }
                 
                 if (value instanceof String || value instanceof Boolean || value instanceof Number) {
-                    System.out.println("**** Set property: " + path + prop + " -> " + value + " [" + value.getClass().getName() + "]");
                     entity.setProperty(path + prop, value);
                 } else if (value instanceof Scriptable) {
                     index_object(path + prop + ".", (Scriptable) value, entity);
@@ -289,7 +288,5 @@ public class JSDataStore extends JSObject {
             // this should never happen but better safe than sorry
             throw new JSConvertableException("Sorry, don't know how to index this type of object (" + className + ")").newJSException(_scope);
         }
-        
-        System.out.println("**** Query: " + query);
     }
 }
