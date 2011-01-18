@@ -1280,15 +1280,14 @@ acre.handlers.binary = {
     }
 };
 
-// helper for .to_module() in proto_require
-var _load_handler = function(scope, handler_name, handlers /* optional dict of handler paths */) {
+// used by script.to_module() in proto_require
+var _load_handler = function(scope, handler_name, handler_path) {
+    var handler;
+    
     // default to passthrough handler (safest)
     handler_name = handler_name || "passthrough";
 
-    // check whether it's a custom handler declared in a metadata file
-    // ... or one of the built-in handlers
-    if (handlers && handlers[handler_name]) {
-        var handler_path = handlers[handler_name];
+    if (handler_path) {
         handler = scope.acre.require(handler_path).handler();
         scope.acre.handlers[handler_name] = handler;
     } else if (scope.acre.handlers[handler_name]){
@@ -2061,7 +2060,10 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
             this.scope = scope = scope_augmentation(script_data, scope);
 
             // now that the scope's all set up, we can finally load our handler
-            _handler = _load_handler(scope, this.handler, app.handlers);
+            var handler_path = (app.handlers && app.handlers[this.handler]) ? 
+                                normalize_path(app.handlers[this.handler]) : 
+                                undefined;
+            _handler = _load_handler(scope, this.handler, handler_path);
 
             // let's make sure we don't end up with the cached compiled_js 
             // from a different file version or different handler
