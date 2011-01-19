@@ -20,6 +20,7 @@ var startup_time = new Date();
 // make a private copy of the objects before
 //  they are wiped out from the global namespace.
 // accessible reference to it.
+
 var _topscope = this;
 var _hostenv = PROTECTED_HOSTENV;
 var _request = ACRE_REQUEST;
@@ -33,6 +34,7 @@ var _json = new JSON();
 // with a whitelist instead of this blacklist.  most of the
 // global properties aren't enumerable so it's impossible to
 // whitelist them here within javascript
+
 delete PROTECTED_HOSTENV;
 delete ACRE_REQUEST;
 delete KeyStore;
@@ -286,14 +288,6 @@ if (_hostenv.ACRE_DEVELOPER_MODE) {
 
 acre.version = new String(_request.version);
 
-if (_request.server.indexOf("jetty") > -1) {
-    acre.server = "acre";
-} else if (_request.server.indexOf("app engine") > -1) {
-    acre.server = "appengine";
-} else {
-    acre.server = new String(_request.server);
-}
-
 /**
  *   begin the http response.
  *
@@ -365,11 +359,20 @@ acre.exit = function () {
 
 // ------------------------------- acre.host -----------------------------------------
 
+if (_request.server.indexOf("jetty") > -1) {
+    var server_type = "acre_server";
+} else if (_request.server.indexOf("app engine") > -1) {
+    var server_type = "appengine";
+} else {
+    var server_type = new String(_request.server);
+}
+
 acre.host = {
     protocol : _request.server_protocol,
     name : _request.server_host_base,
     dev_name : _request.server_host,
-    port : _request.server_port
+    port : _request.server_port,
+    server : server_type
 };
 
 //-------------------------------- acre.request -----------------------------------------
