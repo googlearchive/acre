@@ -1,6 +1,6 @@
 acre.require('/test/lib').enable(this);
 
-var u = acre.require("__utils__");
+var u = acre.require.call(this, "__utils__");
 
 // --------------------- sync urlfetch ---------------------------------
 
