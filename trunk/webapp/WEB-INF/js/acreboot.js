@@ -287,17 +287,6 @@ if (_hostenv.ACRE_DEVELOPER_MODE) {
 acre.version = new String(_request.version);
 
 /**
- * return a fully qualified development URL of the given app
- */
-acre.make_dev_url = function (appid, version) {
-    var protocol = acre.request.protocol;
-    var port = acre.request.server_port;
-    version = (typeof version != 'undefined') ? version + '.' : '';
-    port = ((protocol == 'http' && port != 80) || (protocol == 'https' && port != 443)) ? ":" + port : '';
-    return protocol + "://" + version + namespace_to_host(appid) + port;
-};
-
-/**
  *   begin the http response.
  *
  *   The Content-type header, if specified, is handled specially.
@@ -2048,8 +2037,6 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
           guid: app.guid,
           as_of: app.as_of,
           id: app.id,
-          app_id: app.id,       /* XXX - remove once freebase-site deployed */
-          app_guid: app.guid,   /* XXX - remove once freebase-site deployed */
           mounts: app.mounts,
           version: (app.versions.length > 0 ? app.versions[0] : null),
           versions: app.versions,
