@@ -79,8 +79,7 @@ def drive_app(app,color):
             out.write(colors.RESET)
         out.write("\n")
         if failures > 0:
-            fail_log += get_fail_log(test_results)
-            fail_log += "-"*80 + "\n"
+            fail_log += "\n" + get_fail_log(test_results)
         
     ret = 0
     out.write("\n")
@@ -96,23 +95,22 @@ def drive_app(app,color):
         out.write(colors.RESET)
     out.write("\n")
     if total_tests == 0:
-        out.write("no tests were found or run\n")
+        out.write("\nWARNING: no tests were found or run\n")
         ret = 1
     if fail_log: 
-        print "*** failures ***"
-        print "-"*80
+        out.write("\nFAILURES " + ("-" * 70) + "\n")
         print fail_log
     return ret
 
 def get_fail_log(obj):
-    out = obj['run_url'] + "\n"
+    out = " " + obj['run_url'] + "\n"
     for o in obj['modules']:
         testout = ""
         mname = o['name']
         if mname == "DEFAULT":
             mname = ""
         else:
-            mname = " [%s]" % mname
+            mname = "  [%s]" % mname
         for t in o['tests']:
             name = t['name']
             if t.get('log') is None: continue
@@ -121,9 +119,9 @@ def get_fail_log(obj):
                 msg = l.get('message')
                 if not msg: msg = "fail but no message found"
                 if res is False or res is None:
-                    testout += "  %s\n" % msg
+                    testout += "    %s\n" % msg
         if testout:
-            out +=  "%s%s:\n%s" % (name, mname, testout)
+            out += "   %s%s:\n%s" % (name, mname, testout)
     return out
 
 #-----------------------------------------------------------------------# 
