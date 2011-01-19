@@ -8,7 +8,7 @@ var currentModule;
 
 var currentFile = {
   file:acre.request.script.name,
-  run_url: acre.make_dev_url(acre.request.script.app.id) + '/' + acre.request.script.name,
+  run_url: make_dev_url(acre.request.script.app.id) + '/' + acre.request.script.name,
   modules:[],
   total:null,
   failures:null
@@ -29,6 +29,18 @@ function extend(a, b) {
     a[prop] = b[prop];
   }
   return a;
+}
+
+function get_app_path() {
+  //TODO: what's the acre way to get the app_path?
+  return '//' + (acre.request.server_name).replace('.'+acre.host.name,'');  
+}
+
+function make_dev_url(app_path) {
+    var protocol = acre.request.protocol;
+    var port = acre.request.server_port;
+    port = ((protocol == 'http' && port != 80) || (protocol == 'https' && port != 443)) ? ":" + port : '';
+    return protocol + ":" + app_path + '.' + acre.host.name + port;
 }
 
 function currentTest() {
