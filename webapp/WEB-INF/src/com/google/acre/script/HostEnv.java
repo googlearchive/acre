@@ -311,7 +311,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
             @SuppressWarnings("unchecked")
             Class<? extends Scriptable> jsDataStoreResultsIteratorClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.script.JSDataStoreResultsIterator");
-            
+
             try {
                 ScriptableObject.defineClass(scope, jsDataStoreClass, false, true);
                 ScriptableObject.defineClass(scope, jsDataStoreResultsClass, false, true);
@@ -325,6 +325,23 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             }
         } catch (ClassNotFoundException e1) {
             syslog(Level.INFO, "hostenv.datastore.init.failed", "DataStore provider not found and will not be present");
+        }
+
+        try {
+            @SuppressWarnings("unchecked")
+            Class<? extends Scriptable> jsTaskQueueClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.script.JSTaskQueue");
+
+            try {
+                ScriptableObject.defineClass(scope, jsTaskQueueClass, false, true);
+            } catch (IllegalAccessException e) {
+                syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load TaskQueue object: " + e);
+            } catch (InstantiationException e) {
+                syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load TaskQueue object: " + e);
+            } catch (InvocationTargetException e) {
+                syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load TaskQueue object: " + e);
+            }
+        } catch (ClassNotFoundException e1) {
+            syslog(Level.INFO, "hostenv.taskqueue.init.failed", "TaskQueue provider not found and will not be present");
         }
         
         return scope;

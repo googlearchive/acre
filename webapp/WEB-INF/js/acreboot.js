@@ -55,6 +55,12 @@ if (typeof DataStore != 'undefined') {
     delete DataStore;
 }
 
+// obtain taskqueue if present and remove from scope
+if (typeof TaskQueue != 'undefined') {
+    var _taskqueue = new TaskQueue();
+    delete TaskQueue;
+}
+
 // these values are copied here to avoid triggering a deprecation warning when they are accessed later.
 var server_host_base = _request.server_host_base;
 var freebase_service_url = _request.freebase_service_url;
@@ -865,13 +871,23 @@ acre.keystore.remove = function (name) {
 
 //------------------------ datastore --------------------------
 
-if (_datastore) { // the _ds object won't be available in all environments so we need to check first
+if (_datastore) { // the _datastore object won't be available in all environments so we need to check first
     var store_scope = {};
     store_scope.syslog = syslog;
     store_scope.store = _datastore;
     store_scope.acreboot = _topscope;
     _hostenv.load_system_script('datastore.js', store_scope);
     store_scope.augment(acre);
+}
+
+//------------------------ taskqueue --------------------------
+
+if (_taskqueue) { // the _taskqueue object won't be available in all environments so we need to check first
+    var queue_scope = {};
+    queue_scope.syslog = syslog;
+    queue_scope.queue = _taskqueue;
+    _hostenv.load_system_script('taskqueue.js', queue_scope);
+    queue_scope.augment(acre);
 }
 
 // ------------------------ acre.hash ------------------------------

@@ -1,8 +1,6 @@
 
 var augment;
 
-var Error = acreboot.Error;
-
 (function() {
 
     augment = function (obj) {
