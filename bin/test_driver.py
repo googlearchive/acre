@@ -61,8 +61,8 @@ def drive_app(app,color):
     for t in results['testfiles']:
         test_url = t['run_url']
         test_results = drive_test(test_url)
-        tests = test_results['total']
-        failures = test_results['failures']
+        tests = test_results['total'] or 0
+        failures = test_results['failures'] or 0
         total_tests += tests
         total_failures += failures
         test_name = test_url.split("test_")[1] + " "

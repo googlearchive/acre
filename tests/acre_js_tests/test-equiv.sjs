@@ -1,5 +1,5 @@
-module("equiv");
 
+module("equiv");
 
 test("Primitive types and constants", function () {
     equals(QUnit.equiv(null, null), true, "null");
@@ -1437,4 +1437,3 @@ test("Test that must be done at the end because they extend some primitive's pro
     // between RegExp and Function constructor because typeof on a RegExpt instance is "function"
     equals(QUnit.equiv(function () {}, re), false, "Same conversely, but ensures that function and regexp are distinct because their constructor are different");
 });
-

@@ -2,9 +2,7 @@
 // http://tests.test.dev.acre.z/qunit_basic?output=json&mode=discover
 // http://tests.test.dev.acre.z/qunit_basic?output=json
 
-// convert 'PATH/test/tests' to 'PATH/test/lib'
-var TLIB = (acre.current_script.app.id).replace(/\/[^\/]+$/,'/lib');
-acre.require(TLIB).enable(this);
+acre.require("/test/lib").enable(this);
 
 //m0
 test('minimum test',function() {

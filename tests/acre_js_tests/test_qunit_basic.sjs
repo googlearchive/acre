@@ -16,20 +16,20 @@ test('check /acre/test?mode=listfiles returns list of run_urls',function() {
   var response_str = acre.urlfetch(testurl).body;
   var response = JSON.parse(response_str);
   ok( response.length > 3, "We expect to see plenty of test_files");
-  ok( /http\S+tests.test\S+test_qunit_basic/.test(response_str), 'This file should appear in the list of test files urls');
-  ok( !(/acre-tests.willmoffat.user/.test(response_str)),        'Tests for dependent libs should NOT show up');
+  ok( /http\S+test_qunit_basic/.test(response_str), 'This file should appear in the list of test files urls');
+  ok( !(/acre-tests.willmoffat.user/.test(response_str)), 'Tests for dependent libs should NOT show up');
 });
 
-test('check /acre/test?mode=listfiles&recurse=1 returns list of run_urls',function() {
+// TODO(SM): re-enable once we have dependent tests
+//test('check /acre/test?mode=listfiles&recurse=1 returns list of run_urls',function() {
   // we don't use  acre.test.urlfetch because we're not doing a file based test
-  var testurl = acre.request.base_url+'acre/test?mode=listfiles&recurse=1';
-  var response_str = acre.urlfetch(testurl).body;
-  var response = JSON.parse(response_str);
-  ok( response.length > 3, "We expect to see plenty of test_files");
-  ok( /http\S+tests.test\S+test_qunit_basic/.test(response_str), 'This file should appear in the list of test files urls');
-  ok( /acre-tests.willmoffat.user/.test(response_str),           'Tests for dependent libs SHOULD show up');
-});
-
+//  var testurl = acre.request.base_url+'acre/test?mode=listfiles&recurse=1';
+//  var response_str = acre.urlfetch(testurl).body;
+//  var response = JSON.parse(response_str);
+//  ok( response.length > 3, "We expect to see plenty of test_files");
+//  ok( /http\S+test_qunit_basic/.test(response_str), 'This file should appear in the list of test files urls');
+//  ok( /acre-tests.willmoffat.user/.test(response_str), 'Tests for dependent libs SHOULD show up');
+//});
 
 module('check discovery mode',{
   args:{output:'json',mode:'discover'}
@@ -37,7 +37,7 @@ module('check discovery mode',{
 test('check',function() {
   var response = acre.test.urlfetch();
   var body = response.body;
-  var ts = JSON.parse(body); //test_suite
+  var ts = JSON.parse(body); //test_suited
 
   ok( ts.app_path, 'app_path exists' );
   var m = ts.testfiles[0].modules[0];
