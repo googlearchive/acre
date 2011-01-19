@@ -171,8 +171,7 @@ test('ACRE_MAX_LOGS_SIZE should allow a string of length '+MAX_LOG_KB+'K to be l
 
 test('ACRE_MAX_LOGS_SIZE should prevent a string of length '+TOO_BIG_KB+'K being logged in FirePHP mode',{
   file:'console_big_string',
-  args: { kb:TOO_BIG_KB,str:'acre' },
-  bug: 'ACRE-1431'
+  args: { kb:TOO_BIG_KB,str:'acre' }
 }, function() {
 
   var logs = urlfetch_log(true);
