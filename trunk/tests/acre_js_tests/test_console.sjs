@@ -178,7 +178,6 @@ if (acre.host.server == "acre_server" ) {
     }, function() {
 
       var logs = urlfetch_log(true);
-      console.log(logs);
       ok(  contains(logs,'Logs Truncated'),   'The Logs Truncated warning should appear' );
       ok(  logs.length < (TOO_BIG_KB*1024),   'The log should be shorter, since the large string should have triggered the truncation' );
 
