@@ -77,18 +77,23 @@ def drive_app(app,color):
             out.write(colors.RESET)
         out.write("\n")
         
+    ret = 0
     out.write("\n")
-    
     out.write("Total: ")
     if color:
         if total_failures == 0:
             out.write(colors.OK)
-        else:
+        else: 
+            ret = 1
             out.write(colors.FAIL)
     out.write("%i/%i" % (total_failures, total_tests))
     if color:
         out.write(colors.RESET)
     out.write("\n")
+    if total_tests == 0:
+        out.write("no tests were found or run\n")
+        ret = 1
+    return ret
         
 #-----------------------------------------------------------------------# 
 
@@ -126,8 +131,7 @@ def main():
             LOG_LEVEL = eval('logging.' + a)
 
     logger.setLevel(LOG_LEVEL)
-                
-    drive_app(app,color)
+    sys.exit(drive_app(app,color))
     
 #-----------------------------------------------------------------------# 
 
