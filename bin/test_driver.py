@@ -84,9 +84,9 @@ def drive_app(app,color):
         if total_failures == 0:
             out.write(colors.OK)
         else: 
-            ret = 1
             out.write(colors.FAIL)
     out.write("%i/%i" % (total_failures, total_tests))
+    if total_failures > 0: ret = 1
     if color:
         out.write(colors.RESET)
     out.write("\n")
