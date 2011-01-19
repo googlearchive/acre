@@ -51,6 +51,12 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
    
     protected static final List<String[]> urlmap;
 
+    private static String server;
+    
+    public static String getServer() {
+        return server;
+    }
+    
     static {
         try {
             urlmap = OneTrueConfig.parse();
@@ -73,6 +79,7 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         this.servletContext = config.getServletContext();
+        server = this.servletContext.getServerInfo().toLowerCase();
         Supervisor s = (Supervisor) this.servletContext.getAttribute(SUPERVISOR);
         if (s == null) {
             Supervisor news = (ENABLE_SUPERVISOR ? new Supervisor() : null);

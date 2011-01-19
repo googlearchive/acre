@@ -286,6 +286,14 @@ if (_hostenv.ACRE_DEVELOPER_MODE) {
 
 acre.version = new String(_request.version);
 
+if (_request.server.indexOf("jetty") > -1) {
+    acre.server = "acre";
+} else if (_request.server.indexOf("app engine") > -1) {
+    acre.server = "appengine";
+} else {
+    acre.server = new String(_request.server);
+}
+
 /**
  *   begin the http response.
  *
