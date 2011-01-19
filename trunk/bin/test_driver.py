@@ -65,7 +65,7 @@ def drive_app(app,color):
         failures = test_results['failures'] or 0
         total_tests += tests
         total_failures += failures
-        test_name = test_url.split("test_")[1] + " "
+        test_name = test_url.split("test_")[1].split(".")[0] + " "
         out.write(test_name.ljust(40,'.'))
         if color:
             if failures == 0:
