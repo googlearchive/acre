@@ -8,7 +8,7 @@ var currentModule;
 
 var currentFile = {
   file:acre.request.script.name,
-  run_url: make_dev_url(acre.request.script.app.id) + '/' + acre.request.script.name,
+  run_url: make_dev_url(get_app_path()) + '/' + acre.request.script.name,
   modules:[],
   total:null,
   failures:null
