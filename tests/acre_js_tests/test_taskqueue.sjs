@@ -5,7 +5,7 @@ if (acre.tasks) {
 
     test('acre.tasks exists and has all the pieces', function() {
         ok(typeof acre.tasks != "undefined", "task queue exists");
-        ok(typeof acre.tasks == "function", "tasks.add exists");
+        ok(typeof acre.tasks.add == "function", "tasks.add exists");
     });
     
     test('acre.tasks add works with no parameters', function() {
@@ -13,16 +13,37 @@ if (acre.tasks) {
             acre.tasks.add({});
             ok(true,"exception wasn't triggered");
         } catch (e) {
+            console.log(e);
             ok(false,"exception was triggered");
+        }
+    });
+
+    test("acre.tasks won't add tasks with spaces or underscore in name", function() {
+        try {
+            acre.tasks.add({
+                "name" : "test task"
+            });
+            ok(false,"task was added");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+        
+        try {
+            acre.tasks.add({
+                "name" : "test_task"
+            });
+            ok(false,"task was added");
+        } catch (e) {
+            ok(true,"exception was triggered");
         }
     });
 
     test('acre.tasks add works with countdown and GET method', function() {
         try {
             acre.tasks.add({
-                "name" : "test task 1",
+                "name" : "test-task-1-" + (new Date()).getTime(),
                 "countdown" : 1000,
-                "url" : "/whatever",
+                "url" : "/acre/status",
                 "method" : "GET",
                 "headers" : {
                    "x-something" : "somewhat",
@@ -33,8 +54,9 @@ if (acre.tasks) {
                     "foo" : "bar"
                 }
             });
-            ok(true,"exception wasn't triggered");
+            ok(true,"task was added");
         } catch (e) {
+            console.log(e);
             ok(false,"exception was triggered");
         }
     });
@@ -42,9 +64,9 @@ if (acre.tasks) {
     test('acre.tasks add works with eta and POST method', function() {
         try {
             acre.tasks.add({
-                "name" : "test task 2",
+                "name" : "test-task-2-" + (new Date()).getTime(),
                 "eta" : (new Date()).getTime() + 2000,
-                "url" : "/whatever",
+                "url" : "/acre/status",
                 "method" : "POST",
                 "headers" : {
                    "x-something" : "somewhat",
@@ -57,8 +79,9 @@ if (acre.tasks) {
                 "payload" : "whatever",
                 "payload_encoding" : "ISO-8859-1"
             });
-            ok(true,"exception wasn't triggered");
+            ok(true,"task was added");
         } catch (e) {
+            console.log(e);
             ok(false,"exception was triggered");
         }
     });
