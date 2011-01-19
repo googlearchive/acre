@@ -34,6 +34,7 @@ import org.apache.commons.io.IOUtils;
 
 import com.google.acre.Configuration;
 import com.google.acre.servlet.AcreHttpServletRequest;
+import com.google.acre.servlet.OneTrueServlet;
 
 public class AcreRequest extends JsConvertable {
 
@@ -75,6 +76,7 @@ public class AcreRequest extends JsConvertable {
     public Date request_start_time;
 
     public String version;
+    public String server;
 
     public boolean skip_routes;
     // other aspects of request handling
@@ -103,6 +105,7 @@ public class AcreRequest extends JsConvertable {
         headers = new HashMap<String, Object>();
         cookies = new HashMap<String, AcreCookie>();
         version = Configuration.Values.ACRE_VERSION.getValue();
+        server = OneTrueServlet.getServer();
         skip_routes = false;
         _metaweb_tid = (String) request.getAttribute("X-Metaweb-TID");
 
