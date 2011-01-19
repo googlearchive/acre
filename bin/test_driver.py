@@ -56,6 +56,7 @@ def drive_app(app,color):
     results = simplejson.loads(f.read())
     
     total_failures = 0
+    total_skips = 0
     total_tests = 0
     fail_log = ""
     
@@ -63,10 +64,12 @@ def drive_app(app,color):
         test_url = t['run_url']
         data = drive_test(test_url)
         test_results = data['testfiles'][0]
-        tests = test_results['total'] or 0
-        failures = test_results['failures'] or 0
+        [tests, failures, skips, output] = check_log(test_results)
+        if failures > 0 or skips > 0:
+            fail_log += "\n" + output
         total_tests += tests
         total_failures += failures
+        total_skips += skips
         test_name = test_url.split("test_")[1].split(".")[0] + " "
         out.write(test_name.ljust(40,'.'))
         if color:
@@ -78,8 +81,6 @@ def drive_app(app,color):
         if color:
             out.write(colors.RESET)
         out.write("\n")
-        if failures > 0:
-            fail_log += "\n" + get_fail_log(test_results)
         
     ret = 0
     out.write("\n")
@@ -98,31 +99,42 @@ def drive_app(app,color):
         out.write("\nWARNING: no tests were found or run\n")
         ret = 1
     if fail_log: 
-        out.write("\nFAILURES " + ("-" * 70) + "\n")
+        out.write("\nFAILURES/SKIPS " + ("-" * 65) + "\n")
         print fail_log
     return ret
 
-def get_fail_log(obj):
-    out = " " + obj['run_url'] + "\n"
+def check_log(obj):
+    out = ""
+    tests = 0
+    failures = 0
+    skips = 0
     for o in obj['modules']:
-        testout = ""
         mname = o['name']
         if mname == "DEFAULT":
             mname = ""
         else:
             mname = "  [%s]" % mname
         for t in o['tests']:
+            testout = ""
             name = t['name']
-            if t.get('log') is None: continue
             for l in t['log']:
+                tests += 1
                 res = l.get('result')
                 msg = l.get('message')
                 if not msg: msg = "fail but no message found"
                 if res is False or res is None:
+                    failures += 1
                     testout += "    %s\n" % msg
-        if testout:
-            out += "   %s%s:\n%s" % (name, mname, testout)
-    return out
+                elif res is True:
+                    pass
+                elif "Skipping test:" in res:
+                    skips += 1
+                    testout += "    Skipped: %s\n" % msg
+            if testout:
+                #print "TESTOUT:%s" % testout
+                out += "   %s%s:\n%s" % (name, mname, testout)
+    if out: out = " " + obj['run_url'] + "\n" + out
+    return tests, failures, skips, out
 
 #-----------------------------------------------------------------------# 
 
