@@ -120,6 +120,8 @@ public class JSTaskQueue extends JSObject {
                         } else {
                             throw new JSConvertableException("'method' property must contain a string").newJSException(_scope);
                         }
+                    } else if ("payload_encoding".equals(p)) {
+                        // ignore (it's asked for directly above)
                     } else if ("countdown".equals(p)) {
                         if (v instanceof Number) {
                             task = task.countdownMillis(((Number) v).longValue());
