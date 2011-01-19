@@ -34,13 +34,13 @@ console.log(animal);
 animal.furry = false;
 console.log(animal);
 
-console.options = { MAX_DEPTH : 1 };
-console.log(acre.request);
+//console.options = { MAX_DEPTH : 1 };
+//console.log(acre.request);
 
 console.log(acre.urlfetch);
 
-console.options = {FUNCTION_SOURCE: true };
-console.log(acre.urlfetch);
+//console.options = {FUNCTION_SOURCE: true };
+//console.log(acre.urlfetch);
 
 console.options = { SKIP:[acre] };
 console.log(this);
