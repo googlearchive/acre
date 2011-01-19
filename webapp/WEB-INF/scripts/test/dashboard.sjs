@@ -70,7 +70,7 @@ var testfinder = (function() {
     if (!metadata) { return; }
     for (var filekey in metadata.files) {
       var file = metadata.files[filekey];
-      if (file.name.indexOf('test_')===0  && file.handler==="acre_script") {
+      if (file.name.indexOf('test_')===0) {
         var path = app_path + '/' + file.name;
         testfiles[path] = true; // add to set
       } 
