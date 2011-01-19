@@ -1267,7 +1267,7 @@ acre.handlers.acre_script = {
     },
     'to_http_response': function(module, script) {
         // XXX - should collect acre.write output
-        return null
+        return {body:"", headers:{}};
     }
 };
 
