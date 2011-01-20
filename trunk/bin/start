@@ -60,25 +60,13 @@ if [ "$ACTION" = "start" ] ; then
 
     # Loop waiting for status
     sleep 2
-    for try in 1 2 3 4 5 ; do
-        curlmsg="\nstatus=%{http_code}\n"
-        result=`curl -w "$curlmsg" -s "http://127.0.0.1:$ACRE_PORT/status"`
-        ret=$?
-        if [ $ret -eq 0 ] ; then 
-            echo "$result" | grep "status=200" > /dev/null
-            gret=$?
-            if [ $gret -eq 0 ] ; then 
-                echo "/status returned: $result"
-                echo "Acre started ok"
-                exit 0
-            fi
-        fi
-        echo "failed $try /status check"
-        sleep_int=$(($try*5))
-        sleep $sleep_int
-    done
-    
+    ./bin/status
+    SRET=$?
+    if [ "$?" -eq "0" ]; then
+      exit 0
+    fi
     # if we get here, there was an error, so we should kill
+    echo status failed, stop acre
     ./acre stop
     
     echo
