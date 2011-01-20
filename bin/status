@@ -6,8 +6,23 @@ cd `dirname $0`/..
 # Fixup settings
 . bin/fixup-settings
  
-result=$(curl -sf "http://127.0.0.1:$ACRE_PORT/status")
-ret=$?
+for try in 1 2 3 4 5 ; do
+    curlmsg="\nstatus=%{http_code}\n"
+    result=`curl -w "$curlmsg" -s "http://127.0.0.1:$ACRE_PORT/status"`
+    ret=$?
+    if [ $ret -eq 0 ] ; then
+        echo "$result" | grep "status=200" > /dev/null
+        gret=$?
+        if [ $gret -eq 0 ] ; then
+            echo "/status returned: $result"
+            echo "Acre started ok"
+            exit 0
+        fi
+    fi
+    echo "failed $try /status check"
+    sleep_int=$(($try*5))
+    sleep $sleep_int
+done
 
-echo "status: $result"
-exit $ret
+exit 1
+
