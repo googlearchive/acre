@@ -291,7 +291,7 @@ case "$ACTION" in
     appengine-deploy) 
         check_appengine
         build_appengine
-        $APPENGINE_HOME/bin/appcfg.sh update "$WAR";;
+        $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR";;
     *) 
         SCRIPT="$ACTION" 
         invoke $*;;
