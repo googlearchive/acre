@@ -77,7 +77,7 @@ def drive_app(app,color):
                 out.write(colors.OK)
             else:
                 out.write(colors.FAIL)
-        out.write(" %i/%i" % (failures, tests))
+        out.write(" %i/%i" % (tests - failures, tests))
         if color:
             out.write(colors.RESET)
         out.write("\n")
@@ -90,8 +90,9 @@ def drive_app(app,color):
             out.write(colors.OK)
         else: 
             out.write(colors.FAIL)
-    out.write("%i/%i" % (total_failures, total_tests))
-    if total_failures > 0: ret = 1
+    out.write("%i/%i" % (total_tests - total_failures, total_tests))
+    if total_failures > 0: 
+        ret = 1
     if color:
         out.write(colors.RESET)
     out.write("\n")
