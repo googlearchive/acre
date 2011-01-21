@@ -42,8 +42,6 @@ import com.google.util.logging.MetawebLogger;
  * <p>This Servlet implements a web service on top of the KeyStore that allows
  * external applications to save a particular token/secret pair 
  * for a given application.</p>
- * 
- * <p>Note that this service is write only by design.</p>
  */
 public class KeyStoreServlet extends HttpServlet {
 
