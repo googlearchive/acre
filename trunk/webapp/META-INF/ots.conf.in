@@ -84,16 +84,6 @@
             },
             {
                 "from":{
-                    "path":"/acre/keystore"
-                },
-                "to":{
-                    "route_as":"servlet",
-                    "servlet":"KeyStoreServlet",
-                    "path":"/"
-                }
-            },
-            {
-                "from":{
                     "path":"/acre/logviewer"
                 },
                 "to":{
