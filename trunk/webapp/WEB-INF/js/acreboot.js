@@ -869,9 +869,19 @@ acre.keystore.remove = function (name) {
     }
 };
 
+if (_request.trusted) {
+    acre.keystore.put = function (name, token, secret) {
+        if (_topscope._request_app_guid !== null) {
+            return _ks.put_key(name, _topscope._request_app_guid, token, secret);
+        } else {
+            return null;
+        }
+    };
+}
+
 //------------------------ datastore --------------------------
 
-if (_datastore) { // the _datastore object won't be available in all environments so we need to check first
+if (_request.trusted && _datastore) { // the _datastore object won't be available in all environments so we need to check first
     var store_scope = {};
     store_scope.syslog = syslog;
     store_scope.store = _datastore;
@@ -882,7 +892,7 @@ if (_datastore) { // the _datastore object won't be available in all environment
 
 //------------------------ taskqueue --------------------------
 
-if (_taskqueue) { // the _taskqueue object won't be available in all environments so we need to check first
+if (_request.trusted && _taskqueue) { // the _taskqueue object won't be available in all environments so we need to check first
     var queue_scope = {};
     queue_scope.syslog = syslog;
     queue_scope.queue = _taskqueue;

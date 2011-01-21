@@ -77,6 +77,8 @@ public class AcreRequest extends JsConvertable {
 
     public String version;
     public String server;
+    
+    public boolean trusted;
 
     public boolean skip_routes;
     // other aspects of request handling
@@ -106,6 +108,7 @@ public class AcreRequest extends JsConvertable {
         cookies = new HashMap<String, AcreCookie>();
         version = Configuration.Values.ACRE_VERSION.getValue();
         server = OneTrueServlet.getServer();
+        trusted = Configuration.Values.ACRE_TRUSTED_MODE.getBoolean();
         skip_routes = false;
         _metaweb_tid = (String) request.getAttribute("X-Metaweb-TID");
 
