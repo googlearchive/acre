@@ -59,7 +59,7 @@ $ECHO -n "CHECK: local tests are present... "
 RESP=`curl -s -S -m 5  http://api.qatests.apps.freebase.dev.${ACRE_HOST_BASE}:$ACRE_PORT/request 2> /dev/null | grep "api.qatests.apps.freebase"`
 if [ -z "$RESP" ]; then
     $ECHO "FAILED"
-    $ECHO "FATAL: the required local tests don't seem to be available (did you run './acre appeditor-prepare-tests' yet?)"
+    $ECHO "FATAL: the required local tests don't seem to be available"
     exit 1
 else
     $ECHO "PASSED"

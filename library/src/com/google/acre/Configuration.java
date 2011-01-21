@@ -73,6 +73,7 @@ public class Configuration implements ConfigurationMBean {
         ACRE_SUPERVISOR_THREAD("true"),
         ACRE_APP_THRESHOLDING("false"),
         ACRE_DEVELOPER_MODE("false"),
+        ACRE_TRUSTED_MODE("false"),
 
         // numbers
         ACRE_PORT(DEFAULT_PORT), 
