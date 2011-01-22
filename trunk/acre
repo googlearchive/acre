@@ -130,32 +130,21 @@ invoke() {
 }
 
 build_appengine() {
-    copy_appengine_config
-    . bin/make-configs
-    SCRIPT="build" 
-    COMMAND="appengine"
-    export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
-    invoke
+    check_appengine
+    if [ "$CONF_DIR" != "" ] && [ "$CONF" != ""]; then
+        bin/appengine-config.py -c $CONF -d $CONF_DIR
+    else
+        bin/appengine-config.py
+    fi
+    
+    ant -f build.xml -Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"  appengine || exit 1
 }
 
 test_prepare_appengine() {
-    . bin/make-configs
     SCRIPT="build" 
     COMMAND="appengine-test-prepare"
     export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
     invoke
-}
-
-# copy the project.<app_key>.conf and appengine-web.<app_key>.xml files from the given 
-# directory to the appropriate acre directory
-copy_appengine_config() { 
-    if [ "$CONF_DIR" != "" ]; then
-        if [ -f "$CONF_DIR/appengine-web.$CONF.xml" ]; then
-            cp $CONF_DIR/appengine-web.$CONF.xml webapp/WEB-INF/appengine-web.xml
-        else
-	        error "Cannot find configuration file $CONF_DIR/appengine-web.$CONF.xml"
-        fi
-    fi
 }
 
 # -------------------------------------------------------------------------------------
@@ -275,21 +264,16 @@ case "$ACTION" in
         COMMAND="distclean" 
         invoke;;
     appengine-build) 
-        check_appengine
         build_appengine;;
     appengine-run) 
-        check_appengine
-        build_appengine
         if [ "$ACRE_PORT" != "" ]; then
             APPSERVER_PARAMS="-p $ACRE_PORT"
         fi
         $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS "$WAR";;
     appengine-prepare-tests) 
-        check_appengine
         build_appengine
         test_prepare_appengine;;
     appengine-deploy) 
-        check_appengine
         build_appengine
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR";;
     *) 
