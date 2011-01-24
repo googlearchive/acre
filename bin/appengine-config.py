@@ -65,11 +65,15 @@ def copy_external_configuration_files(options):
 
     f = os.path.join(options.directory, 'appengine-web.%s.xml' % options.config)
     if os.path.exists(f):
-        shutil.copy(f, 'webapp/WEB-INF/appengine-web.xml')
+        target = 'webapp/WEB-INF/appengine-web.xml'
+        shutil.copy(f, target)
+        print 'Copied %s to %s' % (f, target)
 
     f = os.path.join(options.directory, 'ots.%s.conf.in' % options.config)
     if os.path.exists(f):
-        shutil.copy(f, 'webapp/META-INF/ots.external.conf.in')
+        target = 'webapp/META-INF/ots.external.conf.in'
+        shutil.copy(f, target)
+        print 'Copied %s to %s' % (f, target)
 
 
   return True
