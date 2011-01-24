@@ -131,7 +131,7 @@ invoke() {
 
 build_appengine() {
     check_appengine
-    if [ "$CONF_DIR" != "" ] && [ "$CONF" != ""]; then
+    if [ "$CONF_DIR" != "" ] && [ "$CONF" != "" ]; then
         bin/appengine-config.py -c $CONF -d $CONF_DIR
     else
         bin/appengine-config.py
@@ -166,6 +166,7 @@ fi
 
 export CONF="sandbox"
 export WAR="_build/war"
+export CONF_DIR=""
 
 # Extract the options -------------------------------------
 
