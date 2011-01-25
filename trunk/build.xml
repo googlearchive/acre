@@ -171,6 +171,7 @@
           <include name="**/*" />
           <exclude name="examples/**"/>
           <exclude name="freebase/**"/>
+          <exclude name="googlecode/**"/>
           <exclude name="qa/**"/>
         </fileset>
       </copy>
