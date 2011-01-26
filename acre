@@ -198,7 +198,7 @@ while [ $# -ne 0 ]; do
         export WAR="$1"
         shift
         continue;;
-        
+
     -*) echo "$0: invalid option: $1" >&2
         exit 1;;
         
@@ -230,7 +230,7 @@ COMMAND=
 shift
 
 # Overwrite defaults with local configs (if present) ------
-if [ -f "config/project.local.conf" ] && [ "$ACTION" != "appengine-deploy" ]; then
+if [ -f "config/project.local.conf" ] && [ "$ACTION" != "appengine-deploy" ] && [ "$ACTION" != "appengine-internal-deploy" ]; then
     load "config/project.local.conf"
 fi
 
@@ -277,6 +277,9 @@ case "$ACTION" in
     appengine-deploy) 
         build_appengine
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR";;
+    appengine-internal-deploy) 
+        build_appengine
+        $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS update "$WAR";;
     *) 
         SCRIPT="$ACTION" 
         invoke $*;;

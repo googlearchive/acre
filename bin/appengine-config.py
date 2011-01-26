@@ -14,6 +14,7 @@ class ConfigParser:
 
   '''
 
+  #list of acre config parameters that are irrelevant to App Engine Acre
   IGNORED_PARAMS = ['ACRE_LOGDIR', 'ACRE_DATADIR', 'ACRE_JSLOGS', 'ACRE_SERVICE_ADDR', 'HTTP_PROXY_HOST', 'HTTP_PROXY_PORT', 'ACRE_ACCESSLOGS']
 
 
@@ -22,6 +23,10 @@ class ConfigParser:
     self.filename = filename
 
   def env_var(self, matchobj):
+    '''
+    regex substitution callback
+    will substitute the string matched with the environment variable of the same name
+    '''
     
     k = matchobj.groups(0)[0]
 
@@ -35,6 +40,11 @@ class ConfigParser:
     return '\'\''
 
   def convert(self):
+    '''read the file given in the constructor and 
+    substitute any occurance of the pattern @<PARAM_NAME>@ 
+    Finally, spit-out the same filename without the suffix .in
+    '''
+
     #read the source file
     fd = open(self.full_path)
     buf = []
@@ -53,11 +63,12 @@ class ConfigParser:
     print 'Processed file %s' % self.full_path
 
 
-def copy_external_configuration_files(options):
+def copy_configuration_files(options):
 
   #copy necessary configuration files from the alternate config directory
   #this is used for private configuration 
 
+  #if a directory and target where specified in the command line, use them
   if options.config and options.directory:
     if not os.path.isdir(options.directory):
         print 'ERROR: specified directory %s does not exist'
@@ -71,9 +82,22 @@ def copy_external_configuration_files(options):
 
     f = os.path.join(options.directory, 'ots.%s.conf.in' % options.config)
     if os.path.exists(f):
-        target = 'webapp/META-INF/ots.external.conf.in'
+        target = 'webapp/META-INF/ots.other.conf.in'
         shutil.copy(f, target)
         print 'Copied %s to %s' % (f, target)
+
+  #no directory and target specified, use the default 
+  #only do this for appengine-web.xml - no default ots (there is one already in the standard checkout)
+  else:
+    target = 'webapp/WEB-INF/appengine-web.xml'
+    f = 'webapp/WEB-INF/appengine-web.default.xml'
+    shutil.copy(f, target)
+    print 'Copied %s to %s' % (f, target)
+
+    for ots_file in ['ots.other.conf.in', 'ots.other.conf']:
+      f = 'webapp/META-INF/%s' % ots_file
+      if os.path.exists(f):
+        os.remove(f)
 
 
   return True
@@ -125,9 +149,8 @@ parser.add_option('-d', '--dir', dest='directory', default=None,
 
 ######### 3 steps ########
 
-#Step 1: copy any external configuration files from private directories into the acre tree
-copy_external_configuration_files(options)
-
+#Step 1: copy any configuration files from private directories into the acre tree
+copy_configuration_files(options)
 
 #Step 2: evaluate any configuration values that need to be calculated at build time
 modify_config_params()
