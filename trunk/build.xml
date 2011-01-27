@@ -25,8 +25,8 @@
 	<property name="name" value="acre" />
     <property name="fullname" value="${name}-${version}-${revision}" />
 
-    
     <property name="build.dir" value="_build" />
+    <property name="deploy.dir" value="_deploy" />
     <property name="dist.dir" value="_dist" />
     <property name="data.dir" value="_data" />
     <property name="logs.dir" value="_logs" />
@@ -268,6 +268,14 @@
         <delete dir="${server.classes.dir}" />
         <delete dir="${webapp.classes.dir}" />
         <delete dir="${appengine.classes.dir}" />
+        <delete file="${webapp.web-inf}/appengine-web.xml"/>
+        <delete>
+            <fileset dir="${webapp.dir}/META-INF">
+                <include name="*.conf"/>
+                <include name="*.properties"/>
+                <include name="ots.other.conf.in"/>
+            </fileset>
+        </delete>
     </target>
 
     <target name="distclean" description="Remove all files not in version control" depends="clean">

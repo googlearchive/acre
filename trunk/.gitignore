@@ -5,6 +5,7 @@ _build
 _dist
 _data
 _logs
+webapp/WEB-INF/appengine-web.xml
 webapp/WEB-INF/classes
 webapp/WEB-INF/static
 webapp/META-INF/*.properties
