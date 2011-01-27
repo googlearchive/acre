@@ -58,6 +58,7 @@ Available Commands:
     appengine-build ... Build a WAR package of Acre to run on Google App Engine
     appengine-run ..... Run Acre in the local Google App Engine simulator (must call 'appengine-build' first)
     appengine-deploy .. Deploy Acre on Google App Engine (must call 'appengine-build' first)
+    appengine-rollback. Rollback a deployment that failed
 
     test .............. run a suite of integration tests (start acre first)
     testng ............ run the next generation suite of integration tests (start acre first)
@@ -84,6 +85,13 @@ check_appengine() {
     fi
     if [ ! -f "$APPENGINE_HOME/bin/appcfg.sh" ]; then
         error "can\'t find 'appcfg.sh' in $APPENGINE_HOME. Is this the Google AppEngine SDK for Java?"
+    fi
+}
+
+check_python() {
+    PYTHON="`which python 2> /dev/null`"
+    if [ -z "$PYTHON" ] ; then
+        error "'python' needs to be installed and present in your PATH. You can download it for free at http://www.python.org/"
     fi
 }
 
@@ -129,14 +137,18 @@ invoke() {
     fi
 }
 
-build_appengine() {
-    check_appengine
+prepare_configurations() {
+    check_python
     if [ "$CONF_DIR" != "" ] && [ "$CONF" != "" ]; then
         bin/appengine-config.py -c $CONF -d $CONF_DIR
     else
         bin/appengine-config.py
     fi
-    
+}
+
+build_appengine() {
+    check_appengine
+    prepare_configurations
     ant -f build.xml -Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"  appengine || exit 1
 }
 
@@ -237,7 +249,7 @@ fi
 # Decide what script to run based on the wanted action ----
 case "$ACTION" in
     help) 
-        usage ;;
+        usage;;
     run) 
         SCRIPT="start" 
         invoke;;
@@ -277,9 +289,13 @@ case "$ACTION" in
     appengine-deploy) 
         build_appengine
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR";;
+    appengine-rollback) 
+        $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS rollback "$WAR";;
     appengine-internal-deploy) 
         build_appengine
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS update "$WAR";;
+    appengine-internal-rollback) 
+        $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS rollback "$WAR";;
     *) 
         SCRIPT="$ACTION" 
         invoke $*;;
