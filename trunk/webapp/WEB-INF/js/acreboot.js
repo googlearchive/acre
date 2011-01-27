@@ -1643,7 +1643,8 @@ var disk_inventory_path = function(app, disk_path) {
 
 var disk_get_content = function() {
     syslog.debug(this.content_id, "disk.get.content");
-    var f = new _file(this.content_id, (this.handler === 'binary'));
+    //open the file in binary mode if there is a media_type and it starts with application/ or image/
+    var f = new _file(this.content_id, this.media_type != undefined && (this.media_type.indexOf('application/') == 0 || this.media_type.indexOf('image/') == 0));
     var res = {
         'status':200,
         'headers':{
