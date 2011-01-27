@@ -1644,7 +1644,9 @@ var disk_inventory_path = function(app, disk_path) {
 var disk_get_content = function() {
     syslog.debug(this.content_id, "disk.get.content");
     //open the file in binary mode if there is a media_type and it starts with application/ or image/
-    var f = new _file(this.content_id, this.media_type != undefined && this.media_type.indexOf('image/') == 0);
+    var f = new _file(this.content_id, this.media_type != undefined && (this.media_type.indexOf('image/') == 0  
+                                                                        || this.media_type ==  'application/octet-stream'
+                                                                        || this.media_type == 'multipart/form-data'));
     var res = {
         'status':200,
         'headers':{
