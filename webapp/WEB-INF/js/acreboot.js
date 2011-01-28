@@ -1791,7 +1791,7 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
     u.each(appfetch_methods, function(i, m) {
         try {
             method = m;
-            app_data = method.fetcher(host, app_defaults);
+            app_data = method.fetcher(host, u.extend({},app_defaults));
             return false;
         } catch (e if e.__code__ == APPFETCH_ERROR_NOT_FOUND) {
             app_data = null;
