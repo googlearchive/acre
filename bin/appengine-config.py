@@ -74,29 +74,49 @@ def copy_configuration_files(options):
         print 'ERROR: specified directory %s does not exist'
         exit(-1)
 
-    f = os.path.join(options.directory, 'appengine-web.%s.xml' % options.config)
-    if os.path.exists(f):
-        target = 'webapp/WEB-INF/appengine-web.xml'
-        shutil.copy(f, target)
-        print 'Copied %s to %s' % (f, target)
-
     f = os.path.join(options.directory, 'ots.%s.conf.in' % options.config)
     if os.path.exists(f):
         target = 'webapp/META-INF/ots.other.conf.in'
+        if os.path.exists(target):
+          os.chmod(target, 0777)
         shutil.copy(f, target)
         print 'Copied %s to %s' % (f, target)
+
+
+    #these two files require a default
+    for source_target in [('appengine-web.%s.xml', 'appengine-web.xml'), ('web.%s.xml', 'web.xml')]:
+
+      target = 'webapp/WEB-INF/%s' % source_target[1]
+      if os.path.exists(target):
+        os.chmod(target, 0777)
+
+      f = os.path.join(options.directory, source_target[0] % options.config)
+      if os.path.exists(f):
+        shutil.copy(f, target)
+        print 'Copied %s to %s' % (f, target)
+      else:
+        f = 'webapp/WEB-INF/%s' % (source_target[0] % 'default')
+        shutil.copy(f, target)
+        print 'Copied %s to %s' % (f, target)
+      
 
   #no directory and target specified, use the default 
   #only do this for appengine-web.xml - no default ots (there is one already in the standard checkout)
   else:
-    target = 'webapp/WEB-INF/appengine-web.xml'
-    f = 'webapp/WEB-INF/appengine-web.default.xml'
-    shutil.copy(f, target)
-    print 'Copied %s to %s' % (f, target)
+
+    for source_target in [('appengine-web.default.xml', 'appengine-web.xml'), ('web.default.xml', 'web.xml')]:
+      target = 'webapp/WEB-INF/%s' % source_target[1]
+      if os.path.exists(target):
+        os.chmod(target, 0777)
+
+      f = 'webapp/WEB-INF/%s' % source_target[0]
+      shutil.copy(f, target)
+      print 'Copied %s to %s' % (f, target)
 
     for ots_file in ['ots.other.conf.in', 'ots.other.conf']:
       f = 'webapp/META-INF/%s' % ots_file
       if os.path.exists(f):
+        os.chmod(f, 0777)
         os.remove(f)
 
 
