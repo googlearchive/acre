@@ -42,7 +42,7 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
 
             app.as_of    = null;   // use revision id?
             app.guid = app.guid || source_url;
-            // XXX - default app.ttl based on 'trunk' etc. in path?
+            app.ttl = 600000;  // XXX - default app.ttl based on 'trunk' etc. in path?
         }
 
         var files = dir.filePage.files;
