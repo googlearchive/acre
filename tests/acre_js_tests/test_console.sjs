@@ -142,16 +142,16 @@ test('check console',function() {
   
 });
 
-test('check console_big_string 100k',{
+test('check console_big_string 20k',{
   file:'console_big_string',
-  args: { kb:100,str:'acre' }
+  args: { kb:20,str:'acre' }
 }, function() {
 
   var logs = urlfetch_log();
 
   check_log(logs, 'INFO', function(args) {
     var logged_str = args[0];
-    same(logged_str.length, 100*1024, '10K string was logged');
+    same(logged_str.length, 20*1024, '20K string was logged');
   });
 
 });
