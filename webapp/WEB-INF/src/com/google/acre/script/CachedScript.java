@@ -27,7 +27,7 @@ public class CachedScript {
     private int[] linemap;
 
     public static String getClassName(String script_name, String content_id) {
-        return toClassName(join(clean(script_name),content_id));
+        return toClassName(join(script_name,content_id));
     }
 
     public static String toClassName(String name) {
@@ -39,13 +39,6 @@ public class CachedScript {
         // there can be lots of . and / in a row in acre paths - get rid of all of them
         return "cn" + "." + name.replace("/",".").replace("...",".").replace("..",".").replace("-","_$_");
     }
-    
-    public static String clean(String name) {
-        if (name.endsWith(".js")) {
-            name = name.substring(0,name.length() - ".js".length());
-        }
-        return name;
-    }
 
     public static String join(String name, String id) {
         if (id != null && !"".equals(id)) {
@@ -56,8 +49,7 @@ public class CachedScript {
     }
     
     public CachedScript(String script_name, String source_text, String content_id) {
-        _script_name = clean(script_name);
-        _source_name = join(_script_name,content_id);
+        _source_name = join(script_name,content_id);
         _class_name = toClassName(_source_name);
 
         _source_text = source_text;
