@@ -61,7 +61,6 @@ if [ "$ACTION" = "start" ] ; then
     # Loop waiting for status
     sleep 2
     ./bin/status
-    SRET=$?
     if [ "$?" -eq "0" ]; then
       exit 0
     fi
