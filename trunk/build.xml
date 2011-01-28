@@ -104,6 +104,8 @@
         <javac srcdir="${webapp.src.dir}" destdir="${webapp.classes.dir}" includeantruntime="false" debug="true">
             <classpath refid="webapp.class.path" />
         </javac>
+	<copy file="${webapp.web-inf}/web.default.xml" tofile="${webapp.web-inf}/web.xml" overwrite="true"/>
+
     </target>
 
     <target name="compile-appengine" description="Compile the Google AppEngine connectors">
