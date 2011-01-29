@@ -552,8 +552,9 @@ public class NHttpClient {
 
     public void wait_on_result(long time, TimeUnit tunit) throws NHttpException {
 
-        if (_reactor != null && _reactor.getStatus() != IOReactorStatus.INACTIVE)
-            throw new NHttpException("Can not run wait_on_results while it is already running");
+        if (_reactor != null && _reactor.getStatus() != IOReactorStatus.INACTIVE) {
+            throw new NHttpException("Can not run wait_on_results while it is already running [current status: " + _reactor.getStatus() + "]");
+        }
         
         start();
 
