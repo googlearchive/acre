@@ -124,6 +124,11 @@ get_revision() {
     REVISION=`echo $INFO | sed 's/.*Revision: /r/' | sed 's/ .*//'`
 }
 
+# Get appengine application ID ---------------------------------------------
+get_appid() {
+    APP_ID=`cat $CONF_DIR/appengine-web.$CONF.xml | grep '<application>' | cut -d '>' -f 2 | cut -d '<' -f 1`
+}
+
 # ----------------------- commands --------------------------
 
 invoke() {
@@ -287,13 +292,26 @@ case "$ACTION" in
         build_appengine
         test_prepare_appengine;;
     appengine-deploy) 
+        if [ -f "$CONF_DIR/appengine-web.$CONF.xml" ]; then
+            get_appid
+            ACRE_HOST_BASE="$APP_ID.appspot.com"
+        fi
         build_appengine
-        $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR";;
+        $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR"
+        echo ""
+        echo "App is ready at http://$ACRE_HOST_BASE/";;
     appengine-rollback) 
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS rollback "$WAR";;
     appengine-internal-deploy) 
+        if [ -f "$CONF_DIR/appengine-web.$CONF.xml" ]; then
+            get_appid
+            ACRE_HOST_BASE="$APP_ID.prom.corp.google.com"
+        fi
         build_appengine
-        $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS update "$WAR";;
+        echo "Appengine Internal Params: $APPENGINE_INTERNAL_DEPLOY_PARAMS"
+        $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS update "$WAR"
+        echo ""
+        echo "App is ready at http://$ACRE_HOST_BASE/";;
     appengine-internal-rollback) 
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS rollback "$WAR";;
     *) 
