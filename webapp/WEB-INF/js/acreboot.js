@@ -1970,6 +1970,8 @@ for (var name in _topscope) {
 // ---------------------------- proto_require ---------------------------------
 
 var proto_require = function(req_path, override_metadata, resolve_only) {
+    syslog(req_path, "proto_require.path");
+    
     // NOTE: get_file and normalize_path both rely 
     // on app_data already having been defined
     
@@ -2519,7 +2521,6 @@ var handle_request = function (request_path, req_body, skip_routes) {
     var script = null;
     u.each(fallbacks, function(i, fpath) {
         try {            
-            syslog(fpath, "acreboot.route_to");
             script = proto_require(fpath);
         } catch (e if e.__code__ == APPFETCH_ERROR_METHOD) {
             acre.response.status = 503;
