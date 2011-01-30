@@ -1701,7 +1701,7 @@ for (var i=0; i < custom_methods.length; i++) {
 
 // ------------------------------------------ proto_require ------------------------------------
 
-var proto_require = function(req_path, default_metadata, override_metadata, resolve_only) {
+var proto_require = function(req_path, override_metadata, resolve_only) {
     // NOTE: get_file and normalize_path both rely 
     // on app_data already having been defined
     
@@ -1804,7 +1804,7 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
     var [host, path] = decompose_req_path(req_path);
 
     // setup default app metadata
-    var app_defaults = set_app_metadata({host: host}, default_metadata);
+    var app_defaults = set_app_metadata({host: host}, _default_metadata);
 
     // retrieve app metadata using appfetchers
     var method, app_data;
@@ -1890,7 +1890,7 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
             
             if (app.mounts[fn] && (path_info.length > 1)) {
                 var mount_path = normalize_path(app.mounts[fn] + path_info);
-                return proto_require(mount_path, default_metadata, resolve_only);
+                return proto_require(mount_path, null, resolve_only);
             }
             
             var fn_noext = fn.replace(/\.[^\/\.]*$/,"");
@@ -1973,7 +1973,7 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
         aug_scope.acre.get_metadata = function(path) {
             // ensure we only have the host part
             var [host] = decompose_req_path(normalize_path(path, null, true, false));
-            return proto_require(compose_req_path(host), default_metadata);
+            return proto_require(compose_req_path(host));
         };
 
         aug_scope.acre.mount = function(path, local_path) {
@@ -1981,7 +1981,7 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
         };
 
         aug_scope.acre.resolve = function(path) {
-            return proto_require(normalize_path(path), default_metadata, null, true);
+            return proto_require(normalize_path(path), null, true);
         };
 
         aug_scope.acre.route = function(path, body, skip_routes) {
@@ -2025,7 +2025,7 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
             }    
               
             path = normalize_path(path, version);
-            var sobj = proto_require(path, default_metadata, override_metadata);
+            var sobj = proto_require(path, override_metadata);
         
             if (sobj === null) {
                 throw new Error('Could not fetch data from ' + path);
@@ -2539,17 +2539,12 @@ var handle_request = function (request_path, req_body, skip_routes) {
     
     request_path = compose_req_path(req_host, req_pathinfo);
 
-    // get app metadata defaults
-    // doing this here so it's once per request rather than for every require
-    var default_metadata = set_app_metadata({}, proto_require(compose_req_path(_DEFAULTS_HOST)));
-    delete default_metadata.files;
-
     // support /acre/ special case -- these are OTS routing rules 
     // that allow certain global scripts to run within the context of any app
     // e.g., keystore, auth, test, etc.
     if (!source_path && _request.request_url.split('/')[3] == 'acre') {
         var [h, p] = decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
-        var source_app = proto_require(compose_req_path(req_host), default_metadata);
+        var source_app = proto_require(compose_req_path(req_host));
         if (source_app !== null) {
             source_path = compose_req_path(req_host, req_pathinfo);
             _topscope._request_app_guid = source_app.guid;
@@ -2595,7 +2590,7 @@ var handle_request = function (request_path, req_body, skip_routes) {
     u.each(fallbacks, function(i, fpath) {
         try {            
             syslog(fpath, "acreboot.route_to");
-            script = proto_require(fpath, default_metadata);
+            script = proto_require(fpath);
         } catch (e if e.__code__ == APPFETCH_ERROR_METHOD) {
             acre.response.status = 503;
             acre.write("Service Temporarily Unavailable\n");
@@ -2666,23 +2661,32 @@ var handle_request = function (request_path, req_body, skip_routes) {
 };
 
 
-// ---------------------------------- let's roll --------------------------------
+// --------------------------------- let's roll -------------------------------
 
-// We're not going to create this until later
-// but we need it to be global for comparison
+// get app metadata defaults
+// doing this here so it's once per request rather than for every require
+// XXX - there's probably a less hacky way to do this, but it gets the job done
+acre.response = {};
+var _default_metadata = set_app_metadata({}, proto_require(compose_req_path(_DEFAULTS_HOST)));
+delete _default_metadata.files;
+
+// We're going to initialize this in handle_request
+// but we need it to be global for comparison later
 var _request_scope;
 
 var _request_path;
+
+// If it's an internal redirect (error page), get _request_path from handler_script_path:
 if (typeof _request.handler_script_path == 'string' && _request.handler_script_path != '') {
-    // If it's an internal redirect (error page), get _request_path from handler_script_path:
     _request_path = _request.handler_script_path;
     delete _request.handler_script_path;
+
+// Otherwise, get it from the request
+// we don't use _request.request_url because it's set pre-OTS rules,
+// however the following values *are* reset by OTS
 } else {
-    // Otherwise, get from request
-    // we don't use _request.request_url because it is pre-OTS rules
     _request_path = 'http://' + _request.server_name.toLowerCase() + _request.path_info + '?' + _request.query_string; 
 }
 
 handle_request(_request_path, _request.request_body, _request.skip_routes);
-
 })();
