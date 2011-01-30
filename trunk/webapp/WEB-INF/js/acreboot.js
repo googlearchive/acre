@@ -375,11 +375,8 @@ acre.host = {
     server : server_type
 };
 
-//-------------------------------- acre.request -----------------------------------------
 
-// We're not going to create this until later
-// but we need it to be global for comparison
-var _request_scope;
+//-------------------------------- acre.request -----------------------------------------
 
 acre.request = {
     server_name : _request.request_server_name,
@@ -389,18 +386,34 @@ acre.request = {
     app_url : _request.request_app_url,
     protocol : _request.server_protocol, // XXX: how do we get the request protocol?
     method : _request.request_method,
-    base_path : _request.request_path_info.replace(new RegExp(u.escape_re(_request.path_info)+"$"), ""),
-    path_info : _request.path_info,                                                                 
-    query_string : _request.query_string,
     headers : _request.headers,
-    body : _request.request_body,
+
+    // set in set_request_params so
+    // they can be re-set by acre.route
+    body : null,
+    base_path : null,
+    path_info : null,
+    query_string : null,
+    
     start_time : _request.request_start_time,
-    cookies : {}
+    cookies : {},
+    skip_cache : false
 };
 
-// Close to avoid leaking variables into the scope
+// if we get 'cache-control: no-cache' in the request headers (i.e., shift-reload),
+// then set a flag that appfetchers can key off of.
+// some browsers will by default issue this header for *all* XHRs, however,
+// which can make requests very slow. the work-around is that if an 
+// x-acre-cache-control header is present, then we do not set the flag
+if ('cache-control' in acre.request.headers && !('x-acre-cache-control' in acre.request.headers)) {
+    if (/no-cache/.test(acre.request.headers['cache-control'])) {
+        acre.request.skip_cache = true;
+    }
+}
+
 var mwlt_mode = false;
 
+// Close to avoid leaking variables into the scope
 (function () {
     var _MWAUTH_HOSTS = _hostenv.ACRE_ALLOW_MWAUTH_HOST_SUFFIX.split(' ');
      var ok = false;
@@ -444,40 +457,44 @@ var mwlt_mode = false;
 
 })();
 
-// acre_cookiejar == "host:mwlt:host:mwlt"
-//   ie   "sandbox-freebase.com:xxx|xxxxgg_ttt|dddd:freebase.com:123|345|6666|qa"
-function parse_cookiejar(cj) {
-    if (!cj) return {};
-    var parts = cj.split(":");
-    if (!!(parts.length % 2)) {
-        // Invalid Cookie Jar, fail.
-        syslog.warn({jar:cj}, "acreboot.cookie_jar.invalid");
-        return {};
+
+/**
+ * reset acre.request.path_info and base_path
+ */
+function set_request_pathinfo(pathinfo) {
+    // make sure it has a leading '/'
+    if (pathinfo.indexOf("/") !== 0) {
+        pathinfo = "/" + pathinfo;
     }
+    
+    // this will get re-set again in Script.to_http_response
+    acre.request.path_info = pathinfo;
 
-    var out = {};
-    var key = null;
-    for (var a in parts) {
-        var part = parts[a];
-        if (key == null) {
-            key = part;
-        } else {
-            out[key] = part;
-            key = null;
-        }
+    // setup relative path
+    acre.request.base_path = _request.request_path_info.replace(new RegExp(u.escape_re(pathinfo)+"$"), "");
+};
+
+/**
+ * reset acre.request.query_string & body
+ * 
+ * Also parse params into objects for easy look-up:
+ *   query_string --> acre.request.params
+ *   body --> acre.request.body_params
+ */
+function set_request_params(query_string, body) {
+    acre.request.query_string = query_string || "";
+    acre.request.body = body || "";
+    
+    try {
+        acre.request.params = (typeof query_string == 'string') ? acre.form.decode(query_string) : {};
+        acre.request.body_params = (typeof body == 'string' && typeof acre.request.headers['content-type'] == 'string' && acre.request.headers['content-type'].match(/^application\/x-www-form-urlencoded/)) ? acre.form.decode(body) : {};
+        acre.environ.params = acre.request.params;           // deprecated
+        acre.environ.body_params = acre.request.body_params; // deprecated
+    } catch (e) {
+        acre.environ.params = acre.request.params = {};
+        acre.environ.body_params = acre.request.body_params = {};
+        console.warn("Invalid request: parameters were not properly encoded");
     }
-
-    return out;
-}
-
-function serialize_cookiejar(cjar) {
-    var out = [];
-
-    for (var a in cjar) {
-        out.push(a);
-        out.push(cjar[a]);
-    }
-    return out.join(':');
 }
 
 
@@ -718,7 +735,7 @@ var AcreResponse_set_metaweb_vary = function (that) {
     }
 };
 
-acre.response = new AcreResponse();
+acre.response = null;
 
 
 // ------------------------------------------- scripts ------------------------------------
@@ -756,6 +773,9 @@ acre.errors = {};
  *  if this occurs, the best thing is probably to
  *  re-throw the exception.
  */
+acre.errors.AcreRouteException = function () {};
+acre.errors.AcreRouteException.prototype = new Error('acre.route');
+
 acre.errors.AcreExitException = function () {};
 acre.errors.AcreExitException.prototype = new Error('acre.exit');
 _hostenv.AcreExitException = acre.errors.AcreExitException;
@@ -1906,22 +1926,46 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
     function scope_augmentation(script, aug_scope) {
         aug_scope.acre.current_script = script;
         
-        // Stuff we only do for the top-level requested script:
+        /*
+         * _request_scope augmentation:
+         *   This is stuff we only do for 
+         *   the top-level requested script:
+         */
         if (aug_scope == _request_scope && script.name.indexOf("not_found.") !== 0) {
             aug_scope.acre.request.script = script;
-            
+
             if (app.error_page) {
-              _hostenv.error_handler_path = normalize_path(app.error_page);
+                _hostenv.error_handler_path = normalize_path(app.error_page);
             }
 
             // XXX - freebase appfetch method-specific hacks
             if (app.freebase && app.freebase.write_user) {
                 _hostenv.write_user = app.freebase.write_user;
             }
+
             if (app.freebase &&
                 app.freebase.service_url &&
-                /^http(s?):\/\//.test(app.freebase.service_url))
-                acre.freebase.set_service_url(app.freebase.service_url);
+                /^http(s?):\/\//.test(app.freebase.service_url)) {
+                acre.freebase.set_service_url(app.freebase.service_url);    
+            }
+
+            // Decorate deprecated APIs with warning messages, and setup deprecated values
+            var script_id = req_path_to_script_id(script.path);
+            var [namespace, script_name] = split_script_id(script_id);
+
+            aug_scope.acre.request_context = { // deprecated
+                script_name : script_name,
+                script_id : script_id,
+                script_namespace : namespace,
+                script_version : (script.app.versions.length > 0 ? script.app.versions[0] : null)
+            };
+
+            aug_scope.acre.environ.path_info = aug_scope.acre.request.path_info; // deprecated
+
+            aug_scope.acre.context = aug_scope.acre.request_context; // deprecated
+            aug_scope.acre.environ.script_name = script.name; // deprecated
+            aug_scope.acre.environ.script_id = host_to_namespace(script.app.host) + '/' + script.name; // deprecated
+            aug_scope.acre.environ.script_namespace = host_to_namespace(script.app.host); // deprecated
 
             deprecate(aug_scope);
         }
@@ -1940,18 +1984,15 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
             return proto_require(normalize_path(path), default_metadata, null, true);
         };
 
-        aug_scope.acre.route = function(path) {
+        aug_scope.acre.route = function(path, body, skip_routes) {
             path = normalize_path(path, null, true);
-        
             var [h, p, qs] = decompose_req_path(path);
-            var hostpath = app.host;
 
-            // AcreExitException is the only mechanism we have 
-            // for cleanly restarting a request
-            var exit_e = new _hostenv.AcreExitException();
-            exit_e.route_to = path;
-            exit_e.skip_routes = (hostpath == h);
-            throw exit_e;
+            var route_e = new acre.errors.AcreRouteException;
+            route_e.route_to = path;
+            route_e.body = body || "";
+            route_e.skip_routes = (skip_routes ? true : (app.host == h));
+            throw route_e;
         };
 
         aug_scope.acre.response.set_error_page = function(path) {
@@ -2115,8 +2156,10 @@ var proto_require = function(req_path, default_metadata, override_metadata, reso
         };
 
         script.to_http_response = function(scope) {
-            // we're running at the top-level, so reset path_info
-            acre.request.path_info = this.path_info;
+            // if we're running at the top-level, reset path_info
+            if (scope === _request_scope) {
+                acre.request.path_info = this.path_info;
+            }
 
             var module = this.to_module(scope);
             return _handler.to_http_response(module, this);
@@ -2160,7 +2203,6 @@ _hostenv.finish_response = function () {
     if (!('content-type' in acre.response.headers)) {
         acre.response.headers['content-type'] = "text/plain; charset=utf-8";
     }
-
 
     // We don't want users to set these, I guess.
     delete acre.response.headers['connection'];
@@ -2407,47 +2449,63 @@ var oauth_sign = oauth_scope.OAuth.sign;
 delete oauth_scope;
 
 
-//----------------------------- request parameters --------------------------------
+//----------------------------- cookie jar ------------------------------
 
-/**
- * the query_string, decoded into a Javascript object using form url encoding.
- * set to {} if no query string was present or parseable.
- */
-try {
-    acre.request.params = (typeof acre.request.query_string == 'string') ? acre.form.decode(acre.request.query_string) : {};
-    acre.request.body_params = (typeof acre.request.body == 'string' && typeof acre.request.headers['content-type'] == 'string' && acre.request.headers['content-type'].match(/^application\/x-www-form-urlencoded/)) ? acre.form.decode(acre.request.body) : {};
-    acre.environ.params = acre.request.params;           // deprecated
-    acre.environ.body_params = acre.request.body_params; // deprecated
-    if (mwlt_mode === false) {
-        var cj_val = ('acre_cookiejar' in acre.request.cookies) ?
-            acre.request.cookies.acre_cookiejar : '';
-
-        var _cookie_jar_best_match = null;
-        var _cookie_jar = parse_cookiejar(cj_val);
-        syslog.debug({'jar':JSON.stringify(_cookie_jar),
-                      'raw_value':cj_val}, 'acreboot.cookie_jar');
-    } else {
-        var mwlt_val = ('mwLastWriteTime' in acre.request.cookies) ?
-            acre.request.cookies.mwLastWriteTime : null;
-
-        var _cookie_jar_best_match = null;
-        var _cookie_jar = {};
-        if (mwlt_val !== null) {
-            _cookie_jar[_hostenv.ACRE_MWLT_MODE_COOKIE_SCOPE] = mwlt_val;
-        }
-        syslog.debug({'jar':JSON.stringify(_cookie_jar),
-                      'raw_value':mwlt_val}, 'acreboot.cookie_jar.mwlt_mode');
-
-
+// acre_cookiejar == "host:mwlt:host:mwlt"
+//   ie   "sandbox-freebase.com:xxx|xxxxgg_ttt|dddd:freebase.com:123|345|6666|qa"
+function parse_cookiejar(cj) {
+    if (!cj) return {};
+    var parts = cj.split(":");
+    if (!!(parts.length % 2)) {
+        // Invalid Cookie Jar, fail.
+        syslog.warn({jar:cj}, "acreboot.cookie_jar.invalid");
+        return {};
     }
-} catch (e) {
-    acre.environ.params = acre.request.params = {};
-    acre.environ.body_params = acre.request.body_params = {};
+
+    var out = {};
+    var key = null;
+    for (var a in parts) {
+        var part = parts[a];
+        if (key == null) {
+            key = part;
+        } else {
+            out[key] = part;
+            key = null;
+        }
+    }
+
+    return out;
+}
+
+function serialize_cookiejar(cjar) {
+    var out = [];
+
+    for (var a in cjar) {
+        out.push(a);
+        out.push(cjar[a]);
+    }
+    return out.join(':');
+}
+
+if (mwlt_mode === false) {
+    var cj_val = ('acre_cookiejar' in acre.request.cookies) ?
+        acre.request.cookies.acre_cookiejar : '';
+
+    var _cookie_jar_best_match = null;
+    var _cookie_jar = parse_cookiejar(cj_val);
+    syslog.debug({'jar':JSON.stringify(_cookie_jar),
+                  'raw_value':cj_val}, 'acreboot.cookie_jar');
+} else {
+    var mwlt_val = ('mwLastWriteTime' in acre.request.cookies) ?
+        acre.request.cookies.mwLastWriteTime : null;
 
     var _cookie_jar_best_match = null;
     var _cookie_jar = {};
-
-    console.warn("Invalid request: parameters were not properly encoded");
+    if (mwlt_val !== null) {
+        _cookie_jar[_hostenv.ACRE_MWLT_MODE_COOKIE_SCOPE] = mwlt_val;
+    }
+    syslog.debug({'jar':JSON.stringify(_cookie_jar),
+                  'raw_value':mwlt_val}, 'acreboot.cookie_jar.mwlt_mode');
 }
 
 
@@ -2462,75 +2520,41 @@ for (var name in _topscope) {
 
 //----------------------------------- top-level ---------------------------------
 
-var handle_request = function () {
-    // Determine what path we're running:
-    var request_path = null;
-    
-    // also need to track the "original" path for situations like "/acre/" URLs
-    var source_path = null;
+var handle_request = function (request_path, req_body, skip_routes) {
+    // reset the response object
+    acre.response = new AcreResponse();
 
-    // If it's an internal redirect (acre.route(), error page, etc.), get from handler_script_path:
-    if (typeof _request.handler_script_path == 'string' && _request.handler_script_path != '') {
-        request_path = _request.handler_script_path;
-    }
-    delete _request.handler_script_path;
-    
-    // Otherwise, get from request:
-    request_path = request_path || ('http://' + _request.server_name.toLowerCase() + _request.path_info);
-    var [h, p] = decompose_req_path(request_path);
-    
-    if (!h) h = _DEFAULT_APP;
-    if (!p) p = _DEFAULT_FILE;
-    
-    request_path = compose_req_path(h, p);
-    
-    
-    // if we get 'cache-control: no-cache' in the request headers
-    // (normally triggered by a shift-reload in the browser)
-    // we need to touch and get a new mwLastWriteTime value to really clear
-    // the caches
-    
-    // XXX there is a chicken and the egg problem here... we need to touch
-    // before fetching metadata, but we don't want to touch if we're
-    // getting a local-file since we don't need to. Personally, I find
-    // consistency is better than a slight speed up for shift-reload on
-    // local files...
-    
-    // if an x-acre-cache-control header is present, then do not bust the cache
-    // The reason for this change is that many browsers will by default issue
-    // a no-cache cache-control header for XHR post requests which will make 
-    // them very slow for no reason on acre.  In order to bypass this problem, 
-    // we introduced a new header (x-acre-cache-control) that instructs
-    // acre to not bust its appfetch cache for these requests
-    acre.request.skip_cache = false;
-    if ('cache-control' in acre.request.headers && !('x-acre-cache-control' in acre.request.headers)) {
-        if (/no-cache/.test(acre.request.headers['cache-control'])) {
-            // get a new _mwLastWriteTime for the client so future
-            // requests will also be fresh.
-            _system_freebase.touch();
-            acre.request.skip_cache = true;
-        }
-    }
+    // We might need the original path for situations like "/acre/" URLs
+    var source_path = request_path;
 
+    var [req_host, req_pathinfo, req_query_string] = decompose_req_path(request_path);
+
+    // Now that we know what we're running, set up rest of acre.request
+    set_request_pathinfo(req_pathinfo);
+    set_request_params(req_query_string, req_body);
+    
+    // Fill in missing values
+    if (!req_host) req_host = _DEFAULT_APP;
+    if (!req_pathinfo) req_pathinfo = _DEFAULT_FILE;
+    
+    request_path = compose_req_path(req_host, req_pathinfo);
 
     // get app metadata defaults
     // doing this here so it's once per request rather than for every require
     var default_metadata = set_app_metadata({}, proto_require(compose_req_path(_DEFAULTS_HOST)));
     delete default_metadata.files;
 
-
     // support /acre/ special case -- these are OTS routing rules 
     // that allow certain global scripts to run within the context of any app
     // e.g., keystore, auth, test, etc.
-    if (_request.request_url.split('/')[3] == 'acre') {
+    if (!source_path && _request.request_url.split('/')[3] == 'acre') {
         var [h, p] = decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
-        var source_app = proto_require(compose_req_path(h), default_metadata);
+        var source_app = proto_require(compose_req_path(req_host), default_metadata);
         if (source_app !== null) {
-            source_path = compose_req_path(h, p);
+            source_path = compose_req_path(req_host, req_pathinfo);
             _topscope._request_app_guid = source_app.guid;
         }
     }
-
 
     // Set up the list of paths we're going to try before failing altogether, 
     // (routes, not_found, default scripts, etc.)
@@ -2540,15 +2564,13 @@ var handle_request = function () {
         'error':true
     };
 
-    function fallbacks_for(req_path) {
-        var [host, path] = decompose_req_path(req_path);
-
+    function fallbacks_for(host, path) {
         var fallbacks = [];
-        if (_request.skip_routes !== true) {
+        if (skip_routes !== true) {
             fallbacks.push(compose_req_path(host,  'routes' + '/' + path));
         }
 
-        fallbacks.push(req_path);
+        fallbacks.push(compose_req_path(host, path));
 
         for (var sname in  FALLTHROUGH_SCRIPTS) {
             if (file_in_path(sname, path)[1]) {
@@ -2566,13 +2588,13 @@ var handle_request = function () {
         return fallbacks;
     };
 
-    var fallbacks = fallbacks_for(request_path);
+    var fallbacks = fallbacks_for(req_host, req_pathinfo);
 
     // Work our way down the list until we find one that works:
     var script = null;
     u.each(fallbacks, function(i, fpath) {
         try {            
-            syslog(fpath, "fallbacks.route_to");
+            syslog(fpath, "acreboot.route_to");
             script = proto_require(fpath, default_metadata);
         } catch (e if e.__code__ == APPFETCH_ERROR_METHOD) {
             acre.response.status = 503;
@@ -2580,10 +2602,7 @@ var handle_request = function () {
             acre.exit();
         }
         
-        if (script === null) {
-            syslog(fpath, "fallbacks.not_found");
-        } else {
-            syslog(fpath, "fallbacks.found");
+        if (script !== null) {
             return false;
         }        
     });
@@ -2596,25 +2615,20 @@ var handle_request = function () {
         acre.exit();
     }
 
-    // Time to set up the rest of the environment...
-    var [req_host, req_path, req_query_string] = decompose_req_path(request_path);
-    var script_id = req_path_to_script_id(request_path);            // for deprecated stuff
-    var [namespace, script_name] = split_script_id(script_id);      // for deprecated stuff
-
     // This information is needed by the error page
     _hostenv.script_name = script.name;
     _hostenv.script_path = script.path;
     _hostenv.script_host_path = compose_req_path(script.app.host);
-
-    // We need this information to generate things like the appeditor url, and
-    // to run the not_found page, it will actually get overriden with a proper
-    // version if scope_augmentation is running in _request_scope
+    
+    // This information is needed to run the not_found page
+    // it will actually get overriden with a proper
+    // version once scope_augmentation is run
     acre.request.script = {
         'app': {
             'id': host_to_namespace(req_host),
             'path': compose_req_path(req_host)
         },
-        'name': req_path,
+        'name': req_pathinfo,
         'path': request_path
     };
 
@@ -2633,43 +2647,42 @@ var handle_request = function () {
     acre.response.set_header('x-acre-source-url',  
                             _request.freebase_site_host + '/appeditor#!path=' + source_path);
 
-    // Decorate deprecated APIs with warning messages, and setup deprecated values
-    // XXX may want to move this into the _topscope block in scope_augmentation?
-    // it would give more accurate information, and deprecate() has to be there
-    // any way.
-    (function () {
-        acre.request_context = { // deprecated
-            script_name : script_name,
-            script_id : script_id,
-            script_namespace : namespace,
-            script_version : (script.app.versions.length > 0 ? script.app.versions[0] : null)
-        };
+    try {
+        _request_scope = make_scope();
+        var res = script.to_http_response(_request_scope);
 
-        acre.environ.path_info = acre.request.path_info; // deprecated
+        if (res !== null) {
+            acre.response.status = res.status || acre.response.status;
+            for (var k in res.headers) {
+                var v = res.headers[k];
+                acre.response.set_header(k.toLowerCase(), v);
+            }
 
-        acre.context = acre.request_context; // deprecated
-        acre.environ.script_name = script.name; // deprecated
-        acre.environ.script_id = host_to_namespace(script.app.host) + '/' + script.name; // deprecated
-        acre.environ.script_namespace = host_to_namespace(script.app.host); // deprecated
-    })();
-
-    _request_scope = make_scope();
-    
-    var res = script.to_http_response(_request_scope);
-    if (res !== null) {
-        acre.response.status = res.status || acre.response.status;
-        for (var k in res.headers) {
-            var v = res.headers[k];
-            acre.response.set_header(k.toLowerCase(), v);
+            acre.write(res.body);
         }
-        
-        acre.write(res.body);
+    } catch (e if e instanceof acre.errors.AcreRouteException) {
+        handle_request(e.route_to, e.body, e.skip_routes);
     }
-
 };
+
 
 // ---------------------------------- let's roll --------------------------------
 
-handle_request();
+// We're not going to create this until later
+// but we need it to be global for comparison
+var _request_scope;
+
+var _request_path;
+if (typeof _request.handler_script_path == 'string' && _request.handler_script_path != '') {
+    // If it's an internal redirect (error page), get _request_path from handler_script_path:
+    _request_path = _request.handler_script_path;
+    delete _request.handler_script_path;
+} else {
+    // Otherwise, get from request
+    // we don't use _request.request_url because it is pre-OTS rules
+    _request_path = 'http://' + _request.server_name.toLowerCase() + _request.path_info + '?' + _request.query_string; 
+}
+
+handle_request(_request_path, _request.request_body, _request.skip_routes);
 
 })();

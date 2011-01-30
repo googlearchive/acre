@@ -704,12 +704,21 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
         APPFETCH_ERROR_APP = 3,
         APPFETCH_ERROR_NOT_FOUND = 4,
         APPFETCH_THUNK = 5;
+        
+    var have_touched = false;
 
     var graph_resolver = function(host) {
         return host_to_namespace(host);
     };
 
     var graph_inventory_path  = function(app, namespace) {
+        // get a new _mwLastWriteTime for the client so all
+        // requests will also be fresh.
+        if (acre.request.skip_cache === true && have_touched === false) {
+            _system_freebase.touch();
+            have_touched = true;
+        }
+        
         var result = {
             dirs : {},
             files : {}
