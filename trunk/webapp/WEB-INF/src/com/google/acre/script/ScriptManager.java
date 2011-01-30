@@ -85,14 +85,15 @@ public class ScriptManager {
         // script not found in cache, compile it and cache it
         // note that we add the script before compiling it because
         // we need the debug info from the CachedScript to display errors.
-        _logger.debug("script.cache", "caching: " + className);
         _scriptsByClassName.put(className, script);
 
 
         // Here, check if the class is in the class store, and pass it to
         // compileScript instead of the source if available
         if (_class_store != null) {
+            _logger.debug("script.cache.get.begin", className);
             StoredClass sc = _class_store.get(className);
+            _logger.debug("script.cache.get.end", className);
             if (sc != null) {
                 Script compiledScript =
                     compileScript(_classLoader,
@@ -140,8 +141,9 @@ public class ScriptManager {
                                              (byte[])compiled[1]);
 
             synchronized (_class_store) {
-                _logger.debug("script.cache", (String)compiled[0]);
+                _logger.debug("script.cache.put.begin", (String)compiled[0]);
                 _class_store.set((String)compiled[0], sc);
+                _logger.debug("script.cache.put.end", (String)compiled[0]);
             }
         }
 
