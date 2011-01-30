@@ -49,6 +49,7 @@ public class CachedScript {
     }
     
     public CachedScript(String script_name, String source_text, String content_id) {
+        _script_name = script_name;
         _source_name = join(script_name,content_id);
         _class_name = toClassName(_source_name);
 
