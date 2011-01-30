@@ -141,9 +141,9 @@ public class ScriptManager {
                                              (byte[])compiled[1]);
 
             synchronized (_class_store) {
-                _logger.debug("script.cache.put.begin", (String)compiled[0]);
+                _logger.debug("script.cache.put.begin", compiled[0]);
                 _class_store.set((String)compiled[0], sc);
-                _logger.debug("script.cache.put.end", (String)compiled[0]);
+                _logger.debug("script.cache.put.end", compiled[0]);
             }
         }
 
@@ -193,7 +193,8 @@ public class ScriptManager {
                 throw new AcreInternalError("Failed to instantiate a compiled script " + compiled[0] + ":\n " + t.toString(), t);
             }
         }
-
+        
+        _logger.debug("script.cache.compile", compiled[0]);
         return script;
     }
 
