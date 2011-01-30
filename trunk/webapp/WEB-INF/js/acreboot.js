@@ -357,6 +357,7 @@ acre.exit = function () {
     throw new _hostenv.AcreExitException();
 };
 
+
 // ------------------------------- acre.host -----------------------------------------
 
 if (_request.server.indexOf("jetty") > -1) {
@@ -738,15 +739,7 @@ var AcreResponse_set_metaweb_vary = function (that) {
 acre.response = null;
 
 
-// ------------------------------------------- scripts ------------------------------------
-
-/*
- * Keep track of files used in processing the request
- */
-acre.current_script = null;
-
-
-// -------------------------------------------- errors ------------------------------------
+// --------------------------- acre.errors ---------------------------------
 
 /*
  * Setup the acre.error object in case the request is for an error page
@@ -808,6 +801,34 @@ if (acre.request.user_info) {
 }
 
 
+// ------------------------------------ JSON ------------------------------
+
+_topscope.JSON = {
+    stringify: function(obj, resolver, space) {
+        try {
+            return _json.stringify(obj, resolver, space);
+        } catch (e) {
+          var message = e.message.indexOf("JSON.stringify:") == 0
+                          ? e.message
+                          : e.message.replace(/^[^:]*:\s*/, '');
+            throw new Error(message);
+        }
+    },
+    parse: function(str, reviver) {
+        try {
+            if (typeof reviver !== "undefined" && reviver != null) {
+                console.warn("Acre currently ignores 'reviver' in JSON.parse()");
+            }
+
+            return _json.parse(str);
+        } catch (e) {
+            // Everything after the first :, if present
+            throw new Error(e.message.replace(/^[^:]*:\s*/, ''));
+        }
+    }
+};
+
+
 // ------------------------------ xml/html parsers ----------------------------
 
 if (typeof acre.xml == 'undefined') {
@@ -852,6 +873,45 @@ acre.xml.parseNS = function(xml_str) {
  */
 acre.html.parse = function(html_str) {
     return _domparser.parse_string(html_str, "html");
+};
+
+
+// ------------------------ acre.hash ------------------------------
+
+if (typeof acre.hash == 'undefined') {
+    acre.hash = {};
+}
+
+acre.hash.hex_sha1 = function (s) {
+    return _hostenv.hash("SHA-1", s, true);
+};
+
+acre.hash.b64_sha1 = function (s) {
+    return _hostenv.hash("SHA-1", s, false);
+};
+
+acre.hash.hex_md5 = function (s) {
+    return _hostenv.hash("MD5", s, true);
+};
+
+acre.hash.b64_md5 = function (s) {
+    return _hostenv.hash("MD5", s, false);
+};
+
+acre.hash.hex_hmac_sha1 = function (key, data) {
+    return _hostenv.hmac("HmacSHA1", key, data, true);
+};
+
+acre.hash.b64_hmac_sha1 = function (key, data) {
+    return _hostenv.hmac("HmacSHA1", key, data, false);
+};
+
+acre.hash.hex_hmac_md5 = function (key, data) {
+    return _hostenv.hmac("HmacMD5", key, data, true);
+};
+
+acre.hash.b64_hmac_md5 = function (key, data) {
+    return _hostenv.hmac("HmacMD5", key, data, false);
 };
 
 
@@ -919,44 +979,6 @@ if (_request.trusted && _taskqueue) { // the _taskqueue object won't be availabl
     _hostenv.load_system_script('taskqueue.js', queue_scope);
     queue_scope.augment(acre);
 }
-
-// ------------------------ acre.hash ------------------------------
-
-if (typeof acre.hash == 'undefined') {
-    acre.hash = {};
-}
-
-acre.hash.hex_sha1 = function (s) {
-    return _hostenv.hash("SHA-1", s, true);
-};
-
-acre.hash.b64_sha1 = function (s) {
-    return _hostenv.hash("SHA-1", s, false);
-};
-
-acre.hash.hex_md5 = function (s) {
-    return _hostenv.hash("MD5", s, true);
-};
-
-acre.hash.b64_md5 = function (s) {
-    return _hostenv.hash("MD5", s, false);
-};
-
-acre.hash.hex_hmac_sha1 = function (key, data) {
-    return _hostenv.hmac("HmacSHA1", key, data, true);
-};
-
-acre.hash.b64_hmac_sha1 = function (key, data) {
-    return _hostenv.hmac("HmacSHA1", key, data, false);
-};
-
-acre.hash.hex_hmac_md5 = function (key, data) {
-    return _hostenv.hmac("HmacMD5", key, data, true);
-};
-
-acre.hash.b64_hmac_md5 = function (key, data) {
-    return _hostenv.hmac("HmacMD5", key, data, false);
-};
 
 
 // ------------------------------ urlfetch -----------------------------------
@@ -1266,6 +1288,45 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     return response;
 };
 
+
+//----------------------------- cookie jar ------------------------------
+
+// acre_cookiejar == "host:mwlt:host:mwlt"
+//   ie   "sandbox-freebase.com:xxx|xxxxgg_ttt|dddd:freebase.com:123|345|6666|qa"
+function parse_cookiejar(cj) {
+    if (!cj) return {};
+    var parts = cj.split(":");
+    if (!!(parts.length % 2)) {
+        // Invalid Cookie Jar, fail.
+        syslog.warn({jar:cj}, "acreboot.cookie_jar.invalid");
+        return {};
+    }
+
+    var out = {};
+    var key = null;
+    for (var a in parts) {
+        var part = parts[a];
+        if (key == null) {
+            key = part;
+        } else {
+            out[key] = part;
+            key = null;
+        }
+    }
+
+    return out;
+}
+
+function serialize_cookiejar(cjar) {
+    var out = [];
+
+    for (var a in cjar) {
+        out.push(a);
+        out.push(cjar[a]);
+    }
+    return out.join(':');
+}
+
 function cookiejar_domain_match(url) {
     var url_parts = u.parseUri(url);
     var hostname = url_parts.host;
@@ -1278,6 +1339,27 @@ function cookiejar_domain_match(url) {
         }
     }
     return [null, null];
+}
+
+if (mwlt_mode === false) {
+    var cj_val = ('acre_cookiejar' in acre.request.cookies) ?
+        acre.request.cookies.acre_cookiejar : '';
+
+    var _cookie_jar_best_match = null;
+    var _cookie_jar = parse_cookiejar(cj_val);
+    syslog.debug({'jar':JSON.stringify(_cookie_jar),
+                  'raw_value':cj_val}, 'acreboot.cookie_jar');
+} else {
+    var mwlt_val = ('mwLastWriteTime' in acre.request.cookies) ?
+        acre.request.cookies.mwLastWriteTime : null;
+
+    var _cookie_jar_best_match = null;
+    var _cookie_jar = {};
+    if (mwlt_val !== null) {
+        _cookie_jar[_hostenv.ACRE_MWLT_MODE_COOKIE_SCOPE] = mwlt_val;
+    }
+    syslog.debug({'jar':JSON.stringify(_cookie_jar),
+                  'raw_value':mwlt_val}, 'acreboot.cookie_jar.mwlt_mode');
 }
 
 
@@ -1699,7 +1781,193 @@ for (var i=0; i < custom_methods.length; i++) {
 }
 
 
-// ------------------------------------------ proto_require ------------------------------------
+//-------------------------------- console - part 1 --------------------------------------
+
+var console_scope = {};
+console_scope.userlog = function(level,arr) { return _hostenv.userlog(level,arr); };
+_hostenv.load_system_script('console.js', console_scope);
+console_scope.augment_topscope(_topscope);
+console_scope.augment_acre(acre);
+
+
+// ------------------------------ deprecation ------------------------------------------
+
+var deprecate_scope = {};
+deprecate_scope.syslog = syslog;
+_hostenv.load_system_script('acre_deprecate.js', deprecate_scope);
+var deprecate = deprecate_scope.deprecate;
+
+
+// --------------------------------- mjt ------------------------------------------
+
+// NOTE: mjt needs the 'console' object defined at init to work properly
+acre._load_system_script = function (script) {
+    return _hostenv.load_system_script(script, _topscope);
+};
+
+// needed by acremjt.js to load scripts
+_hostenv.load_system_script('acrexhr.js', _topscope);
+_hostenv.load_system_script('acremjt.js', _topscope);
+
+// remove the script loader from the environment
+delete acre._load_system_script;
+
+// Initialize the mjt handler
+acre.handlers.mjt = mjt.acre.handler();
+delete mjt.acre.handler;
+
+// Initialize some mjt variables
+mjt.debug = 1;
+
+// expose a function for deprecating
+mjt.deprecate = function () {
+}
+
+// prepare acre.form.*
+acre.form = {
+    quote : mjt.formquote,
+    encode : mjt.formencode,
+    decode : mjt.formdecode,
+    build_url : mjt.form_url
+};
+
+acre.formquote =  acre.form.quote; // deprecated
+acre.formencode = acre.form.encode; // deprecated
+acre.formdecode = acre.form.decode; // deprecated
+acre.form_url =  acre.form.build_url; // deprecated
+
+// add html encoding to the html object
+acre.html.encode = mjt.htmlencode;
+acre.htmlencode = mjt.htmlencode; // deprecated
+
+// prepare acre.markup.*
+acre.markup = {};
+acre.markup.bless = mjt.bless;
+acre.markup.stringify = mjt.flatten_markup;
+acre.markup.define_browser_var = function(obj,name) {
+    return acre.markup.bless('<script type="text/javascript">var ' + name + ' = ' + JSON.stringify(obj).replace(/\//g,'\\/') + ';</script>');
+};
+
+acre.markup.MarkupList = mjt.MarkupList;
+
+// keep an internal copy of the global used by acremjt.js
+var _mjt = mjt;
+
+_mjt.deprecate = deprecate_scope.deprecation_wrapper;
+
+acre.template = {};
+
+// name is provided for user debugging
+// source is the source text.
+acre.template.load_from_string = function (source, name) {
+    var script_name = 'eval/' + name.replace(/[^a-zA-Z0-9_]/g, '_');
+
+    // the compiler creates a TemplatePackage but doesn't evaluate it.
+    // here we create a package, generate the js, and then serialize it
+    var srcpkg = _mjt.acre.compile_string(source, name);
+    var js_text = 'var pkgdef = (' + srcpkg.toJS() + '); pkgdef';
+
+    // create a runtime TemplatePackage from the generated and serialized package
+    var tobj = eval(js_text);
+    var pkg = (new _mjt.TemplatePackage()).init_from_js(tobj.pkgdef).toplevel();
+    var pkgtop = pkg._main.prototype.tpackage.tcall;
+
+    return pkgtop;
+};
+
+// provide a string of template markup and compile it to JS
+// useful for sending compiled templates over the wire
+acre.template.string_to_js = function (string, name) {
+    return _mjt.acre.compile_string(string, name).toJS();
+};
+
+// LATER
+// hide the global 'mjt' symbol
+//delete mjt;
+
+
+// ----------------------------- acre.freebase -----------------------------------------
+
+var mjt_freebase_whitelist = {
+    "date_from_iso" : true,
+    "date_to_iso" : true,
+    "mqlkey_quote" : true,
+    "mqlkey_unquote" : true
+}
+
+acre.freebase = {};
+var _system_freebase = {};
+
+for (var k in _mjt.freebase) {
+    if (k in mjt_freebase_whitelist) {
+        acre.freebase[k] = _mjt.freebase[k];
+        _system_freebase[k] = _mjt.freebase[k];
+    }
+}
+
+var freebase_scope = {};
+freebase_scope.syslog = syslog;
+_hostenv.load_system_script('freebase.js', freebase_scope);
+
+// decorate acreboot objects with just what we need... a lot
+freebase_scope.augment(acre.freebase, acre.urlfetch, acre.async.urlfetch, _request.freebase_service_url, _request.freebase_site_host, mwlt_mode);
+freebase_scope.augment(_system_freebase, _system_urlfetch, _system_async_urlfetch, _request.freebase_service_url, _request.freebase_site_host, mwlt_mode);
+freebase_scope.appfetcher(register_appfetch_method, make_appfetch_error);
+acre.handlers.mqlquery = freebase_scope.handler();
+
+// for backwards compatibility, these mjt.Task classes
+// are enqueue()d immediately in the acre environment only.
+var mjt_freebase_synctasks = {
+    MqlRead: 'mqlread',
+    MqlReadMultiple: 'mqlread_multiple',
+    MqlWrite: 'mqlwrite',
+    TransGet: 'get_blob',
+    Touch: 'touch',
+    Upload: 'upload'
+};
+
+for (var k in mjt_freebase_synctasks) {
+    (function (k) {
+        var mapped_name = mjt_freebase_synctasks[k];
+        acre.freebase[k] = function () {
+            var res = acre.freebase[mapped_name].apply(this, arguments);
+            res.enqueue = function () { return res; };
+            return res;
+        };
+    })(k);
+}
+
+// cleanup
+delete freebase_scope;
+
+
+//--------------------------------- oauth -----------------------------------
+
+var oauth_scope = {};
+oauth_scope.Hash = acre.hash;
+oauth_scope.syslog = syslog;
+oauth_scope.system_urlfetch = _system_urlfetch;
+_hostenv.load_system_script('oauth.js',      oauth_scope);
+_hostenv.load_system_script('acre_oauth.js', oauth_scope);
+oauth_scope.augment(acre);
+
+// fish this function out because _urlfetch needs it
+var oauth_sign = oauth_scope.OAuth.sign;
+
+// cleanup
+delete oauth_scope;
+
+
+//-------------------------------- console - part 2 ----------------------------
+
+// tell the console to ignore all the top level objects by default
+// NOTE: this needs to be at the very end as to list all the possible objects
+for (var name in _topscope) {
+    console_scope.skip(_topscope[name]);
+}
+
+
+// ---------------------------- proto_require ---------------------------------
 
 var proto_require = function(req_path, override_metadata, resolve_only) {
     // NOTE: get_file and normalize_path both rely 
@@ -2173,19 +2441,171 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
 };
 
 
-// ---------------------------------------- finish_response ------------------------------
+//----------------------------------- Main ---------------------------------
 
-// this is a callback that gets invoked after the script has finished.
-// ideally we could use try...catch to catch AcreException only and
-// run this, but rhino destroys the stack traces of all the other
-// exceptions then.
-// so the try...catch is in java, and the java code calls back in here
-// to finish the response.
-// note that this shouldn't be a security issue: this code is not called with
-// any special privileges, we aren't trying to enforce security requirements
-// on the headers.  so if an app trashes the js scope, that's its problem.
-//
+/*
+ * this is the main function where we:
+ *  1. figure out which script to run
+ *  2. run it
+ *  3. repeat (if acre.route is called)
+ */
+var handle_request = function (request_path, req_body, skip_routes) {
+    // reset the response
+    acre.response = new AcreResponse();
+    
+    // we might need the original path for situations 
+    // like "/acre/" URLs, so let's set it aside
+    var source_path = request_path;
 
+    var [req_host, req_pathinfo, req_query_string] = decompose_req_path(request_path);
+
+    // Now that we know what we're running, set up rest of acre.request
+    set_request_pathinfo(req_pathinfo);
+    set_request_params(req_query_string, req_body);
+    
+    // Fill in missing values
+    if (!req_host) req_host = _DEFAULT_APP;
+    if (!req_pathinfo) req_pathinfo = _DEFAULT_FILE;
+    
+    request_path = compose_req_path(req_host, req_pathinfo);
+
+    // support /acre/ special case -- these are OTS routing rules 
+    // that allow certain global scripts to run within the context of any app
+    // e.g., keystore, auth, test, etc.
+    if (_request.request_url.split('/')[3] == 'acre') {
+        var [h, p] = decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
+        var source_app = proto_require(compose_req_path(req_host));
+        if (source_app !== null) {
+            source_path = compose_req_path(req_host, req_pathinfo);
+            _topscope._request_app_guid = source_app.guid;
+        }
+    }
+
+    // Set up the list of paths we're going to try before failing altogether, 
+    // (routes, not_found, default scripts, etc.)
+    function fallbacks_for(host, path) {
+        var FALLTHROUGH_SCRIPTS = {
+            'robots.txt':true,
+            'favicon.ico':true,
+            'error':true
+        };
+        
+        var fallbacks = [];
+        
+        if (skip_routes !== true) {
+            fallbacks.push(compose_req_path(host,  'routes' + '/' + path));
+        }
+
+        fallbacks.push(compose_req_path(host, path));
+
+        for (var sname in  FALLTHROUGH_SCRIPTS) {
+            if (file_in_path(sname, path)[1]) {
+                fallbacks.push(compose_req_path(_DEFAULTS_HOST, path));
+            }
+        }
+
+        fallbacks = fallbacks.concat(
+            [
+                compose_req_path(host, 'not_found'),
+                compose_req_path(_DEFAULTS_HOST, 'not_found')
+            ]
+        );
+
+        return fallbacks;
+    };
+    var fallbacks = fallbacks_for(req_host, req_pathinfo);
+
+    // Work our way down the list until we find one that works:
+    var script = null;
+    u.each(fallbacks, function(i, fpath) {
+        try {            
+            syslog(fpath, "acreboot.route_to");
+            script = proto_require(fpath);
+        } catch (e if e.__code__ == APPFETCH_ERROR_METHOD) {
+            acre.response.status = 503;
+            acre.write("Service Temporarily Unavailable\n");
+            acre.exit();
+        }
+        
+        if (script !== null) {
+            return false;
+        }        
+    });
+
+    // this is a catastrophic lookup failure
+    if (script == null) {
+        acre.response.set_header('content-type', 'text/plain');
+        acre.response.status = 404;
+        acre.write('No valid acre script found at ' + request_path + ' (or defaults)\n');
+        acre.exit();
+    }
+
+    // This information is needed by the error page
+    _hostenv.script_name = script.name;
+    _hostenv.script_path = script.path;
+    _hostenv.script_host_path = compose_req_path(script.app.host);
+    if ('error' in acre && 'script_path' in acre.error) {
+        source_path = acre.error.script_path;       
+    }
+    
+    // This information is needed to run the not_found page
+    // it will actually get overriden with a proper
+    // version once scope_augmentation is run
+    acre.request.script = {
+        'app': {
+            'id': host_to_namespace(req_host),
+            'path': compose_req_path(req_host)
+        },
+        'name': req_pathinfo,
+        'path': request_path
+    };
+
+    // before the script is actually run, we want to set the app guid aside
+    // if we didn't already do so
+    // app_guid is primarily used for accessing the keystore and the datastore
+    if (_topscope._request_app_guid === null) {
+        _topscope._request_app_guid = script.app.guid;
+    }
+    
+    // View Source link
+    acre.response.set_header('x-acre-source-url',
+                            _request.freebase_site_host + 
+                            '/appeditor#!path=' + source_path);
+
+    // execute the script
+    try {
+        _request_scope = make_scope();
+        var res = script.to_http_response(_request_scope);
+
+        if (res !== null) {
+            // fill out the acre.response object.
+            // this will be processed by HostEnv when
+            // the finish_response callback is invoked
+            acre.response.status = res.status || acre.response.status;
+            for (var k in res.headers) {
+                var v = res.headers[k];
+                acre.response.set_header(k.toLowerCase(), v);
+            }
+
+            acre.write(res.body);
+        }
+    } catch (e if e instanceof acre.errors.AcreRouteException) {
+        handle_request(e.route_to, e.body, e.skip_routes);
+    }
+};
+
+
+/*
+ * this is a callback that gets invoked after the script has finished.
+ * ideally we could use try...catch to catch AcreException only and
+ * run this, but rhino destroys the stack traces of all the other
+ * exceptions then.
+ * so the try...catch is in java, and the java code calls back in here
+ * to finish the response.
+ * note that this shouldn't be a security issue: this code is not called with
+ * any special privileges, we aren't trying to enforce security requirements
+ * on the headers.  so if an app trashes the js scope, that's its problem.
+ */
 _hostenv.finish_response = function () {
     // post process headers so everything is lower case, this sucks
     // but we need it so we can easily modify header values
@@ -2243,421 +2663,6 @@ _hostenv.finish_response = function () {
                             acre.response.headers, acre.response.cookies);
 
     // after this function returns, the body will be sent
-};
-
-// ------------------------------------ JSON ------------------------------
-
-_topscope.JSON = {
-    stringify: function(obj, resolver, space) {
-        try {
-            return _json.stringify(obj, resolver, space);
-        } catch (e) {
-          var message = e.message.indexOf("JSON.stringify:") == 0
-                          ? e.message
-                          : e.message.replace(/^[^:]*:\s*/, '');
-            throw new Error(message);
-        }
-    },
-    parse: function(str, reviver) {
-        try {
-            if (typeof reviver !== "undefined" && reviver != null) {
-                console.warn("Acre currently ignores 'reviver' in JSON.parse()");
-            }
-
-            return _json.parse(str);
-        } catch (e) {
-            // Everything after the first :, if present
-            throw new Error(e.message.replace(/^[^:]*:\s*/, ''));
-        }
-    }
-};
-
-//-------------------------------- console - part 1 --------------------------------------
-
-var console_scope = {};
-console_scope.userlog = function(level,arr) { return _hostenv.userlog(level,arr); };
-_hostenv.load_system_script('console.js', console_scope);
-console_scope.augment_topscope(_topscope);
-console_scope.augment_acre(acre);
-
-
-// ------------------------------ deprecation ------------------------------------------
-
-var deprecate_scope = {};
-deprecate_scope.syslog = syslog;
-_hostenv.load_system_script('acre_deprecate.js', deprecate_scope);
-var deprecate = deprecate_scope.deprecate;
-
-
-// --------------------------------- mjt ------------------------------------------
-
-// NOTE: mjt needs the 'console' object defined at init to work properly
-acre._load_system_script = function (script) {
-    return _hostenv.load_system_script(script, _topscope);
-};
-
-// needed by acremjt.js to load scripts
-_hostenv.load_system_script('acrexhr.js', _topscope);
-_hostenv.load_system_script('acremjt.js', _topscope);
-
-// remove the script loader from the environment
-delete acre._load_system_script;
-
-// Initialize the mjt handler
-acre.handlers.mjt = mjt.acre.handler();
-delete mjt.acre.handler;
-
-// Initialize some mjt variables
-mjt.debug = 1;
-
-// expose a function for deprecating
-mjt.deprecate = function () {
-}
-
-// prepare acre.form.*
-acre.form = {
-    quote : mjt.formquote,
-    encode : mjt.formencode,
-    decode : mjt.formdecode,
-    build_url : mjt.form_url
-};
-
-acre.formquote =  acre.form.quote; // deprecated
-acre.formencode = acre.form.encode; // deprecated
-acre.formdecode = acre.form.decode; // deprecated
-acre.form_url =  acre.form.build_url; // deprecated
-
-// add html encoding to the html object
-acre.html.encode = mjt.htmlencode;
-acre.htmlencode = mjt.htmlencode; // deprecated
-
-// prepare acre.markup.*
-acre.markup = {};
-acre.markup.bless = mjt.bless;
-acre.markup.stringify = mjt.flatten_markup;
-acre.markup.define_browser_var = function(obj,name) {
-    return acre.markup.bless('<script type="text/javascript">var ' + name + ' = ' + JSON.stringify(obj).replace(/\//g,'\\/') + ';</script>');
-};
-
-acre.markup.MarkupList = mjt.MarkupList;
-
-// keep an internal copy of the global used by acremjt.js
-var _mjt = mjt;
-
-_mjt.deprecate = deprecate_scope.deprecation_wrapper;
-
-acre.template = {};
-
-// name is provided for user debugging
-// source is the source text.
-acre.template.load_from_string = function (source, name) {
-    var script_name = 'eval/' + name.replace(/[^a-zA-Z0-9_]/g, '_');
-
-    // the compiler creates a TemplatePackage but doesn't evaluate it.
-    // here we create a package, generate the js, and then serialize it
-    var srcpkg = _mjt.acre.compile_string(source, name);
-    var js_text = 'var pkgdef = (' + srcpkg.toJS() + '); pkgdef';
-
-    // create a runtime TemplatePackage from the generated and serialized package
-    var tobj = eval(js_text);
-    var pkg = (new _mjt.TemplatePackage()).init_from_js(tobj.pkgdef).toplevel();
-    var pkgtop = pkg._main.prototype.tpackage.tcall;
-
-    return pkgtop;
-};
-
-// provide a string of template markup and compile it to JS
-// useful for sending compiled templates over the wire
-acre.template.string_to_js = function (string, name) {
-    return _mjt.acre.compile_string(string, name).toJS();
-};
-
-// LATER
-// hide the global 'mjt' symbol
-//delete mjt;
-
-
-// ----------------------------- acre.freebase -----------------------------------------
-
-var mjt_freebase_whitelist = {
-    "date_from_iso" : true,
-    "date_to_iso" : true,
-    "mqlkey_quote" : true,
-    "mqlkey_unquote" : true
-}
-
-acre.freebase = {};
-var _system_freebase = {};
-
-for (var k in _mjt.freebase) {
-    if (k in mjt_freebase_whitelist) {
-        acre.freebase[k] = _mjt.freebase[k];
-        _system_freebase[k] = _mjt.freebase[k];
-    }
-}
-
-var freebase_scope = {};
-freebase_scope.syslog = syslog;
-_hostenv.load_system_script('freebase.js', freebase_scope);
-
-// decorate acreboot objects with just what we need... a lot
-freebase_scope.augment(acre.freebase, acre.urlfetch, acre.async.urlfetch, _request.freebase_service_url, _request.freebase_site_host, mwlt_mode);
-freebase_scope.augment(_system_freebase, _system_urlfetch, _system_async_urlfetch, _request.freebase_service_url, _request.freebase_site_host, mwlt_mode);
-freebase_scope.appfetcher(register_appfetch_method, make_appfetch_error);
-acre.handlers.mqlquery = freebase_scope.handler();
-
-// for backwards compatibility, these mjt.Task classes
-// are enqueue()d immediately in the acre environment only.
-var mjt_freebase_synctasks = {
-    MqlRead: 'mqlread',
-    MqlReadMultiple: 'mqlread_multiple',
-    MqlWrite: 'mqlwrite',
-    TransGet: 'get_blob',
-    Touch: 'touch',
-    Upload: 'upload'
-};
-
-for (var k in mjt_freebase_synctasks) {
-    (function (k) {
-        var mapped_name = mjt_freebase_synctasks[k];
-        acre.freebase[k] = function () {
-            var res = acre.freebase[mapped_name].apply(this, arguments);
-            res.enqueue = function () { return res; };
-            return res;
-        };
-    })(k);
-}
-
-// cleanup
-delete freebase_scope;
-
-
-//--------------------------------- oauth ------------------------------------------
-
-var oauth_scope = {};
-oauth_scope.Hash = acre.hash;
-oauth_scope.syslog = syslog;
-oauth_scope.system_urlfetch = _system_urlfetch;
-_hostenv.load_system_script('oauth.js',      oauth_scope);
-_hostenv.load_system_script('acre_oauth.js', oauth_scope);
-oauth_scope.augment(acre);
-
-// fish this function out because _urlfetch needs it
-var oauth_sign = oauth_scope.OAuth.sign;
-
-// cleanup
-delete oauth_scope;
-
-
-//----------------------------- cookie jar ------------------------------
-
-// acre_cookiejar == "host:mwlt:host:mwlt"
-//   ie   "sandbox-freebase.com:xxx|xxxxgg_ttt|dddd:freebase.com:123|345|6666|qa"
-function parse_cookiejar(cj) {
-    if (!cj) return {};
-    var parts = cj.split(":");
-    if (!!(parts.length % 2)) {
-        // Invalid Cookie Jar, fail.
-        syslog.warn({jar:cj}, "acreboot.cookie_jar.invalid");
-        return {};
-    }
-
-    var out = {};
-    var key = null;
-    for (var a in parts) {
-        var part = parts[a];
-        if (key == null) {
-            key = part;
-        } else {
-            out[key] = part;
-            key = null;
-        }
-    }
-
-    return out;
-}
-
-function serialize_cookiejar(cjar) {
-    var out = [];
-
-    for (var a in cjar) {
-        out.push(a);
-        out.push(cjar[a]);
-    }
-    return out.join(':');
-}
-
-if (mwlt_mode === false) {
-    var cj_val = ('acre_cookiejar' in acre.request.cookies) ?
-        acre.request.cookies.acre_cookiejar : '';
-
-    var _cookie_jar_best_match = null;
-    var _cookie_jar = parse_cookiejar(cj_val);
-    syslog.debug({'jar':JSON.stringify(_cookie_jar),
-                  'raw_value':cj_val}, 'acreboot.cookie_jar');
-} else {
-    var mwlt_val = ('mwLastWriteTime' in acre.request.cookies) ?
-        acre.request.cookies.mwLastWriteTime : null;
-
-    var _cookie_jar_best_match = null;
-    var _cookie_jar = {};
-    if (mwlt_val !== null) {
-        _cookie_jar[_hostenv.ACRE_MWLT_MODE_COOKIE_SCOPE] = mwlt_val;
-    }
-    syslog.debug({'jar':JSON.stringify(_cookie_jar),
-                  'raw_value':mwlt_val}, 'acreboot.cookie_jar.mwlt_mode');
-}
-
-
-//-------------------------------- console - part 2 ----------------------------
-
-// tell the console to ignore all the top level objects by default
-// NOTE: this needs to be at the very end as to list all the possible objects
-for (var name in _topscope) {
-    console_scope.skip(_topscope[name]);
-}
-
-
-//----------------------------------- top-level ---------------------------------
-
-var handle_request = function (request_path, req_body, skip_routes) {
-    // reset the response object
-    acre.response = new AcreResponse();
-
-    // We might need the original path for situations like "/acre/" URLs
-    var source_path = request_path;
-
-    var [req_host, req_pathinfo, req_query_string] = decompose_req_path(request_path);
-
-    // Now that we know what we're running, set up rest of acre.request
-    set_request_pathinfo(req_pathinfo);
-    set_request_params(req_query_string, req_body);
-    
-    // Fill in missing values
-    if (!req_host) req_host = _DEFAULT_APP;
-    if (!req_pathinfo) req_pathinfo = _DEFAULT_FILE;
-    
-    request_path = compose_req_path(req_host, req_pathinfo);
-
-    // support /acre/ special case -- these are OTS routing rules 
-    // that allow certain global scripts to run within the context of any app
-    // e.g., keystore, auth, test, etc.
-    if (!source_path && _request.request_url.split('/')[3] == 'acre') {
-        var [h, p] = decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
-        var source_app = proto_require(compose_req_path(req_host));
-        if (source_app !== null) {
-            source_path = compose_req_path(req_host, req_pathinfo);
-            _topscope._request_app_guid = source_app.guid;
-        }
-    }
-
-    // Set up the list of paths we're going to try before failing altogether, 
-    // (routes, not_found, default scripts, etc.)
-    var FALLTHROUGH_SCRIPTS = {
-        'robots.txt':true,
-        'favicon.ico':true,
-        'error':true
-    };
-
-    function fallbacks_for(host, path) {
-        var fallbacks = [];
-        if (skip_routes !== true) {
-            fallbacks.push(compose_req_path(host,  'routes' + '/' + path));
-        }
-
-        fallbacks.push(compose_req_path(host, path));
-
-        for (var sname in  FALLTHROUGH_SCRIPTS) {
-            if (file_in_path(sname, path)[1]) {
-                fallbacks.push(compose_req_path(_DEFAULTS_HOST, path));
-            }
-        }
-
-        fallbacks = fallbacks.concat(
-            [
-                compose_req_path(host, 'not_found'),
-                compose_req_path(_DEFAULTS_HOST, 'not_found')
-            ]
-        );
-
-        return fallbacks;
-    };
-
-    var fallbacks = fallbacks_for(req_host, req_pathinfo);
-
-    // Work our way down the list until we find one that works:
-    var script = null;
-    u.each(fallbacks, function(i, fpath) {
-        try {            
-            syslog(fpath, "acreboot.route_to");
-            script = proto_require(fpath);
-        } catch (e if e.__code__ == APPFETCH_ERROR_METHOD) {
-            acre.response.status = 503;
-            acre.write("Service Temporarily Unavailable\n");
-            acre.exit();
-        }
-        
-        if (script !== null) {
-            return false;
-        }        
-    });
-
-    // this is a catastrophic lookup failure
-    if (script == null) {
-        acre.response.set_header('content-type', 'text/plain');
-        acre.response.status = 404;
-        acre.write('No valid acre script found at ' + request_path + ' (or defaults)\n');
-        acre.exit();
-    }
-
-    // This information is needed by the error page
-    _hostenv.script_name = script.name;
-    _hostenv.script_path = script.path;
-    _hostenv.script_host_path = compose_req_path(script.app.host);
-    
-    // This information is needed to run the not_found page
-    // it will actually get overriden with a proper
-    // version once scope_augmentation is run
-    acre.request.script = {
-        'app': {
-            'id': host_to_namespace(req_host),
-            'path': compose_req_path(req_host)
-        },
-        'name': req_pathinfo,
-        'path': request_path
-    };
-
-    // before the script is actually run, we want to set the app guid aside
-    // if we didn't already do so
-    // app_guid is primarily used for accessing the keystore and the datastore
-    if (_topscope._request_app_guid === null) {
-        _topscope._request_app_guid = script.app.guid;
-    }
-
-    // View Source link:
-    source_path = source_path || request_path;
-    if ('error' in acre && 'script_path' in acre.error) { // error page is a special case
-        source_path = acre.error.script_path;       
-    }
-    acre.response.set_header('x-acre-source-url',  
-                            _request.freebase_site_host + '/appeditor#!path=' + source_path);
-
-    try {
-        _request_scope = make_scope();
-        var res = script.to_http_response(_request_scope);
-
-        if (res !== null) {
-            acre.response.status = res.status || acre.response.status;
-            for (var k in res.headers) {
-                var v = res.headers[k];
-                acre.response.set_header(k.toLowerCase(), v);
-            }
-
-            acre.write(res.body);
-        }
-    } catch (e if e instanceof acre.errors.AcreRouteException) {
-        handle_request(e.route_to, e.body, e.skip_routes);
-    }
 };
 
 
