@@ -107,8 +107,8 @@ function extend() {
 
 function each(object, callback) {
     var name, i = 0,
-    length = object.length,
-    isObj = length === undefined || isFunction(object);
+        length = object.length,
+        isObj = length === undefined || isFunction(object);
 
     if (isObj) {
         for (name in object) {
