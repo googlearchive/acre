@@ -388,13 +388,16 @@ acre.request = {
     protocol : _request.server_protocol, // XXX: how do we get the request protocol?
     method : _request.request_method,
     headers : _request.headers,
+    base_path : _request.request_path_info.replace(new RegExp(u.escape_re(_request.path_info)+"$"), ""),    
 
-    // set in set_request_params so
-    // they can be re-set by acre.route
-    body : null,
-    base_path : null,
-    path_info : null,
-    query_string : null,
+    // these can be re-set by acre.route
+    body : _request.body,
+    path_info : _request.path_info,
+    query_string : _request.query_string,
+    
+    // set in request params
+    params: {},
+    body_params: {},
     
     start_time : _request.request_start_time,
     cookies : {},
@@ -457,23 +460,6 @@ var mwlt_mode = false;
     }
 
 })();
-
-
-/**
- * reset acre.request.path_info and base_path
- */
-function set_request_pathinfo(pathinfo) {
-    // make sure it has a leading '/'
-    if (pathinfo.indexOf("/") !== 0) {
-        pathinfo = "/" + pathinfo;
-    }
-    
-    // this will get re-set again in Script.to_http_response
-    acre.request.path_info = pathinfo;
-
-    // setup relative path
-    acre.request.base_path = _request.request_path_info.replace(new RegExp(u.escape_re(pathinfo)+"$"), "");
-};
 
 /**
  * reset acre.request.query_string & body
@@ -1625,14 +1611,17 @@ function set_app_metadata(app, md) {
         'id': true
     };
 
+    // splice remaining metadata onto the app
+    // try not to damage source metadata
     if (md) {
-        for (var key in skip_keys) {
-            delete md[key];
+        for (var key in md) {
+            if (!skip_keys[key]) {
+                app[key] = u.isPlainObject(md[key]) ? 
+                            u.extend(true, app[key] || {}, md[key]) : 
+                            md[key];
+            }
         }        
     }
-
-    // splice remaining metadata onto the app
-    u.extend(true, app, md);
 
     // initialize values used by acre
     if (app.host) {
@@ -2365,7 +2354,7 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
         script_data.path = compose_req_path(app.host, name);
         script_data.id = host_to_namespace(app.host) + "/" + name;
         // so.source_url ?
-        
+
         // only copy some of the app metadata
         script_data.app = {
           source: app.source,
@@ -2392,7 +2381,7 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
         // copy script_data into a new object that we can decorate 
         // with methods for internal and handler use
         var script = u.extend({}, script_data);
-                
+
         script.get_content = get_appfetch_method(script.source).get_content;
 
         script.to_module = function(scope) {
@@ -2464,8 +2453,11 @@ var handle_request = function (request_path, req_body, skip_routes) {
 
     var [req_host, req_pathinfo, req_query_string] = decompose_req_path(request_path);
 
-    // Now that we know what we're running, set up rest of acre.request
-    set_request_pathinfo(req_pathinfo);
+    // Now that we know what the path we're running, 
+    // set up rest of acre.request
+    // path_info will get set once we know which part
+    // of the path is file vs. path_info (in proto_require)
+    acre.request.body = req_body;
     set_request_params(req_query_string, req_body);
     
     // Fill in missing values
