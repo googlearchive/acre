@@ -2144,7 +2144,9 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
     // Create a clean copy and apply override metadata 
     // do this after caching so overrides and direct 
     // maniuplation by scripts are limited to this scope
+    syslog(app_data.host, "proto_require.app_copy.start");
     var app = u.extend(true, {}, app_data);
+    syslog(app_data.host, "proto_require.app_copy.end");
     set_app_metadata(app, override_metadata);
 
 
