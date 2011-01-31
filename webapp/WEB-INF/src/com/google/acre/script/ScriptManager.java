@@ -91,9 +91,7 @@ public class ScriptManager {
         // Here, check if the class is in the class store, and pass it to
         // compileScript instead of the source if available
         if (_class_store != null) {
-            _logger.debug("script.cache.get.begin", className);
             StoredClass sc = _class_store.get(className);
-            _logger.debug("script.cache.get.end", className);
             if (sc != null) {
                 Script compiledScript =
                     compileScript(_classLoader,
@@ -141,9 +139,7 @@ public class ScriptManager {
                                              (byte[])compiled[1]);
 
             synchronized (_class_store) {
-                _logger.debug("script.cache.put.begin", compiled[0]);
                 _class_store.set((String)compiled[0], sc);
-                _logger.debug("script.cache.put.end", compiled[0]);
             }
         }
 
@@ -194,7 +190,6 @@ public class ScriptManager {
             }
         }
         
-        _logger.debug("script.cache.compile", compiled[0]);
         return script;
     }
 
