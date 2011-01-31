@@ -2140,15 +2140,15 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
         METADATA_CACHE[host] = app_data;
     });
 
-
-    // Create a clean copy and apply override metadata 
-    // do this after caching so overrides and direct 
-    // maniuplation by scripts are limited to this scope
-    syslog(app_data.host, "proto_require.app_copy.start");
-    var app = u.extend(true, {}, app_data);
-    syslog(app_data.host, "proto_require.app_copy.end");
-    set_app_metadata(app, override_metadata);
-
+    // If there are overrides, create a clean copy and apply
+    // them now, after caching, so they only affect this scope
+    // XXX - not always creating a clean copy leaves things open
+    // to direct manipulation by scripts, but it's too expensive
+    var app = app_data;
+    if (override_metadata) {
+        app = u.extend(true, {}, app_data);
+        set_app_metadata(app, override_metadata);
+    }
 
     // Note that we wait till after we've cached the app_data before
     // trying to find the specific file we're interested in.
@@ -2284,11 +2284,12 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
          *  can be a version string (path must be a freebase ID) 
          */
         function get_sobj(path, metadata) {
+            var override_metadata,
+                version;
+            
             if (u.isPlainObject(metadata)) {
                 override_metadata = metadata;
-                version = undefined;
             } else {
-                override_metadata = undefined;
                 version = metadata;
             }
             
