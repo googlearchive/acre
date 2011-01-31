@@ -639,8 +639,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                                              Object scopearg,
                                              boolean swizzle) {
                                                  
-        syslog(Level.DEBUG, "hostenv.script.load.from_cache.begin", script_name);
-
         // because rhino won't convert js null to match a Scriptable arg on a
         // java method.
         Scriptable scope = (Scriptable) scopearg;
@@ -693,8 +691,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                                               Object linemaparg,
                                               boolean swizzle) {
                                                   
-        syslog(Level.DEBUG, "hostenv.script.load.from_string.begin", script_name);
-
         // because rhino won't convert js null to match a Scriptable arg on a
         // java method.
         Scriptable scope = (Scriptable) scopearg;
