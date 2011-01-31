@@ -475,11 +475,13 @@ function set_request_params(query_string, body) {
     try {
         acre.request.params = (typeof query_string == 'string') ? acre.form.decode(query_string) : {};
         acre.request.body_params = (typeof body == 'string' && typeof acre.request.headers['content-type'] == 'string' && acre.request.headers['content-type'].match(/^application\/x-www-form-urlencoded/)) ? acre.form.decode(body) : {};
-        acre.environ.params = acre.request.params;           // deprecated
-        acre.environ.body_params = acre.request.body_params; // deprecated
+        //acre.environ.params = acre.request.params;           // deprecated
+        //acre.environ.body_params = acre.request.body_params; // deprecated
     } catch (e) {
-        acre.environ.params = acre.request.params = {};
-        acre.environ.body_params = acre.request.body_params = {};
+        acre.request.params = {};
+        acre.request.body_params = {};
+        //acre.environ.params = acre.request.params = {};
+        //acre.environ.body_params = acre.request.body_params = {};
         console.warn("Invalid request: parameters were not properly encoded");
     }
 }
@@ -780,11 +782,12 @@ _hostenv.Error = Error;
 
 
 // ------------------------------- acre.environ -----------------------------------
-
+/*
 acre.environ = _request; // deprecated
 if (acre.request.user_info) {
     acre.environ.user_info = acre.request.user_info; // deprecated
 }
+*/
 
 
 // ------------------------------------ JSON ------------------------------
@@ -2221,13 +2224,15 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
                 script_version : (script.app.versions.length > 0 ? script.app.versions[0] : null)
             };
 
+            /*
             aug_scope.acre.environ.path_info = aug_scope.acre.request.path_info; // deprecated
 
             aug_scope.acre.context = aug_scope.acre.request_context; // deprecated
             aug_scope.acre.environ.script_name = script.name; // deprecated
             aug_scope.acre.environ.script_id = host_to_namespace(script.app.host) + '/' + script.name; // deprecated
             aug_scope.acre.environ.script_namespace = host_to_namespace(script.app.host); // deprecated
-
+            */
+            
             deprecate(aug_scope);
         }
 
