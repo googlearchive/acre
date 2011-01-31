@@ -1313,7 +1313,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             throw new RuntimeException("cache contains invalid state for script " + script.getScriptName());
         }
 
-        syslog(Level.DEBUG, "hostenv.script.execute", className);
         return scope;
     }
 
