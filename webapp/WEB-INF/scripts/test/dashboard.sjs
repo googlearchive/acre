@@ -15,6 +15,8 @@ show_suite = function(test_suite) {
     acre.write(JSON.stringify( {failures:test_suite.failures, total:test_suite.total} ));
   } else if (acre.request.params.output==='json') {
     acre.write(JSON.stringify(test_suite,null,2));
+  } else if (acre.request.params.output==='flatjson') {
+    acre.write(JSON.stringify(flatten_test_suite(test_suite),null,2));
   } else {
     // output==='html'
     var templates = acre.require('report');
@@ -44,7 +46,54 @@ report_modules = function (modules) {
   show_suite(test_suite);
 };
 
+function flatten_test_suite(test_suite) {
+  // the default shape of the test output is inscrutable
+  var testfile = test_suite.testfiles[0];
+  var tests = [];
+  for (mi in testfile.modules) {
+    var m = testfile.modules[mi];
+    var mname = m.name + ".";
+    if (mname == "DEFAULT.") {
+       mname = "";
+    };
+    //thing += mname;
+    for (ti in m.tests) {
+      var t = m.tests[ti];
+      var tname = mname + t.name;
+      var runtime = t.runtime;
+      var skip = false;
+      for (li in t.log) {
+        if (t.log[li].result == "Skipping test: ") {
+          skip = t.log[li].message;
+        };
+      };
+      var tobj = {
+        "name":tname,
+        "runtime":runtime,
+        "testEnvironment": t.testEnvironment,
+        "skip": skip,
+        "failures": t.failures,
+        "total": t.total,
+        "log": t.log
+      };
+      tests.push(tobj);
+    };
+  };
 
+  var clean_suite = {
+    "app_path": test_suite.app_path,
+    "tid" : test_suite.tid,
+    "testprops" : test_suite.testprops,
+    "file" : testfile.file,
+    "total" : testfile.total,
+    "failures" : testfile.failures,
+    "run_url" : testfile.run_url,
+    "tests" : tests
+  };
+  
+  
+  return clean_suite
+};
 
 var testfinder = (function() {
   var dependencies, // list of libs from manifest
