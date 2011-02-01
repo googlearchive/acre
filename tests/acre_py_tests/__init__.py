@@ -22,9 +22,6 @@ import socket
 # global socket timeout, seemed to help with a weird connection reset issue in appengine
 socket.setdefaulttimeout(60)
 
-from FirePHP import FirePHP_decode
-
-
 
 __all__ = ['TestController', 'tag']
 
@@ -169,9 +166,10 @@ class TestController(ExtraAsserts):
         except:
             raise
 
-    def get(self,headers={'x-acre-enable-log':"firephp"}):
+    def get(self,headers={}):
         """Http GET the test acre url, by default set the x-acre-enable-log header and store the logs in the response headers"""
         from urllib2 import Request
+        self.log = None
         if self.method == "GET":
             if ('%s' % self.data).rstrip().lstrip(): 
                 print "self.data is %s\n" % self.data;
@@ -189,7 +187,6 @@ class TestController(ExtraAsserts):
         try:
             self.cookiejar.add_cookie_header(self.request)
             self.response = urllib2.urlopen(self.request)
-            self.log = FirePHP_decode(self.response.headers)
 
             cookies = self.cookiejar.make_cookies(self.response, self.request);
             print "TID: %s" % self.response.headers['X-Metaweb-TID'];
@@ -198,10 +195,10 @@ class TestController(ExtraAsserts):
 
             return self.response
         except urllib2.HTTPError, e:
-            self.log = FirePHP_decode(e.hdrs)
-            #print "Got error %s message: %s" % (e.code, e.fp.read());
             print "TID: %s" % e.hdrs['X-Metaweb-TID'];
             raise
+
+
 
     def get_response_headers(self, response=None):
         p = re.compile("[\r\n]+");
