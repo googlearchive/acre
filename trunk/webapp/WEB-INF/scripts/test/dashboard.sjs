@@ -50,6 +50,9 @@ function flatten_test_suite(test_suite) {
   // the default shape of the test output is inscrutable
   var testfile = test_suite.testfiles[0];
   var tests = [];
+  var total = 0;
+  var failures = 0;
+  var skips = 0;
   for (mi in testfile.modules) {
     var m = testfile.modules[mi];
     var mname = m.name + ".";
@@ -61,19 +64,23 @@ function flatten_test_suite(test_suite) {
       var t = m.tests[ti];
       var tname = mname + t.name;
       var runtime = t.runtime;
-      var skip = false;
+      var result = "pass";
+      total += 1;
       for (li in t.log) {
         if (t.log[li].result == "Skipping test: ") {
-          skip = t.log[li].message;
+          result = "skip " + t.log[li].message;
+          skips += 1;
+        };
+        if (t.log[li].result==false || t.log[li].result==null) {
+          result = "fail";
+          failures += 1;
         };
       };
       var tobj = {
         "name":tname,
         "runtime":runtime,
         "testEnvironment": t.testEnvironment,
-        "skip": skip,
-        "failures": t.failures,
-        "total": t.total,
+        "result": result,
         "log": t.log
       };
       tests.push(tobj);
@@ -85,8 +92,9 @@ function flatten_test_suite(test_suite) {
     "tid" : test_suite.tid,
     "testprops" : test_suite.testprops,
     "file" : testfile.file,
-    "total" : testfile.total,
-    "failures" : testfile.failures,
+    "total" : total,
+    "failures" : failures,
+    "skips" : skips,
     "run_url" : testfile.run_url,
     "tests" : tests
   };
