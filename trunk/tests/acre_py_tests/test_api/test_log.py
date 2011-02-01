@@ -8,97 +8,86 @@ class test_class(TestController):
 
     def test_log_simple_plain_text(self):
         self.set_acre_script("log", {'test_log_simple_plain_text':'a plain text message that should appear in the log'})
-        self.get()
+        self.get_dbg()
         self.check()
-        self.check_for_log_message(self.data, 'INFO')
+        self.check_body_log(self.data, 'INFO')
    
     def test_log_8_bit_char(self):
         self.set_acre_script("log", {'test_log_8_bit_char':'an unencoded string with 8-bit characters: é'})
-        self.get()
+        self.get_dbg()
         self.check()
-        self.check_for_log_message(self.data, 'INFO')
+        self.check_body_log(self.data, 'INFO')
 
     def test_log_long_string_260_chars(self):
         self.set_acre_script("log", { 'test_long_log_string_260_chars': '123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 ' })
-        self.get()
+        self.get_dbg()
         self.check()
-        self.check_for_log_message(self.data, 'INFO')
+        self.check_body_log(self.data, 'INFO')
 
     def test_log_long_string_1000_chars(self):
         self.set_acre_script("log", { 'test_long_log_string_1000_chars': '123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 '} )
-        self.get()
+        self.get_dbg()
         self.check()
-        self.check_for_log_message(self.data, 'INFO')
+        self.check_body_log(self.data, 'INFO')
 
     def test_writing_multiple_messages(self):
         self.set_acre_script("log",{'msg_1':'12345 67890','msg_2':'abcdefg hijklmnop qrstuv wxyz'})
-        self.get()
+        self.get_dbg()
         self.check()
-        self.check_for_log_messages(self.data, 'INFO')
-
-    @tag(bug=False, bugid="ACRE-1487")
-    def test_log_debug(self):
-        self.set_acre_script("log_debug",{'msg_1':'12345 67890','msg_2':'abcdefg hijklmnop qrstuv wxyz'});
-        self.get(headers={ "x-acre-enable-log": "firephp:debug" });
-        self.check()
-        self.check_for_log_messages(self.data, 'LOG') # DEBUG is LOG in firephp speak
+        self.check_body_logs(self.data, 'INFO')
 
     def test_log_warn(self):
         self.set_acre_script("log_warn",{'msg_1':'12345 67890','msg_2':'abcdefg hijklmnop qrstuv wxyz'})
-        self.get()
+        self.get_dbg()
         self.check()
-        self.check_for_log_messages(self.data, 'WARN')
+        self.check_body_logs(self.data, 'WARN')
 
     def test_log_info(self):
         self.set_acre_script("log_info",{'msg_1':'12345 67890','msg_2':'abcdefg hijklmnop qrstuv wxyz'})
-        self.get()
+        self.get_dbg()
         self.check()
-        self.check_for_log_messages(self.data, 'INFO')
+        self.check_body_logs(self.data, 'INFO')
 
     def test_log_error(self):
         self.set_acre_script("log_error",{'msg_0':'these messages should appear as errors','msg_1':'12345 67890','msg_2':'abcdefg hijklmnop qrstuv wxyz'})
         try:
-            self.get()
+            self.get_dbg()
             self.check()
-            self.check_for_log_messages(self.data, 'ERROR')
+            print "DATA: %s" % self.data
+            self.check_body_logs(self.data, 'ERROR')
         except Exception, e:
             self.print_exception_msg(e);
 
-    def test_log_js_parse_err(self):
-        try:
-            self.set_acre_script("js_parse_error", data={ "js_parse_error": "Unhandled exception: missing ; before statement"})
-            self.get()
-            self.check()
-            self.check_for_log_message(self.data, 'INFO')
-        except HTTPError, e:
-            print "Got exception: %s" % e;
-            self.verify_log_message( re.compile("Unhandled exception: missing \; before statement"), "ERROR" );
-
-    def test_log_js_reference_err(self):
-        try:
-            self.set_acre_script("js_eval", data={ "js":"foo = bar" });
-            self.get()
-            self.verify_log_message( re.compile("EVAL THREW AN EXCEPTION: ReferenceError: \"bar\" is not defined\."), "ERROR" );
-        except HTTPError, e:
-            print "Got exception: %s" % e;
-            raise;
 
             
     #
     # Utility functions for this test class
     #
-    def check_for_log_message(self, msg, level=None):
-        self.verify_log_message(msg, level)
+    def get_dbg(self):
+        self.get({"x-acre-enable-log":"debug"}) 
 
-    def check_for_log_messages(self, data, level=None):
+    def check_body_log(self, msg, level=None):
+        res = simplejson.loads(self.r)
+        logs = res.get('logs')
+        found = False
+        for l in logs:
+            type = l[0].get('Type')
+            for item in l[1]:
+                if item == msg and type == level: found = True
+                #print "ITEM: %s LEVEL:%s" % (item,level)
+        if found is False:
+            note = '%s not found' % msg
+            assert note is False
+
+    def check_body_logs(self, data, level=None):
         msgs = data.split('&')
         for msg in msgs:
-            self.verify_log_message(msg, level)
+            self.check_body_log(msg, level)
 
     def check( self ):
         import re
         r = self.response.read()
-        print("response body:" + r)
+        self.r = r
         self.assert_(re.compile('ok', re.M).search(r), "Did not find expected OK in acre response.")
 
     def get_tid( self ):

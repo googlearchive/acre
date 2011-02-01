@@ -123,18 +123,12 @@ class test_class(TestController):
         p = re.compile( log_err);
         log_pattern = re.compile(log_err);
 
-        try:
-            self.get();
-            response = self.response.read();
-            message = simplejson.loads(response)['message'];
+        self.get({"x-acre-enable-log":"debug"});
+        response = self.response.read();
+        res = simplejson.loads(response)
+        message = simplejson.loads(res["body"])["message"]
 
-            # verify that error message is returned in the response body
-            self.assert_(p.search(message), "Did not find error message in result: %s " % message);
-
-            # verify that the error appears in the log
-            self.verify_log_message(log_pattern,'ERROR')
-            
-        except Exception, e:
-            self.assert_(False, "Caught an unexpected exception %s " % e); 
+        # verify that error message is returned in the response body
+        self.assert_(p.search(message), "Did not find error message in result: %s " % message);
 
 test_class.reviewed = True
