@@ -638,6 +638,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                                              String content_id,
                                              Object scopearg,
                                              boolean swizzle) {
+
+         syslog(Level.DEBUG, "hostenv.script.load.from_cache.start", script_name);
                                                  
         // because rhino won't convert js null to match a Scriptable arg on a
         // java method.
@@ -690,6 +692,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                                               Object scopearg,
                                               Object linemaparg,
                                               boolean swizzle) {
+                                                
+        syslog(Level.DEBUG, "hostenv.script.load.from_string.begin", script_name);
                                                   
         // because rhino won't convert js null to match a Scriptable arg on a
         // java method.
@@ -1268,6 +1272,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         String className = script.getClassName();
 
+        syslog(Level.DEBUG, "execute.start", className);
+
         // check if this script (package) has already been included
         // XXX note that the scope passed in is ignored in this case!
         // should have an assertion to make sure there's no inconsistency.
@@ -1308,6 +1314,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         } else {
             throw new RuntimeException("cache contains invalid state for script " + script.getScriptName());
         }
+
+        syslog(Level.DEBUG, "execute.end", className);
 
         return scope;
     }
