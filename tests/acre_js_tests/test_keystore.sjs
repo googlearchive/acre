@@ -30,6 +30,33 @@ if (acre.keystore.put) { // we can test only if put exists
         ok(keys == null, "key was removed");
     });
 
+    test("test adding multiple keys", function() {
+        var name0 = "a";
+        var token0 = "b";
+        var secret0 = "c";
+        var name1 = "A";
+        var token1 = "B";
+        var secret1 = "C";
+        acre.keystore.put(name0,token0,secret0);
+        acre.keystore.put(name1,token1,secret1);
+        var keys = acre.keystore.keys();
+        ok(keys != null && keys.length == 2, "keys were recorded");
+        equal(keys[0], name0, "first key ok");
+        equal(keys[1], name1, "second key ok");
+        var key = acre.keystore.get(name0);
+        ok(key != null,"key was retrieved");
+        equal(key[0],token0, "token of first key was saved correctly");
+        equal(key[1],secret0, "secret of first key  was saved correctly");
+        key = acre.keystore.get(name1);
+        ok(key != null,"key was retrieved");
+        equal(key[0],token1, "token of first key was saved correctly");
+        equal(key[1],secret1, "secret of first key  was saved correctly");
+        acre.keystore.remove(name0);
+        acre.keystore.remove(name1);
+        keys = acre.keystore.keys();
+        ok(keys == null, "keys were removed");
+    });
+
 }
 
 acre.test.report();
