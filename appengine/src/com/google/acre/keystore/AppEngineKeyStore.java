@@ -145,7 +145,7 @@ public class AppEngineKeyStore implements KeyStore {
         try {
             app = _datastore.get(KeyFactory.createKey("App", appid));
         } catch (EntityNotFoundException e) {
-            throw new RuntimeException("Failed to locate app: "+ appid);
+            return res;
         }
             
         Query query = new Query("Key", app.getKey());
