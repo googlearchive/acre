@@ -2065,15 +2065,14 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
     // parse path
     var [host, path] = decompose_req_path(req_path);
 
-    // setup default app metadata
-    var app_defaults = set_app_metadata({host: host}, _default_metadata);
-
     // retrieve app metadata using appfetchers
     var method, app_data;
     u.each(appfetch_methods, function(i, m) {
         try {
             method = m;
-            app_data = method.fetcher(host, u.extend({},app_defaults));
+            var app_defaults = (method.name === 'cache') ? {} : 
+                set_app_metadata({host: host}, _default_metadata);
+            app_data = method.fetcher(host, app_defaults);
             return false;
         } catch (e if e.__code__ == APPFETCH_ERROR_NOT_FOUND) {
             app_data = null;
