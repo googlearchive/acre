@@ -138,7 +138,7 @@ public class JSDataStore extends JSObject {
         }
     }
     
-    public void jsFunction_erase(String app_id, String obj_id) {
+    public void jsFunction_remove(String app_id, String obj_id) {
         try {
             Key key = KeyFactory.stringToKey(obj_id);
             String kind = key.getKind();
@@ -148,7 +148,7 @@ public class JSDataStore extends JSObject {
                 throw new JSConvertableException("Security violation: you can't read data that belongs to another app.").newJSException(_scope);
             }
         } catch (java.lang.Exception e) {
-            throw new JSConvertableException("Failed to erase object: " + e.getMessage()).newJSException(_scope);
+            throw new JSConvertableException("Failed to remove object: " + e.getMessage()).newJSException(_scope);
         }
     }
     

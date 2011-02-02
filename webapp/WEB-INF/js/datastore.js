@@ -14,7 +14,7 @@ var augment;
             "get" : get,
             "put" : put,
             "update" : update,
-            "erase" : erase,
+            "remove" : remove,
             "find" : find
         };
 
@@ -39,14 +39,14 @@ var augment;
         
     }
     
-    function erase(id) {
+    function remove(id) {
         var appid = get_appid();
         if (id instanceof Array) {
             for each (var i in id) {
-                store.erase(appid, i);
+                store.remove(appid, i);
             }
         } else {
-            store.erase(appid, id);
+            store.remove(appid, id);
         }
     }
 

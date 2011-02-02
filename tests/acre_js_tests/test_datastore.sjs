@@ -7,7 +7,7 @@ if (acre.store) {
         ok(typeof acre.store != "undefined", "store exists");
         ok(typeof acre.store.get == "function", "store.get exists");
         ok(typeof acre.store.put == "function", "store.put exists");
-        ok(typeof acre.store.erase == "function", "store.erase exists");
+        ok(typeof acre.store.remove == "function", "store.remove exists");
         ok(typeof acre.store.update == "function", "store.update exists");
         ok(typeof acre.store.find == "function", "store.find exists");
         ok(typeof acre.store.begin == "function", "store.begin exists");
@@ -15,12 +15,12 @@ if (acre.store) {
         ok(typeof acre.store.rollback == "function", "store.rollback exists");
     });
     
-    test('acre.store put/get/erase works', function() {
+    test('acre.store put/get/remove works', function() {
         var o1 = { "foo" : "bar" };
         var id = acre.store.put(o1);
         var o2 = acre.store.get(id);
         deepEqual(o1,o2);
-        acre.store.erase(id);
+        acre.store.remove(id);
         try {
             acre.store.get(id);
             ok(false,"exception wasn't triggered");
@@ -36,7 +36,7 @@ if (acre.store) {
         id = acre.store.update(id, o2);
         var o3 = acre.store.get(id);
         deepEqual(o2,o3);
-        acre.store.erase(id);
+        acre.store.remove(id);
     });
 
     test('acre.store must complain if objs have "." in properties', function() {
@@ -57,7 +57,7 @@ if (acre.store) {
         }
     });
 
-    test('acre.store multiple erase works', function() {
+    test('acre.store multiple remove works', function() {
         var o1 = { 
             "a" : "A"
         };
@@ -67,7 +67,7 @@ if (acre.store) {
         };
         var id2 = acre.store.put(o2);
         
-        acre.store.erase([id1,id2]);
+        acre.store.remove([id1,id2]);
     });
 
     test('acre.store find works and has all the pieces', function() {
@@ -103,7 +103,7 @@ if (acre.store) {
         }
         ok(c == 2, "got correct number of results");
         
-        acre.store.erase([id1,id2,id3]);
+        acre.store.remove([id1,id2,id3]);
     });
 
     test('acre.store find works against nested objects', function() {
@@ -143,7 +143,7 @@ if (acre.store) {
         }
         ok(c == 1, "got correct number of results");
         
-        acre.store.erase([id1,id2,id3]);
+        acre.store.remove([id1,id2,id3]);
     });
 
     test('acre.store find works with other filter operators', function() {
@@ -202,7 +202,7 @@ if (acre.store) {
         for (var r in result) c++;
         ok(c == 1, "got correct number of results");
         
-        acre.store.erase([id1,id2,id3]);
+        acre.store.remove([id1,id2,id3]);
     });
     
 }
