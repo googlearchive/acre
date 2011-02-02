@@ -349,6 +349,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     // note that this may be called re-entrantly to handle error pages
     public void run() {
+      
+        long start = System.currentTimeMillis();
         
         Thread thread = Thread.currentThread();
 
@@ -379,6 +381,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             _async_fetch.scope(_scope);
 
             // let's do it!
+            syslog(Level.DEBUG, "timing.pre_run", Long.toString(System.currentTimeMillis() - start) + "ms");
             bootScript();
 
         } catch (Exception e) {
@@ -416,6 +419,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     }
 
     public void bootScript() {
+        
+        long start = System.currentTimeMillis();
 
         req.server_host = ACRE_HOST_DELIMITER_PATH + "." + ACRE_HOST_BASE;
         req.server_host_base = ACRE_HOST_BASE;
@@ -456,6 +461,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 throw new RuntimeException("FATAL: bootScript() re-entered with same scope");
             }
 
+            syslog(Level.DEBUG, "timing.pre_acreboot", Long.toString(System.currentTimeMillis() - start) + "ms");
             try {
                 load_system_script("acreboot.js", _scope);
             } catch (JavaScriptException jsexc) {
@@ -614,8 +620,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     @JS_Function
     public Scriptable load_system_script(String script, Scriptable scope) {
-        
         int pathIndex = script.lastIndexOf('/');
+        
         String script_name = (pathIndex == -1) ? script : script.substring(pathIndex + 1);
 
         //String script_id = (ACRE_AUTORELOADING) ? script + lastModifiedTime(script) : script;
@@ -639,7 +645,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                                              Object scopearg,
                                              boolean swizzle) {
 
-         syslog(Level.DEBUG, "hostenv.script.load.from_cache.start", script_name);
+        long start = System.currentTimeMillis();
                                                  
         // because rhino won't convert js null to match a Scriptable arg on a
         // java method.
@@ -677,6 +683,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             }
         }
 
+        syslog(Level.DEBUG, "timings.load_from_cache", Long.toString(System.currentTimeMillis() - start) + "ms " + className);
         syslog4j(Level.DEBUG, "hostenv.script.load.from_cache",
                "script_name", script.getScriptName(),
                "cache_key", className,
@@ -692,8 +699,9 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                                               Object scopearg,
                                               Object linemaparg,
                                               boolean swizzle) {
+        
                                                 
-        syslog(Level.DEBUG, "hostenv.script.load.from_string.begin", script_name);
+        long start = System.currentTimeMillis();
                                                   
         // because rhino won't convert js null to match a Scriptable arg on a
         // java method.
@@ -726,6 +734,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         // get the script (this will compile it if it wasn't done before)
         script = _scriptManager.getScript(script);
 
+        syslog(Level.DEBUG, "timings.load_from_string", Long.toString(System.currentTimeMillis() - start) + "ms " + script_name);
         syslog(Level.DEBUG, "hostenv.script.load.from_string", "loading script '" + script.getScriptName() + "'");
 
         return execute(script, scope, swizzle);
@@ -1269,10 +1278,10 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
      */
     private Scriptable execute(CachedScript script, Scriptable scope,
                                boolean swizzle) {
+                                 
+        long start = System.currentTimeMillis();
 
         String className = script.getClassName();
-
-        syslog(Level.DEBUG, "execute.start", className);
 
         // check if this script (package) has already been included
         // XXX note that the scope passed in is ignored in this case!
@@ -1315,8 +1324,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             throw new RuntimeException("cache contains invalid state for script " + script.getScriptName());
         }
 
-        syslog(Level.DEBUG, "execute.end", className);
-
+        syslog(Level.DEBUG, "timings.execute", Long.toString(System.currentTimeMillis() - start) + "ms " + className);
         return scope;
     }
 
