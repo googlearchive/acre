@@ -22,8 +22,6 @@ import java.util.Map;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.EntityNotFoundException;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
 
 public class AppEngineKeyStore implements KeyStore {
@@ -37,47 +35,21 @@ public class AppEngineKeyStore implements KeyStore {
         return _singleton;
     }
 
-    /*
-     * Entity(App).guid
-     * Entity(Key, Parent(App)).name
-     * Entity(Key, Parent(App)).token
-     * Entity(Key, Parent(App)).secret
-     *
-     */
-
     private DatastoreService _datastore;
 
     private AppEngineKeyStore() {
         _datastore = DatastoreServiceFactory.getDatastoreService();
     }
 
-    public void put_key(String keyname, String appid, String token,
-                        String secret) {
-        Entity app;
-
-        try {
-            app = _datastore.get(KeyFactory.createKey("App", appid));
-            Query query = new Query("Key", app.getKey());
-            query.addFilter("name", Query.FilterOperator.EQUAL, keyname);
-            for (Entity key : _datastore.prepare(query).asIterable()) {
-                key.setProperty("token", token);
-                if (secret != null)
-                    key.setProperty("secret", secret);
-                return;
-            }
-        } catch (EntityNotFoundException e) {
-            app = new Entity("App", KeyFactory.createKey("App", appid));
-            _datastore.put(app);
+    public void put_key(String keyname, String appid, String token, String secret) {
+        Entity key = new Entity("Key");
+        key.setProperty("name", keyname);
+        key.setProperty("appid", appid);
+        key.setUnindexedProperty("token", token);
+        if (secret != null) {
+            key.setUnindexedProperty("secret", secret);
         }
-
-        // We have an app, either that we queried or that we created
-        // and it doesn't have a matching key, so we need to make one.
-        Entity nkey = new Entity("Key", app.getKey());
-        nkey.setProperty("name", keyname);
-        nkey.setProperty("token", token);
-        if (secret != null)
-            nkey.setProperty("secret", secret);
-        _datastore.put(nkey);
+        _datastore.put(key);
     }
 
     public void put_key(String keyname, String appid, String token) {
@@ -85,54 +57,37 @@ public class AppEngineKeyStore implements KeyStore {
     }
 
     public void delete_key(String keyname, String appid) {
-        Entity app;
-        try {
-            app = _datastore.get(KeyFactory.createKey("App", appid));
-        } catch (EntityNotFoundException e) {
-            throw new RuntimeException("Failed to locate app: "+ appid);
-        }
-        Query query = new Query("Key", app.getKey());
+        Query query = new Query("Key");
         query.addFilter("name", Query.FilterOperator.EQUAL, keyname);
+        query.addFilter("appid", Query.FilterOperator.EQUAL, appid);
         for (Entity key : _datastore.prepare(query).asIterable()) {
-                _datastore.delete(key.getKey());
-                return;
+            _datastore.delete(key.getKey());
         }
+        return;
     }
 
     public String[] get_key(String keyname, String appid) {
-        Entity app;
-        try {
-            app = _datastore.get(KeyFactory.createKey("App", appid));
-        } catch (EntityNotFoundException e) {
-            throw new RuntimeException("Failed to locate app: "+ appid);
-        }
-
-        Query query = new Query("Key", app.getKey());
+        Query query = new Query("Key");
         query.addFilter("name", Query.FilterOperator.EQUAL, keyname);
+        query.addFilter("appid", Query.FilterOperator.EQUAL, appid);
         for (Entity key : _datastore.prepare(query).asIterable()) {
-            return new String[] { (String)key.getProperty("token"),
-                                  (String)key.getProperty("secret") };
+            String token = (String) key.getProperty("token");
+            String secret = (String) key.getProperty("secret");
+            return new String[] { token, secret };
         }
-
         return null;
     }
 
     public List<Map<String,String>> get_full_keys(String appid) {
         List<Map<String,String>> res = new ArrayList<Map<String,String>>();
 
-        Entity app;
-        try {
-            app = _datastore.get(KeyFactory.createKey("App", appid));
-        } catch (EntityNotFoundException e) {
-            throw new RuntimeException("Failed to locate app: "+ appid);
-        }
-
-        Query query = new Query("Key", app.getKey());
+        Query query = new Query("Key");
+        query.addFilter("appid", Query.FilterOperator.EQUAL, appid);
         for (Entity key : _datastore.prepare(query).asIterable()) {
             Map<String,String> map = new HashMap<String,String>();
-            map.put("key_id", (String)key.getProperty("name"));
-            map.put("token", (String)key.getProperty("token"));
-            map.put("secret", (String)key.getProperty("secret"));
+            map.put("key_id", (String) key.getProperty("name"));
+            map.put("token",  (String) key.getProperty("token"));
+            map.put("secret", (String) key.getProperty("secret"));
             res.add(map);
         }
 
@@ -141,16 +96,11 @@ public class AppEngineKeyStore implements KeyStore {
 
     public List<String> get_keys(String appid) {
         List<String> res = new ArrayList<String>();
-        Entity app;
-        try {
-            app = _datastore.get(KeyFactory.createKey("App", appid));
-        } catch (EntityNotFoundException e) {
-            return res;
-        }
             
-        Query query = new Query("Key", app.getKey());
+        Query query = new Query("Key");
+        query.addFilter("appid", Query.FilterOperator.EQUAL, appid);
         for (Entity key : _datastore.prepare(query).asIterable()) {
-            res.add((String)key.getProperty("name"));
+            res.add((String) key.getProperty("name"));
         }
 
         return res;
