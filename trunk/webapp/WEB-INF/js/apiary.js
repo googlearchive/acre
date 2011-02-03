@@ -6,7 +6,6 @@ var URL_SIZE_LIMIT = 2047;
  * to make them available to the user scope
  */
 function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, site_host, mwlt_mode) {
-
     // tuck this away so we can use it in handler and appfetcher creation
 
     // XXX - relies on augment being called for system *after* user...

@@ -63,10 +63,6 @@ if (typeof TaskQueue != 'undefined') {
     delete TaskQueue;
 }
 
-// these values are copied here to avoid triggering a deprecation warning when they are accessed later.
-var server_host_base = _request.server_host_base;
-var freebase_service_url = _request.freebase_service_url;
-
 //----------------------------- globals ---------------------------------------
 
 var _DELIMITER_HOST = _hostenv.ACRE_HOST_DELIMITER_HOST;
@@ -148,7 +144,7 @@ function decompose_req_path(req_path) {
         host = host.replace(/\:\d*$/,"");
         
         // normalize host relative to current acre host
-        var acre_host_re = new RegExp("^((.*)\.)?" + u.escape_re(server_host_base) + "$");
+        var acre_host_re = new RegExp("^((.*)\.)?" + u.escape_re(_request.server_host_base) + "$");
         var foreign_host_re = new RegExp("^(.*\.)" + _DELIMITER_HOST + "$");
         
         var m = host.match(acre_host_re);
@@ -1899,11 +1895,12 @@ for (var k in _mjt.freebase) {
 
 var freebase_scope = {};
 freebase_scope.syslog = syslog;
-_hostenv.load_system_script('freebase.js', freebase_scope);
+var fb_script = (_request.apiary_service_url !== "http://") ? "apiary.js" : "freebase.js";
+_hostenv.load_system_script(fb_script, freebase_scope);
 
 // decorate acreboot objects with just what we need... a lot
-freebase_scope.augment(acre.freebase, acre.urlfetch, acre.async.urlfetch, _request.freebase_service_url, _request.freebase_site_host, mwlt_mode);
-freebase_scope.augment(_system_freebase, _system_urlfetch, _system_async_urlfetch, _request.freebase_service_url, _request.freebase_site_host, mwlt_mode);
+freebase_scope.augment(acre.freebase, acre.urlfetch, acre.async.urlfetch, _request.freebase_service_url, _request.apiary_service_url, _request.freebase_site_host, mwlt_mode);
+freebase_scope.augment(_system_freebase, _system_urlfetch, _system_async_urlfetch, _request.freebase_service_url, _request.apiary_service_url,_request.freebase_site_host, mwlt_mode);
 freebase_scope.appfetcher(register_appfetch_method, make_appfetch_error);
 acre.handlers.mqlquery = freebase_scope.handler();
 
