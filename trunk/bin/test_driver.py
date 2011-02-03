@@ -109,6 +109,7 @@ def drive_apps(apps,color,jsn):
         print fail_log
     if jsn:
         joutput = {
+            "host": "%s:%s" % (acre_host, acre_port),
             "passed":(total_tests - total_failures - total_skips),
             "failed":total_failures,
             "skipped":total_skips,
