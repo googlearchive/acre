@@ -68,8 +68,14 @@ def drive_apps(apps,color,jsn):
         for t in results['testfiles']:
             test_url = t['run_url']
             test_name = test_url.split("test_")[1].split(".")[0]
-            data = drive_test(test_url)
-            [tests, failures, skips, results] = parse_json(app, test_name, data)
+            try:
+                data = drive_test(test_url)
+                [tests, failures, skips, results] = parse_json(app, test_name, data)
+            except:
+                failures = 1
+                tests = 1
+                skips = 0
+                results = {"%s/%s" % (app, test_name):["ERROR","error fetching url: %s" % str(sys.exc_info()[:2])]}
             # add results
             test_results = dict(test_results.items() + results.items())
             if failures > 0 or skips > 0:
