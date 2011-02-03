@@ -12,6 +12,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
     // *and* before register_handler or register_appfetcher
     _system_freebase = freebase;
     
+    freebase.apiary_url = apiary_url;
     freebase.service_url = service_url;
     freebase.site_host = site_host;
 
