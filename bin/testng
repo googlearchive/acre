@@ -64,7 +64,10 @@ if [ $? -ne 0 ]; then
 fi
 
 $ECHO
-
-python bin/test_driver.py $* qa
+ARGS=$*
+if [ -z "$ARGS" ]; then
+    ARGS="qa"
+fi
+python bin/test_driver.py $ARGS
 
 exit $?
