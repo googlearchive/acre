@@ -8,6 +8,9 @@ Where OPTIONS is one or more of:
 
     -n,--no-color
         avoid using color in output
+  
+    -j --jsn
+        include json output
                 
     -h,--help
         show usage and exit
@@ -40,48 +43,51 @@ class colors:
 #-----------------------------------------------------------------------# 
                         
 def drive_test(url):
-    test = urllib2.urlopen(url + "?output=json")
+    test = urllib2.urlopen(url + "?output=flatjson")
     return simplejson.loads(test.read())
                 
-def drive_app(app,color):
+def drive_apps(apps,color,jsn):
     out = sys.stdout
     
     acre_host = os.environ["ACRE_HOST_BASE"]
     acre_port = os.environ["ACRE_PORT"]
     host_delimiter_path = os.environ["ACRE_HOST_DELIMITER_PATH"]
-    host = app + "." + host_delimiter_path + "." + acre_host + ":" + acre_port
-    
-    url = "http://" + host + "/acre/test?mode=discover&output=json"
-    f = urllib2.urlopen(url)
-    results = simplejson.loads(f.read())
-    
     total_failures = 0
     total_skips = 0
     total_tests = 0
+    test_results = {}
     fail_log = ""
-    
-    for t in results['testfiles']:
-        test_url = t['run_url']
-        data = drive_test(test_url)
-        test_results = data['testfiles'][0]
-        [tests, failures, skips, output] = check_log(test_results)
-        if failures > 0 or skips > 0:
-            fail_log += "\n" + output
-        total_tests += tests
-        total_failures += failures
-        total_skips += skips
-        test_name = test_url.split("test_")[1].split(".")[0] + " "
-        out.write(test_name.ljust(40,'.'))
-        if color:
-            if failures == 0:
-                out.write(colors.OK)
-            else:
-                out.write(colors.FAIL)
-        out.write(" %i/%i" % (tests - failures, tests))
-        if color:
-            out.write(colors.RESET)
-        out.write("\n")
-        
+    starttime = time.time()
+    for app in apps:
+
+        host = app + "." + host_delimiter_path + "." + acre_host + ":" + acre_port
+        url = "http://" + host + "/acre/test?mode=discover&output=json"
+        f = urllib2.urlopen(url)
+        results = simplejson.loads(f.read())
+        out.write(app + ":\n")
+        for t in results['testfiles']:
+            test_url = t['run_url']
+            test_name = test_url.split("test_")[1].split(".")[0]
+            data = drive_test(test_url)
+            [tests, failures, skips, results] = parse_json(app, test_name, data)
+            # add results
+            test_results = dict(test_results.items() + results.items())
+            if failures > 0 or skips > 0:
+                fail_log += "\n" + testoutput(results)
+            total_tests += tests
+            total_failures += failures
+            total_skips += skips
+            out.write(test_name.ljust(40,'.'))
+            if color:
+                if failures == 0:
+                    out.write(colors.OK)
+                else:
+                    out.write(colors.FAIL)
+            out.write(" %i/%i" % ((tests - failures - skips), tests))
+            if color:
+                out.write(colors.RESET)
+            out.write("\n")
+         
     ret = 0
     out.write("\n")
     out.write("Total: ")
@@ -90,7 +96,7 @@ def drive_app(app,color):
             out.write(colors.OK)
         else: 
             out.write(colors.FAIL)
-    out.write("%i/%i" % (total_tests - total_failures, total_tests))
+    out.write("%i/%i" % ((total_tests - total_failures - total_skips), total_tests))
     if total_failures > 0: 
         ret = 1
     if color:
@@ -100,42 +106,46 @@ def drive_app(app,color):
         out.write("\nWARNING: no tests were found or run\n")
         ret = 1
     if fail_log: 
-        out.write("\nFAILURES/SKIPS " + ("-" * 65) + "\n")
         print fail_log
+    if jsn:
+        joutput = {
+            "passed":(total_tests - total_failures - total_skips),
+            "failed":total_failures,
+            "skipped":total_skips,
+            "elapsed": time.time() - starttime,
+            "testresults":test_results
+        }
+        out.write("\njson=%s\n" % simplejson.dumps(joutput))
     return ret
 
-def check_log(obj):
-    out = ""
-    tests = 0
-    failures = 0
-    skips = 0
-    for o in obj['modules']:
-        mname = o['name']
-        if mname == "DEFAULT":
-            mname = ""
-        else:
-            mname = "  [%s]" % mname
-        for t in o['tests']:
-            testout = ""
-            name = t['name']
-            for l in t['log']:
-                tests += 1
-                res = l.get('result')
-                msg = l.get('message')
-                if not msg: msg = "fail but no message found"
-                if res is False or res is None:
-                    failures += 1
-                    testout += "    %s\n" % msg
-                elif res is True:
-                    pass
-                elif "Skipping test:" in res:
-                    skips += 1
-                    testout += "    Skipped: %s\n" % msg
-            if testout:
-                #print "TESTOUT:%s" % testout
-                out += "   %s%s:\n%s" % (name, mname, testout)
-    if out: out = " " + obj['run_url'] + "\n" + out
-    return tests, failures, skips, out
+def testoutput(results):
+    output = ""
+    for t, r in results.iteritems():
+        output += "%s: %s\n" % (r[0], t)
+        output += "  %s\n" % r[1]
+    return output
+
+def parse_json(app, module, data):
+    results = {}
+    failures = int(data.get("failures"))
+    tests = int(data.get("total"))
+    skips = int(data.get("skips"))
+    for t in data['tests']:
+       name = "%s/%s:%s" % (app, module, t['name'])
+       r = t.get("result")
+       if r == "pass": continue
+       testout = ""
+       if r.startswith("skip"):
+          results[name] = ["SKIP", r]
+          continue
+       for l in t['log']:
+           res = l.get('result')
+           msg = l.get('message')
+           if res is True: continue
+           if not msg: msg = "fail but no message found"
+           testout += "%s\n" % msg
+       results[name] = ["FAIL", testout]
+    return tests, failures, skips, results
 
 #-----------------------------------------------------------------------# 
 
@@ -150,18 +160,19 @@ def main():
 
     LOG_LEVEL = logging.ERROR
     color = True
+    jsn = False
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hnl:", ["help", "no-color", "log="])
+        opts, args = getopt.getopt(sys.argv[1:], "hnjl:", ["help", "no-color", "jsn", "log="])
     except getopt.GetoptError, msg:
         usage(msg)
         sys.exit(1)
         
-    if not len(args) == 1:
+    if len(args) == 0:
         usage()
         sys.exit(1)
     else:
-        app = args[0]
+        apps = args
         
     for o, a in opts:
         if o in ("-h", "--help"):
@@ -169,11 +180,13 @@ def main():
             sys.exit()
         if o in ("-n", "--no-color"):
             color = False
+        if o in ("-j", "--jsn"):
+            jsn = True
         if o in ("-l", "--log"):
             LOG_LEVEL = eval('logging.' + a)
 
     logger.setLevel(LOG_LEVEL)
-    sys.exit(drive_app(app,color))
+    sys.exit(drive_apps(apps,color,jsn))
     
 #-----------------------------------------------------------------------# 
 
