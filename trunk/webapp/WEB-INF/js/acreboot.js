@@ -2475,7 +2475,8 @@ var handle_request = function (request_path, req_body, skip_routes) {
     // e.g., keystore, auth, test, etc.
     if (_request.request_url.split('/')[3] == 'acre') {
         var [h, p] = decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
-        var source_app = proto_require(compose_req_path(req_host));
+        //var source_app = proto_require(compose_req_path(req_host));
+        var source_app = proto_require(compose_req_path(h));
         if (source_app !== null) {
             source_path = compose_req_path(req_host, req_pathinfo);
             _topscope._request_app_guid = source_app.guid;
