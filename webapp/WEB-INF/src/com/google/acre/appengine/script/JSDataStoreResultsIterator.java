@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.acre.script;
+package com.google.acre.appengine.script;
 
 import java.util.Iterator;
 
@@ -22,45 +22,51 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
 import com.google.acre.script.exceptions.JSConvertableException;
-import com.google.appengine.api.datastore.PreparedQuery;
+import com.google.appengine.api.datastore.Entity;
 import com.google.util.javascript.JSObject;
 
-public class JSDataStoreResults extends JSObject {
+public class JSDataStoreResultsIterator extends JSObject {
         
-    private static final long serialVersionUID = 529101157247378231L;
+    private static final long serialVersionUID = -704340676845729749L;
 
     public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) {
         Scriptable scope = ScriptableObject.getTopLevelScope(ctorObj);
-        return new JSDataStoreResults(((JSDataStoreResults) args[0]).getWrapped(), scope);
+        return new JSDataStoreResultsIterator(((JSDataStoreResultsIterator) args[0]).getWrapped(), scope);
     }
     
-    public JSDataStoreResults() { }
+    public JSDataStoreResultsIterator() { }
 
-    private Object _result;
+    private Object _iterator;
     
-    public JSDataStoreResults(Object result, Scriptable scope) {
-        _result = result;
+    public JSDataStoreResultsIterator(Object iterator, Scriptable scope) {
+        _iterator = iterator;
         _scope = scope;
     }
     
     public Object getWrapped() {
-        return _result;
+        return _iterator;
     }
     
     public String getClassName() {
-        return "DataStoreResults";
+        return "DataStoreResultsIterator";
     }
         
     // -------------------------------------------------------------
-    
-    public Object jsFunction_as_iterator() {
+
+    @SuppressWarnings("rawtypes")
+    public boolean jsFunction_has_next() {
         try {
-            @SuppressWarnings("rawtypes")
-            Iterator iterator = ((PreparedQuery) _result).asIterator();
-            JSDataStoreResultsIterator resultIterator = new JSDataStoreResultsIterator(iterator,_scope);
-            return resultIterator.makeJSInstance();
+            return ((Iterator) _iterator).hasNext();
         } catch (java.lang.Exception e) {
-            e.printStackTrace();
+            throw new JSConvertableException("" + e.getMessage()).newJSException(_scope);
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    public Scriptable jsFunction_next() {
+        try {
+            return JSDataStore.extract((Entity) ((Iterator) _iterator).next(),_scope);
+        } catch (java.lang.Exception e) {
             throw new JSConvertableException("" + e.getMessage()).newJSException(_scope);
         }
     }

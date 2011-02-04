@@ -26,10 +26,6 @@ if [ -z "$ACRE_ACCESSLOGS" ]; then
     export ACRE_ACCESSLOGS="${ACRE_DATADIR}/accesslogs"
 fi
 
-if [ -z "$ACRE_STATIC_DIR" ]; then
-    ACRE_STATIC_DIR="${ACRE_DATADIR}/static"
-fi
-
 if [ -z "$ACRE_SERVICE_ADDR" ]; then
     export ACRE_SERVICE_ADDR=${ACRE_HOST}:${ACRE_PORT}
 fi

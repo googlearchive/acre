@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.acre.script;
+package com.google.acre.appengine.script;
 
 import static com.google.appengine.api.urlfetch.FetchOptions.Builder.disallowTruncate;
 
@@ -40,6 +40,11 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 
+import com.google.acre.script.AcreCookie;
+import com.google.acre.script.AcreResponse;
+import com.google.acre.script.AsyncUrlfetch;
+import com.google.acre.script.JSBinary;
+import com.google.acre.script.JSURLError;
 import com.google.appengine.api.urlfetch.HTTPHeader;
 import com.google.appengine.api.urlfetch.HTTPMethod;
 import com.google.appengine.api.urlfetch.HTTPRequest;

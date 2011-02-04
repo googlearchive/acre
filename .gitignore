@@ -8,10 +8,12 @@ _logs
 webapp/WEB-INF/web.xml
 webapp/WEB-INF/appengine-web.xml
 webapp/WEB-INF/classes
-webapp/WEB-INF/static
+webapp/WEB-INF/appengine-generated
 webapp/WEB-INF/lib/mysql-connector-java-*.jar
-webapp/WEB-INF/scripts/freebase
-webapp/WEB-INF/scripts/qa
+webapp/WEB-INF/lib/log4j-*.jar
+webapp/WEB-INF/lib/slf4j-*.jar
+webapp/WEB-INF/lib/jcl-*.jar
+webapp/WEB-INF/lib/appengine-api-*-sdk-*.jar
 webapp/META-INF/*.properties
 webapp/META-INF/*.conf
 webapp/META-INF/ots.other.conf.in
@@ -19,8 +21,6 @@ webapp/META-INF/ots.freebase.conf.in
 config/project.local.conf
 server/classes
 library/classes
-appengine/classes
-war/
 *~
 \#*\#
 .#*

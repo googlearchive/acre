@@ -63,8 +63,6 @@ Available Commands:
     test .............. run a suite of integration tests (start acre first)
     testng ............ run the next generation suite of integration tests (start acre first)
     
-    appengine-prepare-tests .... Copy tests over to the appengine local directory for execution
-
     clean ............. Remove all class files
     clean-whitespace .. Normalize tabs and newlines
     distclean ......... Restore everything to checkout state
@@ -154,14 +152,13 @@ prepare_configurations() {
 build_appengine() {
     check_appengine
     prepare_configurations
-    ant -f build.xml -Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"  appengine || exit 1
+    ant -f build.xml -Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\" compile-appengine || exit 1
 }
 
-test_prepare_appengine() {
-    SCRIPT="build" 
-    COMMAND="appengine-test-prepare"
-    export ANT_PARAMS="-Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\"" 
-    invoke
+build_appengine_war() {
+    check_appengine
+    prepare_configurations
+    ant -f build.xml -Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\" appengine-war || exit 1
 }
 
 # -------------------------------------------------------------------------------------
@@ -287,16 +284,13 @@ case "$ACTION" in
         if [ "$ACRE_PORT" != "" ]; then
             APPSERVER_PARAMS="-p $ACRE_PORT"
         fi
-        $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS "$WAR";;
-    appengine-prepare-tests) 
-        build_appengine
-        test_prepare_appengine;;
+        $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS webapp;;
     appengine-deploy) 
         if [ -f "$CONF_DIR/appengine-web.$CONF.xml" ]; then
             get_appid
             ACRE_HOST_BASE="$APP_ID.appspot.com"
         fi
-        build_appengine
+        build_appengine_war
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR"
         echo ""
         echo "App is ready at http://$ACRE_HOST_BASE/";;
@@ -307,7 +301,7 @@ case "$ACTION" in
             get_appid
             ACRE_HOST_BASE="$APP_ID.prom.corp.google.com"
         fi
-        build_appengine
+        build_appengine_war
         echo "Appengine Internal Params: $APPENGINE_INTERNAL_DEPLOY_PARAMS"
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS update "$WAR"
         echo ""
