@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.acre.classstore;
+package com.google.acre.appengine.classstore;
 
+import com.google.acre.classstore.ClassStore;
+import com.google.acre.classstore.StoredClass;
 import com.google.appengine.api.memcache.MemcacheService;
 import com.google.appengine.api.memcache.MemcacheServiceFactory;
 

@@ -27,12 +27,6 @@ fi
 # Create directories that Acre will need to function
 mkdir -p "$ACRE_LOGDIR"
 mkdir -p "$ACRE_DATADIR"
-mkdir -p "$ACRE_STATIC_DIR"
-
-# Check if the static symlink is not there
-if [ ! -L webapp/WEB-INF/static ]; then
-    ln -s `absolute_path ${ACRE_STATIC_DIR}` webapp/WEB-INF/static
-fi
 
 if [ ! -z "$LOGFWD_REGDIR" ]; then
     mkdir -p ${LOGFWD_REGDIR}

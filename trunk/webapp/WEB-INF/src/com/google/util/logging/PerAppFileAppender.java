@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.util.logging;
 
 import java.io.BufferedWriter;

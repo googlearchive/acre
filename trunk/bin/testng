@@ -9,14 +9,6 @@ ECHO="/bin/echo"
 
 $ECHO
 
-# these js acre apps are required to be deployed locally
-APPSOURCE="tests/acre_js_tests"
-APPDIR="webapp/WEB-INF/scripts"
-mkdir -p $APPDIR
-if [ ! -L ${APPDIR}/qa ]; then
-    ln -s ../../../${APPSOURCE} ${APPDIR}/qa
-fi
-
 $ECHO -n "CHECK: python availability... "
 python -V &> /dev/null
 RET=$?

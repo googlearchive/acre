@@ -106,7 +106,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     private static String ACRE_HOST_BASE = Configuration.Values.ACRE_HOST_BASE.getValue();
     private static String ACRE_HOST_DELIMITER_PATH = Configuration.Values.ACRE_HOST_DELIMITER_PATH.getValue();
-    private static boolean ACRE_AUTORELOADING = Configuration.Values.ACRE_AUTORELOADING.getBoolean();
+    //private static boolean ACRE_AUTORELOADING = Configuration.Values.ACRE_AUTORELOADING.getBoolean();
     private static boolean ACRE_DEVELOPER_MODE = Configuration.Values.ACRE_DEVELOPER_MODE.getBoolean();
     
     private static final String DEFAULT_HOST_PATH = "//default." + ACRE_HOST_DELIMITER_PATH;
@@ -306,13 +306,13 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         try {
             @SuppressWarnings("unchecked")
-            Class<? extends Scriptable> jsDataStoreClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.script.JSDataStore");
+            Class<? extends Scriptable> jsDataStoreClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSDataStore");
 
             @SuppressWarnings("unchecked")
-            Class<? extends Scriptable> jsDataStoreResultsClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.script.JSDataStoreResults");
+            Class<? extends Scriptable> jsDataStoreResultsClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSDataStoreResults");
 
             @SuppressWarnings("unchecked")
-            Class<? extends Scriptable> jsDataStoreResultsIteratorClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.script.JSDataStoreResultsIterator");
+            Class<? extends Scriptable> jsDataStoreResultsIteratorClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSDataStoreResultsIterator");
 
             try {
                 ScriptableObject.defineClass(scope, jsDataStoreClass, false, true);
@@ -331,7 +331,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         try {
             @SuppressWarnings("unchecked")
-            Class<? extends Scriptable> jsTaskQueueClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.script.JSTaskQueue");
+            Class<? extends Scriptable> jsTaskQueueClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSTaskQueue");
 
             try {
                 ScriptableObject.defineClass(scope, jsTaskQueueClass, false, true);
@@ -648,8 +648,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                                              Object scopearg,
                                              boolean swizzle) {
 
-        long start = System.currentTimeMillis();
-                                                 
         // because rhino won't convert js null to match a Scriptable arg on a
         // java method.
         Scriptable scope = (Scriptable) scopearg;
@@ -686,7 +684,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             }
         }
 
-        syslog(Level.DEBUG, "timings.load_from_cache", Long.toString(System.currentTimeMillis() - start) + "ms " + className);
         syslog4j(Level.DEBUG, "hostenv.script.load.from_cache",
                "script_name", script.getScriptName(),
                "cache_key", className,
@@ -703,9 +700,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                                               Object linemaparg,
                                               boolean swizzle) {
         
-                                                
-        long start = System.currentTimeMillis();
-                                                  
         // because rhino won't convert js null to match a Scriptable arg on a
         // java method.
         Scriptable scope = (Scriptable) scopearg;
@@ -737,7 +731,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         // get the script (this will compile it if it wasn't done before)
         script = _scriptManager.getScript(script);
 
-        syslog(Level.DEBUG, "timings.load_from_string", Long.toString(System.currentTimeMillis() - start) + "ms " + script_name);
         syslog(Level.DEBUG, "hostenv.script.load.from_string", "loading script '" + script.getScriptName() + "'");
 
         return execute(script, scope, swizzle);
@@ -1279,11 +1272,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
      *
      * @param script
      */
-    private Scriptable execute(CachedScript script, Scriptable scope,
-                               boolean swizzle) {
+    private Scriptable execute(CachedScript script, Scriptable scope, boolean swizzle) {
                                  
-        long start = System.currentTimeMillis();
-
         String className = script.getClassName();
 
         // check if this script (package) has already been included
@@ -1327,7 +1317,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             throw new RuntimeException("cache contains invalid state for script " + script.getScriptName());
         }
 
-        syslog(Level.DEBUG, "timings.execute", Long.toString(System.currentTimeMillis() - start) + "ms " + className);
         return scope;
     }
 

@@ -26,7 +26,6 @@
     <property name="fullname" value="${name}-${version}-${revision}" />
 
     <property name="build.dir" value="_build" />
-    <property name="deploy.dir" value="_deploy" />
     <property name="dist.dir" value="_dist" />
     <property name="data.dir" value="_data" />
     <property name="logs.dir" value="_logs" />
@@ -62,6 +61,8 @@
     <property name="war.lib.dir" value="${war.web-inf}/lib" />
     <property name="war.classes.dir" value="${war.web-inf}/classes" />
 
+    <!-- ======================================================================== -->
+
     <path id="server.class.path">
         <fileset dir="${server.lib.dir}">
             <include name="**/*.jar" />
@@ -85,6 +86,8 @@
         <pathelement location="${webapp.classes.dir}"/>
     </path>
     
+    <!-- ======================================================================== -->
+    
     <target name="compile-library" description="Compile the library">
         <mkdir dir="${library.classes.dir}" />
         <javac srcdir="${library.src.dir}" destdir="${library.classes.dir}" includeantruntime="false" debug="true">
@@ -101,22 +104,49 @@
         
     <target name="compile-webapp" description="Compile the webapp">
         <mkdir dir="${webapp.classes.dir}" />
-        <javac srcdir="${webapp.src.dir}" destdir="${webapp.classes.dir}" includeantruntime="false" debug="true">
+        <javac sourcepath="" srcdir="${webapp.src.dir}" destdir="${webapp.classes.dir}" includeantruntime="false" debug="true">
             <classpath refid="webapp.class.path" />
+            <exclude name="**/appengine/**/*.java"/>
+            <include name="**/*.java"/>
         </javac>
-	<copy file="${webapp.web-inf}/web.default.xml" tofile="${webapp.web-inf}/web.xml" overwrite="true"/>
-
+	    <copy file="${webapp.web-inf}/web.default.xml" tofile="${webapp.web-inf}/web.xml" overwrite="true"/>
     </target>
 
-    <target name="compile-appengine" description="Compile the Google AppEngine connectors">
-        <mkdir dir="${appengine.classes.dir}" />
-        <javac srcdir="${appengine.src.dir}" destdir="${appengine.classes.dir}" includeantruntime="false" debug="true">
+    <target name="compile-webapp-appengine" description="Compile the Google AppEngine specific parts of the webapp">
+        <javac sourcepath="" srcdir="${webapp.src.dir}" destdir="${webapp.classes.dir}" includeantruntime="false" debug="true">
             <classpath refid="appengine.class.path" />
+            <include name="**/appengine/**/*.java"/>
         </javac>
     </target>
 
-    <target name="compile" depends="compile-library, compile-server, compile-webapp" description="Compile everything" />
+    <target name="compile" depends="compile-library, compile-server, compile-webapp" description="Compile Standard Acre" />
 
+    <target name="compile-appengine" depends="compile-library, compile-webapp, compile-webapp-appengine" description="Compile Appengine Acre">
+        <copy todir="${webapp.lib.dir}">
+          <fileset dir="${server.lib.dir}">
+            <include name="log4j-*.jar"/>
+            <include name="jcl-*.jar"/>
+            <include name="slf4j-*.jar"/>
+          </fileset>
+        </copy>
+        
+        <copy todir="${webapp.classes.dir}">
+          <fileset dir="${library.classes.dir}">
+            <include name="**/*.class"/>
+          </fileset>
+        </copy>
+        
+        <copy todir="${webapp.lib.dir}" flatten="true">
+          <fileset dir="${sdk.dir}/lib/user">
+            <include name="appengine-api-*-sdk-*.jar" />
+          </fileset>
+        </copy>
+        
+        <copy file="${webapp.config.dir}/log4j-appengine.properties" tofile="${webapp.config.dir}/log4j.properties" overwrite="true"/>
+    </target>
+
+    <!-- ======================================================================== -->
+    
     <target name="war" depends="compile-library, compile-webapp" description="Build a webapp">
     
       <mkdir dir="${war.dir}" />
@@ -153,12 +183,6 @@
         </fileset>
       </copy>
 
-      <copy todir="${war.lib.dir}" flatten="true">
-        <fileset dir="${sdk.dir}/lib/user">
-          <include name="**/*.jar" />
-        </fileset>
-      </copy>
-
       <copy todir="${war.dir}/WEB-INF/js">
         <fileset dir="${webapp.dir}/WEB-INF/js">
           <include name="**/*.js" />
@@ -171,10 +195,11 @@
       <copy todir="${war.dir}/WEB-INF/scripts">
         <fileset dir="${webapp.dir}/WEB-INF/scripts">
           <include name="**/*" />
-          <exclude name="examples/**"/>
           <exclude name="freebase/**"/>
           <exclude name="googlecode/**"/>
           <exclude name="qa/**"/>
+          <exclude name="test/tests/**"/>
+          <exclude name="test/writetests/**"/>
         </fileset>
       </copy>
 
@@ -184,8 +209,13 @@
         </fileset>
       </copy>
     </target>
-    
-    <target name="copy-appengine-configs">
+            
+    <target name="appengine-war" depends="compile-appengine, war">
+      <delete>
+        <fileset dir="${war.lib.dir}" includes="**/mysql*"/>
+        <fileset dir="${war.classes.dir}" includes="**/MySQL*"/>
+      </delete>
+
       <copy todir="${war.config.dir}" overwrite="true">
         <fileset dir="${webapp.config.dir}">
           <include name="**/*.properties"/>
@@ -198,37 +228,10 @@
           <include name="*.xml"/>
         </fileset>
       </copy>
-
-      <copy file="${war.config.dir}/log4j-appengine.properties" tofile="${war.config.dir}/log4j.properties" overwrite="true"/>
-      <delete file="${war.config.dir}/log4j-appengine.properties" />
-    </target>
-        
-    <target name="appengine" depends="war, copy-appengine-configs, compile-appengine" description="Build WAR for Google App Engine">
-      <copy todir="${war.classes.dir}">
-        <fileset dir="${appengine.classes.dir}">
-          <include name="**/*.class"/>
-        </fileset>
-      </copy>
-
-      <delete>
-        <fileset dir="${war.lib.dir}" includes="**/mysql*"/>
-        <fileset dir="${war.classes.dir}" includes="**/MySQL*"/>
-      </delete>
-    </target>
-    
-    <target name="appengine-test-prepare">
-      <copy todir="${war.dir}/WEB-INF/scripts/qa">
-        <fileset dir="${tests.dir}/acre_js_tests">
-          <include name="**/*" />
-        </fileset>
-      </copy>
-      <copy todir="${war.dir}/WEB-INF/scripts/freebase/apps">
-        <fileset dir="${tests.dir}/acreapps">
-          <include name="**/*" />
-        </fileset>
-      </copy>
     </target>
 
+    <!-- ======================================================================== -->
+            
 	<target name="dist" description="Build the acre distribution" depends="compile">
         <mkdir dir="${build.dir}" />
 
@@ -265,6 +268,8 @@
         </tar>
 	</target>
     
+    <!-- ======================================================================== -->
+    
     <target name="clean" description="Remove all compiled classes">
         <delete dir="${library.classes.dir}" />
         <delete dir="${server.classes.dir}" />
@@ -276,6 +281,12 @@
                 <include name="*.conf"/>
                 <include name="*.properties"/>
                 <include name="ots.other.conf.in"/>
+            </fileset>
+            <fileset dir="${webapp.lib.dir}">
+                <include name="log4j-*.jar"/>
+                <include name="jcl-*.jar"/>
+                <include name="slf4j-*.jar"/>
+                <include name="appengine-api-*-sdk-*.jar" />
             </fileset>
         </delete>
     </target>

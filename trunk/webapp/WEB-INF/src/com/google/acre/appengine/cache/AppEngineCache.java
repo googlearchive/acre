@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-package com.google.acre.cache;
+package com.google.acre.appengine.cache;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.codec.binary.Hex;
 
+import com.google.acre.cache.Cache;
 import com.google.appengine.api.memcache.Expiration;
 import com.google.appengine.api.memcache.MemcacheService;
 import com.google.appengine.api.memcache.MemcacheServiceFactory;

@@ -14,14 +14,14 @@ import com.google.acre.script.AsyncUrlfetch;
 public class AcreFactory {
 
     public static KeyStore getKeyStore() throws Exception {
-        String keystore_class = "com.google.acre.keystore." + ((Configuration.isAppEngine()) ? "AppEngineKeyStore" : "MySQLKeyStore");
+        String keystore_class = "com.google.acre." + ((Configuration.isAppEngine()) ? "appengine.keystore.AppEngineKeyStore" : "keystore.MySQLKeyStore");
         Class<?> cls = Class.forName(keystore_class);
         Method method = cls.getMethod("getKeyStore", new Class[0]);
         return (KeyStore) method.invoke(null, new Object[0]);
     }
 
     public static Cache getCache() throws Exception {
-        String cache_class = "com.google.acre.cache." + ((Configuration.isAppEngine()) ? "AppEngineCache" : "WhirlyCache");
+        String cache_class = "com.google.acre." + ((Configuration.isAppEngine()) ? "appengine.cache.AppEngineCache" : "cache.WhirlyCache");
         Class<?> cls = Class.forName(cache_class);
         Method method = cls.getMethod("getCache", new Class[0]);
         return (Cache) method.invoke(null, new Object[0]);
@@ -29,7 +29,7 @@ public class AcreFactory {
 
     public static ClassStore getClassStore() throws Exception {
         if (Configuration.isAppEngine()) {
-            String class_store_class = "com.google.acre.classstore.AppEngineClassStore";
+            String class_store_class = "com.google.acre.appengine.classstore.AppEngineClassStore";
             return (ClassStore) Class.forName(class_store_class).newInstance();
         } else {
             return null;
@@ -37,13 +37,13 @@ public class AcreFactory {
     }
     
     public static AsyncUrlfetch getAsyncUrlfetch() throws Exception {
-        String async_urlfetch_class = "com.google.acre.script." + ((Configuration.isAppEngine()) ? "AppEngineAsyncUrlfetch" : "NHttpAsyncUrlfetch");
+        String async_urlfetch_class = "com.google.acre." + ((Configuration.isAppEngine()) ? "appengine.script.AppEngineAsyncUrlfetch" : "script.NHttpAsyncUrlfetch");
         return (AsyncUrlfetch) Class.forName(async_urlfetch_class).newInstance();
     }
     
     public static ClientConnectionManager getClientConnectionManager() {
         if (Configuration.isAppEngine()) {
-            String connection_manager_class = "com.google.acre.client.AppEngineClientConnectionManager";
+            String connection_manager_class = "com.google.acre.appengine.client.AppEngineClientConnectionManager";
             try {
                 return (ClientConnectionManager) Class.forName(connection_manager_class).newInstance();
             } catch (Exception e) {
