@@ -63,7 +63,12 @@ if (typeof TaskQueue != 'undefined') {
     delete TaskQueue;
 }
 
+
 //----------------------------- globals ---------------------------------------
+
+// set these aside to avoid deprecation warnings when used later
+var request_url = _request.request_url;
+var freebase_site_host = _request.freebase_site_host;
 
 var _DELIMITER_HOST = _hostenv.ACRE_HOST_DELIMITER_HOST;
 var _DELIMITER_PATH = _hostenv.ACRE_HOST_DELIMITER_PATH;
@@ -471,13 +476,13 @@ function set_request_params(query_string, body) {
     try {
         acre.request.params = (typeof query_string == 'string') ? acre.form.decode(query_string) : {};
         acre.request.body_params = (typeof body == 'string' && typeof acre.request.headers['content-type'] == 'string' && acre.request.headers['content-type'].match(/^application\/x-www-form-urlencoded/)) ? acre.form.decode(body) : {};
-        //acre.environ.params = acre.request.params;           // deprecated
-        //acre.environ.body_params = acre.request.body_params; // deprecated
+        acre.environ.params = acre.request.params;           // deprecated
+        acre.environ.body_params = acre.request.body_params; // deprecated
     } catch (e) {
         acre.request.params = {};
         acre.request.body_params = {};
-        //acre.environ.params = acre.request.params = {};
-        //acre.environ.body_params = acre.request.body_params = {};
+        acre.environ.params = acre.request.params = {};
+        acre.environ.body_params = acre.request.body_params = {};
         console.warn("Invalid request: parameters were not properly encoded");
     }
 }
@@ -778,12 +783,27 @@ _hostenv.Error = Error;
 
 
 // ------------------------------- acre.environ -----------------------------------
-/*
-acre.environ = _request; // deprecated
-if (acre.request.user_info) {
-    acre.environ.user_info = acre.request.user_info; // deprecated
-}
-*/
+
+function set_environ() {
+    // avoid deprecation warnings
+    // if already set up (acre.route)
+    if (acre.environ) {
+        delete acre.environ.query_string;
+        delete acre.environ.params;
+        delete acre.environ.body_params;
+        delete acre.environ.path_info;
+        delete acre.environ.script_name;
+        delete acre.environ.script_id;
+        delete acre.environ.script_namespace;
+        delete acre.environ.user_info;
+        delete acre.environ;
+    }
+    
+    acre.environ = _request; // deprecated
+    if (acre.request.user_info) {
+        acre.environ.user_info = acre.request.user_info; // deprecated
+    }
+};
 
 
 // ------------------------------------ JSON ------------------------------
@@ -2220,14 +2240,12 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
                 script_version : (script.app.versions.length > 0 ? script.app.versions[0] : null)
             };
 
-            /*
             aug_scope.acre.environ.path_info = aug_scope.acre.request.path_info; // deprecated
 
             aug_scope.acre.context = aug_scope.acre.request_context; // deprecated
             aug_scope.acre.environ.script_name = script.name; // deprecated
             aug_scope.acre.environ.script_id = host_to_namespace(script.app.host) + '/' + script.name; // deprecated
             aug_scope.acre.environ.script_namespace = host_to_namespace(script.app.host); // deprecated
-            */
             
             deprecate(aug_scope);
         }
@@ -2459,6 +2477,7 @@ var handle_request = function (request_path, req_body, skip_routes) {
     // path_info will get set once we know which part
     // of the path is file vs. path_info (in proto_require)
     acre.request.body = req_body;
+    set_environ();  // deprecated
     set_request_params(req_query_string, req_body);
     
     // Fill in missing values
@@ -2470,7 +2489,7 @@ var handle_request = function (request_path, req_body, skip_routes) {
     // support /acre/ special case -- these are OTS routing rules 
     // that allow certain global scripts to run within the context of any app
     // e.g., keystore, auth, test, etc.
-    if (_request.request_url.split('/')[3] == 'acre') {
+    if (request_url.split('/')[3] == 'acre') {
         var [h, p] = decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
         var source_app = proto_require(compose_req_path(h));
         if (source_app !== null) {
@@ -2566,7 +2585,7 @@ var handle_request = function (request_path, req_body, skip_routes) {
     
     // View Source link
     acre.response.set_header('x-acre-source-url',
-                            _request.freebase_site_host + 
+                            freebase_site_host + 
                             '/appeditor#!path=' + source_path);
 
     // execute the script
