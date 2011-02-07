@@ -458,29 +458,12 @@ var augment;
         }
     }
 
-    function parseUri(str) {
-        /*
-         * This function was adapted from parseUri 1.2.1
-         * http://stevenlevithan.com/demo/parseuri/js/assets/parseuri.js
-         */
-        var o = {
-            key: ["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","anchor"],
-            parser: /^(?:([^:\/?#]+):)?(?:\/\/((?:(([^:@]*):?([^:@]*))?@)?([^:\/?#]*)(?::(\d*))?))?((((?:[^?#\/]*\/)*)([^?#]*))(?:\?([^#]*))?(?:#(.*))?)/
-        };
-        var m = o.parser.exec(str);
-        var uri = {};
-        var i = 14;
-        while (i--) uri[o.key[i]] = m[i] || "";
-        return uri;
-    }
-
     // ---------------------------------------------------------------------------------------
 
     /*
      * Obtain the token/secret information for the calling app
      */
     function getConsumer(domain) {
-
         domain = remap(domain);
 
         var key = null;
