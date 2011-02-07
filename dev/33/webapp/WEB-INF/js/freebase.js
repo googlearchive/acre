@@ -195,7 +195,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, site_host, mwl
         if (!query) throw new Error("You must provide a query");
         if (!envelope) envelope = {};
         envelope.query = query;
-        envelope.escape = false;
+        //envelope.escape = false;
         if (!params) params = {};
         params.query = envelope;
         return form_encode(params);
@@ -211,7 +211,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, site_host, mwl
         for (var query in queries) {
             var envelope = (query in envelopes) ? envelopes[query] : {};
             envelope.query = queries[query];
-            envelope.escape = false;
+            //envelope.escape = false;
             queries[query] = envelope;
         }
         params.queries = queries;
