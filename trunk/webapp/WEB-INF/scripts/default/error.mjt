@@ -10,7 +10,7 @@
 <acre:block if="('accept' in acre.request.headers && acre.request.headers['accept'].indexOf('text/html') > -1)">
 <html>
   <head>
-    <title>Error in <acre:block if="einfo">$einfo.script_path</acre:block></title>
+    <title>Error${einfo ? " in " + einfo.script_path : ""}</title>
     <link href='$acre_server/acre/static/style.css' rel='stylesheet' type='text/css'>
   </head>
   <body>
