@@ -352,8 +352,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     // note that this may be called re-entrantly to handle error pages
     public void run() {
       
-        long start = System.currentTimeMillis();
-        
         Thread thread = Thread.currentThread();
 
         // if the supervisor is there and enabled,
@@ -383,7 +381,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             _async_fetch.scope(_scope);
 
             // let's do it!
-            syslog(Level.DEBUG, "timing.pre_run", Long.toString(System.currentTimeMillis() - start) + "ms");
             bootScript();
 
         } catch (Exception e) {
@@ -422,8 +419,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     public void bootScript() {
         
-        long start = System.currentTimeMillis();
-
         req.server_host = ACRE_HOST_DELIMITER_PATH + "." + ACRE_HOST_BASE;
         req.server_host_base = ACRE_HOST_BASE;
         req.freebase_service_url = "http://" + ACRE_METAWEB_API_ADDR;
@@ -464,7 +459,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 throw new RuntimeException("FATAL: bootScript() re-entered with same scope");
             }
 
-            syslog(Level.DEBUG, "timing.pre_acreboot", Long.toString(System.currentTimeMillis() - start) + "ms");
             try {
                 load_system_script("acreboot.js", _scope);
             } catch (JavaScriptException jsexc) {
