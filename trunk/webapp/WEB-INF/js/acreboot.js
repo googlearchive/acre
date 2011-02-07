@@ -1955,6 +1955,7 @@ delete freebase_scope;
 var oauth_scope = {};
 oauth_scope.Hash = acre.hash;
 oauth_scope.syslog = syslog;
+oauth_scope.parseUri = u.parseUri;
 oauth_scope.system_urlfetch = _system_urlfetch;
 _hostenv.load_system_script('oauth.js',      oauth_scope);
 _hostenv.load_system_script('acre_oauth.js', oauth_scope);
