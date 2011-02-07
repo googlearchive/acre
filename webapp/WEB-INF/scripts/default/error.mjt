@@ -79,9 +79,7 @@
       
           <acre:block if="einfo.info.messages && einfo.info.messages[0].query">
             <h4>Query</h4>
-            <pre class="query">
-              ${highlight(JSON.stringify(einfo.info.messages[0].query,null,2))}
-            </pre>
+            <pre class="query">${highlight(JSON.stringify(einfo.info.messages[0].query,null,2))}</pre>
           </acre:block>
 
           <acre:block elif="einfo.info.body">
@@ -90,19 +88,13 @@
               delete einfo.info.body;
             </acre:script>
             <h4>Headers</h4>
-            <pre class="result">
-              ${JSON.stringify(einfo.info, null, 2)}
-            </pre>
+            <pre class="result">${JSON.stringify(einfo.info, null, 2)}</pre>
             <h4>Response Body</h4>
-            <pre class="body">
-              ${acre.html.encode(body.replace('\\n','\n'))}
-            </pre>
+            <pre class="body">${acre.markup.bless(acre.html.encode(body.replace('\\n','\n')))}</pre>
           </acre:block>
 
           <acre:block else="">
-            <pre class="query">
-              ${acre.html.encode(JSON.stringify(einfo.info,null,2))}
-            </pre>
+            <pre class="query">${acre.markup.bless(acre.html.encode(JSON.stringify(einfo.info,null,2)))}</pre>
           </acre:block>
 
         </acre:block>
