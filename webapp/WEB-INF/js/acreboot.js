@@ -1612,53 +1612,6 @@ function get_appfetch_method(method_name) {
 
 
 /*
- *  Helper function for defaulting app metadata 
- *  and applying metadata files
- */
-function set_app_metadata(app, md) {
-    app = app || {};
-    
-    // create a clean copy and delete keys that
-    // could create security issues or other failures
-    var skip_keys = {
-        'source': true,
-        'host': true,
-        'hosts': true,
-        'guid': true,
-        'as_of': true,
-        'path': true,
-        'id': true
-    };
-
-    // splice remaining metadata onto the app
-    // try not to damage source metadata
-    if (md) {
-        for (var key in md) {
-            if (!skip_keys[key]) {
-                app[key] = u.isPlainObject(md[key]) ? 
-                            u.extend(true, app[key] || {}, md[key]) : 
-                            md[key];
-            }
-        }        
-    }
-
-    // initialize values used by acre
-    if (app.host) {
-        app.hosts = app.hosts || [app.host];
-        app.guid = app.guid || app.host;
-        app.as_of = app.as_of || null; 
-        app.path = app.path || compose_req_path(app.host);
-        app.id = app.id || host_to_namespace(app.host);
-    }
-    app.versions = app.versions || [];
-    app.mounts = app.mounts || {};
-    app.files = app.files || {};
-    
-    return app;
-};
-
-
-/*
  *  Cache appfetcher
  *
  *  Special appfetch method that checks cache 
@@ -1981,6 +1934,52 @@ for (var name in _topscope) {
 
 var proto_require = function(req_path, override_metadata, resolve_only) {
     syslog(req_path, "proto_require.path");
+    
+    /*
+     *  Helper function for defaulting app metadata 
+     *  and applying metadata files
+     */
+    function set_app_metadata(app, md) {
+        app = app || {};
+
+        // create a clean copy and delete keys that
+        // could create security issues or other failures
+        var skip_keys = {
+            'source': true,
+            'host': true,
+            'hosts': true,
+            'guid': true,
+            'as_of': true,
+            'path': true,
+            'id': true
+        };
+
+        // splice remaining metadata onto the app
+        // try not to damage source metadata
+        if (md) {
+            for (var key in md) {
+                if (!skip_keys[key]) {
+                    app[key] = u.isPlainObject(md[key]) ? 
+                                u.extend(true, app[key] || {}, md[key]) : 
+                                md[key];
+                }
+            }        
+        }
+
+        // initialize values used by acre
+        if (app.host) {
+            app.hosts = app.hosts || [app.host];
+            app.guid = app.guid || app.host;
+            app.as_of = app.as_of || null; 
+            app.path = app.path || compose_req_path(app.host);
+            app.id = app.id || host_to_namespace(app.host);
+        }
+        app.versions = app.versions || [];
+        app.mounts = app.mounts || {};
+        app.files = app.files || {};
+
+        return app;
+    };
     
     // NOTE: get_file and normalize_path both rely 
     // on app_data already having been defined
