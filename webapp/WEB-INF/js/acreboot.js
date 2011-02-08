@@ -2689,8 +2689,12 @@ _hostenv.finish_response = function () {
 // doing this here so it's once per request rather than for every require
 // XXX - there's probably a less hacky way to do this, but it gets the job done
 acre.response = {};
-var _default_metadata = set_app_metadata({}, proto_require(compose_req_path(_DEFAULTS_HOST)));
-delete _default_metadata.files;
+var defaults = proto_require(compose_req_path(_DEFAULTS_HOST));
+var _default_metadata = {
+  "error_page": defaults.error_page,
+  "extensions": defaults.extensions,
+  "ttl": defaults.ttl
+};
 
 // We're going to initialize this in handle_request
 // but we need it to be global for comparison later
