@@ -159,7 +159,7 @@ class AppEngineClientConnection implements ManagedClientConnection {
 
         // WARNING(SM): appengine condenses multiple HTTP headers with the same name into
         // one single comma-separated string. Unfortunately it doesn't escape the commas
-        // already present in the header value, making it a realy pain to write a header
+        // already present in the header value, making it a real pain to write a header
         // parsing code that is not special-casing the various headers. Since the only
         // header we're having trouble with is set-cookie, we're special-casing that one
         // but there could be others lurking and waiting to bite us in the rear later.
@@ -224,7 +224,7 @@ class AppEngineClientConnection implements ManagedClientConnection {
         }
 
         HTTPMethod method = HTTPMethod.valueOf(apache_request.getRequestLine().getMethod());
-        _appengine_hrequest = new HTTPRequest(request_url, method, allowTruncate().doNotFollowRedirects());
+        _appengine_hrequest = new HTTPRequest(request_url, method, allowTruncate().doNotFollowRedirects().setDeadline(10.0d));
 
         Header[] apache_headers = apache_request.getAllHeaders();
         for (int i = 0; i < apache_headers.length; i++) {
