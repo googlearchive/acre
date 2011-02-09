@@ -71,7 +71,7 @@ def copy_configuration_files(options):
   #if a directory and target where specified in the command line, use them
   if options.config and options.directory:
     if not os.path.isdir(options.directory):
-        print 'ERROR: specified directory %s does not exist'
+        print 'ERROR: specified directory %s does not exist' % options.directory
         exit(-1)
 
     f = os.path.join(options.directory, 'ots.%s.conf.in' % options.config)
