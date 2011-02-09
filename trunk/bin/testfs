@@ -40,7 +40,7 @@ else
     $ECHO "PASSED"
 fi
 
-MANIFEST=/tmp/tmp.${PORT}.json
+MANIFEST=/tmp/tmp.${ACRE_PORT}.json
 $ECHO -n "PREPARE: test manifest... "
 bin/discover_tests.py  -n $ACRE_HOST_BASE -p $ACRE_PORT -e ${ACRE_FREEBASE_SITE_ADDR} 1> $MANIFEST
 if [ $? -ne 0 ]; then
@@ -48,6 +48,7 @@ if [ $? -ne 0 ]; then
     $ECHO "FATAL: could not generate manifest file"
     exit 1
 fi
+$ECHO "test manifest created: $MANIFEST"
 
 bin/freebase_check
 if [ $? -ne 0 ]; then
