@@ -3,8 +3,7 @@
   acre.response.headers['vary'] = 'Accept';
 
   var einfo = acre.error;
-  var acre_server = acre.host.protocol + "://" + acre.host.name + 
-      ((acre.host.port === "80") ? "" : ":" + acre.host.port);
+  var acre_server = acre.host.protocol + "://" + acre.host.name + ((acre.host.port === "80") ? "" : ":" + acre.host.port);
 </acre:script>
 
 <acre:block if="('accept' in acre.request.headers && acre.request.headers['accept'].indexOf('text/html') > -1)">
@@ -56,7 +55,7 @@
         
         <h1>Error in <span class="script">$einfo.script_path</span></h1>
       
-        <p class="msg">${acre.html.encode(einfo.message)}</p>
+        <p class="msg">${einfo.message}</p>
         
         <p acre:if="user_script">
           frat ${sourcelink(einfo.filename, einfo.line, user_script)}
@@ -90,11 +89,11 @@
             <h4>Headers</h4>
             <pre class="result">${JSON.stringify(einfo.info, null, 2)}</pre>
             <h4>Response Body</h4>
-            <pre class="body">${acre.markup.bless(acre.html.encode(body.replace('\\n','\n')))}</pre>
+            <pre class="body">${body.replace('\\n','\n')}</pre>
           </acre:block>
 
           <acre:block else="">
-            <pre class="query">${acre.markup.bless(acre.html.encode(JSON.stringify(einfo.info,null,2)))}</pre>
+            <pre class="query">${JSON.stringify(einfo.info,null,2)}</pre>
           </acre:block>
 
         </acre:block>
