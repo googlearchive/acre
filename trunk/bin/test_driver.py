@@ -17,6 +17,7 @@ Where OPTIONS is one or more of:
         
 and 'app' is the name of the app which tests we should drive
 NOTE: the name app should be without the '.dev.hostname' ending part
+OPTIONAL: app is the path to a pre-generated manifest (see below)
 """
 
 import os
@@ -24,7 +25,9 @@ import sys
 import time
 import getopt
 import logging
+import urllib
 import urllib2
+import cookielib
 import simplejson
 import socket
 # global socket timeout, seemed to help with a weird connection reset issue in appengine
@@ -42,40 +45,68 @@ class colors:
 
 #-----------------------------------------------------------------------# 
                         
-def drive_test(url):
-    test = urllib2.urlopen(url + "?output=flatjson")
-    return simplejson.loads(test.read())
-                
+acre_host = os.environ["ACRE_HOST_BASE"]
+devel_host = os.environ["ACRE_FREEBASE_SITE_ADDR"]
+acre_port = os.environ["ACRE_PORT"]
+host_delimiter_path = os.environ["ACRE_HOST_DELIMITER_PATH"]
+
+def gen_manifest(apps):
+    # fetch urls for the manifest based on a list of app names
+    manifest = {}
+    for app in apps:
+        manifest[app] = []
+        host = app + "." + host_delimiter_path + "." + acre_host + ":" + acre_port
+        url = "http://" + host + "/acre/test?mode=discover&output=json"
+        try:
+            f = urllib2.urlopen(url)
+        except:
+            sys.stderr.write("error fetching: %s\n" % url)
+            raise
+        results = simplejson.loads(f.read())
+        for t in results['testfiles']:
+            manifest[app].append(t['run_url'])
+    return manifest
+
 def drive_apps(apps,color,jsn):
     out = sys.stdout
-    
-    acre_host = os.environ["ACRE_HOST_BASE"]
-    acre_port = os.environ["ACRE_PORT"]
-    host_delimiter_path = os.environ["ACRE_HOST_DELIMITER_PATH"]
     total_failures = 0
     total_skips = 0
     total_tests = 0
     test_results = {}
     fail_log = ""
     starttime = time.time()
-    for app in apps:
 
-        host = app + "." + host_delimiter_path + "." + acre_host + ":" + acre_port
-        url = "http://" + host + "/acre/test?mode=discover&output=json"
-        f = urllib2.urlopen(url)
-        results = simplejson.loads(f.read())
+    # you provided a manifest file
+    if apps[0].startswith('/'):
+        manifest = simplejson.loads(open(apps[0]).read())
+    else:
+        manifest = gen_manifest(apps)
+
+    # this will login to freebase if the env var is defined
+    r = Fetcher(username=os.environ.get("FSTEST_USERNAME"), 
+        password=os.environ.get("FSTEST_PASSWORD"),
+        api_url=os.environ.get("ACRE_METAWEB_BASE_ADDR"))
+    
+    for app, test_urls in manifest.iteritems():
+
         out.write(app + ":\n")
-        for t in results['testfiles']:
-            test_url = t['run_url']
+        for test_url in test_urls:
             test_name = test_url.split("test_")[1].split(".")[0]
             try:
-                data = drive_test(test_url)
+                # fetch test file!
+                data = simplejson.loads(r.fetch(test_url + "?output=flatjson"))
                 [tests, failures, skips, results] = parse_json(app, test_name, data)
+            except KeyboardInterrupt:
+                raise
             except:
                 failures = 1
                 tests = 1
                 skips = 0
-                results = {"%s/%s" % (app, test_name):["ERROR","error fetching url: %s" % str(sys.exc_info()[:2])]}
+                results = {\
+                  "%s/%s" % (app, test_name):\
+                  ["ERROR","error fetching url: " +\
+                  test_url + " %s %s" % sys.exc_info()[:2]]\
+                  } 
             # add results
             test_results = dict(test_results.items() + results.items())
             if failures > 0 or skips > 0:
@@ -112,8 +143,10 @@ def drive_apps(apps,color,jsn):
         out.write("\nWARNING: no tests were found or run\n")
         ret = 1
     if fail_log: 
-        print fail_log
+        out.write(fail_log + "\n")
+
     if jsn:
+        out.write("\nJSON OUTPUT:\n")
         joutput = {
             "host": "%s:%s" % (acre_host, acre_port),
             "passed":(total_tests - total_failures - total_skips),
@@ -122,7 +155,7 @@ def drive_apps(apps,color,jsn):
             "elapsed": time.time() - starttime,
             "testresults":test_results
         }
-        out.write("\njson=%s\n" % simplejson.dumps(joutput))
+        out.write("json=%s\n" % simplejson.dumps(joutput))
     return ret
 
 def testoutput(results):
@@ -153,6 +186,44 @@ def parse_json(app, module, data):
            testout += "%s\n" % msg
        results[name] = ["FAIL", testout]
     return tests, failures, skips, results
+
+class Fetcher:
+
+    def __init__(self, username=None, password=None, api_url=None):
+        self.username=username
+        self.password=password
+        self.api_url=api_url
+        if username: self.login()
+
+    def login(self):
+        username = self.username
+        password = self.password
+        host = self.api_url
+        self.cookiefile = "./cookies.lwp"
+        self.cookiejar = cookielib.LWPCookieJar()
+        self.opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cookiejar))
+        urllib2.install_opener(self.opener)
+        data = urllib.urlencode({ "username":username, "password":password, 'mw_cookie_scope':'domain' })
+        url = "http://%s/api/account/login?%s" % (host, data)
+        request = urllib2.Request(url)
+        self.cookiejar.add_cookie_header(request)
+        respobj = urllib2.urlopen(request)
+        respdata = respobj.read()
+        cookies = self.cookiejar.make_cookies(respobj, request)
+
+    def logout(self):
+        data = urllib.urlencode({ 'mw_cookie_scope':'domain' })
+        logout_url = "%s/api/account/logout?%s" % (self.api_url, data)
+        response = self.request_url(logout_url)
+
+    def fetch(self, url):
+        request = urllib2.Request(url)
+        if hasattr(self, 'cookiejar'): 
+            self.cookiejar.add_cookie_header(request)
+            return self.opener.open(request).read()
+        else:
+            request = urllib2.urlopen(url)
+            return request.read()
 
 #-----------------------------------------------------------------------# 
 
