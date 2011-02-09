@@ -1,0 +1,63 @@
+#!/bin/sh
+
+# this should be called with ./acre to pickup the environment vars 
+
+# Normalize the current directory
+cd `dirname $0`/..
+
+ECHO="/bin/echo"
+
+$ECHO
+
+$ECHO -n "CHECK: python availability... "
+python -V &> /dev/null
+RET=$?
+if [ $RET == 127 ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: These tests require 'python' to be in your path"
+    exit 1
+else
+    $ECHO "PASSED"
+fi
+
+$ECHO -n "CHECK: your local acre installation... "
+RESP=`curl -s -S -m 5 http://127.0.0.1:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
+if [ -z "$RESP" ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: local acre does not not seem to be running or reachable"
+    exit 1
+else
+    $ECHO "PASSED"
+fi
+
+$ECHO -n "CHECK: your local DNS configurations... "
+RESP=`curl -s -S -m 5  http://${ACRE_FREEBASE_SITE_ADDR}:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
+if [ -z "$RESP" ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: make sure '${ACRE_FREEBASE_SITE_ADDR}' points to 127.0.0.1 in your DNS or /etc/hosts"
+    exit 1
+else
+    $ECHO "PASSED"
+fi
+
+MANIFEST=/tmp/tmp.${PORT}.json
+$ECHO -n "PREPARE: test manifest... "
+bin/discover_tests.py  -n $ACRE_HOST_BASE -p $ACRE_PORT -e ${ACRE_FREEBASE_SITE_ADDR} 1> $MANIFEST
+if [ $? -ne 0 ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: could not generate manifest file"
+    exit 1
+fi
+
+bin/freebase_check
+if [ $? -ne 0 ]; then
+    exit 1
+fi
+
+if [ -z "$ARGS" ]; then
+    ARGS="$MANIFEST"
+fi
+$ECHO 
+python bin/test_driver.py $ARGS
+
+exit $?
