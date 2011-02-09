@@ -53,29 +53,28 @@ function flatten_test_suite(test_suite) {
   var total = 0;
   var failures = 0;
   var skips = 0;
-  for (mi in testfile.modules) {
-    var m = testfile.modules[mi];
+
+  testfile.modules.forEach(function(m) {
     var mname = m.name + ".";
     if (mname == "DEFAULT.") {
        mname = "";
     };
     //thing += mname;
-    for (ti in m.tests) {
-      var t = m.tests[ti];
+    m.tests.forEach(function(t) {
       var tname = mname + t.name;
       var runtime = t.runtime;
       var result = "pass";
       total += 1;
-      for (li in t.log) {
-        if (t.log[li].result == "Skipping test: ") {
-          result = "skip " + t.log[li].message;
+      t.log.forEach(function(li) {
+        if (li.result == "Skipping test: ") {
+          result = "skip " + li.message;
           skips += 1;
         };
-        if (t.log[li].result==false || t.log[li].result==null) {
+        if (!li.result) {
           result = "fail";
           failures += 1;
         };
-      };
+      });
       var tobj = {
         "name":tname,
         "runtime":runtime,
@@ -84,8 +83,8 @@ function flatten_test_suite(test_suite) {
         "log": t.log
       };
       tests.push(tobj);
-    };
-  };
+    });
+  });
 
   var clean_suite = {
     "app_path": test_suite.app_path,
@@ -98,8 +97,8 @@ function flatten_test_suite(test_suite) {
     "run_url" : testfile.run_url,
     "tests" : tests
   };
-  
-  
+
+
   return clean_suite
 };
 
@@ -107,7 +106,7 @@ var testfinder = (function() {
   var dependencies, // list of libs from manifest
   testfiles;        // list of test files objects
 
-  // Look for MANIFEST containing var MF = {test:{files:['test_file1','test_file2']}}; 
+  // Look for MANIFEST containing var MF = {test:{files:['test_file1','test_file2']}};
   function search_deps_in_manifest(app_path) {
     var manifestid=app_path+'/MANIFEST';
     var mf;
@@ -130,7 +129,7 @@ var testfinder = (function() {
       if (file.name.indexOf('test_')===0) {
         var path = app_path + '/' + file.name;
         testfiles[path] = true; // add to set
-      } 
+      }
     }
   }
 
@@ -144,9 +143,9 @@ var testfinder = (function() {
           search(dep_app_path,recurse);
         }
       }
-    }   
+    }
   }
-  
+
   function get(app_path,recurse) {
       dependencies={
         // app_path: has_been_visited
@@ -190,7 +189,7 @@ function get_test_suite(app_path,testscripts) {
   var testprops = {};
 
   acre.request.params.mode = 'discover'; //HACK: is this clean?
-  
+
   testscripts.forEach(function(file) {
     var acre_testfile = acre.require(file.fileid); //HACK: version?
     var modules = acre_testfile.acre.test.get_modules();
@@ -209,12 +208,12 @@ function get_test_suite(app_path,testscripts) {
 
 function get_app_path() {
   //TODO: what's the acre way to get the app_path?
-  return '//' + (acre.request.server_name).replace('.'+acre.host.name,'');  
+  return '//' + (acre.request.server_name).replace('.'+acre.host.name,'');
 }
 
 if (acre.current_script === acre.request.script) {
   var app_path = get_app_path();
-  
+
   var testscripts = testfinder.get(app_path, acre.request.params.recurse);
   if (testscripts.length) {
     console.log('test: tests = '+testscripts.map(function(file){return file.name;}).join(', '));
