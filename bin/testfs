@@ -1,64 +1,38 @@
-#!/bin/sh
+#!/usr/bin/env python
 
-# this should be called with ./acre to pickup the environment vars 
+import sys
+import os
+import test_driver
+import tempfile
+import subprocess
 
-# Normalize the current directory
-cd `dirname $0`/..
+manifest=tempfile.mkstemp(dir="/tmp", prefix="fsmanifest.")[1]
 
-ECHO="/bin/echo"
+# check api endpoint
+subprocess.check_call('bin/freebase_check')
 
-$ECHO
+site_addr =os.environ['ACRE_FREEBASE_SITE_ADDR']
+acre_port = os.environ['ACRE_PORT']
+acre_host_base = os.environ['ACRE_HOST_BASE']
 
-$ECHO -n "CHECK: python availability... "
-python -V &> /dev/null
-RET=$?
-if [ $RET == 127 ]; then
-    $ECHO "FAILED"
-    $ECHO "FATAL: These tests require 'python' to be in your path"
-    exit 1
-else
-    $ECHO "PASSED"
-fi
+url = 'http://%s:%s/status' % (site_addr, acre_port)
+args = ['curl', '-s', '-S', '-o', '/dev/null', url]
+sys.stdout.write('CHECK: %s...' % url)
+subprocess.check_call(args)
+sys.stdout.write('PASSED\n')
 
-$ECHO -n "CHECK: your local acre installation... "
-RESP=`curl -s -S -m 5 http://127.0.0.1:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
-if [ -z "$RESP" ]; then
-    $ECHO "FAILED"
-    $ECHO "FATAL: local acre does not not seem to be running or reachable"
-    exit 1
-else
-    $ECHO "PASSED"
-fi
+args = ['bin/discover_tests.py', '-n', acre_host_base,
+    '-p', acre_port,
+    '-e', site_addr ]
+# add the callers args
+if len(sys.argv) > 1:
+    if sys.argv[1] == '--help':
+        args = ['bin/discover_tests.py', '--help']
+        subprocess.check_call(args)
+        sys.exit(0)
+    args = args + sys.argv[1:]
 
-$ECHO -n "CHECK: your local DNS configurations... "
-RESP=`curl -s -S -m 5  http://${ACRE_FREEBASE_SITE_ADDR}:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
-if [ -z "$RESP" ]; then
-    $ECHO "FAILED"
-    $ECHO "FATAL: make sure '${ACRE_FREEBASE_SITE_ADDR}' points to 127.0.0.1 in your DNS or /etc/hosts"
-    exit 1
-else
-    $ECHO "PASSED"
-fi
-
-MANIFEST=/tmp/tmp.${ACRE_PORT}.json
-$ECHO -n "PREPARE: test manifest... "
-bin/discover_tests.py  -n $ACRE_HOST_BASE -p $ACRE_PORT -e ${ACRE_FREEBASE_SITE_ADDR} 1> $MANIFEST
-if [ $? -ne 0 ]; then
-    $ECHO "FAILED"
-    $ECHO "FATAL: could not generate manifest file"
-    exit 1
-fi
-$ECHO "test manifest created: $MANIFEST"
-
-bin/freebase_check
-if [ $? -ne 0 ]; then
-    exit 1
-fi
-
-if [ -z "$ARGS" ]; then
-    ARGS="$MANIFEST"
-fi
-$ECHO 
-python bin/test_driver.py $ARGS
-
-exit $?
+subprocess.check_call(args, stdout=open(manifest,'w'))
+print "tests were found, test manifest has been created:", manifest, '\nrun tests...\n'
+sys.argv = ['', '-j', manifest]
+sys.exit(test_driver.main())
