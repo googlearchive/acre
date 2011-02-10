@@ -22,6 +22,7 @@
         <not><isset property="config.file"/></not>
     </condition>
 
+
 	<property name="name" value="acre" />
     <property name="fullname" value="${name}-${version}-${revision}" />
 
@@ -60,6 +61,10 @@
     <property name="war.web-inf" value="${war.dir}/WEB-INF"/>
     <property name="war.lib.dir" value="${war.web-inf}/lib" />
     <property name="war.classes.dir" value="${war.web-inf}/classes" />
+
+    <available file="${webapp.web-inf}/web.xml" property="web.xml.present"/>
+
+
 
     <!-- ======================================================================== -->
 
@@ -101,15 +106,20 @@
             <classpath refid="server.class.path" />
         </javac>
     </target>
-        
-    <target name="compile-webapp" description="Compile the webapp">
+
+
+    <target name="create-web-xml" description="Move the default web.xml file in place if it's missing" unless="${web.xml.present}">
+        <copy file="${webapp.web-inf}/web.default.xml" tofile="${webapp.web-inf}/web.xml" overwrite="true"/>
+    </target>
+
+    <target name="compile-webapp" description="Compile the webapp" depends="create-web-xml">
         <mkdir dir="${webapp.classes.dir}" />
         <javac sourcepath="" srcdir="${webapp.src.dir}" destdir="${webapp.classes.dir}" includeantruntime="false" debug="true">
             <classpath refid="webapp.class.path" />
             <exclude name="**/appengine/**/*.java"/>
             <include name="**/*.java"/>
         </javac>
-	    <copy file="${webapp.web-inf}/web.default.xml" tofile="${webapp.web-inf}/web.xml" overwrite="true"/>
+
     </target>
 
     <target name="compile-webapp-appengine" description="Compile the Google AppEngine specific parts of the webapp">
