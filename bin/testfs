@@ -30,9 +30,16 @@ if len(sys.argv) > 1:
         args = ['bin/discover_tests.py', '--help']
         subprocess.check_call(args)
         sys.exit(0)
-    args = args + sys.argv[1:]
+    if sys.argv[1] == 'buildbot':
+        bb = True
+    else:
+        bb = False
+        args = args + sys.argv[1:]
 
 subprocess.check_call(args, stdout=open(manifest,'w'))
 print "tests were found, test manifest has been created:", manifest, '\nrun tests...\n'
-sys.argv = ['', '-j', manifest]
+if bb:
+    sys.argv = ['', '--no-color', '-j', manifest]
+else:
+    sys.argv = ['', manifest]
 sys.exit(test_driver.main())
