@@ -15,12 +15,16 @@ www_path = base_path + '/' + \
   'webapp/WEB-INF/scripts/googlecode/freebase-site/svn/trunk/www'
 
 def discover(opts, whitelist):
+    params = '?output=flatjson'
+    if opts.nomock:
+        params += '&mock=0'
     url = "http://environments.svn.freebase-site.googlecode.dev.%s:%s/%s"\
     % (opts.host, opts.port, opts.env)
     try:
         response = urllib2.urlopen(url)
     except:
         sys.stderr.write("error fetching: %s\n" % url)
+        sys.stderr.write("perhaps you need to add %s to /etc/hosts?\n\n" % opts.host)
         raise
     data = json.loads(response.read())
     
@@ -62,11 +66,13 @@ def discover(opts, whitelist):
                 #print tpath, path
                 found = True
                 manifest[tapp].append("http://" + opts.env + ":" +\
-                  opts.port + apps[path] + remainder + fl)
+                  opts.port + apps[path] + remainder + fl + params)
                 #print  apps[path] + remainder + fl + "?output=flatjson"
                 break
         if not found: sys.stderr.write("WARN: did not find a route for: %s\n" % f)
-    print json.dumps(manifest, indent=2)
+    
+    ret = json.dumps(manifest, indent=2)
+    print ret
 
 from optparse import OptionParser
 def main(argv=None):
@@ -75,9 +81,10 @@ def main(argv=None):
 
     usage = "usage: discover_tests.py [--help] optional args are whitelisted apps"
     parser = OptionParser(usage=usage)
-    parser.add_option('-n',  dest='host', default="acre.z", help='host base')
-    parser.add_option('-p',  dest='port', default="8115", help='port')
-    parser.add_option('-e',  dest='env', default="devel.sandbox-freebase.com", help='environments file')
+    parser.add_option('-n',  dest='host', default="acre.z", help='host base to fetch envs. (default acre.z)')
+    parser.add_option('-p',  dest='port', default="8115", help='port (default 8115)')
+    parser.add_option('-m',  dest='nomock', action="store_true", help='turn off mockmode')
+    parser.add_option('-e',  dest='env', default="devel.sandbox-freebase.com", help='environments file (default devel.sandbox-freebase.com)')
     (opts, args) = parser.parse_args(argv)
     discover(opts, args[1:])
     

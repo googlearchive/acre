@@ -64,7 +64,7 @@ def gen_manifest(apps):
             raise
         results = simplejson.loads(f.read())
         for t in results['testfiles']:
-            manifest[app].append(t['run_url'])
+            manifest[app].append(t['run_url'] + "?output=flatjson")
     return manifest
 
 def drive_apps(apps,color,jsn):
@@ -94,7 +94,7 @@ def drive_apps(apps,color,jsn):
             test_name = test_url.split("test_")[1].split(".")[0]
             try:
                 # fetch test file!
-                data = simplejson.loads(r.fetch(test_url + "?output=flatjson"))
+                data = simplejson.loads(r.fetch(test_url))
                 [tests, failures, skips, results] = parse_json(app, test_name, data)
             except KeyboardInterrupt:
                 raise
