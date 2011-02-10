@@ -124,7 +124,7 @@ get_revision() {
 
 # Get appengine application ID ---------------------------------------------
 get_appid() {
-    APP_ID=`cat $CONF_DIR/appengine-web.$CONF.xml | grep '<application>' | cut -d '>' -f 2 | cut -d '<' -f 1`
+    APP_ID=`cat webapp/WEB-INF/appengine-web.xml | grep '<application>' | cut -d '>' -f 2 | cut -d '<' -f 1`
 }
 
 # ----------------------- commands --------------------------
@@ -286,22 +286,22 @@ case "$ACTION" in
         fi
         $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS webapp;;
     appengine-deploy) 
-        if [ -f "$CONF_DIR/appengine-web.$CONF.xml" ]; then
+        build_appengine_war
+        if [ -f "webapp/WEB-INF/appengine-web.xml" ]; then
             get_appid
             ACRE_HOST_BASE="$APP_ID.appspot.com"
         fi
-        build_appengine_war
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR"
         echo ""
         echo "App is ready at http://$ACRE_HOST_BASE/";;
     appengine-rollback) 
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS rollback "$WAR";;
     appengine-internal-deploy) 
-        if [ -f "$CONF_DIR/appengine-web.$CONF.xml" ]; then
+        build_appengine_war
+        if [ -f "webapp/WEB-INF/appengine-web.xml" ]; then
             get_appid
             ACRE_HOST_BASE="$APP_ID.prom.corp.google.com"
         fi
-        build_appengine_war
         echo "Appengine Internal Params: $APPENGINE_INTERNAL_DEPLOY_PARAMS"
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS update "$WAR"
         echo ""
