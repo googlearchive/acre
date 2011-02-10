@@ -19,7 +19,7 @@ and 'app' is the name of the app which tests we should drive
 NOTE: the name app should be without the '.dev.hostname' ending part
 OPTIONAL: app is the path to a pre-generated manifest (see below)
 """
-
+import re
 import os
 import sys
 import time
@@ -72,6 +72,7 @@ def drive_apps(apps,color,jsn):
     total_failures = 0
     total_skips = 0
     total_tests = 0
+    lmax = 40
     test_results = {}
     fail_log = ""
     starttime = time.time()
@@ -91,7 +92,9 @@ def drive_apps(apps,color,jsn):
 
         out.write(app + ":\n")
         for test_url in test_urls:
-            test_name = test_url.split("test_")[1].split(".")[0]
+            path = test_url.split("/")[3:]
+            test_name = re.split('(\?|.sjs\?)', '/'.join(path))[0]
+            if len(test_name) > lmax: lmax = len(test_name)
             try:
                 # fetch test file!
                 data = simplejson.loads(r.fetch(test_url))
@@ -114,7 +117,7 @@ def drive_apps(apps,color,jsn):
             total_tests += tests
             total_failures += failures
             total_skips += skips
-            out.write(test_name.ljust(40,'.'))
+            out.write(test_name.ljust(lmax+5,'.'))
             if color:
                 if failures == 0:
                     out.write(colors.OK)
