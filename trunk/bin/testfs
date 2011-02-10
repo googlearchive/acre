@@ -25,6 +25,7 @@ args = ['bin/discover_tests.py', '-n', acre_host_base,
     '-p', acre_port,
     '-e', site_addr ]
 # add the callers args
+bb = False
 if len(sys.argv) > 1:
     if sys.argv[1] == '--help':
         args = ['bin/discover_tests.py', '--help']
@@ -33,7 +34,6 @@ if len(sys.argv) > 1:
     if sys.argv[1] == 'buildbot':
         bb = True
     else:
-        bb = False
         args = args + sys.argv[1:]
 
 subprocess.check_call(args, stdout=open(manifest,'w'))
