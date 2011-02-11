@@ -72,14 +72,13 @@ def drive_apps(apps,color,jsn):
     total_failures = 0
     total_skips = 0
     total_tests = 0
-    lmax = 40
     test_results = {}
     fail_log = ""
     starttime = time.time()
 
-    # you provided a manifest file
-    if apps[0].startswith('/'):
-        manifest = simplejson.loads(open(apps[0]).read())
+    # you provided a manifest object (called test_driver.drive_apps)
+    if isinstance(apps, dict):
+        manifest = apps
     else:
         manifest = gen_manifest(apps)
 
@@ -94,7 +93,6 @@ def drive_apps(apps,color,jsn):
         for test_url in test_urls:
             path = test_url.split("/")[3:]
             test_name = re.split('(\?|.sjs\?)', '/'.join(path))[0]
-            if len(test_name) > lmax: lmax = len(test_name)
             try:
                 # fetch test file!
                 data = simplejson.loads(r.fetch(test_url))
@@ -117,7 +115,7 @@ def drive_apps(apps,color,jsn):
             total_tests += tests
             total_failures += failures
             total_skips += skips
-            out.write(test_name.ljust(lmax+5,'.'))
+            out.write(test_name.ljust(60,'.'))
             if color:
                 if failures == 0:
                     out.write(colors.OK)
