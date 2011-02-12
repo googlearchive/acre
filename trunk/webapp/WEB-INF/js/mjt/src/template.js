@@ -64,6 +64,10 @@ mjt.foreach = function(self, items, func) {
             l = items.length;
             for (i = 0; i < l; i++)
                 func.apply(self, [i, items.item(i)]);
+        } else if ('__iterator__' in items) {
+            var counter = 0;
+            for (i in items)
+                func.apply(self, [counter++, i]);
         } else {
             // plain old js object
             for (i in items)
