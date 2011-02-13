@@ -2270,7 +2270,7 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
 
             var route_e = new acre.errors.AcreRouteException;
             route_e.route_to = path;
-            route_e.body = body || "";
+            route_e.body = body || acre.request.body;
             route_e.skip_routes = (skip_routes ? true : (app.host == h));
             throw route_e;
         };
