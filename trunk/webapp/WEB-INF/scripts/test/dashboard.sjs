@@ -72,9 +72,11 @@ function flatten_test_suite(test_suite) {
         };
         if (!li.result) {
           result = "fail";
-          failures += 1;
         };
       });
+      if (result == "fail") {
+        failures += 1;
+      };
       var tobj = {
         "name":tname,
         "runtime":runtime,
