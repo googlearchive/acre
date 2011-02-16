@@ -30,20 +30,24 @@ public class PerAppFileAppender extends AppenderSkeleton {
     
     File file;
     
+    boolean active = false;
+    
     public String getFile() {
         return file.toString();
     }
     
     public void setFile(String fileName) {
         File file = new File(fileName);
-        if (!file.exists() && !file.mkdirs()) {
-            throw new RuntimeException("Failed to create directory " + fileName + " for per-application logs");
+        if (file.exists() && file.mkdirs()) {
+            this.file = file;
+            active = true;
         }
-        this.file = file;
     }
             
     @Override
     protected void append(LoggingEvent event) {
+        if (!active) return;
+
         Object msg = event.getMessage();
         if (msg instanceof Object[]) {
             Object[] obj = (Object[]) msg;
@@ -54,6 +58,8 @@ public class PerAppFileAppender extends AppenderSkeleton {
     }
 
     protected void append(String app, String msg) {
+        if (!active) return;
+        
         BufferedWriter appender = null;
         
         if (!appenders.containsKey(app)) {
@@ -87,6 +93,8 @@ public class PerAppFileAppender extends AppenderSkeleton {
     }
     
     public void close() {
+        if (!active) return;
+        
         Iterator<BufferedWriter> i = appenders.values().iterator();
         while (i.hasNext()) {
             try {
