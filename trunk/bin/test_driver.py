@@ -92,11 +92,16 @@ def drive_apps(apps,color,jsn):
         out.write(app + ":\n")
         for test_url in test_urls:
             path = test_url.split("/")[3:]
-            test_name = re.split('(\?|.sjs\?)', '/'.join(path))[0]
+            last = path.pop()
+            module = re.split('(\?|.sjs\?)', last)[0]
+            if len(path) > 0:
+                pack = '/'.join(path)
+            else:
+                pack = app
             try:
                 # fetch test file!
                 data = simplejson.loads(r.fetch(test_url))
-                [tests, failures, skips, results] = parse_json(app, test_name, data)
+                [tests, failures, skips, results] = parse_json(pack, module, data)
             except KeyboardInterrupt:
                 raise
             except:
@@ -104,7 +109,7 @@ def drive_apps(apps,color,jsn):
                 tests = 1
                 skips = 0
                 results = {\
-                  "%s/%s" % (app, test_name):\
+                  "%s/%s" % (pack, module):\
                   ["ERROR","error fetching url: " +\
                   test_url + " %s %s" % sys.exc_info()[:2]]\
                   } 
@@ -115,7 +120,7 @@ def drive_apps(apps,color,jsn):
             total_tests += tests
             total_failures += failures
             total_skips += skips
-            out.write(test_name.ljust(60,'.'))
+            out.write(module.ljust(60,'.'))
             if color:
                 if failures == 0:
                     out.write(colors.OK)
@@ -166,13 +171,13 @@ def testoutput(results):
         output += "  %s\n" % r[1]
     return output
 
-def parse_json(app, module, data):
+def parse_json(pack, module, data):
     results = {}
     failures = int(data.get("failures"))
     tests = int(data.get("total"))
     skips = int(data.get("skips"))
     for t in data['tests']:
-       name = "%s/%s:%s" % (app, module, t['name'])
+       name = "%s/%s:%s" % (pack, module, t['name'])
        r = t.get("result")
        if r == "pass": continue
        testout = ""
