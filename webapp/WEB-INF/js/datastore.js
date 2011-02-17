@@ -56,6 +56,14 @@ var augment;
         this.result = result;
     }
     
+    Result.prototype.first = function() {
+        try {
+            return this.__iterator__().next();
+        } catch (e) {
+            return undefined;
+        }
+    }
+    
     Result.prototype.__iterator__ = function() {
         return new ResultIterator(this.result.as_iterator());
     };        

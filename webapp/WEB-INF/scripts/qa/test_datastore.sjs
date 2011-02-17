@@ -19,6 +19,7 @@ if (acre.store) {
         var o1 = { "foo" : "bar" };
         var id = acre.store.put(o1);
         var o2 = acre.store.get(id);
+        delete o2._;
         deepEqual(o1,o2);
         acre.store.remove(id);
         try {
@@ -35,7 +36,32 @@ if (acre.store) {
         var o2 = { "foo" : "whatever", "this" : "that" };
         id = acre.store.update(id, o2);
         var o3 = acre.store.get(id);
+        delete o3._;
         deepEqual(o2,o3);
+        acre.store.remove(id);
+    });
+
+    test('acre.store update via find works', function() {
+        var o1 = { "foo" : "1", "this" : "this" };
+        var o2 = { "foo" : "2", "this" : "that" };
+        var id = acre.store.put(o1);
+        var o = acre.store.find({ "foo" : "1" }).first();
+        ok(typeof o == 'object', "first() returns an object");
+        ok("_" in o, "found objects have metadata");
+        equal(id,o._.id, "ids are the same");
+        id = acre.store.update(o._.id, o2);
+        var o3 = acre.store.get(id);
+        delete o3._;
+        deepEqual(o2,o3);
+        acre.store.remove(id);
+    });
+
+    test('acre.store first works', function() {
+        var o = { "foo" : "2" };
+        var id = acre.store.put(o);
+        var result = acre.store.find({ "foo" : "3" });
+        var o = result.first();
+        ok(typeof o == 'undefined', "first() returns undefined on empty result sets");
         acre.store.remove(id);
     });
 
@@ -94,6 +120,7 @@ if (acre.store) {
         ok(typeof result.__iterator__ != "undefined", "result is an iterator");
         var c = 0;
         for (var r in result) {
+            delete r._;
             c++;
             if (c == 1) {
                 deepEqual(r,o1);
@@ -136,6 +163,7 @@ if (acre.store) {
         });
         var c = 0;
         for (var r in result) {
+            delete r._;
             c++;
             if (c == 1) {
                 deepEqual(r,o1);
