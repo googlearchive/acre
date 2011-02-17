@@ -67,7 +67,7 @@ public class JSDataStore extends JSObject {
         }
         try {
             _transaction = _store.beginTransaction();
-        } catch (java.lang.Exception e) {
+        } catch (Exception e) {
             throw new JSConvertableException("Failed to initiate transaction: " + e.getMessage()).newJSException(_scope);
         }
     }
@@ -78,7 +78,7 @@ public class JSDataStore extends JSObject {
         }
         try {
             _transaction.commit();
-        } catch (java.lang.Exception e) {
+        } catch (Exception e) {
             throw new JSConvertableException("Failed to commit transaction: " + e.getMessage()).newJSException(_scope);
         }
         _transaction = null; // remove transaction even after failure or we won't be able to create another one
@@ -89,65 +89,66 @@ public class JSDataStore extends JSObject {
             throw new JSConvertableException("There is no transaction to commit, have you called acre.store.begin() first?").newJSException(_scope);
         }
         try {
-            _transaction.rollback();
-        } catch (java.lang.Exception e) {
+            if (_transaction.isActive()) {
+                _transaction.rollback();
+            }
+        } catch (Exception e) {
             throw new JSConvertableException("Failed to roll back transaction: " + e.getMessage()).newJSException(_scope);
         }
         _transaction = null; // remove transaction even after failure or we won't be able to create another one
     }
     
-    public Scriptable jsFunction_get(String app_id, String obj_id) {
+    public Scriptable jsFunction_get(String app_id, String obj_key) {
         try {
-            Key key = KeyFactory.stringToKey(obj_id);
-            String kind = key.getKind();
-            if (kind.equals(app_id)) {
-                return extract(_store.get(_transaction, key), _scope);
-            } else {
-                throw new JSConvertableException("Security violation: you can't read data that belongs to another app.").newJSException(_scope);
-            }
-        } catch (java.lang.Exception e) {
-            throw new JSConvertableException("Failed to obtain object with id '" + obj_id + ": " + e.getMessage()).newJSException(_scope);
+            Key key = KeyFactory.stringToKey(obj_key);
+            return extract(_store.get(_transaction, key), _scope);
+        } catch (Exception e) {
+            throw new JSConvertableException("Failed to obtain object with id '" + obj_key + ": " + e.getMessage()).newJSException(_scope);
         }
     }
 
-    public String jsFunction_put(String app_id, Scriptable obj) {
+    public Object jsFunction_put(String app_id, Scriptable obj, String name, String parent_key) {
         try {
-            Entity entity = new Entity(app_id);
+            Entity entity = null;
+            if (name == null || "undefined".equals(name)) {
+                if (parent_key == null || "undefined".equals(parent_key)) {
+                    entity = new Entity(app_id);
+                } else {
+                    entity = new Entity(app_id, KeyFactory.stringToKey(parent_key));
+                }
+            } else {
+                if (parent_key == null || "undefined".equals(parent_key)) {
+                    entity = new Entity(app_id, name);
+                } else {
+                    entity = new Entity(app_id, name, KeyFactory.stringToKey(parent_key));
+                }
+            }
             embed(entity, obj);
-            Key key = _store.put(_transaction, entity);
-            return KeyFactory.keyToString(key);
-        } catch (java.lang.Exception e) {
+            Key k = _store.put(_transaction, entity);
+            return KeyFactory.keyToString(k);
+        } catch (Exception e) {
+            e.printStackTrace();
             throw new JSConvertableException("Failed to save object: " + e.getMessage()).newJSException(_scope);
         }
     }
 
-    public String jsFunction_update(String app_id, String obj_id, Scriptable obj) {
+    public Object jsFunction_update(String app_id, String obj_key, Scriptable obj) {
         try {
-            Key key = KeyFactory.stringToKey(obj_id);
-            String kind = key.getKind();
-            if (kind.equals(app_id)) {
-                Entity entity = _store.get(_transaction, key);
-                embed(entity, obj);
-                Key key2 = _store.put(_transaction, entity);
-                return KeyFactory.keyToString(key2);
-            } else {
-                throw new JSConvertableException("Security violation: you can't read data that belongs to another app.").newJSException(_scope);
-            }
-        } catch (java.lang.Exception e) {
+            Key key = KeyFactory.stringToKey(obj_key);
+            Entity entity = _store.get(_transaction, key);
+            embed(entity, obj);
+            Key k = _store.put(_transaction, entity);
+            return KeyFactory.keyToString(k);
+        } catch (Exception e) {
             throw new JSConvertableException("Failed to update object: " + e.getMessage()).newJSException(_scope);
         }
     }
     
-    public void jsFunction_remove(String app_id, String obj_id) {
+    public void jsFunction_remove(String app_id, String obj_key) {
         try {
-            Key key = KeyFactory.stringToKey(obj_id);
-            String kind = key.getKind();
-            if (kind.equals(app_id)) {
-                _store.delete(_transaction, key);
-            } else {
-                throw new JSConvertableException("Security violation: you can't read data that belongs to another app.").newJSException(_scope);
-            }
-        } catch (java.lang.Exception e) {
+            Key key = KeyFactory.stringToKey(obj_key);
+            _store.delete(_transaction, key);
+        } catch (Exception e) {
             throw new JSConvertableException("Failed to remove object: " + e.getMessage()).newJSException(_scope);
         }
     }
@@ -159,8 +160,7 @@ public class JSDataStore extends JSObject {
             PreparedQuery pq = _store.prepare(aequery);
             JSDataStoreResults results = new JSDataStoreResults(pq,_scope);
             return results.makeJSInstance();
-        } catch (java.lang.Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) {
             throw new JSConvertableException("Failed to query store: " + e.getMessage()).newJSException(_scope);
         }
     }
@@ -173,7 +173,7 @@ public class JSDataStore extends JSObject {
         Object json = entity.getProperty(JSON_PROPERTY);
         Scriptable o = (Scriptable) JSON.parse(((Text) json).getValue(), scope, false);
         Scriptable metadata = Context.getCurrentContext().newObject(scope);
-        ScriptableObject.putProperty(metadata, "id", KeyFactory.keyToString(entity.getKey()));
+        ScriptableObject.putProperty(metadata, "key", KeyFactory.keyToString(entity.getKey()));
         ScriptableObject.putProperty(o,"_",metadata);
         return o;
     }
@@ -185,6 +185,22 @@ public class JSDataStore extends JSObject {
 
     // -------------------------------------------------------------------------------------------------------------
 
+    static Object get_key_name(Key key) {
+        return (key.getName() != null) ? key.getName() : key.getId();
+    }
+    
+    Key get_key(String app_id, Object obj_id) {
+        Key key = null;
+        if (obj_id instanceof String) {
+            key = KeyFactory.createKey(app_id, (String) obj_id);
+        } else if (obj_id instanceof Number) {
+            key = KeyFactory.createKey(app_id, ((Number) obj_id).intValue());
+        } else {
+            throw new JSConvertableException("obj IDs can only be strings or numbers").newJSException(_scope);
+        }
+        return key;
+    }
+    
     void index_object(String path, Scriptable obj, Entity entity) {
         String className = obj.getClassName();
         if ("Object".equals(className)) {
@@ -201,6 +217,10 @@ public class JSDataStore extends JSObject {
                     throw new JSConvertableException("Sorry, but properties are not allowed to contain the '.' character").newJSException(_scope);
                 }
     
+                if (prop.equals("_")) {
+                    throw new JSConvertableException("Sorry, but property '_' is reserved and your objects can't contain it").newJSException(_scope);
+                }
+                
                 Object value = obj.get(prop, obj);
                 
                 // NOTE(SM): for some reason, sometimes Rhino returns numbers that are integers and sometimes doubles

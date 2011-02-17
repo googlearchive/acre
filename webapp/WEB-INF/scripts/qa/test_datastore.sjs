@@ -48,8 +48,8 @@ if (acre.store) {
         var o = acre.store.find({ "foo" : "1" }).first();
         ok(typeof o == 'object', "first() returns an object");
         ok("_" in o, "found objects have metadata");
-        equal(id,o._.id, "ids are the same");
-        id = acre.store.update(o._.id, o2);
+        equal(id,o._.key, "keys are the same");
+        id = acre.store.update(o._.key, o2);
         var o3 = acre.store.get(id);
         delete o3._;
         deepEqual(o2,o3);
@@ -68,6 +68,24 @@ if (acre.store) {
     test('acre.store must complain if objs have "." in properties', function() {
         var o = { 
             "a.a" : "A"
+        };
+        try {
+            acre.store.put(o);
+            ok(false,"exception wasn't triggered");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+        try {
+            acre.store.find(o);
+            ok(false,"exception wasn't triggered");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+    });
+
+    test('acre.store must complain if objs have the "_" property', function() {
+        var o = { 
+            "_" : "A"
         };
         try {
             acre.store.put(o);
@@ -232,7 +250,56 @@ if (acre.store) {
         
         acre.store.remove([id1,id2,id3]);
     });
-    
+
+    test('acre.store commit works', function() {
+        var root = { "root" : "yeah!" };
+        var key = acre.store.put("root",root);
+        try {
+            acre.store.begin();
+            var o1 = { "a" : "A" };
+            var id1 = acre.store.put("o1", o1, key);
+            var o2 = { "b" : "B" };
+            var id2 = acre.store.put("o2", o2, key);
+            acre.store.commit();
+            ok(true,"commit worked");
+        } catch (e) {
+            acre.store.rollback();
+            ok(false,"exception wasn't supposed to be triggered");
+        }
+
+        var o3 = acre.store.get(id1);
+        delete o3._;
+        deepEqual(o1,o3);
+
+        var o4 = acre.store.get(id2);
+        delete o4._;
+        deepEqual(o2,o4);
+
+        acre.store.remove([key,id1,id2]);
+    });
+
+    test('acre.store rollback works', function() {
+        var root = { "root" : "yeah!" };
+        var key = acre.store.put("root",root);
+        try {
+            acre.store.begin();
+            var o1 = { "a" : "A" , "type" : "blah" };
+            var id1 = acre.store.put("o1", o1, key);
+            var o2 = { "b" : "B" , "type" : "blah" };
+            var id2 = acre.store.put("o2", o2, key);
+            JSON.parse("["); // this will throw (on purpose)
+            acre.store.commit();
+            ok(false,"exception should have been triggered");
+        } catch (e) {
+            acre.store.rollback();
+            ok(true,"exception was triggered");
+        }
+
+        var result = acre.store.find({ "type" : "blah" });
+        ok(typeof result.first() == 'undefined', "nothing was added");
+        acre.store.remove(key);
+    });
+        
 }
 
 acre.test.report();
