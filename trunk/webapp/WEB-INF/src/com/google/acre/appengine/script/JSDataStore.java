@@ -241,6 +241,10 @@ public class JSDataStore extends JSObject {
                 if (prop.indexOf('.') > -1) {
                     throw new JSConvertableException("Sorry, but properties are not allowed to contain the '.' character").newJSException(_scope);
                 }
+
+                if (prop.equals("_")) {
+                    throw new JSConvertableException("Sorry, but property '_' is reserved and your objects can't contain it").newJSException(_scope);
+                }
                 
                 FilterOperator filterOperator = Query.FilterOperator.EQUAL;
     
