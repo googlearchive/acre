@@ -171,7 +171,11 @@ public class JSDataStore extends JSObject {
     
     public static Scriptable extract(Entity entity, Scriptable scope) throws JSONException {
         Object json = entity.getProperty(JSON_PROPERTY);
-        return (Scriptable) JSON.parse(((Text) json).getValue(), scope, false);
+        Scriptable o = (Scriptable) JSON.parse(((Text) json).getValue(), scope, false);
+        Scriptable metadata = Context.getCurrentContext().newObject(scope);
+        ScriptableObject.putProperty(metadata, "id", KeyFactory.keyToString(entity.getKey()));
+        ScriptableObject.putProperty(o,"_",metadata);
+        return o;
     }
     
     public void embed(Entity entity, Scriptable obj) throws JSONException {

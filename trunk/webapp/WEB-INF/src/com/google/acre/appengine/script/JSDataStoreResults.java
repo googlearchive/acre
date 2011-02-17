@@ -59,10 +59,10 @@ public class JSDataStoreResults extends JSObject {
             Iterator iterator = ((PreparedQuery) _result).asIterator();
             JSDataStoreResultsIterator resultIterator = new JSDataStoreResultsIterator(iterator,_scope);
             return resultIterator.makeJSInstance();
-        } catch (java.lang.Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             throw new JSConvertableException("" + e.getMessage()).newJSException(_scope);
         }
     }
-    
+        
 }
