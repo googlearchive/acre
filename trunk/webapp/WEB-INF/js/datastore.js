@@ -8,9 +8,9 @@ var augment;
         // augment the given object (normally the 'acre' object)
         
         obj.store = {
-            "begin" : store.begin,
-            "commit" : store.commit,
-            "rollback" : store.rollback,
+            "begin" : begin,
+            "commit" : commit,
+            "rollback" : rollback,
             "get" : get,
             "put" : put,
             "update" : update,
@@ -26,27 +26,46 @@ var augment;
         return appid;
     }
 
-    function get(id) {
-        return store.get(get_appid(), id);
+    function begin() {
+        store.begin();
     }
     
-    function put(obj) {
-        return store.put(get_appid(), obj);
+    function commit() {
+        store.commit();
     }
     
-    function update(id, obj) {
-        return store.update(get_appid(), id, obj);
+    function rollback() {
+        store.rollback();
+    }
+    
+    function get(key) {
+        return store.get(get_appid(), key);
+    }
+    
+    function put(obj, name, parent_key) {
+        // allow put() to be used both as (value,key) and (key,value)
+        // this is useful to be able to say put(value) without specifying a key
+        if (typeof obj == 'string' && typeof name == 'object') {
+            var temp = obj;
+            var obj = name;
+            var name = temp;
+        }
+        return store.put(get_appid(), obj, name, parent_key);
+    }
+    
+    function update(key, obj) {
+        return store.update(get_appid(), key, obj);
         
     }
     
-    function remove(id) {
+    function remove(key) {
         var appid = get_appid();
-        if (id instanceof Array) {
-            for each (var i in id) {
-                store.remove(appid, i);
+        if (key instanceof Array) {
+            for each (var k in key) {
+                store.remove(appid, k);
             }
         } else {
-            store.remove(appid, id);
+            store.remove(appid, key);
         }
     }
 
