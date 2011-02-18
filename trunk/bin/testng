@@ -44,7 +44,7 @@ $ECHO -n "CHECK: local tests are present... "
 RESP=`curl -s -S -m 5  http://qa.dev.${ACRE_HOST_BASE}:$ACRE_PORT/write 2> /dev/null | grep "ok"`
 if [ -z "$RESP" ]; then
     $ECHO "FAILED"
-    $ECHO "FATAL: the required local tests don't seem to be available (did you run './acre appengine-prepare-tests' yet?)"
+    $ECHO "FATAL: the required local tests don't seem to be available"
     exit 1
 else
     $ECHO "PASSED"
