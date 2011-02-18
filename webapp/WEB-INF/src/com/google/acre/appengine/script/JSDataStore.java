@@ -110,14 +110,14 @@ public class JSDataStore extends JSObject {
     public Object jsFunction_put(String app_id, Scriptable obj, String name, String parent_key) {
         try {
             Entity entity = null;
-            if (name == null || "undefined".equals(name)) {
-                if (parent_key == null || "undefined".equals(parent_key)) {
+            if (name == null || "null".equals(name) || "undefined".equals(name) ) {
+                if (parent_key == null || "null".equals(parent_key) || "undefined".equals(parent_key)) {
                     entity = new Entity(app_id);
                 } else {
                     entity = new Entity(app_id, KeyFactory.stringToKey(parent_key));
                 }
             } else {
-                if (parent_key == null || "undefined".equals(parent_key)) {
+                if (parent_key == null || "null".equals(parent_key) || "undefined".equals(parent_key)) {
                     entity = new Entity(app_id, name);
                 } else {
                     entity = new Entity(app_id, name, KeyFactory.stringToKey(parent_key));
