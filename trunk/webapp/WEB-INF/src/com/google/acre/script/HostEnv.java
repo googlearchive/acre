@@ -326,7 +326,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
             }
         } catch (ClassNotFoundException e1) {
-            syslog(Level.INFO, "hostenv.datastore.init.failed", "DataStore provider not found and will not be present");
+            syslog(Level.WARN, "hostenv.datastore.init.failed", "DataStore provider not found and will not be present");
         }
 
         try {
@@ -343,7 +343,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load TaskQueue object: " + e);
             }
         } catch (ClassNotFoundException e1) {
-            syslog(Level.INFO, "hostenv.taskqueue.init.failed", "TaskQueue provider not found and will not be present");
+            syslog(Level.WARN, "hostenv.taskqueue.init.failed", "TaskQueue provider not found and will not be present");
         }
         
         return scope;
