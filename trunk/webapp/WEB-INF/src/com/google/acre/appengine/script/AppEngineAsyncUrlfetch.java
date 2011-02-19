@@ -14,7 +14,6 @@
 
 package com.google.acre.appengine.script;
 
-import static com.google.acre.logging.MetawebLogger.DEBUG;
 import static com.google.appengine.api.urlfetch.FetchOptions.Builder.disallowTruncate;
 
 import java.net.MalformedURLException;
@@ -41,7 +40,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 
-import com.google.acre.logging.MetawebLogger;
+import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.AcreCookie;
 import com.google.acre.script.AcreResponse;
 import com.google.acre.script.AsyncUrlfetch;
@@ -56,7 +55,7 @@ import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 
 public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
 
-    private MetawebLogger _logger = new MetawebLogger();
+    private final static AcreLogger _logger = new AcreLogger(AppEngineAsyncUrlfetch.class);    
     
     class AsyncRequest {
         public AsyncRequest(URL url, Future<HTTPResponse> request, Function callback, long start_time, boolean system, boolean log_to_user, String response_encoding) {
@@ -151,7 +150,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         }
         Future<HTTPResponse> futr = _urlfetch_service.fetchAsync(req);
         
-        _logger.syslog4j(DEBUG, "urlfetch.request.async",
+        _logger.syslog4j("DEBUG", "urlfetch.request.async",
                 "Method", method,
                 "URL", url,
                 "Headers", request_header_log);
@@ -222,7 +221,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         boolean system = req.system;
         boolean log_to_user = req.log_to_user;
                 
-        _logger.syslog4j(DEBUG, "urlfetch.response.async",
+        _logger.syslog4j("DEBUG", "urlfetch.response.async",
                          "URL", furl.toString(),
                          "Status", Integer.toString(res.getResponseCode()),
                          "Headers", response_header_log);

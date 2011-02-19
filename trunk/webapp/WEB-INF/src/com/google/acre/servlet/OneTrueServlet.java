@@ -28,17 +28,19 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
-import com.google.acre.logging.MetawebLogger;
+import com.google.acre.script.ScriptManager;
 import com.google.acre.util.Supervisor;
 import com.google.acre.util.TIDGenerator;
 
 public class OneTrueServlet extends javax.servlet.http.HttpServlet implements javax.servlet.Servlet {
     
-    protected static final MetawebLogger _logger = new MetawebLogger();
+    private final static Logger _logger = LoggerFactory.getLogger(ScriptManager.class);    
 
     private static final long serialVersionUID = -7572688360464348578L;
         

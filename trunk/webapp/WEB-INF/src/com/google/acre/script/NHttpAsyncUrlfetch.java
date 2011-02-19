@@ -14,8 +14,6 @@
 
 package com.google.acre.script;
 
-import static com.google.acre.logging.MetawebLogger.DEBUG;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,15 +48,16 @@ import org.mozilla.javascript.Scriptable;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
-import com.google.acre.logging.MetawebLogger;
+import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.exceptions.JSURLTimeoutError;
 
 public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
     
+    private final static AcreLogger _logger = new AcreLogger(NHttpAsyncUrlfetch.class);    
+    
     private AcreResponse _response;
     private Scriptable _scope;
     private NHttpClient _nhttp;
-    private MetawebLogger _logger = new MetawebLogger();
 
     public NHttpAsyncUrlfetch(AcreResponse response, Scriptable scope) {
         this();
@@ -170,7 +169,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
         }
         
         String httpreqhdr = request_header_log.toString();
-        _logger.syslog4j(DEBUG, "urlfetch.request.async",
+        _logger.syslog4j("DEBUG", "urlfetch.request.async",
                          "Method", method,
                          "URL", url,
                          "Headers", httpreqhdr);
@@ -355,7 +354,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
 
                 String httprephdr = response_header_log.toString();
                 // XXX need to log start-time of request
-                _logger.syslog4j(DEBUG, "urlfetch.response.async",
+                _logger.syslog4j("DEBUG", "urlfetch.response.async",
                                  "URL", url.toString(),
                                  "Status", Integer.toString(status),
                                  "Headers", httprephdr,

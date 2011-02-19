@@ -31,12 +31,14 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.acre.AcreFactory;
 import com.google.acre.Configuration;
 import com.google.acre.javascript.JSON;
 import com.google.acre.javascript.JSONException;
 import com.google.acre.keystore.KeyStore;
-import com.google.acre.logging.MetawebLogger;
 
 /**
  * <p>This Servlet implements a web service on top of the KeyStore that allows
@@ -49,8 +51,8 @@ public class KeyStoreServlet extends HttpServlet {
     
     private static final long serialVersionUID = -526354280010592746L;
     
-    protected static final MetawebLogger _logger = new MetawebLogger();
-
+    private final static Logger _logger = LoggerFactory.getLogger(KeyStoreServlet.class);    
+    
     protected transient KeyStore _store;
     
     private static final boolean CHECK_SSL = false;

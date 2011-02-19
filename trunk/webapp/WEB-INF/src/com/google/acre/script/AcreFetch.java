@@ -52,10 +52,11 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
-import com.google.acre.logging.MetawebLogger;
 import com.google.acre.script.exceptions.AcreURLFetchException;
 import com.google.acre.util.http.HttpPropFind;
 
@@ -66,8 +67,8 @@ import com.google.acre.util.http.HttpPropFind;
  */
 public class AcreFetch extends JsConvertable {
 
-    private static MetawebLogger _logger = new MetawebLogger();
-
+    private final static Logger _logger = LoggerFactory.getLogger(AcreFetch.class);    
+    
     private static String ACRE_METAWEB_API_ADDR = Configuration.Values.ACRE_METAWEB_API_ADDR.getValue();
     private static String ACRE_FREEBASE_SITE_ADDR = Configuration.Values.ACRE_FREEBASE_SITE_ADDR.getValue();
 
