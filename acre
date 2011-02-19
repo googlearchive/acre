@@ -284,7 +284,7 @@ case "$ACTION" in
         if [ "$ACRE_PORT" != "" ]; then
             APPSERVER_PARAMS="-p $ACRE_PORT"
         fi
-        $APPENGINE_HOME/bin/dev_appserver.sh $APPSERVER_PARAMS webapp;;
+        $APPENGINE_HOME/bin/dev_appserver.sh --disable_update_check $APPSERVER_PARAMS webapp;;
     appengine-deploy) 
         if [ -f "webapp/WEB-INF/appengine-web.xml" ]; then
             get_appid
