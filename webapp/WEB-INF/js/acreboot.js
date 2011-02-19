@@ -2109,6 +2109,7 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
         var md_file = Script(app_data, md_filename).to_module();
         try {
           var md = md_file[_METADATA_FILE] || JSON.parse(md_file.body);
+          syslog("Loaded app metadata file in //" + host, "proto_require.metadata");
         } catch (e) {
           throw new Error("Metadata file in //" + host + " is not valid. "  + e);
         }
