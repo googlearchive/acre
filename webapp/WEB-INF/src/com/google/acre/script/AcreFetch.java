@@ -134,11 +134,10 @@ public class AcreFetch extends JsConvertable {
     // note that the pattern in UrlUtil.java is incorrect.
     private static Pattern contentTypeCharsetPattern = Pattern.compile("^([^;]+); charset=['\"]?([^;'\"]+)['\"]?");
 
-    public void fetch(boolean system, String response_encoding,
-                      boolean log_to_user) {
+    public void fetch(boolean system, String response_encoding, boolean log_to_user) {
+        
         if (request_url.length() > 2047) {
-            throw new AcreURLFetchException("fetching URL failed - url is too long\n"
-                                   + request_url.substring(0, 40) + " ..." );
+            throw new AcreURLFetchException("fetching URL failed - url is too long\n" + request_url.substring(0, 40) + " ..." );
         }
 
         DefaultHttpClient client = new DefaultHttpClient(_connectionManager, null);
@@ -175,27 +174,20 @@ public class AcreFetch extends JsConvertable {
             }
         }
 
-        // see http://hc.apache.org/httpclient-3.x/preference-api.html
-        // for many more security and performance options
-
-        client.getParams().setParameter(AllClientPNames.COOKIE_POLICY,
-                                       CookiePolicy.BROWSER_COMPATIBILITY);
+        client.getParams().setParameter(AllClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
 
         // in msec
 
         long timeout = _deadline - System.currentTimeMillis();
         if (timeout < 0) timeout = 0;
-        client.getParams().setParameter(AllClientPNames.CONNECTION_TIMEOUT,
-                                        (int)timeout);
-        client.getParams().setParameter(AllClientPNames.SO_TIMEOUT,
-                                        (int)timeout);
+        client.getParams().setParameter(AllClientPNames.CONNECTION_TIMEOUT,(int)timeout);
+        client.getParams().setParameter(AllClientPNames.SO_TIMEOUT,(int)timeout);
 
         // we're not streaming the request so this should be a win.
         client.getParams().setParameter(AllClientPNames.TCP_NODELAY, true);
 
         // set the encoding of our POST payloads to UTF-8
-        client.getParams().setParameter(AllClientPNames.HTTP_CONTENT_CHARSET,
-                                        "UTF-8");
+        client.getParams().setParameter(AllClientPNames.HTTP_CONTENT_CHARSET,"UTF-8");
 
         BasicCookieStore cstore = new BasicCookieStore();
         for (AcreCookie cookie : request_cookies.values()) {
@@ -206,8 +198,8 @@ public class AcreFetch extends JsConvertable {
         HttpRequestBase method;
 
         HashMap<String, String> logmsg = new HashMap<String, String>();
-        logmsg.put("Http.req.method", request_method);
-        logmsg.put("Http.url", request_url);
+        logmsg.put("Method", request_method);
+        logmsg.put("URL", request_url);
 
         try {
             if (request_method.equals("GET")) {
@@ -223,11 +215,9 @@ public class AcreFetch extends JsConvertable {
             } else if (request_method.equals("PROPFIND")) {
                 method = new HttpPropFind(request_url);
             } else {
-                throw new AcreURLFetchException("Failed: unsupported (so far) method " +
-                                                request_method);
+                throw new AcreURLFetchException("Failed: unsupported (so far) method " + request_method);
             }
-            method.getParams().setBooleanParameter(AllClientPNames.USE_EXPECT_CONTINUE,
-                                                   false);
+            method.getParams().setBooleanParameter(AllClientPNames.USE_EXPECT_CONTINUE,false);
         } catch (java.lang.IllegalArgumentException e) {
             throw new AcreURLFetchException("Unable to handle URL: " + request_url + "; this is most likely an issue with URL encoding.");
         } catch (java.lang.IllegalStateException e) {
@@ -267,22 +257,19 @@ public class AcreFetch extends JsConvertable {
                 request_header_log.append(key + ": " + value + "\r\n");
             }
         }
-        logmsg.put("Http.req.hdr", request_header_log.toString());
+        logmsg.put("Headers", request_header_log.toString());
 
         // XXX need more detailed error checking
         if (method instanceof HttpEntityEnclosingRequestBase &&
             request_body != null) {
 
-            HttpEntityEnclosingRequestBase em =
-                (HttpEntityEnclosingRequestBase) method;
+            HttpEntityEnclosingRequestBase em = (HttpEntityEnclosingRequestBase) method;
             try {
                 if (request_body instanceof String) {
-                    StringEntity ent = new StringEntity((String)request_body,
-                                                        content_type_charset);
+                    StringEntity ent = new StringEntity((String)request_body, content_type_charset);
                     em.setEntity(ent);
                 } else if (request_body instanceof JSBinary) {
-                    ByteArrayEntity ent = new ByteArrayEntity(((JSBinary)request_body)
-                                                              .get_data());
+                    ByteArrayEntity ent = new ByteArrayEntity(((JSBinary)request_body).get_data());
                     em.setEntity(ent);
                 }
             } catch (UnsupportedEncodingException e) {
@@ -306,8 +293,8 @@ public class AcreFetch extends JsConvertable {
             HttpResponse hres = client.execute(method);
             status = hres.getStatusLine().getStatusCode();
             HashMap<String, String> res_logmsg = new HashMap<String, String>();
-            res_logmsg.put("Http.url", request_url);
-            res_logmsg.put("Http.rep.status", ((Integer)status).toString());
+            res_logmsg.put("URL", request_url);
+            res_logmsg.put("Status", ((Integer)status).toString());
 
             Header content_type_header = null;
 
@@ -332,7 +319,7 @@ public class AcreFetch extends JsConvertable {
                 response_header_log.append(headername + ": " + rawheader.getValue() + "\r\n");
             }
 
-            res_logmsg.put("Http.rep.hdr", response_header_log.toString());
+            res_logmsg.put("Headers", response_header_log.toString());
 
             if (!system && log_to_user) {
                 ArrayList<Object> msg = new ArrayList<Object>();
@@ -437,20 +424,15 @@ public class AcreFetch extends JsConvertable {
         } catch (IllegalArgumentException e) {
             Throwable cause = e.getCause();
             if (cause == null) cause = e;
-            throw new AcreURLFetchException("failed to fetch URL "+ request_url +
-                                            " - Request Error: "+ cause.getMessage());
+            throw new AcreURLFetchException("failed to fetch URL "+ request_url + " - Request Error: "+ cause.getMessage());
         } catch (IOException e) {
             Throwable cause = e.getCause();
             if (cause == null) cause = e;
-            throw new AcreURLFetchException("Failed to fetch URL " + request_url +
-                                            " - Network Error: " + cause.getMessage());
-
+            throw new AcreURLFetchException("Failed to fetch URL " + request_url + " - Network Error: " + cause.getMessage());
         } catch (RuntimeException e) {
             Throwable cause = e.getCause();
             if (cause == null) cause = e;
-            throw new AcreURLFetchException("Failed to fetch URL " + request_url +
-                                            " - Network Error: " + cause.getMessage());
-
+            throw new AcreURLFetchException("Failed to fetch URL " + request_url + " - Network Error: " + cause.getMessage());
         } finally {
             method.abort();
         }

@@ -14,6 +14,8 @@
 
 package com.google.acre.script;
 
+import static com.google.util.logging.MetawebLogger.DEBUG;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +44,6 @@ import org.apache.http.cookie.CookieSpec;
 import org.apache.http.cookie.MalformedCookieException;
 import org.apache.http.impl.cookie.BrowserCompatSpecFactory;
 import org.apache.http.message.BasicHeader;
-import org.apache.log4j.Level;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
@@ -169,16 +170,16 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
         }
         
         String httpreqhdr = request_header_log.toString();
-        _logger.syslog4j(Level.DEBUG, "urlfetch.request.async",
-                         "Http.req.method", method,
-                         "Http.url", url,
-                         "Http.req.hdr", httpreqhdr);
+        _logger.syslog4j(DEBUG, "urlfetch.request.async",
+                         "Method", method,
+                         "URL", url,
+                         "Headers", httpreqhdr);
 
         if (!system && log_to_user) {
             _response.userlog4j("DEBUG", "urlfetch.request.async",
-                                "Http.req.method", method,
-                                "Http.url", url,
-                                "Http.req.hdr", httpreqhdr);
+                                "Method", method,
+                                "URL", url,
+                                "Headers", httpreqhdr);
         }
         
         // XXX this is time the request was initiated, not necessarily the
@@ -354,18 +355,18 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
 
                 String httprephdr = response_header_log.toString();
                 // XXX need to log start-time of request
-                _logger.syslog4j(Level.DEBUG, "urlfetch.response.async",
-                                 "Http.url", url.toString(),
-                                 "Http.rep.status", Integer.toString(status),
-                                 "Http.rep.hdr", httprephdr,
-                                 "reading_time", reading_time,
-                                 "waiting_time", waiting_time);
+                _logger.syslog4j(DEBUG, "urlfetch.response.async",
+                                 "URL", url.toString(),
+                                 "Status", Integer.toString(status),
+                                 "Headers", httprephdr,
+                                 "Reading time", reading_time,
+                                 "Waiting time", waiting_time);
 
                 if (system && log_to_user) {
                     _response.userlog4j("DEBUG", "urlfetch.response.async",
-                                        "Http.url", url.toString(),
-                                        "Http.rep.status", Integer.toString(status),
-                                        "Http.rep.hdr", httprephdr);
+                                        "URL", url.toString(),
+                                        "Status", Integer.toString(status),
+                                        "Headers", httprephdr);
 
                 }
                 

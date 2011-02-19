@@ -14,6 +14,11 @@
 
 package com.google.acre.script;
 
+import static com.google.util.logging.MetawebLogger.DEBUG;
+import static com.google.util.logging.MetawebLogger.ERROR;
+import static com.google.util.logging.MetawebLogger.INFO;
+import static com.google.util.logging.MetawebLogger.WARN;
+
 import java.io.BufferedReader;
 import java.io.CharArrayWriter;
 import java.io.IOException;
@@ -40,7 +45,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.log4j.Level;
 import org.mozilla.javascript.Callable;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
@@ -228,51 +232,51 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         try {
             ScriptableObject.defineClass(scope, JSJSON.class, false, true);
         } catch (IllegalAccessException e) {
-            syslog(Level.ERROR, "hostenv.jsonobj.init.failed", "Failed to load JSON object: " + e); 
+            syslog(ERROR, "hostenv.jsonobj.init.failed", "Failed to load JSON object: " + e); 
         } catch (InstantiationException e) {
-            syslog(Level.ERROR, "hostenv.jsonobj.init.failed", "Failed to load JSON object: " + e); 
+            syslog(ERROR, "hostenv.jsonobj.init.failed", "Failed to load JSON object: " + e); 
         } catch (InvocationTargetException e) {
-            syslog(Level.ERROR, "hostenv.jsonobj.init.failed", "Failed to load JSON object: " + e); 
+            syslog(ERROR, "hostenv.jsonobj.init.failed", "Failed to load JSON object: " + e); 
         }
 
         try {
             ScriptableObject.defineClass(scope, JSBinary.class, false, true);
         } catch (IllegalAccessException e) {
-            syslog(Level.ERROR, "hostenv.binaryobj.init.failed", "Failed to load Binary object: " + e); 
+            syslog(ERROR, "hostenv.binaryobj.init.failed", "Failed to load Binary object: " + e); 
         } catch (InstantiationException e) {
-            syslog(Level.ERROR, "hostenv.binaryobj.init.failed", "Failed to load Binary object: " + e); 
+            syslog(ERROR, "hostenv.binaryobj.init.failed", "Failed to load Binary object: " + e); 
         } catch (InvocationTargetException e) {
-            syslog(Level.ERROR, "hostenv.binaryobj.init.failed", "Failed to load Binary object: " + e); 
+            syslog(ERROR, "hostenv.binaryobj.init.failed", "Failed to load Binary object: " + e); 
         }
         
         try {
             ScriptableObject.defineClass(scope, JSFile.class, false, true);
         } catch (IllegalAccessException e) {
-            syslog(Level.ERROR, "hostenv.fileobj.init.failed", "Failed to load File object: " + e); 
+            syslog(ERROR, "hostenv.fileobj.init.failed", "Failed to load File object: " + e); 
         } catch (InstantiationException e) {
-            syslog(Level.ERROR, "hostenv.fileobj.init.failed", "Failed to load File object: " + e); 
+            syslog(ERROR, "hostenv.fileobj.init.failed", "Failed to load File object: " + e); 
         } catch (InvocationTargetException e) {
-            syslog(Level.ERROR, "hostenv.fileobj.init.failed", "Failed to load File object: " + e); 
+            syslog(ERROR, "hostenv.fileobj.init.failed", "Failed to load File object: " + e); 
         }
 
         try {
             ScriptableObject.defineClass(scope, JSKeyStore.class, false, true);
         } catch (IllegalAccessException e) {
-            syslog(Level.ERROR, "hostenv.keystore.init.failed", "Failed to load KeyStore object: " + e);
+            syslog(ERROR, "hostenv.keystore.init.failed", "Failed to load KeyStore object: " + e);
         } catch (InstantiationException e) {
-            syslog(Level.ERROR, "hostenv.keystore.init.failed", "Failed to load KeyStore object: " + e);
+            syslog(ERROR, "hostenv.keystore.init.failed", "Failed to load KeyStore object: " + e);
         } catch (InvocationTargetException e) {
-            syslog(Level.ERROR, "hostenv.keystore.init.failed", "Failed to load KeyStore object: " + e);
+            syslog(ERROR, "hostenv.keystore.init.failed", "Failed to load KeyStore object: " + e);
         }
         
         try {
             ScriptableObject.defineClass(scope, JSCache.class, false, true);
         } catch (IllegalAccessException e) {
-            syslog(Level.ERROR, "hostenv.cache.init.failed", "Failed to load Cache object: " + e);
+            syslog(ERROR, "hostenv.cache.init.failed", "Failed to load Cache object: " + e);
         } catch (InstantiationException e) {
-            syslog(Level.ERROR, "hostenv.cache.init.failed", "Failed to load Cache object: " + e);
+            syslog(ERROR, "hostenv.cache.init.failed", "Failed to load Cache object: " + e);
         } catch (InvocationTargetException e) {
-            syslog(Level.ERROR, "hostenv.cache.init.failed", "Failed to load Cache object: " + e);
+            syslog(ERROR, "hostenv.cache.init.failed", "Failed to load Cache object: " + e);
         }
 
         try {
@@ -297,11 +301,11 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             ScriptableObject.defineClass(scope, JSDOMParser.class, false, true);
             ScriptableObject.defineClass(scope, JSDOMParserException.class, false, true);
         } catch (IllegalAccessException e) {
-            syslog(Level.ERROR, "hostenv.dom.init.failed", "Failed to load DOM: " + e);
+            syslog(ERROR, "hostenv.dom.init.failed", "Failed to load DOM: " + e);
         } catch (InstantiationException e) {
-            syslog(Level.ERROR, "hostenv.dom.init.failed", "Failed to load DOM: " + e);
+            syslog(ERROR, "hostenv.dom.init.failed", "Failed to load DOM: " + e);
         } catch (InvocationTargetException e) {
-            syslog(Level.ERROR, "hostenv.dom.init.failed", "Failed to load DOM: " + e);
+            syslog(ERROR, "hostenv.dom.init.failed", "Failed to load DOM: " + e);
         }
 
         try {
@@ -319,14 +323,14 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 ScriptableObject.defineClass(scope, jsDataStoreResultsClass, false, true);
                 ScriptableObject.defineClass(scope, jsDataStoreResultsIteratorClass, false, true);
             } catch (IllegalAccessException e) {
-                syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
+                syslog(ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
             } catch (InstantiationException e) {
-                syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
+                syslog(ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
             } catch (InvocationTargetException e) {
-                syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
+                syslog(ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
             }
         } catch (ClassNotFoundException e1) {
-            syslog(Level.WARN, "hostenv.datastore.init.failed", "DataStore provider not found and will not be present");
+            syslog(DEBUG, "hostenv.datastore.init.failed", "DataStore provider not found and will not be present");
         }
 
         try {
@@ -336,14 +340,14 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             try {
                 ScriptableObject.defineClass(scope, jsTaskQueueClass, false, true);
             } catch (IllegalAccessException e) {
-                syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load TaskQueue object: " + e);
+                syslog(ERROR, "hostenv.datastore.init.failed", "Failed to load TaskQueue object: " + e);
             } catch (InstantiationException e) {
-                syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load TaskQueue object: " + e);
+                syslog(ERROR, "hostenv.datastore.init.failed", "Failed to load TaskQueue object: " + e);
             } catch (InvocationTargetException e) {
-                syslog(Level.ERROR, "hostenv.datastore.init.failed", "Failed to load TaskQueue object: " + e);
+                syslog(ERROR, "hostenv.datastore.init.failed", "Failed to load TaskQueue object: " + e);
             }
         } catch (ClassNotFoundException e1) {
-            syslog(Level.WARN, "hostenv.taskqueue.init.failed", "TaskQueue provider not found and will not be present");
+            syslog(DEBUG, "hostenv.taskqueue.init.failed", "TaskQueue provider not found and will not be present");
         }
         
         return scope;
@@ -398,7 +402,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                     int pctused = (int) ((100 * memory_used) / allocationLimit);
                     String msg = "script used " + pctused + "% of memory quota";
                     userlog("debug", msg);
-                    syslog(Level.DEBUG, "hostenv.script.memory", msg);
+                    syslog(DEBUG, "hostenv.script.memory", msg);
                     res.collect("am", (float) memory_used);
                     athread.setThreadAllocationLimit(0);
                 }
@@ -447,7 +451,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         _scope.put("ACRE_REQUEST", _scope, req.toJsObject(_scope));
 
         try {
-            syslog(Level.DEBUG, "hostenv.script.start", "");
+            syslog(DEBUG, "hostenv.script.start", "");
 
             // we ought to make sure acreboot has initialized before
             // throwing this error
@@ -541,7 +545,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
      */
 
     public HostEnv internalRedirect(String script_path, boolean skip_routes) throws IOException {
-        syslog(Level.DEBUG, "hostenv.script.internalredirect", "internal redirect to " + script_path);
+        syslog(DEBUG, "hostenv.script.internalredirect", "internal redirect to " + script_path);
 
         // reset the request path_info and query_string
         URL url;
@@ -653,7 +657,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         CachedScript script = _scriptManager.getScriptByClassName(className);
 
         if (script == null) {
-            syslog4j(Level.DEBUG, "hostenv.script.load.from_cache.not_found",
+            syslog4j(DEBUG, "hostenv.script.load.from_cache.not_found",
                    "script_name", script_name,
                    "cache_key", className,
                    "content_id", content_id
@@ -665,7 +669,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             // doesn't happen
 
             if (script.getCompiledScript() == null) {
-                syslog4j(Level.DEBUG, "hostenv.script.load.from_cache.invalid",
+                syslog4j(DEBUG, "hostenv.script.load.from_cache.invalid",
                        "script_name", script_name,
                        "cache_key", className,
                        "content_id", content_id
@@ -678,7 +682,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             }
         }
 
-        syslog4j(Level.DEBUG, "hostenv.script.load.from_cache",
+        syslog4j(DEBUG, "hostenv.script.load.from_cache",
                "script_name", script.getScriptName(),
                "cache_key", className,
                "content_id", content_id
@@ -713,7 +717,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                         d = (Double) linemap.get(i, linemap);
                         jlinemap[i] = (d != null) ? d.intValue() : 0;
                     } catch (ClassCastException e) {
-                        syslog(Level.WARN, "hostenv.script.bad_linemap_entry",
+                        syslog(WARN, "hostenv.script.bad_linemap_entry",
                                "bad linemap entry for script " + script_name);
                         jlinemap[i] = 0;
                     }
@@ -725,7 +729,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         // get the script (this will compile it if it wasn't done before)
         script = _scriptManager.getScript(script);
 
-        syslog(Level.DEBUG, "hostenv.script.load.from_string", "loading script '" + script.getScriptName() + "'");
+        syslog(DEBUG, "hostenv.script.load.from_string", "loading script '" + script.getScriptName() + "'");
 
         return execute(script, scope, swizzle);
     }
@@ -778,14 +782,14 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         // NOTE(SM): should go away once we transition the APIs over to the google infra 
         if (host.equals(ACRE_METAWEB_API_ADDR)) {
             fetch.request_headers.put("X-Metaweb-TID", req._metaweb_tid);
-            syslog(Level.DEBUG, "hostenv.urlopen.attached.tid", "Attaching X-Metaweb-TID of " + req._metaweb_tid);
+            syslog(DEBUG, "hostenv.urlopen.attached.tid", "Attaching X-Metaweb-TID of " + req._metaweb_tid);
 
             if (has("write_user", this)) {
                 String write_user = (String) get("write_user", this);
                 if (write_user != null) {
                     if (!fetch.request_headers.containsKey("Authorization")) {
                         fetch.request_headers.put("X-Acre-Auth", signAcreAuth(write_user));
-                        syslog(Level.DEBUG, "hostenv.urlopen.attached.acre_write_user", "Request will be signed as user " + write_user);
+                        syslog(DEBUG, "hostenv.urlopen.attached.acre_write_user", "Request will be signed as user " + write_user);
                     }
                 }
             }
@@ -859,14 +863,14 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         // NOTE(SM): should go away once we transition the APIs over to the google infra 
         if (host.equals(ACRE_METAWEB_API_ADDR)) {
             header_map.put("X-Metaweb-TID", req._metaweb_tid);
-            syslog(Level.DEBUG, "hostenv.urlopen.attached.tid", "Attaching X-Metaweb-TID of " + req._metaweb_tid);
+            syslog(DEBUG, "hostenv.urlopen.attached.tid", "Attaching X-Metaweb-TID of " + req._metaweb_tid);
 
             if (has("write_user", this)) {
                 String write_user = (String) get("write_user", this);
                 if (write_user != null) {
                     if (!header_map.containsKey("Authorization")) {
                         header_map.put("X-Acre-Auth", signAcreAuth(write_user));
-                        syslog(Level.DEBUG, "hostenv.urlopen.attached.acre_write_user", "Request will be signed as user " + write_user);
+                        syslog(DEBUG, "hostenv.urlopen.attached.acre_write_user", "Request will be signed as user " + write_user);
                     }
                 }
             }
@@ -923,7 +927,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
     }
 
-    public void syslog4j(Level level, String event_name, Object... msgparts) {
+    public void syslog4j(byte level, String event_name, Object... msgparts) {
         HashMap<String, String> msg = new HashMap<String, String>();
 
         String key = null;
@@ -958,14 +962,14 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     @JS_Function
     public void syslog(Object level, Object event_name, Object msgarg) {
 
-        Level lvl = null;
+        byte lvl = INFO;
+        
         if (level instanceof String) {
-            lvl = Level.toLevel((String) level);
-        } else if (level instanceof Level) {
-            lvl = (Level) level;
+            lvl = MetawebLogger.toLevel((String) level);
+        } else if (level instanceof Number) {
+            lvl = ((Number) level).byteValue();
         } else {
-            throw new JSConvertableException("Not a valid Level")
-                .newJSException(this);
+            throw new JSConvertableException("Log levels can only be strings").newJSException(this);
         }
 
         if (event_name == null) event_name = "system";
@@ -1090,7 +1094,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     }
 
     private void simpleReportRhinoException(String msg, RhinoException e) throws IOException {
-        syslog(Level.WARN, "hostenv.script.error.rhinoexception.fallback", "JS exception " + e);
+        syslog(WARN, "hostenv.script.error.rhinoexception.fallback", "JS exception " + e);
         String errmsg = "Unhandled exception in acre error handler: " + e.getMessage();
         userlog("error", errmsg);
 
@@ -1114,7 +1118,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         if (has("script_path", this))
             script_path = (String)get("script_path", this);
 
-        syslog(Level.DEBUG, "hostenv.script.finish", "Done with script " + script_path);
+        syslog(DEBUG, "hostenv.script.finish", "Done with script " + script_path);
     }
 
     /**
@@ -1128,7 +1132,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         // error.
 
         try {
-            syslog(Level.ERROR, "hostenv.internal.error", "Internal error in script boot: " + message);
+            syslog(ERROR, "hostenv.internal.error", "Internal error in script boot: " + message);
 
             startErrorPage();
             signalAcreError(message);
@@ -1143,14 +1147,14 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             }
             pw.flush();
             String excdump = cw.toString();
-            syslog(Level.ERROR, "hostenv.internal.error.msg", "ACRE INTERNAL ERROR: \n" + excdump);
+            syslog(ERROR, "hostenv.internal.error.msg", "ACRE INTERNAL ERROR: \n" + excdump);
 
             write("ACRE INTERNAL ERROR -- Please Report to irc://irc.freenode.net/#freebase\n");
             write("Request Id: " + req._metaweb_tid + "\n\n");
             write(excdump + "\n");
         } catch (Throwable e) {
-            syslog(Level.ERROR, "hostenv.internal.error.fatal", "Dispatch: Acre Last chance error, giving up" + exc);
-            syslog(Level.ERROR, "hostenv.internal.error.fatal.failed_on", "Failed reporting the error above" + e);
+            syslog(ERROR, "hostenv.internal.error.fatal", "Dispatch: Acre Last chance error, giving up" + exc);
+            syslog(ERROR, "hostenv.internal.error.fatal.failed_on", "Failed reporting the error above" + e);
 
             // XXX this should be replaced with an exception class that is unique to this case
             // and will never be caught.
@@ -1200,7 +1204,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                     }
                 }
 
-                syslog(Level.ERROR, logevent, log_msg + " [" + script_path + "]");
+                syslog(ERROR, logevent, log_msg + " [" + script_path + "]");
 
                 // handle the error using the local error handler for the script
                 // this will fall back to the default error handler if no local handler is found
@@ -1216,7 +1220,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                         return;
                     }
 
-                    syslog(Level.ERROR, logevent, "Error in acreboot.js, no error context available");
+                    syslog(ERROR, logevent, "Error in acreboot.js, no error context available");
                     error_script_path = DEFAULT_ERROR_PAGE;
 
                     // this is a hack to handle huge request bodies, which can choke acreboot.js

@@ -2,30 +2,6 @@
 # other configs, we derive them here if they
 # weren't explicitly set somewhere else.
 
-if [ -z "$ACRE_DATADIR" ]; then
-    if [ -z "$MWBUILD_DATAROOT" ]; then
-        ACRE_DATADIR="_data/acre"
-    else
-        ACRE_DATADIR="${MWBUILD_DATAROOT}/acre"
-    fi
-fi
-
-if [ -z "$ACRE_LOGDIR" ]; then
-    if [ -z "$MWBUILD_LOGROOT" ]; then
-        ACRE_LOGDIR="_logs/acre"
-    else
-        ACRE_LOGDIR="${MWBUILD_LOGROOT}/acre"
-    fi
-fi
-
-if [ -z "$ACRE_JSLOGS" ]; then
-    ACRE_JSLOGS="${ACRE_DATADIR}/jslogs"
-fi
-
-if [ -z "$ACRE_ACCESSLOGS" ]; then
-    export ACRE_ACCESSLOGS="${ACRE_DATADIR}/accesslogs"
-fi
-
 if [ -z "$ACRE_SERVICE_ADDR" ]; then
     export ACRE_SERVICE_ADDR=${ACRE_HOST}:${ACRE_PORT}
 fi
@@ -68,7 +44,7 @@ else
 fi
 
 # Set Acre PID file
-ACRE_PID=$ACRE_DATADIR/acre.pid
+ACRE_PID=acre.pid
 
 # If verbosity is not specified, set syslog threshold level to INFO
 if [ -z "$ACRE_LOG_LEVEL" ]; then

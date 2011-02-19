@@ -15,6 +15,7 @@
 package com.google.acre.appengine.script;
 
 import static com.google.appengine.api.urlfetch.FetchOptions.Builder.disallowTruncate;
+import static com.google.util.logging.MetawebLogger.DEBUG;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -51,9 +52,12 @@ import com.google.appengine.api.urlfetch.HTTPRequest;
 import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
+import com.google.util.logging.MetawebLogger;
 
 public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
 
+    private MetawebLogger _logger = new MetawebLogger();
+    
     class AsyncRequest {
         public AsyncRequest(URL url, Future<HTTPResponse> request, Function callback, long start_time, boolean system, boolean log_to_user, String response_encoding) {
             this.url = url;
@@ -147,11 +151,16 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         }
         Future<HTTPResponse> futr = _urlfetch_service.fetchAsync(req);
         
+        _logger.syslog4j(DEBUG, "urlfetch.request.async",
+                "Method", method,
+                "URL", url,
+                "Headers", request_header_log);
+                
         if (!system && log_to_user) {
             _response.userlog4j("DEBUG", "urlfetch.request.async",
-                                "Http.req.method", method,
-                                "Http.url", url,
-                                "Http.req.hdr", request_header_log);
+                                "Method", method,
+                                "URL", url,
+                                "Headers", request_header_log);
         }
         
         final long start_time = System.currentTimeMillis();
@@ -213,11 +222,16 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         boolean system = req.system;
         boolean log_to_user = req.log_to_user;
                 
+        _logger.syslog4j(DEBUG, "urlfetch.response.async",
+                         "URL", furl.toString(),
+                         "Status", Integer.toString(res.getResponseCode()),
+                         "Headers", response_header_log);
+        
         if (system && log_to_user) {
             _response.userlog4j("DEBUG", "urlfetch.response.async",
-                                "Http.url", furl.toString(),
-                                "Http.rep.status", Integer.toString(res.getResponseCode()),
-                                "Http.rep.hdr", response_header_log);
+                                "URL", furl.toString(),
+                                "Status", Integer.toString(res.getResponseCode()),
+                                "Headers", response_header_log);
         }
         
         _response.collect((system) ? "asuc":"auuc");
