@@ -469,20 +469,16 @@ var mwlt_mode = false;
  *   query_string --> acre.request.params
  *   body --> acre.request.body_params
  */
-function set_request_params(query_string, body) {
-    acre.request.query_string = query_string || "";
-    acre.request.body = body || "";
+function set_request_params() {
+    var query_string = acre.request.query_string;
+    var body = acre.request.body;
     
     try {
         acre.request.params = (typeof query_string == 'string') ? acre.form.decode(query_string) : {};
         acre.request.body_params = (typeof body == 'string' && typeof acre.request.headers['content-type'] == 'string' && acre.request.headers['content-type'].match(/^application\/x-www-form-urlencoded/)) ? acre.form.decode(body) : {};
-        acre.environ.params = acre.request.params;           // deprecated
-        acre.environ.body_params = acre.request.body_params; // deprecated
     } catch (e) {
         acre.request.params = {};
         acre.request.body_params = {};
-        acre.environ.params = acre.request.params = {};
-        acre.environ.body_params = acre.request.body_params = {};
         console.warn("Invalid request: parameters were not properly encoded");
     }
 }
@@ -784,6 +780,7 @@ _hostenv.Error = Error;
 
 // ------------------------------- acre.environ -----------------------------------
 
+// deprecated
 function set_environ() {
     // avoid deprecation warnings
     // if already set up (acre.route)
@@ -799,9 +796,12 @@ function set_environ() {
         delete acre.environ;
     }
     
-    acre.environ = _request; // deprecated
+    acre.environ = _request;
+    acre.environ.params = acre.request.params;
+    acre.environ.body_params = acre.request.body_params;
+    
     if (acre.request.user_info) {
-        acre.environ.user_info = acre.request.user_info; // deprecated
+        acre.environ.user_info = acre.request.user_info;
     }
 };
 
@@ -2205,6 +2205,9 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
      *   because of relative references
      */
     function scope_augmentation(script, aug_scope) {
+        // return immediately if we've already augmented this scope
+        if (aug_scope._augmented) return aug_scope;
+        
         aug_scope.acre.current_script = script;
         
         /*
@@ -2229,8 +2232,11 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
                 /^http(s?):\/\//.test(app.freebase.service_url)) {
                 acre.freebase.set_service_url(app.freebase.service_url);    
             }
+            
 
-            // Decorate deprecated APIs with warning messages, and setup deprecated values
+            // Setup deprecated values and decorate with warning messages
+            set_environ();
+            
             var script_id = req_path_to_script_id(script.path);
             var [namespace, script_name] = split_script_id(script_id);
 
@@ -2343,6 +2349,9 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
             return sobj.get_content().body;
         };
 
+        // keep track of the fact that we've already augmented this scope-
+        aug_scope._augmented = true;
+        
         return aug_scope;
     }
 
@@ -2478,8 +2487,8 @@ var handle_request = function (request_path, req_body, skip_routes) {
     // path_info will get set once we know which part
     // of the path is file vs. path_info (in proto_require)
     acre.request.body = req_body;
-    set_environ();  // deprecated
-    set_request_params(req_query_string, req_body);
+    acre.request.query_string = req_query_string;
+    set_request_params();
     
     // Fill in missing values
     if (!req_host) req_host = _DEFAULT_APP;
