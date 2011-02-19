@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.servlet;
 
 import java.io.IOException;
@@ -22,7 +21,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.MDC;
+import org.slf4j.MDC;
 
 import com.google.acre.script.AcreRequest;
 import com.google.acre.script.AcreResponse;
@@ -47,8 +46,7 @@ public class DispatchServlet extends HttpServlet {
         try {
             ResourceSource resources = new ServletResourceSource(getServletContext());
             req = new AcreRequest((AcreHttpServletRequest) request);
-            res = new AcreResponse((AcreHttpServletResponse) response, req._logtype,
-                                   req.getLogLevel());
+            res = new AcreResponse((AcreHttpServletResponse) response, req._logtype,req.getLogLevel());
             String tid = (String) MDC.get("TID");
             req.setTID(tid);
             res.setTID(tid);

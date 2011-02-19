@@ -145,7 +145,6 @@ public class ScriptManager {
 
     @SuppressWarnings("unchecked")
     private Script compileScript(GeneratedClassLoader classloader, Object[] compiled) {
-        long start = System.currentTimeMillis();
         
         Script script;
 
@@ -167,7 +166,6 @@ public class ScriptManager {
                 try {
                     klacc = (Class<Script>) classloader.defineClass((String) compiled[0], (byte[]) compiled[1]);
                     classloader.linkClass(klacc);
-                    _logger.debug("timings.link", Long.toString(System.currentTimeMillis() - start) + "ms " + compiled[0]);
                 } catch (LinkageError e) {
                     throw new AcreInternalError("Failed to instantiate a compiled script " + compiled[0] + ":\n " + e.toString(), e);
                 }

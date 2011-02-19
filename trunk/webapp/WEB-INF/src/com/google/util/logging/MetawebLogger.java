@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.util.logging;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.MDC;
 import org.apache.log4j.PropertyConfigurator;
 import org.mozilla.javascript.Scriptable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import com.google.acre.Configuration;
 import com.google.util.javascript.JSON;
@@ -64,13 +64,35 @@ import com.google.util.javascript.JSONException;
 
 public final class MetawebLogger {
 
-    private static String _serviceName = Configuration.Values.SERVICE_NAME.getValue();
-        
+    public static final byte ERROR = 0;
+    public static final byte WARN = 1;
+    public static final byte INFO = 2;
+    public static final byte DEBUG = 3;
+    public static final byte TRACE = 4;
+    
+    public static byte toLevel(String str) {
+        if ("error".equalsIgnoreCase(str)) {
+            return ERROR;
+        } else if ("warn".equalsIgnoreCase(str)) {
+            return WARN;
+        } else if ("info".equalsIgnoreCase(str)) {
+            return INFO;
+        } else if ("debug".equalsIgnoreCase(str)) {
+            return DEBUG;
+        } else if ("trace".equalsIgnoreCase(str)) {
+            return TRACE;
+        } else {
+            throw new RuntimeException("Sorry, don't know how to log '" + str + "' messages");
+        }
+    }
+
     static {
         String confDir = Configuration.getConfDir();
         PropertyConfigurator.configure(confDir + "/log4j.properties");
     }
     
+    private static String _serviceName = Configuration.Values.SERVICE_NAME.getValue();
+            
     private Logger _logger;
 
     public MetawebLogger() {
@@ -78,7 +100,7 @@ public final class MetawebLogger {
     }
 
     public MetawebLogger(String logger_name) {
-        _logger = Logger.getLogger(logger_name);
+        _logger = LoggerFactory.getLogger(logger_name);
     }
 
     /**
@@ -87,38 +109,34 @@ public final class MetawebLogger {
      */
 
     public void error(String event_name, Object message, Throwable t) {
-        logActual(event_name, Level.ERROR, message, t);
+        logActual(event_name, ERROR, message, t);
     }
     
     public void error(String event_name, Object message) {
-        logActual(event_name, Level.ERROR, message, null);
-    }
-
-    public void fatal(String event_name, Object message) {
-        logActual(event_name, Level.FATAL, message, null);
+        logActual(event_name, ERROR, message, null);
     }
 
     public void warn(String event_name, Object message) {
-        logActual(event_name, Level.WARN, message, null);
+        logActual(event_name, WARN, message, null);
     }
 
     public void info(String event_name, Object message) {
-        logActual(event_name, Level.INFO, message, null);
+        logActual(event_name, INFO, message, null);
     }
 
     public void debug(String event_name, Object message) {
-        logActual(event_name, Level.DEBUG, message, null);
+        logActual(event_name, DEBUG, message, null);
     }
 
     public void trace(String event_name, Object message) {
-        logActual(event_name, Level.TRACE, message, null);
+        logActual(event_name, TRACE, message, null);
     }
     
-    public void log(String event_name, Level level, Object message) {
+    public void log(String event_name, byte level, Object message) {
         logActual(event_name, level, message, null);
     }
 
-    public void syslog4j(Level level, String event_name, Object... msgparts) {
+    public void syslog4j(byte level, String event_name, Object... msgparts) {
         HashMap<String, String> msg = new HashMap<String, String>();
 
         String key = null;
@@ -163,16 +181,53 @@ public final class MetawebLogger {
      *            the message to be logged
      * @param throwable any exceptions that are thrown
      */
-    private void logActual(String event_name, Level level, Object message, Throwable throwable) {
+    private void logActual(String event_name, byte level, Object msg_obj, Throwable throwable) {
         // It's ok to use getName here since userlogs won't bubble up
         MDC.put("LogEvent", _logger.getName() + "." + event_name);
+        String message = stringify(msg_obj);
         if (throwable != null) {
-            _logger.log(level, message, throwable);
+            switch (level) {
+                case ERROR : _logger.error(message, throwable); break;
+                case WARN  : _logger.warn(message, throwable);  break;
+                case INFO  : _logger.info(message, throwable);  break;
+                case DEBUG : _logger.debug(message, throwable); break;
+                case TRACE : _logger.trace(message, throwable); break;
+            }
         } else {
-            _logger.log(level, message);
+            switch (level) {
+                case ERROR : _logger.error(message); break;
+                case WARN  : _logger.warn(message);  break;
+                case INFO  : _logger.info(message);  break;
+                case DEBUG : _logger.debug(message); break;
+                case TRACE : _logger.trace(message); break;
+            }
         }
         // remove them from MDC just to be sure
         MDC.remove("LogEvent");
+    }
+    
+    private String stringify(Object obj) {
+        if (obj instanceof String) {
+            return (String) obj;
+        } else if (obj instanceof Map) {
+            StringBuffer b = new StringBuffer();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) obj;
+            Iterator<Map.Entry<String,Object>> i = map.entrySet().iterator();
+            while(i.hasNext()) {
+                Map.Entry<String,Object> entry = i.next();
+                String key = entry.getKey();
+                Object v = entry.getValue();
+                String value = (v == null) ? "null" : v.toString();
+                b.append(key);
+                b.append(": ");
+                b.append(value);
+                if (i.hasNext()) b.append(", ");
+            }
+            return b.toString();
+        } else {
+            return "*** don't know how to serialize " + obj.getClass().getName() + " objects";
+        }
     }
     
 }

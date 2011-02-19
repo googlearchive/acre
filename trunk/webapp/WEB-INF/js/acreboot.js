@@ -1555,12 +1555,12 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
                     var app = e.args[0];
                     var ckey = "METADATA:"+app.guid+":"+app.as_of;
                     if (ckey in METADATA_CACHE) {
-                        syslog({'s' : 'inprocess', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
+                        syslog.debug({'s' : 'inprocess', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
                         return METADATA_CACHE[ckey];
                     } else {
                         var r2 = _cache.get(ckey);
                         if (r2 !== null) {
-                            syslog({'s' : 'memcache', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
+                            syslog.debug({'s' : 'memcache', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
                             return JSON.parse(r2);
                         }
                     }
@@ -1620,28 +1620,28 @@ function get_appfetch_method(method_name) {
  */
 var appfetch_cache = function(host) {
     if (host in METADATA_CACHE) {
-        syslog.info({'host': host, 's': 'inprocess', 'm': 'appfetch_cache'}, 'appfetch.cache.success');
+        syslog.debug({'host': host, 's': 'inprocess', 'm': 'appfetch_cache'}, 'appfetch.cache.success');
         return METADATA_CACHE[host];
     }
 
     if (acre.request.skip_cache) {
-        syslog.info({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.skip');
+        syslog.debug({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.skip');
         throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
     }
 
     var ckey = _cache.get("HOST:"+host);
     if (ckey == null) {
-        syslog.info({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.host.not_found');
+        syslog.debug({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.host.not_found');
         throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
     }
 
     var res = _cache.get(ckey);
     if (res === null) {
-        syslog.info({'host': host, 'key': ckey}, 'appfetch.cache.metadata.not_found');
+        syslog.debug({'host': host, 'key': ckey}, 'appfetch.cache.metadata.not_found');
         throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
     }
 
-    syslog.info({'key': ckey, 's': 'memcache', 'm': 'appfetch_cache'}, 'appfetch.cache.success');
+    syslog.debug({'key': ckey, 's': 'memcache', 'm': 'appfetch_cache'}, 'appfetch.cache.success');
 
     return JSON.parse(res);  
 };
@@ -1933,7 +1933,7 @@ for (var name in _topscope) {
 // ---------------------------- proto_require ---------------------------------
 
 var proto_require = function(req_path, override_metadata, resolve_only) {
-    syslog(req_path, "proto_require.path");
+    syslog.info(req_path, "proto_require.path");
     
     /*
      *  Helper function for defaulting app metadata 
@@ -2136,7 +2136,7 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
             } else {
               _cache.put("HOST:"+host, ckey, ttl);
             }
-            syslog.info({key:"HOST:"+host, value: ckey, ttl: ttl }, 'appfetch.cache.write.host');
+            syslog.debug({key:"HOST:"+host, value: ckey, ttl: ttl }, 'appfetch.cache.write.host');
         });
     }
 

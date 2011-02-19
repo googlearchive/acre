@@ -3,10 +3,6 @@
 # Normalize the current directory
 cd `dirname $0`/..
 
-if [ "$ACTION" = "run_app" ] ; then
-    ACRE_HOST_BASE="localhost"
-fi
-
 # Make configuration files
 . bin/make-configs
 
@@ -17,21 +13,6 @@ absolute_path () {
     *) echo `pwd`/$1; ;;
   esac
 }
-
-# Check if Acre is already running
-if [ "$ACTION" != "run" ] && [ -f $ACRE_PID ]; then
-    echo "$ACRE_PID exists. Is Acre already running?"
-    exit 1
-fi
-
-# Create directories that Acre will need to function
-mkdir -p "$ACRE_LOGDIR"
-mkdir -p "$ACRE_DATADIR"
-
-if [ ! -z "$LOGFWD_REGDIR" ]; then
-    mkdir -p ${LOGFWD_REGDIR}
-    echo "${ACRE_LOGDIR}/acre.mwlog.log.*" > ${LOGFWD_REGDIR}/acre.reg
-fi
 
 # Obtain Acre classpath
 classpath="`absolute_path library/classes`:`absolute_path server/classes`"
@@ -48,7 +29,7 @@ fi
 if [ "$ACTION" = "start" ] ; then
 
     # Execute the JVM fork the process in background
-    nohup sh -c "exec $RUN_CMD >> _logs/acre.console.log 2>&1" >/dev/null &
+    nohup sh -c "exec $RUN_CMD >> acre.console.log 2>&1" >/dev/null &
     A_PID=$!
     echo $A_PID > $ACRE_PID
 

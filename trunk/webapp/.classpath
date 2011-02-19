@@ -12,12 +12,13 @@
 	<classpathentry kind="lib" path="WEB-INF/lib/commons-dbcp-1.2.2.jar" sourcepath="WEB-INF/lib-src/commons-dbcp-1.2.2-sources.jar"/>
 	<classpathentry kind="lib" path="WEB-INF/lib/commons-pool-1.4.jar" sourcepath="WEB-INF/lib-src/commons-pool-1.4-sources.jar"/>
 	<classpathentry kind="lib" path="WEB-INF/lib/commons-io-1.4.jar" sourcepath="WEB-INF/lib-src/commons-io-1.4-sources.jar"/>
-	<classpathentry kind="lib" path="/Acre Server/lib/log4j-1.2.15.jar" sourcepath="/Acre Server/lib-src/log4j-1.2.15-sources.jar"/>
 	<classpathentry kind="lib" path="WEB-INF/lib/rhino-1.7R2.jar" sourcepath="WEB-INF/lib-src/rhino-1.7R2-sources.jar"/>
 	<classpathentry kind="lib" path="WEB-INF/lib/whirlycache-2.0.jar" sourcepath="WEB-INF/lib-src/whirlycache-2.0-sources.jar"/>
 	<classpathentry kind="lib" path="WEB-INF/lib/httpclient-4.0.3.jar" sourcepath="WEB-INF/lib-src/httpclient-4.0.3-sources.jar"/>
 	<classpathentry kind="lib" path="WEB-INF/lib/httpcore-4.1-beta2.jar" sourcepath="WEB-INF/lib-src/httpcore-4.1-beta2-sources.jar"/>
 	<classpathentry kind="lib" path="WEB-INF/lib/httpcore-nio-4.1-beta2.jar" sourcepath="WEB-INF/lib-src/httpcore-nio-4.1-beta2-sources.jar"/>
 	<classpathentry kind="con" path="com.google.appengine.eclipse.core.GAE_CONTAINER"/>
+	<classpathentry kind="lib" path="WEB-INF/lib/log4j-1.2.15.jar"/>
+	<classpathentry kind="lib" path="WEB-INF/lib/slf4j-api-1.6.1.jar"/>
 	<classpathentry kind="output" path="WEB-INF/classes"/>
 </classpath>

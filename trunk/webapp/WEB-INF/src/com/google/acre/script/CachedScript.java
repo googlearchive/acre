@@ -37,7 +37,7 @@ public class CachedScript {
         }
         // classnames cannot start with a number or contain other illegal characters
         // there can be lots of . and / in a row in acre paths - get rid of all of them
-        return "cn" + "." + name.replace("/",".").replace("...",".").replace("..",".").replace("-","_$_");
+        return "js" + "." + name.replace("/",".").replace("...",".").replace("..",".").replace("-","_$_");
     }
 
     public static String join(String name, String id) {

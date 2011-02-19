@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.servlet;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -30,8 +28,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.MDC;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
@@ -95,7 +94,7 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         }
     }
 
-    private final static Logger access_logger = Logger.getLogger(Configuration.Values.ACCESS_LOG_LOGGER_NAME.getValue());
+    private final static Logger access_logger = LoggerFactory.getLogger(Configuration.Values.ACCESS_LOG_LOGGER_NAME.getValue());
     
     private final static boolean app_thresholding = Configuration.Values.ACRE_APP_THRESHOLDING.getBoolean();
     private final static float max_request_rate = Configuration.Values.ACRE_MAX_REQUEST_RATE.getFloat();
@@ -142,22 +141,26 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         // We'll set this again going out to make sure it's not overridden
         response.setHeader("X-Metaweb-TID", tid);
 
+        String pathinfo = request.getPathInfo();
+        String hostval = request.getHeader("Host");
+        String portval = "";
+
+        if (access_logger.isInfoEnabled()) {
+            access_log(request, response);
+        } else {
+            _logger.info("request.url", hostval + pathinfo);
+        }
+        
         _logger.debug("request.start", start_log(request));
         _logger.debug(tid_event, tid);
         
         try {
             
-            String pathinfo = request.getPathInfo();
-            String hostval = request.getHeader("Host");
-            String portval = "";
-
             if (hostval == null) {
                 _logger.warn("request.url", "missing Host: header");
                 response.sendError(400);
                 return;
             }
-
-            _logger.info("request.url", hostval + pathinfo);
             
             AcreHttpServletResponse res = new AcreHttpServletResponse(response);
             AcreHttpServletRequest req = null;
@@ -242,8 +245,6 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
                     
                     _logger.debug("request.end", end_log(res));
                     
-                    if (access_logger.isInfoEnabled()) access_log(host, req, res);
-                    
                     break;
                 }
             }
@@ -258,8 +259,6 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         return (servletName.toLowerCase().indexOf("proxy") == -1 && ae != null && ae.indexOf("gzip") != -1);
     }
     
-    private final static SimpleDateFormat logDateFormat = new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss Z");
-
     @SuppressWarnings("unchecked")
     private HashMap<String, String> start_log(HttpServletRequest request) {
         HashMap<String, String> start_log = new HashMap<String, String>();
@@ -270,67 +269,61 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
             req_url.append(qs);
         }
 
-        start_log.put("Http.url", req_url.toString());
-        start_log.put("Http.req.method", request.getMethod());
-        start_log.put("client.ip", request.getRemoteAddr());
+        start_log.put("URL", req_url.toString());
+        start_log.put("Method", request.getMethod());
+        start_log.put("Client IP", request.getRemoteAddr());
 
         StringBuilder sb = new StringBuilder();
         Enumeration<String> e = request.getHeaderNames();
         while (e.hasMoreElements()) {
             String hname = e.nextElement();
             String hvalue = request.getHeader(hname);
-            sb.append(hname + ": " + hvalue + "\r\n");
+            sb.append(hname + ": " + hvalue + "\n");
         }
-        start_log.put("Http.req.hdr", sb.toString());
+        start_log.put("Headers", sb.toString());
 
         return start_log;
     }
     
     private HashMap<String, String> end_log(AcreHttpServletResponse response) {
         HashMap<String, String> end_log = new HashMap<String, String>();
-        end_log.put("Http.rep.status", Integer.toString(response.getStatus()));
+        end_log.put("Status", Integer.toString(response.getStatus()));
 
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String,String> entry : response.getHeaders().entrySet()) {
             sb.append(entry.getKey());
             sb.append(": ");
             sb.append(entry.getValue());
-            sb.append("\r\n");
+            sb.append("\n");
         }
-        end_log.put("Http.rep.hdr", sb.toString());
+        end_log.put("Headers", sb.toString());
 
         sb = new StringBuilder();
         for (Map.Entry<String,String> entry : response.getCookies().entrySet()) {
             sb.append(entry.getKey());
             sb.append(": ");
             sb.append(entry.getValue());
-            sb.append("\r\n");
+            sb.append("\n");
         }
-        end_log.put("Http.rep.cookies", sb.toString());
+        end_log.put("Cookies", sb.toString());
         
         return end_log;
     }
     
-    private void access_log(String host, AcreHttpServletRequest req, AcreHttpServletResponse res) {
+    private void access_log(HttpServletRequest req, HttpServletResponse res) {
     
         StringBuffer buf = new StringBuffer(300);
         
         buf.append(req.getRemoteAddr());
-        buf.append(" - ");
-        String user = req.getRemoteUser();
-        buf.append((user == null) ? "- " : user);
-                
-        buf.append("[");
-        buf.append(logDateFormat.format(System.currentTimeMillis()));
-        buf.append("] \"");
+        buf.append(" \"");
         buf.append(req.getMethod());
         buf.append(' ');
-        buf.append(req.getServletPath() + req.getPathInfo());
+        buf.append(req.getHeader("Host"));
+        buf.append(req.getServletPath());
+        buf.append(req.getPathInfo());
         buf.append(' ');
         buf.append(req.getProtocol());
         buf.append("\" ");
-        buf.append(res.getStatus());
-        buf.append(" - "); // XXX: here should be content length of the response
 
         String referrer = req.getHeader("Referer");
         if (referrer == null) {
@@ -350,8 +343,7 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
             buf.append("\"");
         }
                      
-        Object[] msg = { host , buf.toString() };
-        access_logger.info(msg);
+        access_logger.info(buf.toString());
     }
 
 }

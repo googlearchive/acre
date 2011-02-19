@@ -19,13 +19,6 @@ import java.lang.management.ManagementFactory;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
-import org.apache.log4j.Appender;
-import org.apache.log4j.ConsoleAppender;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-
-import com.google.util.logging.IndentingLayout;
-
 public class Main {
 
     public static void main(String[] args) throws Exception  {
@@ -35,19 +28,7 @@ public class Main {
         mbs.registerMBean(new Configuration(), new ObjectName("acre:type=Configurations"));
         mbs.registerMBean(Statistics.instance(), new ObjectName("acre:type=Statistics"));
         
-        // tell jetty to use SLF4J for logging instead of its own stuff
         //System.setProperty("VERBOSE","true");
-        System.setProperty("org.mortbay.log.class","org.mortbay.log.Slf4jLog");
-
-        // initialize the log4j system
-        Appender console = new ConsoleAppender(new IndentingLayout());
-        
-        Logger root = Logger.getRootLogger();
-        root.setLevel(Level.ALL);
-        root.addAppender(console);
-
-        Logger jetty_logger = Logger.getLogger("org.mortbay.log");
-        jetty_logger.setLevel(Level.INFO);
 
         // create acre's server (which is a thin wrapper around Jetty) 
         AcreServer server = new AcreServer();
