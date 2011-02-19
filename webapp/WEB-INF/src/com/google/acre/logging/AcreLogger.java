@@ -166,6 +166,7 @@ public class AcreLogger {
                 case TRACE : _logger.trace(message); break;
             }
         }
+        
     }
     
     private String stringify(Object obj) {
