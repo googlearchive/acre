@@ -10,12 +10,11 @@
 #
 
 # Set the default logging level for all loggers
-.level=INFO
+.level=FINEST
 
-java.util.logging.ConsoleHandler.level=FINEST
-java.util.logging.ConsoleHandler.formatter=com.google.util.logging.SimpleFormatter
+#java.util.logging.ConsoleHandler.level=FINEST
+#java.util.logging.ConsoleHandler.formatter=com.google.util.logging.SimpleFormatter
 
 # Specify logging levels for specific namespaces
-com.google.apphosting.utils.jetty.level=WARNING
-org.apache.commons.httpclient.level=WARNING
-com.google.acre.level=FINEST
+#com.google.apphosting.utils.jetty.level=SEVERE
+org.apache.commons.httpclient.level=SEVERE
