@@ -105,19 +105,17 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         if (rule_host == null) return true;
 
         if (rule_host.startsWith(".")) {
-            
-            if (request_host.endsWith(rule_host))
+            if (request_host.endsWith(rule_host)) {
                 return true;
-
+            }
             String base_host = rule_host.substring(1);
-            if (request_host.equals(base_host))
+            if (request_host.equals(base_host)) {
                 return true;
-                
+            }
         } else {
-            
-            if (rule_host.equals(request_host))
+            if (rule_host.equals(request_host)) {
                 return true;
-                
+            }
         }
 
         return false;
