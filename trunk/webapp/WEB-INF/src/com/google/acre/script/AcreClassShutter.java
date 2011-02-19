@@ -21,7 +21,7 @@ import com.google.acre.Configuration;
 
 public class AcreClassShutter implements ClassShutter {
 
-    //private static AcreLogger _logger = new AcreLogger();
+    //private static AcreLogger _logger = new AcreLogger(AcreClassShutter.class);
     
     private static final boolean ENABLED = Configuration.Values.ENABLE_CLASS_SHUTTER.getBoolean();
 

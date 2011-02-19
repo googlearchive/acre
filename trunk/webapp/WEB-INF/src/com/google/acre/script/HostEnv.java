@@ -98,7 +98,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     public static final String ACRE_QUOTAS_HEADER = "X-acre-quotas";
     
-    private final static AcreLogger _logger = new AcreLogger();
+    private final static AcreLogger _logger = new AcreLogger(HostEnv.class);
 
     private static String ACRE_METAWEB_API_ADDR = Configuration.Values.ACRE_METAWEB_API_ADDR.getValue();
     private static int ACRE_METAWEB_API_ADDR_PORT = Configuration.Values.ACRE_METAWEB_API_ADDR_PORT.getInteger();
