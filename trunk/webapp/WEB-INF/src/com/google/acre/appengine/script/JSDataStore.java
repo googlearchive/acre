@@ -19,6 +19,9 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
+import com.google.acre.javascript.JSON;
+import com.google.acre.javascript.JSONException;
+import com.google.acre.javascript.JSObject;
 import com.google.acre.script.exceptions.JSConvertableException;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
@@ -30,9 +33,6 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.FilterOperator;
 import com.google.appengine.api.datastore.Text;
 import com.google.appengine.api.datastore.Transaction;
-import com.google.util.javascript.JSON;
-import com.google.util.javascript.JSONException;
-import com.google.util.javascript.JSObject;
 
 public class JSDataStore extends JSObject {
     

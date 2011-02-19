@@ -21,10 +21,10 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 
+import com.google.acre.javascript.JSON;
+import com.google.acre.javascript.JSONException;
+import com.google.acre.javascript.JSObject;
 import com.google.acre.script.exceptions.JSConvertableException;
-import com.google.util.javascript.JSON;
-import com.google.util.javascript.JSONException;
-import com.google.util.javascript.JSObject;
 
 public class JSJSON extends JSObject {
     private static final long serialVersionUID = -306790422514648132L;

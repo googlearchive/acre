@@ -31,7 +31,7 @@ import org.apache.commons.dbcp.PoolingDriver;
 import org.apache.commons.pool.impl.GenericObjectPool;
 
 import com.google.acre.Configuration;
-import com.google.util.logging.MetawebLogger;
+import com.google.acre.logging.MetawebLogger;
 
 public class MySQLKeyStore implements KeyStore {
 

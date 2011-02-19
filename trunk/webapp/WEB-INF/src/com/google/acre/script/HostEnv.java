@@ -14,10 +14,10 @@
 
 package com.google.acre.script;
 
-import static com.google.util.logging.MetawebLogger.DEBUG;
-import static com.google.util.logging.MetawebLogger.ERROR;
-import static com.google.util.logging.MetawebLogger.INFO;
-import static com.google.util.logging.MetawebLogger.WARN;
+import static com.google.acre.logging.MetawebLogger.DEBUG;
+import static com.google.acre.logging.MetawebLogger.ERROR;
+import static com.google.acre.logging.MetawebLogger.INFO;
+import static com.google.acre.logging.MetawebLogger.WARN;
 
 import java.io.BufferedReader;
 import java.io.CharArrayWriter;
@@ -57,6 +57,30 @@ import org.mozilla.javascript.ScriptableObject;
 
 import com.google.acre.AcreFactory;
 import com.google.acre.Configuration;
+import com.google.acre.javascript.JSON;
+import com.google.acre.javascript.JSONException;
+import com.google.acre.javascript.JSUtil;
+import com.google.acre.javascript.DOM.JSAttr;
+import com.google.acre.javascript.DOM.JSCDATASection;
+import com.google.acre.javascript.DOM.JSCharacterData;
+import com.google.acre.javascript.DOM.JSComment;
+import com.google.acre.javascript.DOM.JSDOMException;
+import com.google.acre.javascript.DOM.JSDOMImplementation;
+import com.google.acre.javascript.DOM.JSDOMParser;
+import com.google.acre.javascript.DOM.JSDOMParserException;
+import com.google.acre.javascript.DOM.JSDocument;
+import com.google.acre.javascript.DOM.JSDocumentFragment;
+import com.google.acre.javascript.DOM.JSDocumentType;
+import com.google.acre.javascript.DOM.JSElement;
+import com.google.acre.javascript.DOM.JSEntity;
+import com.google.acre.javascript.DOM.JSEntityReference;
+import com.google.acre.javascript.DOM.JSNamedNodeMap;
+import com.google.acre.javascript.DOM.JSNode;
+import com.google.acre.javascript.DOM.JSNodeList;
+import com.google.acre.javascript.DOM.JSNotation;
+import com.google.acre.javascript.DOM.JSProcessingInstruction;
+import com.google.acre.javascript.DOM.JSText;
+import com.google.acre.logging.MetawebLogger;
 import com.google.acre.script.AcreContextFactory.AcreContext;
 import com.google.acre.script.exceptions.AcreDeadlineError;
 import com.google.acre.script.exceptions.AcreInternalError;
@@ -65,32 +89,8 @@ import com.google.acre.script.exceptions.AcreThreadDeath;
 import com.google.acre.script.exceptions.AcreURLFetchException;
 import com.google.acre.script.exceptions.JSConvertableException;
 import com.google.acre.thread.AllocationLimitedThread;
-import com.google.acre.util.JSUtil;
 import com.google.acre.util.Supervisor;
-import com.google.util.javascript.JSON;
-import com.google.util.javascript.JSONException;
-import com.google.util.javascript.DOM.JSAttr;
-import com.google.util.javascript.DOM.JSCDATASection;
-import com.google.util.javascript.DOM.JSCharacterData;
-import com.google.util.javascript.DOM.JSComment;
-import com.google.util.javascript.DOM.JSDOMException;
-import com.google.util.javascript.DOM.JSDOMImplementation;
-import com.google.util.javascript.DOM.JSDOMParser;
-import com.google.util.javascript.DOM.JSDOMParserException;
-import com.google.util.javascript.DOM.JSDocument;
-import com.google.util.javascript.DOM.JSDocumentFragment;
-import com.google.util.javascript.DOM.JSDocumentType;
-import com.google.util.javascript.DOM.JSElement;
-import com.google.util.javascript.DOM.JSEntity;
-import com.google.util.javascript.DOM.JSEntityReference;
-import com.google.util.javascript.DOM.JSNamedNodeMap;
-import com.google.util.javascript.DOM.JSNode;
-import com.google.util.javascript.DOM.JSNodeList;
-import com.google.util.javascript.DOM.JSNotation;
-import com.google.util.javascript.DOM.JSProcessingInstruction;
-import com.google.util.javascript.DOM.JSText;
-import com.google.util.logging.MetawebLogger;
-import com.google.util.resource.ResourceSource;
+import com.google.acre.util.resource.ResourceSource;
 
 public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 

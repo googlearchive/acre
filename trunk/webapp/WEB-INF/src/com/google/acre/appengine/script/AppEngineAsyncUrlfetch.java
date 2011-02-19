@@ -14,8 +14,8 @@
 
 package com.google.acre.appengine.script;
 
+import static com.google.acre.logging.MetawebLogger.DEBUG;
 import static com.google.appengine.api.urlfetch.FetchOptions.Builder.disallowTruncate;
-import static com.google.util.logging.MetawebLogger.DEBUG;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -41,6 +41,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 
+import com.google.acre.logging.MetawebLogger;
 import com.google.acre.script.AcreCookie;
 import com.google.acre.script.AcreResponse;
 import com.google.acre.script.AsyncUrlfetch;
@@ -52,7 +53,6 @@ import com.google.appengine.api.urlfetch.HTTPRequest;
 import com.google.appengine.api.urlfetch.HTTPResponse;
 import com.google.appengine.api.urlfetch.URLFetchService;
 import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
-import com.google.util.logging.MetawebLogger;
 
 public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
 

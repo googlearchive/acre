@@ -21,9 +21,9 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
+import com.google.acre.javascript.JSObject;
 import com.google.acre.script.exceptions.JSConvertableException;
 import com.google.appengine.api.datastore.PreparedQuery;
-import com.google.util.javascript.JSObject;
 
 public class JSDataStoreResults extends JSObject {
         

@@ -22,10 +22,10 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
 import com.google.acre.AcreFactory;
+import com.google.acre.javascript.JSObject;
 import com.google.acre.keystore.KeyStore;
+import com.google.acre.logging.MetawebLogger;
 import com.google.acre.script.exceptions.JSConvertableException;
-import com.google.util.javascript.JSObject;
-import com.google.util.logging.MetawebLogger;
 
 public class JSKeyStore extends JSObject {
     

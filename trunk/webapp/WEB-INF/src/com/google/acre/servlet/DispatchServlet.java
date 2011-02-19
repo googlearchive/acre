@@ -27,8 +27,8 @@ import com.google.acre.script.AcreRequest;
 import com.google.acre.script.AcreResponse;
 import com.google.acre.script.HostEnv;
 import com.google.acre.util.Supervisor;
-import com.google.util.resource.ResourceSource;
-import com.google.util.resource.ServletResourceSource;
+import com.google.acre.util.resource.ResourceSource;
+import com.google.acre.util.resource.ServletResourceSource;
 
 /**
  * Servlet implementation class for dispatching request to js
