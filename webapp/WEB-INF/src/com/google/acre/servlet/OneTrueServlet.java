@@ -28,8 +28,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import com.google.acre.Configuration;
@@ -94,7 +92,7 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         }
     }
 
-    private final static Logger access_logger = LoggerFactory.getLogger(Configuration.Values.ACCESS_LOG_LOGGER_NAME.getValue());
+    //private final static Logger access_logger = LoggerFactory.getLogger(Configuration.Values.ACCESS_LOG_LOGGER_NAME.getValue());
     
     private final static boolean app_thresholding = Configuration.Values.ACRE_APP_THRESHOLDING.getBoolean();
     private final static float max_request_rate = Configuration.Values.ACRE_MAX_REQUEST_RATE.getFloat();
@@ -145,11 +143,9 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         String hostval = request.getHeader("Host");
         String portval = "";
 
-        if (access_logger.isInfoEnabled()) {
-            access_log(request, response);
-        } else {
-            _logger.info("request.url", hostval + pathinfo);
-        }
+        //if (access_logger.isInfoEnabled()) {
+        //    access_log(request, response);
+        //}
         
         _logger.debug("request.start", start_log(request));
         _logger.debug(tid_event, tid);
@@ -310,40 +306,40 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         return end_log;
     }
     
-    private void access_log(HttpServletRequest req, HttpServletResponse res) {
-    
-        StringBuffer buf = new StringBuffer(300);
-        
-        buf.append(req.getRemoteAddr());
-        buf.append(" \"");
-        buf.append(req.getMethod());
-        buf.append(' ');
-        buf.append(req.getHeader("Host"));
-        buf.append(req.getServletPath());
-        buf.append(req.getPathInfo());
-        buf.append(' ');
-        buf.append(req.getProtocol());
-        buf.append("\" ");
-
-        String referrer = req.getHeader("Referer");
-        if (referrer == null) {
-            buf.append("- ");
-        } else {
-            buf.append("\"");
-            buf.append(referrer);
-            buf.append("\" ");
-        }
-
-        String user_agent = req.getHeader("User-Agent");
-        if (user_agent == null) {
-            buf.append("- ");
-        } else {
-            buf.append("\"");
-            buf.append(user_agent);
-            buf.append("\"");
-        }
-                     
-        access_logger.info(buf.toString());
-    }
+//    private void access_log(HttpServletRequest req, HttpServletResponse res) {
+//    
+//        StringBuffer buf = new StringBuffer(300);
+//        
+//        buf.append(req.getRemoteAddr());
+//        buf.append(" \"");
+//        buf.append(req.getMethod());
+//        buf.append(' ');
+//        buf.append(req.getHeader("Host"));
+//        buf.append(req.getServletPath());
+//        buf.append(req.getPathInfo());
+//        buf.append(' ');
+//        buf.append(req.getProtocol());
+//        buf.append("\" ");
+//
+//        String referrer = req.getHeader("Referer");
+//        if (referrer == null) {
+//            buf.append("- ");
+//        } else {
+//            buf.append("\"");
+//            buf.append(referrer);
+//            buf.append("\" ");
+//        }
+//
+//        String user_agent = req.getHeader("User-Agent");
+//        if (user_agent == null) {
+//            buf.append("- ");
+//        } else {
+//            buf.append("\"");
+//            buf.append(user_agent);
+//            buf.append("\"");
+//        }
+//                     
+//        access_logger.info(buf.toString());
+//    }
 
 }
