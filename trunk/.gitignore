@@ -3,16 +3,11 @@
 *.pyc
 _build
 _dist
-_data
-_logs
 webapp/WEB-INF/web.xml
 webapp/WEB-INF/appengine-web.xml
 webapp/WEB-INF/classes
 webapp/WEB-INF/appengine-generated
 webapp/WEB-INF/lib/mysql-connector-java-*.jar
-webapp/WEB-INF/lib/log4j-*.jar
-webapp/WEB-INF/lib/slf4j-*.jar
-webapp/WEB-INF/lib/jcl-*.jar
 webapp/WEB-INF/lib/appengine-api-*-sdk-*.jar
 webapp/META-INF/*.properties
 webapp/META-INF/*.conf
