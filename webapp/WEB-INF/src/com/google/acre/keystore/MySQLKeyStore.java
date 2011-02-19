@@ -29,14 +29,13 @@ import org.apache.commons.dbcp.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp.PoolableConnectionFactory;
 import org.apache.commons.dbcp.PoolingDriver;
 import org.apache.commons.pool.impl.GenericObjectPool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.acre.Configuration;
+import com.google.acre.logging.AcreLogger;
 
 public class MySQLKeyStore implements KeyStore {
 
-    private final static Logger _logger = LoggerFactory.getLogger(MySQLKeyStore.class);    
+    private final static AcreLogger _logger = new AcreLogger(MySQLKeyStore.class);    
 	
     private static final String DRIVER_PREFIX = "jdbc:apache:commons:dbcp:";
     private static final String DATASOURCE_NAME = "keystore";

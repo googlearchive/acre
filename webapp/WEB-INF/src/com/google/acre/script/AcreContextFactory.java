@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.script;
 
 import org.mozilla.javascript.Callable;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.acre.Configuration;
+import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.exceptions.AcreScriptError;
 
 /**
@@ -33,7 +31,7 @@ import com.google.acre.script.exceptions.AcreScriptError;
  */
 public class AcreContextFactory extends ContextFactory {
 
-    private final static Logger _logger = LoggerFactory.getLogger(AcreContextFactory.class);    
+    private final static AcreLogger _logger = new AcreLogger(AcreContextFactory.class);    
     
     private static boolean GENERATE_JS_DEBUG_INFO = Configuration.Values.GENERATE_JS_DEBUG_INFO.getBoolean();
 

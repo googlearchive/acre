@@ -24,18 +24,17 @@ import org.mozilla.javascript.DefiningClassLoader;
 import org.mozilla.javascript.GeneratedClassLoader;
 import org.mozilla.javascript.Script;
 import org.mozilla.javascript.optimizer.ClassCompiler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.acre.AcreFactory;
 import com.google.acre.Configuration;
 import com.google.acre.classstore.ClassStore;
 import com.google.acre.classstore.StoredClass;
+import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.exceptions.AcreInternalError;
 
 public class ScriptManager {
 
-    private final static Logger _logger = LoggerFactory.getLogger(ScriptManager.class);    
+    private final static AcreLogger _logger = new AcreLogger(ScriptManager.class);    
     
     private static final int ACRE_MAX_CACHED_SCRIPT_CLASSES = Configuration.Values.ACRE_MAX_CACHED_SCRIPT_CLASSES.getInteger();
 
@@ -91,9 +90,7 @@ public class ScriptManager {
         // Here, check if the class is in the class store, and pass it to
         // compileScript instead of the source if available
         if (_class_store != null) {
-            long start = System.currentTimeMillis();
             StoredClass sc = _class_store.get(className);
-            _logger.debug("class_store.get", Long.toString(System.currentTimeMillis() - start));
             if (sc != null) {
                 Script compiledScript = compileScript(_classLoader, new Object[] { sc.name(), sc.code() });
                 script.setCompiledScript(compiledScript);

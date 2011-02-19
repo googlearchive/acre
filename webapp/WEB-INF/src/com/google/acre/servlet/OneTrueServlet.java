@@ -28,19 +28,17 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
-import com.google.acre.script.ScriptManager;
+import com.google.acre.logging.AcreLogger;
 import com.google.acre.util.Supervisor;
 import com.google.acre.util.TIDGenerator;
 
 public class OneTrueServlet extends javax.servlet.http.HttpServlet implements javax.servlet.Servlet {
     
-    private final static Logger _logger = LoggerFactory.getLogger(ScriptManager.class);    
+    private final static AcreLogger _logger = new AcreLogger(OneTrueServlet.class);
 
     private static final long serialVersionUID = -7572688360464348578L;
         
@@ -93,8 +91,6 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
             s.cancel();
         }
     }
-
-    //private final static Logger access_logger = LoggerFactory.getLogger(Configuration.Values.ACCESS_LOG_LOGGER_NAME.getValue());
     
     private final static boolean app_thresholding = Configuration.Values.ACRE_APP_THRESHOLDING.getBoolean();
     private final static float max_request_rate = Configuration.Values.ACRE_MAX_REQUEST_RATE.getFloat();
@@ -143,9 +139,7 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         String hostval = request.getHeader("Host");
         String portval = "";
 
-        //if (access_logger.isInfoEnabled()) {
-        //    access_log(request, response);
-        //}
+        _logger.info("****** request *******",access_log(request, response));
         
         _logger.debug("request.start", start_log(request));
         _logger.debug(tid_event, tid);
@@ -306,40 +300,40 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         return end_log;
     }
     
-//    private void access_log(HttpServletRequest req, HttpServletResponse res) {
-//    
-//        StringBuffer buf = new StringBuffer(300);
-//        
-//        buf.append(req.getRemoteAddr());
-//        buf.append(" \"");
-//        buf.append(req.getMethod());
-//        buf.append(' ');
-//        buf.append(req.getHeader("Host"));
-//        buf.append(req.getServletPath());
-//        buf.append(req.getPathInfo());
-//        buf.append(' ');
-//        buf.append(req.getProtocol());
-//        buf.append("\" ");
-//
-//        String referrer = req.getHeader("Referer");
-//        if (referrer == null) {
-//            buf.append("- ");
-//        } else {
-//            buf.append("\"");
-//            buf.append(referrer);
-//            buf.append("\" ");
-//        }
-//
-//        String user_agent = req.getHeader("User-Agent");
-//        if (user_agent == null) {
-//            buf.append("- ");
-//        } else {
-//            buf.append("\"");
-//            buf.append(user_agent);
-//            buf.append("\"");
-//        }
-//                     
-//        access_logger.info(buf.toString());
-//    }
+    private String access_log(HttpServletRequest req, HttpServletResponse res) {
+    
+        StringBuffer buf = new StringBuffer(300);
+        
+        buf.append(req.getRemoteAddr());
+        buf.append(" \"");
+        buf.append(req.getMethod());
+        buf.append(' ');
+        buf.append(req.getHeader("Host"));
+        buf.append(req.getServletPath());
+        buf.append(req.getPathInfo());
+        buf.append(' ');
+        buf.append(req.getProtocol());
+        buf.append("\" ");
+
+        String referrer = req.getHeader("Referer");
+        if (referrer == null) {
+            buf.append("- ");
+        } else {
+            buf.append("\"");
+            buf.append(referrer);
+            buf.append("\" ");
+        }
+
+        String user_agent = req.getHeader("User-Agent");
+        if (user_agent == null) {
+            buf.append("- ");
+        } else {
+            buf.append("\"");
+            buf.append(user_agent);
+            buf.append("\"");
+        }
+                     
+        return buf.toString();
+    }
 
 }

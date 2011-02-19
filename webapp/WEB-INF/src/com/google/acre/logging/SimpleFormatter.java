@@ -11,9 +11,10 @@ public class SimpleFormatter extends java.util.logging.SimpleFormatter {
     public SimpleFormatter(){
         super();
         this.s = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
+        System.out.println("********** got here ***********");
     }
     
-    public String format(LogRecord r){
+    public synchronized String format(LogRecord r){
         StringBuffer sb = new StringBuffer(s.format(new Date(r.getMillis())));sb.append(":");
         sb.append(r.getLevel().toString()); sb.append(" ");
         sb.append(r.getSourceClassName()); sb.append(".");
