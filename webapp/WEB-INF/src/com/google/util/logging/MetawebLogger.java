@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.PropertyConfigurator;
 import org.mozilla.javascript.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,8 +86,8 @@ public final class MetawebLogger {
     }
 
     static {
-        String confDir = Configuration.getConfDir();
-        PropertyConfigurator.configure(confDir + "/log4j.properties");
+        //String confDir = Configuration.getConfDir();
+        //PropertyConfigurator.configure(confDir + "/log4j.properties");
     }
     
     private static String _serviceName = Configuration.Values.SERVICE_NAME.getValue();

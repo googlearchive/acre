@@ -5,4 +5,7 @@
     <system-properties>
       <property name="configDir" value="META-INF" />
     </system-properties>
+    <system-properties>
+        <property name="java.util.logging.config.file" value="META-INF/logging.properties" />
+    </system-properties>
 </appengine-web-app>
