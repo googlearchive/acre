@@ -17,7 +17,7 @@ package com.google.acre.script;
 
 import com.google.acre.AcreFactory;
 import com.google.acre.cache.Cache;
-import com.google.util.javascript.JSObject;
+import com.google.acre.javascript.JSObject;
 
 public class JSCache extends JSObject {
     

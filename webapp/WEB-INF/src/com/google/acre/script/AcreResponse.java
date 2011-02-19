@@ -32,9 +32,9 @@ import java.util.regex.Pattern;
 import org.mozilla.javascript.Scriptable;
 
 import com.google.acre.Configuration;
+import com.google.acre.javascript.JSON;
+import com.google.acre.javascript.JSONException;
 import com.google.acre.servlet.AcreHttpServletResponse;
-import com.google.util.javascript.JSON;
-import com.google.util.javascript.JSONException;
 
 public class AcreResponse extends JsConvertable {
 

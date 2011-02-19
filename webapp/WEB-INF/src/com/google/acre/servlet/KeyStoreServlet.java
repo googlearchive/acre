@@ -33,10 +33,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.acre.AcreFactory;
 import com.google.acre.Configuration;
+import com.google.acre.javascript.JSON;
+import com.google.acre.javascript.JSONException;
 import com.google.acre.keystore.KeyStore;
-import com.google.util.javascript.JSON;
-import com.google.util.javascript.JSONException;
-import com.google.util.logging.MetawebLogger;
+import com.google.acre.logging.MetawebLogger;
 
 /**
  * <p>This Servlet implements a web service on top of the KeyStore that allows

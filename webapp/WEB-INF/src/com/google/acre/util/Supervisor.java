@@ -19,8 +19,8 @@ import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import com.google.acre.logging.MetawebLogger;
 import com.google.acre.script.exceptions.AcreThreadDeath;
-import com.google.util.logging.MetawebLogger;
 
 /**
  * This class implements a way to supervise the execution of threads and

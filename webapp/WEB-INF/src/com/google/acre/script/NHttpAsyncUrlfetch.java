@@ -14,7 +14,7 @@
 
 package com.google.acre.script;
 
-import static com.google.util.logging.MetawebLogger.DEBUG;
+import static com.google.acre.logging.MetawebLogger.DEBUG;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -50,8 +50,8 @@ import org.mozilla.javascript.Scriptable;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
+import com.google.acre.logging.MetawebLogger;
 import com.google.acre.script.exceptions.JSURLTimeoutError;
-import com.google.util.logging.MetawebLogger;
 
 public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
     

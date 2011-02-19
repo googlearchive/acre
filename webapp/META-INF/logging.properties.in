@@ -13,7 +13,7 @@
 .level=FINEST
 
 #java.util.logging.ConsoleHandler.level=FINEST
-#java.util.logging.ConsoleHandler.formatter=com.google.util.logging.SimpleFormatter
+#java.util.logging.ConsoleHandler.formatter=com.google.acre.logging.SimpleFormatter
 
 # Specify logging levels for specific namespaces
 #com.google.apphosting.utils.jetty.level=SEVERE

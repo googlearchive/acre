@@ -32,9 +32,9 @@ import org.slf4j.MDC;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
+import com.google.acre.logging.MetawebLogger;
 import com.google.acre.util.Supervisor;
-import com.google.util.TIDGenerator;
-import com.google.util.logging.MetawebLogger;
+import com.google.acre.util.TIDGenerator;
 
 public class OneTrueServlet extends javax.servlet.http.HttpServlet implements javax.servlet.Servlet {
     

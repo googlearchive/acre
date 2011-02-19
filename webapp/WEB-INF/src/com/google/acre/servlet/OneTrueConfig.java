@@ -26,8 +26,8 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 
 import com.google.acre.Configuration;
-import com.google.util.javascript.JSON;
-import com.google.util.javascript.JSONException;
+import com.google.acre.javascript.JSON;
+import com.google.acre.javascript.JSONException;
 
 public class OneTrueConfig {
     

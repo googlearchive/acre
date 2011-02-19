@@ -24,7 +24,7 @@ import java.util.Map;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-import com.google.util.javascript.JSObject;
+import com.google.acre.javascript.JSObject;
 /**
  *  Superclass for Java objects that can be converted to JS objects.
  *

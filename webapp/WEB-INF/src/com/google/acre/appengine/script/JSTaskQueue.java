@@ -19,12 +19,12 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
+import com.google.acre.javascript.JSObject;
 import com.google.acre.script.exceptions.JSConvertableException;
 import com.google.appengine.api.taskqueue.Queue;
 import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.appengine.api.taskqueue.TaskOptions.Builder;
-import com.google.util.javascript.JSObject;
 
 public class JSTaskQueue extends JSObject {
     

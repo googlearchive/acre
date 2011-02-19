@@ -55,9 +55,9 @@ import org.apache.http.impl.client.DefaultHttpClient;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
+import com.google.acre.logging.MetawebLogger;
 import com.google.acre.script.exceptions.AcreURLFetchException;
 import com.google.acre.util.http.HttpPropFind;
-import com.google.util.logging.MetawebLogger;
 
 /**
  *   This represents a URL fetch from Acre.

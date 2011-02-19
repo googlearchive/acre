@@ -20,7 +20,7 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
-import com.google.util.javascript.JSObject;
+import com.google.acre.javascript.JSObject;
 
 public class JSBinary extends JSObject {
 

@@ -25,9 +25,9 @@ import org.mozilla.javascript.RhinoException;
 import org.mozilla.javascript.Scriptable;
 
 import com.google.acre.Configuration;
+import com.google.acre.javascript.JSON;
+import com.google.acre.javascript.JSONException;
 import com.google.acre.script.exceptions.AcreThreadDeath;
-import com.google.util.javascript.JSON;
-import com.google.util.javascript.JSONException;
 
 public class AcreExceptionInfo extends JsConvertable {
     

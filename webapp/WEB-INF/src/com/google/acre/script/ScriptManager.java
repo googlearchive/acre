@@ -29,8 +29,8 @@ import com.google.acre.AcreFactory;
 import com.google.acre.Configuration;
 import com.google.acre.classstore.ClassStore;
 import com.google.acre.classstore.StoredClass;
+import com.google.acre.logging.MetawebLogger;
 import com.google.acre.script.exceptions.AcreInternalError;
-import com.google.util.logging.MetawebLogger;
 
 public class ScriptManager {
 
