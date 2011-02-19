@@ -2205,9 +2205,6 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
      *   because of relative references
      */
     function scope_augmentation(script, aug_scope) {
-        // return immediately if we've already augmented this scope
-        if (aug_scope._augmented) return aug_scope;
-        
         aug_scope.acre.current_script = script;
         
         /*
@@ -2349,9 +2346,6 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
             return sobj.get_content().body;
         };
 
-        // keep track of the fact that we've already augmented this scope-
-        aug_scope._augmented = true;
-        
         return aug_scope;
     }
 
