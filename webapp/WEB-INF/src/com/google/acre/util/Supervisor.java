@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.util;
 
 import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import com.google.acre.logging.MetawebLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.acre.script.exceptions.AcreThreadDeath;
 
 /**
@@ -34,8 +35,8 @@ import com.google.acre.script.exceptions.AcreThreadDeath;
  */
 public class Supervisor extends Timer {
 
-    private static MetawebLogger _logger = new MetawebLogger();
-    
+    private final static Logger _logger = LoggerFactory.getLogger(Supervisor.class);    
+        
     // the map between threads and their scheduled killing tasks
     private HashMap<Thread,ThreadKillerTask> _killerTasks = new HashMap<Thread,ThreadKillerTask>();
 

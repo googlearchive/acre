@@ -22,46 +22,12 @@ import java.util.Map;
 import org.mozilla.javascript.Scriptable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 
 import com.google.acre.Configuration;
 import com.google.acre.javascript.JSON;
 import com.google.acre.javascript.JSONException;
 
-/**
- * Logging class that provides interfaces close to ME logging api so that
- * logging can be done for this service in a similar manner. 
- *
- * The actual ME logging api is not provided, mainly because its too much work 
- * to write custom loggers and appenders. What we have here are wrappers for 
- * most of the default java logger interfaces.
- * 
- * Instantiate this logger as a local instance variable in the worker:
- * 
- * <pre>
- * MetawebLogger logger = new MetawebLogger("module name");
- * </pre>
- * 
- * To do the actual logging you will need to do:
- * 
- * <pre>
- * logger.info('...', '...');
- * logger.warn('...', '...');
- * </pre>
- * 
- * We are using MDC's to pass around context information. MDC's are <a
- * href='http://logging.apache.org/log4j/docs/api/org/apache/log4j/MDC.html'>copied
- * from the parent thread</a>. In this case the MDC is used mainly to push 
- * parameters down the logger without having to write custom logging code
- * - which I really really don't want to do.
- * 
- * One of the downsides to using this approach is the loss of access to a single
- * static logger per VM instance. APIs that need to use the logger, are used by
- * the worker or its callees and do not get the thread context passed down to
- * them might need to be passed in at least the logger.
- */
-
-public final class MetawebLogger {
+public class AcreLogger {
 
     public static final byte ERROR = 0;
     public static final byte WARN = 1;
@@ -84,58 +50,59 @@ public final class MetawebLogger {
             throw new RuntimeException("Sorry, don't know how to log '" + str + "' messages");
         }
     }
-
-    static {
-        //String confDir = Configuration.getConfDir();
-        //PropertyConfigurator.configure(confDir + "/log4j.properties");
-    }
     
-    private static String _serviceName = Configuration.Values.SERVICE_NAME.getValue();
-            
     private Logger _logger;
 
-    public MetawebLogger() {
-        this(_serviceName);
+    public AcreLogger() {
+        this(Configuration.Values.SERVICE_NAME.getValue());
     }
 
-    public MetawebLogger(String logger_name) {
+    public AcreLogger(String logger_name) {
         _logger = LoggerFactory.getLogger(logger_name);
     }
 
+    public AcreLogger(Class<?> clazz) {
+        _logger = LoggerFactory.getLogger(clazz);
+    }
+    
     /**
      * Wrapped log methods to make sure that the event and level MDC variables
      * are properly setup and output
      */
 
     public void error(String event_name, Object message, Throwable t) {
-        logActual(event_name, ERROR, message, t);
+        log(event_name, ERROR, message, t);
     }
     
     public void error(String event_name, Object message) {
-        logActual(event_name, ERROR, message, null);
+        log(event_name, ERROR, message, null);
     }
 
     public void warn(String event_name, Object message) {
-        logActual(event_name, WARN, message, null);
+        log(event_name, WARN, message, null);
     }
 
     public void info(String event_name, Object message) {
-        logActual(event_name, INFO, message, null);
+        log(event_name, INFO, message, null);
     }
 
     public void debug(String event_name, Object message) {
-        logActual(event_name, DEBUG, message, null);
+        log(event_name, DEBUG, message, null);
     }
 
     public void trace(String event_name, Object message) {
-        logActual(event_name, TRACE, message, null);
+        log(event_name, TRACE, message, null);
     }
     
     public void log(String event_name, byte level, Object message) {
-        logActual(event_name, level, message, null);
+        log(event_name, level, message, null);
     }
 
-    public void syslog4j(byte level, String event_name, Object... msgparts) {
+    public void log(String event_name, String level, Object message) {
+        log(event_name, toLevel(level), message, null);
+    }
+    
+    public void syslog4j(String level, String event_name, Object... msgparts) {
         HashMap<String, String> msg = new HashMap<String, String>();
 
         String key = null;
@@ -180,10 +147,8 @@ public final class MetawebLogger {
      *            the message to be logged
      * @param throwable any exceptions that are thrown
      */
-    private void logActual(String event_name, byte level, Object msg_obj, Throwable throwable) {
-        // It's ok to use getName here since userlogs won't bubble up
-        MDC.put("LogEvent", _logger.getName() + "." + event_name);
-        String message = stringify(msg_obj);
+    private void log(String event_name, byte level, Object msg_obj, Throwable throwable) {
+        String message = "[" + event_name + "] " + stringify(msg_obj);
         if (throwable != null) {
             switch (level) {
                 case ERROR : _logger.error(message, throwable); break;
@@ -201,8 +166,6 @@ public final class MetawebLogger {
                 case TRACE : _logger.trace(message); break;
             }
         }
-        // remove them from MDC just to be sure
-        MDC.remove("LogEvent");
     }
     
     private String stringify(Object obj) {

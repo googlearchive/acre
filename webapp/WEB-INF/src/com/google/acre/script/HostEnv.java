@@ -14,10 +14,10 @@
 
 package com.google.acre.script;
 
-import static com.google.acre.logging.MetawebLogger.DEBUG;
-import static com.google.acre.logging.MetawebLogger.ERROR;
-import static com.google.acre.logging.MetawebLogger.INFO;
-import static com.google.acre.logging.MetawebLogger.WARN;
+import static com.google.acre.logging.AcreLogger.DEBUG;
+import static com.google.acre.logging.AcreLogger.ERROR;
+import static com.google.acre.logging.AcreLogger.INFO;
+import static com.google.acre.logging.AcreLogger.WARN;
 
 import java.io.BufferedReader;
 import java.io.CharArrayWriter;
@@ -80,7 +80,7 @@ import com.google.acre.javascript.DOM.JSNodeList;
 import com.google.acre.javascript.DOM.JSNotation;
 import com.google.acre.javascript.DOM.JSProcessingInstruction;
 import com.google.acre.javascript.DOM.JSText;
-import com.google.acre.logging.MetawebLogger;
+import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.AcreContextFactory.AcreContext;
 import com.google.acre.script.exceptions.AcreDeadlineError;
 import com.google.acre.script.exceptions.AcreInternalError;
@@ -98,8 +98,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     public static final String ACRE_QUOTAS_HEADER = "X-acre-quotas";
     
-    private static MetawebLogger _logger = new MetawebLogger();
-    
+    private final static AcreLogger _logger = new AcreLogger();
+
     private static String ACRE_METAWEB_API_ADDR = Configuration.Values.ACRE_METAWEB_API_ADDR.getValue();
     private static int ACRE_METAWEB_API_ADDR_PORT = Configuration.Values.ACRE_METAWEB_API_ADDR_PORT.getInteger();
     
@@ -110,12 +110,10 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     private static String ACRE_HOST_BASE = Configuration.Values.ACRE_HOST_BASE.getValue();
     private static String ACRE_HOST_DELIMITER_PATH = Configuration.Values.ACRE_HOST_DELIMITER_PATH.getValue();
-    //private static boolean ACRE_AUTORELOADING = Configuration.Values.ACRE_AUTORELOADING.getBoolean();
     private static boolean ACRE_DEVELOPER_MODE = Configuration.Values.ACRE_DEVELOPER_MODE.getBoolean();
     
     private static final String DEFAULT_HOST_PATH = "//default." + ACRE_HOST_DELIMITER_PATH;
 
-    //private static boolean HIDE_INTERNAL_JS_STACK = Configuration.Values.HIDE_ACREBOOT_STACK.getBoolean();
     private static boolean ENABLE_SUPERVISOR = Configuration.Values.ACRE_SUPERVISOR_THREAD.getBoolean();
 
     // in order to allow error scripts to handle timeouts in the main
@@ -965,7 +963,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         byte lvl = INFO;
         
         if (level instanceof String) {
-            lvl = MetawebLogger.toLevel((String) level);
+            lvl = AcreLogger.toLevel((String) level);
         } else if (level instanceof Number) {
             lvl = ((Number) level).byteValue();
         } else {

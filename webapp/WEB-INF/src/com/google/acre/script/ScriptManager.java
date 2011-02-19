@@ -24,18 +24,19 @@ import org.mozilla.javascript.DefiningClassLoader;
 import org.mozilla.javascript.GeneratedClassLoader;
 import org.mozilla.javascript.Script;
 import org.mozilla.javascript.optimizer.ClassCompiler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.acre.AcreFactory;
 import com.google.acre.Configuration;
 import com.google.acre.classstore.ClassStore;
 import com.google.acre.classstore.StoredClass;
-import com.google.acre.logging.MetawebLogger;
 import com.google.acre.script.exceptions.AcreInternalError;
 
 public class ScriptManager {
 
-    private static MetawebLogger _logger = new MetawebLogger();
-
+    private final static Logger _logger = LoggerFactory.getLogger(ScriptManager.class);    
+    
     private static final int ACRE_MAX_CACHED_SCRIPT_CLASSES = Configuration.Values.ACRE_MAX_CACHED_SCRIPT_CLASSES.getInteger();
 
     private Map<String, CachedScript> _scriptsByClassName = new HashMap<String, CachedScript>();
