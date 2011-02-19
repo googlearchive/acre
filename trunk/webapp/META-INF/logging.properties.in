@@ -9,12 +9,18 @@
 # </system-properties>
 #
 
-# Set the default logging level for all loggers
-.level=FINEST
+handlers=java.util.logging.ConsoleHandler
 
-#java.util.logging.ConsoleHandler.level=FINEST
-#java.util.logging.ConsoleHandler.formatter=com.google.acre.logging.SimpleFormatter
+# Set the default logging level for all loggers
+.level=INFO
+
+java.util.logging.ConsoleHandler.level=FINEST
+java.util.logging.ConsoleHandler.formatter=com.google.acre.logging.SimpleFormatterr
 
 # Specify logging levels for specific namespaces
-#com.google.apphosting.utils.jetty.level=SEVERE
+com.google.apphosting.utils.jetty.level=SEVERE
+org.apache.http.level=SEVERE
 org.apache.commons.httpclient.level=SEVERE
+com.whirlycott.cache.level=SEVERE
+
+com.google.acre.level=@ACRE_LOG_LEVEL@

@@ -18,9 +18,7 @@ import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.exceptions.AcreThreadDeath;
 
 /**
@@ -35,7 +33,7 @@ import com.google.acre.script.exceptions.AcreThreadDeath;
  */
 public class Supervisor extends Timer {
 
-    private final static Logger _logger = LoggerFactory.getLogger(Supervisor.class);    
+    private final static AcreLogger _logger = new AcreLogger(Supervisor.class);    
         
     // the map between threads and their scheduled killing tasks
     private HashMap<Thread,ThreadKillerTask> _killerTasks = new HashMap<Thread,ThreadKillerTask>();

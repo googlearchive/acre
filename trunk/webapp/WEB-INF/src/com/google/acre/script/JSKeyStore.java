@@ -20,17 +20,16 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.acre.AcreFactory;
 import com.google.acre.javascript.JSObject;
 import com.google.acre.keystore.KeyStore;
+import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.exceptions.JSConvertableException;
 
 public class JSKeyStore extends JSObject {
 
-    private final static Logger _logger = LoggerFactory.getLogger(JSKeyStore.class);    
+    private final static AcreLogger _logger = new AcreLogger(JSKeyStore.class);    
     
     private static final long serialVersionUID = -306790422514648132L;
     
