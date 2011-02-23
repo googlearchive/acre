@@ -101,6 +101,19 @@ public class AcreExceptionInfo extends JsConvertable {
             if (v instanceof Scriptable) {
                 Scriptable excobj = (Scriptable) v;
                 try {
+                    // if user is re-throwing a Rhino Exception
+                    // do our best to extract the info back out
+                    Object jsFileName = excobj.get("fileName", excobj);
+                    Object jsLineNumber = excobj.get("lineNumber", excobj);
+                    if (jsFileName != Scriptable.NOT_FOUND && jsLineNumber != Scriptable.NOT_FOUND) {
+                        CachedScript script = scriptManager.getScriptBySourceName(jsFileName.toString());
+                        if (script != null) {
+                            filename = script.getScriptName();
+                            line = script.mapLineNumber(((Integer)jsLineNumber).intValue());
+                        }
+                    }
+                    
+                    // .info property of the exception is serialized to acre.error.info
                     Object info = excobj.get("info", excobj);
                     if (info != Scriptable.NOT_FOUND)
                         info_json = JSON.stringify(info, null, _scope);
