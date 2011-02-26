@@ -1,0 +1,21 @@
+<html>
+  <acre:script>
+    acre.response.status = 404;
+    acre.response.set_header('content-type', 'text/html; charset="UTF-8"');
+    var acre_server = acre.host.protocol + "://" + acre.host.name + 
+                      ((acre.host.port == "80") ? "" : ":" + acre.host.port);
+  </acre:script>
+  <head>
+    <title>Not Found: ${acre.html.encode(acre.request.script.path)}</title>
+    <link href='$acre_server/acre/static/style.css' rel='stylesheet' type='text/css'>
+  </head>
+
+  <body>
+    <div id='body'>
+      <h1>Not Found</h1>
+      <p class="msg">No Such file 
+      <span class="script">${acre.html.encode(acre.request.script.name)}</span> in app 
+      <a href="/">${acre.html.encode(acre.request.script.app.path)}</a></p>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>names across languages</title>
+<script type="text/javascript" src="../../mjt.js"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link type="text/css" rel="stylesheet"
+	href="./chrome.css" />
+<style type="text/css">
+.bigname {
+  font-size: 72px;
+}
+.inputform {
+  padding-right: 20px;
+}
+</style>
+</head>
+
+<body onload="mjt.run()" style="display:none;">
+
+  <pre mjt.script="">
+    var qlang = mjt.urlquery.lang
+                ? mjt.urlquery.lang.replace('/lang/', '')
+                : 'en';
+    var qname = mjt.urlquery.name ? mjt.urlquery.name : 'butterfly';
+    var qid = mjt.urlquery.id ? mjt.urlquery.id : null;
+    
+    /* regularized table for most common languages?
+     * not actually implemented. */
+    var lang_table = ['en', 'de', 'nl', 'fr',
+                      'it', 'es', 'pt', 'ca',
+                      'ja', 'zh', 'ko', 'he',
+                      'sv', 'no', 'fi', 'da',
+                      'pl', 'ru', 'uk', 'sr',
+                      'lmo', 'eo', 'sl', 'bg',
+                      'lt', 'id', 'tr', 'ar',
+                      'sk', 'cs', 'ro', 'hu'];
+
+  </pre>
+
+  <div mjt.def="get_blurb(id)">
+    <div mjt.task="bodyq">
+      mjt.freebase.TransGet(id, 'blurb')
+    </div>
+    <div mjt.if="bodyq.state=='ready'"
+         mjt.choose="bodyq.result.media_type">
+      <div mjt.when="text/html">
+        <!-- we mjt.bless() here because we trust the metaweb html
+             sanitizer -->
+        ${mjt.bless( bodyq.result.body )}
+      </div>
+      <div mjt.when="text/plain">
+        ${bodyq.result.body}
+      </div>
+      <div mjt.otherwise="">
+        unknown media type: $bodyq.result.media_type
+      </div>
+    </div>
+  </div>
+
+  <div mjt.task="q">
+       mjt.freebase.MqlRead([{
+         limit: 100,
+         id:qid,
+         /* allow fuzzy matches in the value for more results... */
+         /* 'q:name': {'value~=': qname, value:null, lang: '/lang/'+qlang}, */
+         'q:name': {value: qname, lang: '/lang/'+qlang},
+
+         type: '/common/topic',
+         name: [{
+             value:null,
+             lang:{
+                 id:null,
+                 name:{
+                     value:null,
+                     lang:'/lang/en',
+                     optional:true
+                 },
+                 'q:name':{
+                     value:null,
+                     lang:'/lang/'+qlang,
+                     optional:true
+                 }
+             }
+         }],
+         article: [{id:null, limit:1}],
+         image: [{id:null, limit:1, optional:true}],
+         creator: null,
+         timestamp:null
+       }])     
+    </div>
+
+  <div mjt.task="langq">
+       mjt.freebase.MqlRead({
+         '/language/human_language/iso_639_1_code': qlang,
+         type: '/common/topic',
+         id:null,
+         name: null,
+         article: [{id:null, limit:1, optional:true}]
+       })
+  </div>
+
+enter a freebase topic name and language id (e.g.
+<a href="?name=Albedo&amp;lang=en">"Albedo" and "en"</a> or 
+<a href="?name=台灣&amp;lang=zh">"台灣" and "zh"</a>)
+
+<table>
+  <tr><td class="inputform">
+    <form method="get" action="">
+      <div>
+        <table>
+          <tr>
+            <td>topic name:</td>
+            <td><input type="text" name="name" value="${qname||''}"/></td>
+          </tr>
+          <tr>
+            <td>lang id:</td>
+            <td><input type="text" name="lang" value="${qlang||''}"/></td>
+          </tr>
+          <tr>
+            <td>
+              <input type="submit" value="search"/>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </form>
+  </td><td class="bigname">
+    ${qname||''}
+  </td></tr>
+</table>
+
+<div mjt.choose="langq.state">
+  <div mjt.when="ready">
+    <div mjt.if="langq.result.article.length &gt; 0">
+      <b>$qlang:</b>
+      ${get_blurb(langq.result.article[0].id)}
+    </div>
+    <div mjt.else="">
+      no article for language
+      <b><a href="$mjt.service_url/view$langq.result.id">$langq.result.name</a></b>
+    </div>
+  </div>
+  <div mjt.when="error">
+    <div mjt.for="msg in q.messages">
+      Error from service: $msg.code : $msg.message
+    </div>
+  </div>
+</div>
+
+<div mjt.choose="q.state">
+  <div mjt.when="ready">
+    <table cellpadding="2" >
+        <!--
+      <tr>
+        <th></th><th></th>
+        <th align="left">name</th>
+        <th align="left">creator</th>
+        <th align="left">created</th>
+      </tr>
+        -->
+      <tr mjt.for="topic in q.result">
+        <td></td>
+        
+        <td>
+          <img mjt.if="topic.image.length &gt; 0"
+               alt="image for ${topic['q:name'].value}"
+               src=""
+               mjt.src="$mjt.service_url/api/trans/image_thumb${topic.image[0].id}">
+          </img>
+        </td>
+        <td>
+
+          <table>
+            <tr mjt.for="(var rowi = 0; rowi &lt; topic.name.length; rowi += 4)">
+              <td mjt.for="(var coli = 0; coli &lt; 4; coli++)"
+                  mjt.if="rowi+coli &lt; topic.name.length"
+                  style="padding-left:2em">
+                <pre mjt.script="">
+                  var name = topic.name[rowi+coli];
+                </pre>
+                <a href="$mjt.service_url/view$topic.id">
+                  $name.value
+                </a>
+                (<a href="?name=${mjt.formquote(name.value)}&amp;lang=${mjt.formquote(name.lang.id.substr(6))}"
+                >${(name.lang['q:name']||name.lang.name).value}</a>)
+                
+              </td>
+            </tr>
+          </table>
+
+
+          <div mjt.if="topic.article.length &gt; 0">
+            ${get_blurb(topic.article[0].id)}
+          </div>
+
+        </td>
+<!--
+        <td>
+          <a href="$mjt.service_url/view${encodeURIComponent(topic.creator)}">$topic.creator</a>&nbsp;
+        </td>
+
+        <td align="left">
+          ${mjt.freebase.date_from_iso(topic.timestamp).toLocaleString()}
+        </td>
+-->
+        
+      </tr>
+    </table>
+  </div>
+  <div mjt.when="wait">
+    loading...
+  </div>
+  <div mjt.when="error">
+    <div mjt.for="msg in q.messages">
+      Error from service: $msg.code : $msg.message
+    </div>
+  </div>
+</div>
+</body>
+</html>
