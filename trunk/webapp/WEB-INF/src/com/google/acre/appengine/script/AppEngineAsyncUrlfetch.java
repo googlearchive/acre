@@ -46,6 +46,7 @@ import com.google.acre.script.AcreResponse;
 import com.google.acre.script.AsyncUrlfetch;
 import com.google.acre.script.JSBinary;
 import com.google.acre.script.JSURLError;
+import com.google.acre.script.exceptions.JSURLTimeoutError;
 import com.google.appengine.api.urlfetch.HTTPHeader;
 import com.google.appengine.api.urlfetch.HTTPMethod;
 import com.google.appengine.api.urlfetch.HTTPRequest;
@@ -179,8 +180,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         boolean issecure = ("https".equals(protocol));
         int port = furl.getPort();
         if (port == -1) port = 80;
-        CookieOrigin origin = new CookieOrigin(furl.getHost(), port,
-                                               furl.getPath(), issecure);
+        CookieOrigin origin = new CookieOrigin(furl.getHost(), port, furl.getPath(), issecure);
 
         Context ctx = Context.getCurrentContext();
         Scriptable out = ctx.newObject(_scope);
@@ -196,17 +196,13 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         for (HTTPHeader h : res.getHeaders()) {
             if (h.getName().equalsIgnoreCase("set-cookie")) {
                 String set_cookie = h.getValue();
-                Matcher m = Pattern.compile("\\s*(([^,]|(,\\s*\\d))+)")
-                    .matcher(set_cookie);
+                Matcher m = Pattern.compile("\\s*(([^,]|(,\\s*\\d))+)").matcher(set_cookie);
                 while (m.find()) {
-                    Header ch = new BasicHeader("Set-Cookie",
-                                                set_cookie.substring(m.start(),
-                                                                     m.end()));
+                    Header ch = new BasicHeader("Set-Cookie",set_cookie.substring(m.start(),m.end()));
                     try {
                         List<Cookie> pcookies = cspec.parse(ch, origin);
                         for (Cookie c : pcookies) {
-                            cookies.put(c.getName(), cookies,
-                                        new AcreCookie(c).toJsObject(_scope));
+                            cookies.put(c.getName(), cookies, new AcreCookie(c).toJsObject(_scope));
                         }
                     } catch (MalformedCookieException e) {
                         throw new RuntimeException(e);
@@ -254,7 +250,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                 for (AsyncRequest r : _requests) {
                     r.request.cancel(true);
                 }
-                throw new JSURLError("Time limit exceeded").newJSException(_scope);
+                throw new JSURLTimeoutError("Time limit exceeded").newJSException(_scope);
             }
 
             AsyncRequest asyncreq = _requests.get(i);
@@ -265,19 +261,18 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                 JSURLError jse = new JSURLError("Request cancelled");
 
                 callback.call(ctx, _scope, null, new Object[] {
-                        asyncreq.url.toString(),
-                        jse.toJSError(_scope)
-                    });
+                    asyncreq.url.toString(),
+                    jse.toJSError(_scope)
+                });
                 continue;
             }
 
             try {
                 HTTPResponse res = futr.get(10, TimeUnit.MILLISECONDS);
-                callback.call(ctx, _scope, null,
-                              new Object[] { 
-                                  asyncreq.url.toString(),
-                                  callback_result(asyncreq, res) 
-                              });
+                callback.call(ctx, _scope, null, new Object[] { 
+                    asyncreq.url.toString(),
+                    callback_result(asyncreq, res) 
+                });
                 _requests.remove(i);
                 continue;
             } catch (TimeoutException e) {
@@ -288,15 +283,15 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                 JSURLError jse = new JSURLError(e.getMessage());
                 
                 callback.call(ctx, _scope, null, new Object[] {
-                        asyncreq.url.toString(),
-                        jse.toJSError(_scope)
-                    });
+                    asyncreq.url.toString(),
+                    jse.toJSError(_scope)
+                });
             } catch (InterruptedException e) {
-                                JSURLError jse = new JSURLError(e.getMessage());
-                
-                                callback.call(ctx, _scope, null, new Object[] {
-                                        asyncreq.url.toString(),
-                                        jse.toJSError(_scope)
+                JSURLError jse = new JSURLError(e.getMessage());
+
+                callback.call(ctx, _scope, null, new Object[] {
+                    asyncreq.url.toString(),
+                    jse.toJSError(_scope)
                 });
             }
 
