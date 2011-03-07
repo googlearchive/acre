@@ -2173,10 +2173,8 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
                 var mount_path = normalize_path(app.mounts[fn] + path_info);
                 return proto_require(mount_path, null, resolve_only);
             }
-            
-            var fn_noext = fn.replace(/\.[^\/\.]*$/,"");
-            filename = get_file(fn) || get_file(fn_noext);
-            
+
+            filename = get_file(fn);
             if(filename) break;
             path_segs.pop();
         }
