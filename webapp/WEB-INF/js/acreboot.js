@@ -1932,12 +1932,11 @@ for (var name in _topscope) {
 
 // ---------------------------- proto_require ---------------------------------
 
-var proto_require = function(req_path, override_metadata, resolve_only) {
+var proto_require = function(req_path, override_metadata, metadata_only) {
     syslog.info(req_path, "proto_require.path");
     
     /*
-     *  Helper function for defaulting app metadata 
-     *  and applying metadata files
+     *  Helper functions for copying/setting metadata
      */
     function set_app_metadata(app, md) {
         app = app || {};
@@ -1980,6 +1979,42 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
 
         return app;
     };
+    
+    function create_mini_app(app) {
+        return {
+          source: app.source,
+          path: compose_req_path(app.host),
+          host: app.host,
+          hosts: app.hosts,
+          guid: app.guid,
+          as_of: app.as_of,
+          id: app.id,
+          mounts: app.mounts,
+          version: (app.versions.length > 0 ? app.versions[0] : null),
+          versions: app.versions,
+          base_url : acre.host.protocol + "://" + 
+              (app.host.match(/\.$/) ? app.host.replace(/\.$/, "") : (app.host + "." + acre.host.name)) +
+              (acre.host.port !== 80 ? (":" + acre.host.port) : "")              
+        };
+    };
+    
+    function get_extension_metadata(name, extensions) {
+        // match from longest to shortest (i.e., .mf.css before .css)
+        var exts = name.split(".");
+        exts.shift();
+        while (exts.length) {
+          var ext = exts.join(".");
+          var ext_data = {};
+          if (ext && extensions && extensions[ext]) {
+              ext_data = extensions[ext];
+              break;
+          }
+          exts.shift();
+        }
+        
+        return ext_data;
+    };
+    
     
     // NOTE: get_file and normalize_path both rely 
     // on app_data already having been defined
@@ -2036,7 +2071,7 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
      * utility for converting all paths relative to an app
      * into fully-qualified paths (for acre.require, etc.)
      */
-    function normalize_path(path, version, new_only, app_only) {
+    function normalize_path(path, version, new_only) {
         path = path || "";
         if (typeof path !== 'string') throw new Error("Path must be a string");
         var parts = path.split('//');
@@ -2058,8 +2093,6 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
             return path;
             
         } else {
-            if (app_only) throw new Error("Only apps are supported by this method");
-            
             // Mode 3: relative require
 
             // check whether there's a matching mount
@@ -2115,7 +2148,7 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
         }
         set_app_metadata(app_data, md);
     }
-
+    
     // now cache the app metadata
     var ckey = "METADATA:"+app_data.guid+":"+app_data.as_of;
     var ttl = (typeof app_data.ttl === "number") ? app_data.ttl : 0;
@@ -2151,8 +2184,6 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
 
     // If there are overrides, create a clean copy and apply
     // them now, after caching, so they only affect this scope
-    // XXX - not always creating a clean copy leaves things open
-    // to direct manipulation by scripts, but it's too expensive
     var app = app_data;
     if (override_metadata) {
         app = u.extend(true, {}, app_data);
@@ -2161,7 +2192,9 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
 
     // Note that we wait till after we've cached the app_data before
     // trying to find the specific file we're interested in.
-    var filename, path_info;
+    var filename = null,
+        path_info = null;
+
     if (path) {
         var path_segs = path.split("/");
         
@@ -2171,27 +2204,21 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
             
             if (app.mounts[fn] && (path_info.length > 1)) {
                 var mount_path = normalize_path(app.mounts[fn] + path_info);
-                return proto_require(mount_path, null, resolve_only);
+                return proto_require(mount_path, null, metadata_only);
             }
 
             filename = get_file(fn);
             if(filename) break;
             path_segs.pop();
         }
-        
-        if (!filename) return null;
-    } else {
-        // Provide the app metadata if proto_require is called
-        // without a path.  Used by acre.get_metadata().
-        return app;
     }
 
-
-    // return just found path for acre.resolve()
-    if (resolve_only) {
-        return "//" + app.host + "/" + filename;
+    if (metadata_only) {
+        return [app, filename];
     }
 
+    // we don't have a script to run
+    if (!filename) return null;
     
     // we've found our script, now we need to:
     // set up its scope and run it
@@ -2252,18 +2279,51 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
             deprecate(aug_scope);
         }
 
-        aug_scope.acre.get_metadata = function(path) {
-            // ensure we only have the host part
-            var [host] = decompose_req_path(normalize_path(path, null, true, false));
-            return proto_require(compose_req_path(host));
-        };
 
         aug_scope.acre.mount = function(path, local_path) {
-            app.mounts[local_path] = normalize_path(path);
+            app.mounts[local_path] = normalize_path(path, null, true);
+        };
+
+        aug_scope.acre.get_metadata = function(path) {
+            path = normalize_path(path, null, true);
+            var r = proto_require(path, null, true);
+            
+            var [host, path_info] = decompose_req_path(path);
+            
+            // we didn't find an app or file as expected
+            if (!r || (path_info && !r[1])) {
+                return null;
+            }
+
+            // create cleaned-up copies of the metadata
+            if (r[1]) {
+                var ext_md = get_extension_metadata(r[0].files[r[1]].name, r[0].extensions);
+                file = u.extend(true, {}, ext_md, r[0].files[r[1]]);
+                file.app = create_mini_app(r[0]);
+                return file;
+            } else {
+                var app = u.extend(true, {}, r[0]);
+                delete app.filenames;
+                for (var f in app.files) {
+                    var ext_md = get_extension_metadata(app.files[f].name, app.extensions);
+                    app.files[f] = u.extend(ext_md, app.files[f]);
+                }
+                return app;
+            }
         };
 
         aug_scope.acre.resolve = function(path) {
-            return proto_require(normalize_path(path), null, true);
+            path = normalize_path(path, null, true);
+            var r = proto_require(path, null, true);
+
+            var [host, path_info] = decompose_req_path(path);
+
+            // we didn't find an app or file as expected
+            if (!r || (path_info && !r[1])) {
+                return null;
+            }
+            
+            return compose_req_path(r[0].host, r[1]);
         };
 
         aug_scope.acre.route = function(path, body, skip_routes) {
@@ -2352,46 +2412,20 @@ var proto_require = function(req_path, override_metadata, resolve_only) {
     // used to create modules (acre.require) or
     // geenrate output (http request, acre.include)
     function Script(app, name, path_info) {
-        
-        // look whether there's relevant backfill metadata in 
-        // the 'extensions' dictionary in the app metadata.
-        // match from longest to shortest (i.e., .mf.css before .css)
-        var exts = name.split(".");
-        exts.shift();
-        while (exts.length) {
-          var ext = exts.join(".");
-          var ext_data = {};
-          if (ext && app.extensions && app.extensions[ext]) {
-              ext_data = app.extensions[ext];
-              break;
-          }
-          exts.shift();
-        }
+        // get backfill metadata
+        // we need to do this post-overrides being applied
+        var ext_md = get_extension_metadata(name, app.extensions);
 
         // Create a good looking copy of script metadata 
         // this will be used in acre.current_script, etc.
-        var script_data = u.extend({}, ext_data, app.files[name]);
+        var script_data = u.extend({}, ext_md, app.files[name]);
+
         script_data.path_info = path_info;
         script_data.path = compose_req_path(app.host, name);
         script_data.id = host_to_namespace(app.host) + "/" + name;
         // so.source_url ?
 
-        // only copy some of the app metadata
-        script_data.app = {
-          source: app.source,
-          path: compose_req_path(app.host),
-          host: app.host,
-          hosts: app.hosts,
-          guid: app.guid,
-          as_of: app.as_of,
-          id: app.id,
-          mounts: app.mounts,
-          version: (app.versions.length > 0 ? app.versions[0] : null),
-          versions: app.versions,
-          base_url : acre.host.protocol + "://" + 
-              (app.host.match(/\.$/) ? app.host.replace(/\.$/, "") : (app.host + "." + acre.host.name)) +
-              (acre.host.port !== 80 ? (":" + acre.host.port) : "")              
-        };
+        script_data.app = create_mini_app(app);
 
         // private variable for storing the handler we'll use to 
         // process the script. the exact handler will depend on the 
@@ -2690,7 +2724,7 @@ _hostenv.finish_response = function () {
 // doing this here so it's once per request rather than for every require
 // XXX - there's probably a less hacky way to do this, but it gets the job done
 acre.response = {};
-var defaults = proto_require(compose_req_path(_DEFAULTS_HOST));
+var [defaults] = proto_require(compose_req_path(_DEFAULTS_HOST), null, true);
 var _default_metadata = {
   "error_page": defaults.error_page,
   "extensions": defaults.extensions,
