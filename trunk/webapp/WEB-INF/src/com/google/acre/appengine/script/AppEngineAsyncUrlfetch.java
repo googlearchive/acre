@@ -151,13 +151,13 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         }
         Future<HTTPResponse> futr = _urlfetch_service.fetchAsync(req);
         
-        _logger.syslog4j("DEBUG", "urlfetch.request.async",
+        _logger.syslog4j("INFO", "urlfetch.request.async",
                 "Method", method,
                 "URL", url,
                 "Headers", request_header_log);
                 
         if (!system && log_to_user) {
-            _response.userlog4j("DEBUG", "urlfetch.request.async",
+            _response.userlog4j("INFO", "urlfetch.request.async",
                                 "Method", method,
                                 "URL", url,
                                 "Headers", request_header_log);
@@ -217,13 +217,13 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         boolean system = req.system;
         boolean log_to_user = req.log_to_user;
                 
-        _logger.syslog4j("DEBUG", "urlfetch.response.async",
+        _logger.syslog4j("INFO", "urlfetch.response.async",
                          "URL", furl.toString(),
                          "Status", Integer.toString(res.getResponseCode()),
                          "Headers", response_header_log);
         
         if (system && log_to_user) {
-            _response.userlog4j("DEBUG", "urlfetch.response.async",
+            _response.userlog4j("INFO", "urlfetch.response.async",
                                 "URL", furl.toString(),
                                 "Status", Integer.toString(res.getResponseCode()),
                                 "Headers", response_header_log);
