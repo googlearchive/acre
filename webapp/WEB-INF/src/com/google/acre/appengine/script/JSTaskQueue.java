@@ -164,7 +164,7 @@ public class JSTaskQueue extends JSObject {
                                 String pp = (String) ii;
                                 Object vv = o.get(pp,obj);
                                 if (vv instanceof String) {
-                                    task = task.header(pp, (String) vv);
+                                    task = task.param(pp, (String) vv);
                                 } else {
                                     throw new JSConvertableException("Params values can only be strings").newJSException(_scope);
                                 }
