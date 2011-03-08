@@ -286,6 +286,7 @@ case "$ACTION" in
         fi
         $APPENGINE_HOME/bin/dev_appserver.sh --disable_update_check $APPSERVER_PARAMS webapp;;
     appengine-deploy) 
+        build_appengine
         if [ -f "webapp/WEB-INF/appengine-web.xml" ]; then
             get_appid
             ACRE_HOST_BASE="$APP_ID.appspot.com"
@@ -297,6 +298,7 @@ case "$ACTION" in
     appengine-rollback) 
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS rollback "$WAR";;
     appengine-internal-deploy) 
+        build_appengine
         if [ -f "webapp/WEB-INF/appengine-web.xml" ]; then
             get_appid
             ACRE_HOST_BASE="$APP_ID.prom.corp.google.com"
