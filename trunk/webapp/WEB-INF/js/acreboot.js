@@ -2306,7 +2306,7 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
                 delete app.filenames;
                 for (var f in app.files) {
                     var ext_md = get_extension_metadata(app.files[f].name, app.extensions);
-                    app.files[f] = u.extend(ext_md, app.files[f]);
+                    app.files[f] = u.extend({}, ext_md, app.files[f]);
                 }
                 return app;
             }
