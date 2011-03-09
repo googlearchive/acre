@@ -55,7 +55,6 @@ var augment;
     
     function update(key, obj) {
         return store.update(get_appid(), key, obj);
-        
     }
     
     function remove(key) {
