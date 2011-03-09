@@ -2724,7 +2724,7 @@ _hostenv.finish_response = function () {
 // doing this here so it's once per request rather than for every require
 // XXX - there's probably a less hacky way to do this, but it gets the job done
 acre.response = {};
-var [defaults] = proto_require(compose_req_path(_DEFAULTS_HOST), null, true);
+var defaults = proto_require(compose_req_path(_DEFAULTS_HOST), null, true)[0];
 var _default_metadata = {
   "error_page": defaults.error_page,
   "extensions": defaults.extensions,
