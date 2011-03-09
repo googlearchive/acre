@@ -217,9 +217,8 @@ public class JSDataStore extends JSObject {
                     throw new JSConvertableException("Sorry, but properties are not allowed to contain the '.' character").newJSException(_scope);
                 }
     
-                if (prop.equals("_")) {
-                    throw new JSConvertableException("Sorry, but property '_' is reserved and your objects can't contain it").newJSException(_scope);
-                }
+                // '_' is a reserved property that contains the object metadata. If it's passed to us we need to ignore it
+                if (prop.equals("_")) continue;
                 
                 Object value = obj.get(prop, obj);
                 
