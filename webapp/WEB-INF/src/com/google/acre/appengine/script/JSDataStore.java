@@ -100,7 +100,7 @@ public class JSDataStore extends JSObject {
     
     public Scriptable jsFunction_get(String app_id, String obj_key) {
         try {
-            Key key = KeyFactory.stringToKey(obj_key);
+            Key key = stringToKey(obj_key);
             return extract(_store.get(_transaction, key), _scope);
         } catch (Exception e) {
             throw new JSConvertableException("Failed to obtain object with id '" + obj_key + ": " + e.getMessage()).newJSException(_scope);
@@ -114,18 +114,18 @@ public class JSDataStore extends JSObject {
                 if (parent_key == null || "null".equals(parent_key) || "undefined".equals(parent_key)) {
                     entity = new Entity(app_id);
                 } else {
-                    entity = new Entity(app_id, KeyFactory.stringToKey(parent_key));
+                    entity = new Entity(app_id, stringToKey(parent_key));
                 }
             } else {
                 if (parent_key == null || "null".equals(parent_key) || "undefined".equals(parent_key)) {
                     entity = new Entity(app_id, name);
                 } else {
-                    entity = new Entity(app_id, name, KeyFactory.stringToKey(parent_key));
+                    entity = new Entity(app_id, name, stringToKey(parent_key));
                 }
             }
             embed(entity, obj);
             Key k = _store.put(_transaction, entity);
-            return KeyFactory.keyToString(k);
+            return keyToString(k);
         } catch (Exception e) {
             e.printStackTrace();
             throw new JSConvertableException("Failed to save object: " + e.getMessage()).newJSException(_scope);
@@ -134,11 +134,11 @@ public class JSDataStore extends JSObject {
 
     public Object jsFunction_update(String app_id, String obj_key, Scriptable obj) {
         try {
-            Key key = KeyFactory.stringToKey(obj_key);
+            Key key = stringToKey(obj_key);
             Entity entity = _store.get(_transaction, key);
             embed(entity, obj);
             Key k = _store.put(_transaction, entity);
-            return KeyFactory.keyToString(k);
+            return keyToString(k);
         } catch (Exception e) {
             throw new JSConvertableException("Failed to update object: " + e.getMessage()).newJSException(_scope);
         }
@@ -146,7 +146,7 @@ public class JSDataStore extends JSObject {
     
     public void jsFunction_remove(String app_id, String obj_key) {
         try {
-            Key key = KeyFactory.stringToKey(obj_key);
+            Key key = stringToKey(obj_key);
             _store.delete(_transaction, key);
         } catch (Exception e) {
             throw new JSConvertableException("Failed to remove object: " + e.getMessage()).newJSException(_scope);
@@ -173,7 +173,7 @@ public class JSDataStore extends JSObject {
         Object json = entity.getProperty(JSON_PROPERTY);
         Scriptable o = (Scriptable) JSON.parse(((Text) json).getValue(), scope, false);
         Scriptable metadata = Context.getCurrentContext().newObject(scope);
-        ScriptableObject.putProperty(metadata, "key", KeyFactory.keyToString(entity.getKey()));
+        ScriptableObject.putProperty(metadata, "key", keyToString(entity.getKey()));
         ScriptableObject.putProperty(o,"_",metadata);
         return o;
     }
@@ -234,7 +234,7 @@ public class JSDataStore extends JSObject {
                 } else if (value instanceof Scriptable) {
                     index_object(path + prop + ".", (Scriptable) value, entity);
                 } else {
-                    throw new JSConvertableException("Sorry, you can't save objects with null or underfined properties (" + path + prop + ")").newJSException(_scope);
+                    //throw new JSConvertableException("Sorry, you can't save objects with null or undefined properties (" + path + prop + ")").newJSException(_scope);
                 }
             }
         } else if ("Array".equals(className)) {
@@ -315,5 +315,16 @@ public class JSDataStore extends JSObject {
             // this should never happen but better safe than sorry
             throw new JSConvertableException("Sorry, don't know how to index this type of object (" + className + ")").newJSException(_scope);
         }
+    }
+    
+    static String keyToString(Key key) {
+        System.out.println("key: " + key.toString());
+        String str = KeyFactory.keyToString(key); 
+        System.out.println("str: " + str);
+        return str;
+    }
+    
+    static Key stringToKey(String str) {
+        return KeyFactory.stringToKey(str);
     }
 }
