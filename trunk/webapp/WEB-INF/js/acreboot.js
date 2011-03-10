@@ -2133,7 +2133,7 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
     if (app_data === null) {
         // cache complete misses in the request cache
         METADATA_CACHE[host] = null;
-        return null;
+        return metadata_only ? [null, null] : null;
     }
 
     // splice in metadata file before caching app
@@ -2286,23 +2286,21 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
 
         aug_scope.acre.get_metadata = function(path) {
             path = normalize_path(path, null, true);
-            var r = proto_require(path, null, true);
-            
+            var [app_md, filename] = proto_require(path, null, true);
             var [host, path_info] = decompose_req_path(path);
             
-            // we didn't find an app or file as expected
-            if (!r || (path_info && !r[1])) {
+            if (!app_md || (path_info && !filename)) {
                 return null;
             }
 
             // create cleaned-up copies of the metadata
-            if (r[1]) {
-                var ext_md = get_extension_metadata(r[0].files[r[1]].name, r[0].extensions);
-                file = u.extend(true, {}, ext_md, r[0].files[r[1]]);
-                file.app = create_mini_app(r[0]);
+            if (filename) {
+                var ext_md = get_extension_metadata(app_md.files[filename].name, app_md.extensions);
+                var file = u.extend(true, {}, ext_md, app_md.files[filename]);
+                file.app = create_mini_app(app_md);
                 return file;
             } else {
-                var app = u.extend(true, {}, r[0]);
+                var app = u.extend(true, {}, app_md);
                 delete app.filenames;
                 for (var f in app.files) {
                     var ext_md = get_extension_metadata(app.files[f].name, app.extensions);
@@ -2314,16 +2312,14 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
 
         aug_scope.acre.resolve = function(path) {
             path = normalize_path(path, null, true);
-            var r = proto_require(path, null, true);
-
+            var [app_md, filename] = proto_require(path, null, true);
             var [host, path_info] = decompose_req_path(path);
 
-            // we didn't find an app or file as expected
-            if (!r || (path_info && !r[1])) {
+            if (!app_md || (path_info && !filename)) {
                 return null;
             }
             
-            return compose_req_path(r[0].host, r[1]);
+            return compose_req_path(app_md.host, filename);
         };
 
         aug_scope.acre.route = function(path, body, skip_routes) {
