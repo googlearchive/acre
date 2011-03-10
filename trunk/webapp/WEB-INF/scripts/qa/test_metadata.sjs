@@ -12,8 +12,13 @@ test('metadata file loading',function() {
     ok(md.handlers.custom, "custom handler present");
     ok(md.extensions.cst, "cst extension present");
     ok(md.extensions.html, "html extension present");
-    var file = md.files["not_custom.html"];
-    ok(file.handler === 'custom', "custom handler was set");
+
+    var file1 = acre.get_metadata(qa_app + "/custom.cst");
+    ok(file1.handler === 'custom', "custom handler was set");
+
+    var file2 = acre.get_metadata(qa_app + "/not_custom.html");
+    ok(file2.handler === 'custom', "custom handler was set");
+    
 });
 
 test('mount points',function() {
