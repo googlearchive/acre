@@ -2513,10 +2513,7 @@ var handle_request = function (request_path, req_body, skip_routes) {
     set_request_params();
     
     // Fill in missing values
-    if (!req_host) req_host = _DEFAULT_APP;
-    if (!req_pathinfo) req_pathinfo = _DEFAULT_FILE;
-    
-    request_path = compose_req_path(req_host, req_pathinfo);
+    request_path = compose_req_path(req_host || _DEFAULT_APP, req_pathinfo || _DEFAULT_FILE);
 
     // support /acre/ special case -- these are OTS routing rules 
     // that allow certain global scripts to run within the context of any app
@@ -2567,7 +2564,7 @@ var handle_request = function (request_path, req_body, skip_routes) {
     // Work our way down the list until we find one that works:
     var script = null;
     u.each(fallbacks, function(i, fpath) {
-        try {            
+        try {
             script = proto_require(fpath);
         } catch (e if e.__code__ == APPFETCH_ERROR_METHOD) {
             acre.response.status = 503;
