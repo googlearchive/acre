@@ -124,7 +124,7 @@ get_revision() {
 
 # Get appengine application ID ---------------------------------------------
 get_appid() {
-    APP_ID=`cat webapp/WEB-INF/appengine-web.xml | grep '<application>' | cut -d '>' -f 2 | cut -d '<' -f 1`
+    APP_ID=`cat _build/war/WEB-INF/appengine-web.xml | grep '<application>' | cut -d '>' -f 2 | cut -d '<' -f 1`
 }
 
 # ----------------------- commands --------------------------
@@ -244,7 +244,7 @@ COMMAND=
 shift
 
 # Overwrite defaults with local configs (if present) ------
-if [ -f "config/project.local.conf" ] && [ "$ACTION" != "appengine-deploy" ] && [ "$ACTION" != "appengine-internal-deploy" ]; then
+if [ -f "config/project.local.conf" ] && [ "$ACTION" != "appengine-deploy" ] && [ "$ACTION" != "appengine-internal-deploy" ] & [ "$ACTION" != "appengine-build-war" ]; then
     load "config/project.local.conf"
 fi
 
@@ -285,25 +285,23 @@ case "$ACTION" in
             APPSERVER_PARAMS="-p $ACRE_PORT"
         fi
         $APPENGINE_HOME/bin/dev_appserver.sh --disable_update_check $APPSERVER_PARAMS webapp;;
+    appengine-build-war) 
+        build_appengine_war;;
     appengine-deploy) 
-        build_appengine
-        if [ -f "webapp/WEB-INF/appengine-web.xml" ]; then
+        if [ -f "_build/war/WEB-INF/appengine-web.xml" ]; then
             get_appid
             ACRE_HOST_BASE="$APP_ID.appspot.com"
         fi
-        build_appengine_war
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR"
         echo ""
         echo "App is ready at http://$ACRE_HOST_BASE/";;
     appengine-rollback) 
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS rollback "$WAR";;
     appengine-internal-deploy) 
-        build_appengine
-        if [ -f "webapp/WEB-INF/appengine-web.xml" ]; then
+        if [ -f "_build/war/WEB-INF/appengine-web.xml" ]; then
             get_appid
             ACRE_HOST_BASE="$APP_ID.prom.corp.google.com"
         fi
-        build_appengine_war
         echo "Appengine Internal Params: $APPENGINE_INTERNAL_DEPLOY_PARAMS"
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS update "$WAR"
         echo ""
