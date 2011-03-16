@@ -291,7 +291,8 @@ case "$ACTION" in
     appengine-deploy) 
         if [ -f "_build/war/WEB-INF/appengine-web.xml" ]; then
             get_appid
-            ACRE_HOST_BASE="$APP_ID.appspot.com"
+            DEPLOYED_ACRE_HOST_BASE="$APP_ID.appspot.com"
+            sed -i bak "s/ACRE_HOST_BASE=.*/ACRE_HOST_BASE=$DEPLOYED_ACRE_HOST_BASE/g" "_build/war/META-INF/acre.properties"
         fi
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR"
         echo ""
@@ -301,7 +302,8 @@ case "$ACTION" in
     appengine-internal-deploy) 
         if [ -f "_build/war/WEB-INF/appengine-web.xml" ]; then
             get_appid
-            ACRE_HOST_BASE="$APP_ID.prom.corp.google.com"
+            DEPLOYED_ACRE_HOST_BASE="$APP_ID.prom.corp.google.com"
+            sed -i bak "s/ACRE_HOST_BASE=.*/ACRE_HOST_BASE=$DEPLOYED_ACRE_HOST_BASE/g" "_build/war/META-INF/acre.properties"
         fi
         echo "Appengine Internal Params: $APPENGINE_INTERNAL_DEPLOY_PARAMS"
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS update "$WAR"
