@@ -37,7 +37,7 @@ class ConfigParser:
         return os.environ[k]
     
     print "No value found for variable %s in %s" % (k, self.full_path)
-    return '\'\''
+    return ""
 
   def convert(self):
     '''read the file given in the constructor and 

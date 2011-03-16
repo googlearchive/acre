@@ -50,7 +50,6 @@ public class Configuration implements ConfigurationMBean {
         ACRE_SERVICE_ADDR(DEFAULT_HOSTNAME + ":" + DEFAULT_PORT), 
         ACRE_METAWEB_API_ADDR(SANDBOX_API), 
         ACRE_FREEBASE_SITE_ADDR(SANDBOX_SITE),
-        ACRE_APIARY_ADDR("googleapis.com/freebase-sandbox"),
         ACRE_APPEDITOR_HOST("acre.freebase.com"),
         ACRE_MWLT_MODE_COOKIE_SCOPE(".freebase.com"),
         ACRE_METAWEB_API_PATH("USE_SERVLET_PATH"), 
@@ -101,6 +100,8 @@ public class Configuration implements ConfigurationMBean {
         ACRE_REQUEST_MAX_TIME("30000"), // in ms
         ACRE_MAX_ASYNC_CONNECTIONS("10"),
 
+        ACRE_APIARY_ADDR,
+        
         // values that are better without defaults because they could expose security-sensitive info
         ACRE_AUTH_SECRET, 
         ACRE_SQL,
