@@ -12,7 +12,7 @@
 handlers=java.util.logging.ConsoleHandler
 
 # Set the default logging level for all loggers
-.level=INFO
+.level=SEVERE
 
 java.util.logging.ConsoleHandler.level=FINEST
 java.util.logging.ConsoleHandler.formatter=com.google.acre.logging.SimpleFormatterr
