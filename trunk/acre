@@ -57,7 +57,8 @@ Available Commands:
     
     appengine-build ... Build a WAR package of Acre to run on Google App Engine
     appengine-run ..... Run Acre in the local Google App Engine simulator (must call 'appengine-build' first)
-    appengine-deploy .. Deploy Acre on Google App Engine (must call 'appengine-build' first)
+    appengine-build-war Build a WAR package of Acre to run on Google App Engine
+    appengine-deploy .. Deploy Acre on Google App Engine (must call 'appengine-build and appengine-build-war' first)
     appengine-rollback. Rollback a deployment that failed
 
     test .............. run a suite of integration tests (start acre first)
