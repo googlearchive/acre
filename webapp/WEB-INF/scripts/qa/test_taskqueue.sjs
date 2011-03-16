@@ -72,10 +72,6 @@ if (acre.tasks) {
                    "x-something" : "somewhat",
                    "foo" : "bar"
                 },
-                "params" : {
-                    "this" : "that",
-                    "foo" : "bar"
-                },
                 "payload" : "whatever",
                 "payload_encoding" : "ISO-8859-1"
             });
