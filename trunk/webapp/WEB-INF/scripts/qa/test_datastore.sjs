@@ -3,6 +3,25 @@ acre.require('/test/lib').enable(this);
 // not all acre instances might have a store present so check to make sure
 if (acre.store) {
 
+    // evaluate if two objects are the same except for their store metadata
+    // but make sure to add it back since we might need it later on
+    function are_same(o1,o2) {
+        var _o1 = o1._;
+        delete o1._;
+        var _o2 = o2._;
+        delete o2._;
+        var result = deepEqual(o1,o2);
+        o1._ = _o1;
+        o2._ = _o2;
+        return result;
+    }
+    
+    // make sure we don't have any leftover objects in the store
+    var all = acre.store.find({});
+    for (var r in all) {
+        acre.store.remove(r);
+    }
+    
     test('acre.store exists and has all the pieces', function() {
         ok(typeof acre.store != "undefined", "store exists");
         ok(typeof acre.store.get == "function", "store.get exists");
@@ -19,8 +38,7 @@ if (acre.store) {
         var o1 = { "foo" : "bar" };
         var id = acre.store.put(o1);
         var o2 = acre.store.get(id);
-        delete o2._;
-        deepEqual(o1,o2);
+        are_same(o1,o2);
         acre.store.remove(id);
         try {
             acre.store.get(id);
@@ -30,29 +48,75 @@ if (acre.store) {
         }
     });
     
+    test('acre.store remove by object works', function() {
+        var o = { "foo" : "bar" };
+        var id = acre.store.put(o);
+        try {
+            // can't remove by object if they were not obtained from the store
+            acre.store.remove(o);
+            ok(false,"exception wasn't triggered");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+        o = acre.store.get(id);
+        acre.store.remove(o);
+        try {
+            acre.store.get(id);
+            ok(false,"exception wasn't triggered");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+    });
+
+    test('acre.store remove by array of keys works', function() {
+        var o1 = { "foo1" : "bar1" };
+        var o2 = { "foo2" : "bar2" };
+        var id1 = acre.store.put(o1);
+        var id2 = acre.store.put(o2);
+        acre.store.remove([id1,id2]);
+        try {
+            acre.store.get(id1);
+            ok(false,"exception wasn't triggered");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+        try {
+            acre.store.get(id2);
+            ok(false,"exception wasn't triggered");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+    });
+
+    test('acre.store remove by array of objects works', function() {
+        var o1 = { "foo1" : "bar1" };
+        var o2 = { "foo2" : "bar2" };
+        var id1 = acre.store.put(o1);
+        var id2 = acre.store.put(o2);
+        o1 = acre.store.get(id1);
+        o2 = acre.store.get(id2);
+        acre.store.remove([o1,o2]);
+        try {
+            acre.store.get(id1);
+            ok(false,"exception wasn't triggered");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+        try {
+            acre.store.get(id2);
+            ok(false,"exception wasn't triggered");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+    });
+
     test('acre.store update works', function() {
         var o1 = { "foo" : "bar" };
         var id = acre.store.put(o1);
         var o2 = { "foo" : "whatever", "this" : "that" };
         id = acre.store.update(id, o2);
         var o3 = acre.store.get(id);
-        delete o3._;
-        deepEqual(o2,o3);
-        acre.store.remove(id);
-    });
-
-    test('acre.store update via find works', function() {
-        var o1 = { "foo" : "1", "this" : "this" };
-        var o2 = { "foo" : "2", "this" : "that" };
-        var id = acre.store.put(o1);
-        var o = acre.store.find({ "foo" : "1" }).first();
-        ok(typeof o == 'object', "first() returns an object");
-        ok("_" in o, "found objects have metadata");
-        equal(id,o._.key, "keys are the same");
-        id = acre.store.update(o._.key, o2);
-        var o3 = acre.store.get(id);
-        delete o3._;
-        deepEqual(o2,o3);
+        are_same(o2,o3);
         acre.store.remove(id);
     });
 
@@ -83,17 +147,19 @@ if (acre.store) {
         }
     });
 
-    test('acre.store must complain if objs have the "_" property', function() {
+    test('acre.store handling objects with "_" property', function() {
         var o = { 
             "_" : "A"
         };
         try {
+            // store should ignore the "_" property when storing
             acre.store.put(o);
-            ok(false,"exception wasn't triggered");
+            ok(true,"exception wasn't triggered");
         } catch (e) {
-            ok(true,"exception was triggered");
+            ok(false,"exception was triggered");
         }
         try {
+            // but complain if used in a query
             acre.store.find(o);
             ok(false,"exception wasn't triggered");
         } catch (e) {
@@ -112,6 +178,20 @@ if (acre.store) {
         var id2 = acre.store.put(o2);
         
         acre.store.remove([id1,id2]);
+    });
+
+    test('acre.store update via find works', function() {
+        var o1 = { "foo" : "1", "this" : "this" };
+        var o2 = { "foo" : "2", "this" : "that" };
+        var id = acre.store.put(o1);
+        var o = acre.store.find({ "foo" : "1" }).first();
+        ok(typeof o == 'object', "first() returns an object");
+        ok("_" in o, "found objects have metadata");
+        equal(id,o._.key, "keys are the are_same");
+        id = acre.store.update(o._.key, o2);
+        var o3 = acre.store.get(id);
+        are_same(o2,o3);
+        acre.store.remove(id);
     });
 
     test('acre.store find works and has all the pieces', function() {
@@ -138,12 +218,11 @@ if (acre.store) {
         ok(typeof result.__iterator__ != "undefined", "result is an iterator");
         var c = 0;
         for (var r in result) {
-            delete r._;
             c++;
             if (c == 1) {
-                deepEqual(r,o1);
+                are_same(r,o1);
             } else if (c == 2) {
-                deepEqual(r,o2);
+                are_same(r,o2);
             }
         }
         ok(c == 2, "got correct number of results");
@@ -181,10 +260,9 @@ if (acre.store) {
         });
         var c = 0;
         for (var r in result) {
-            delete r._;
             c++;
             if (c == 1) {
-                deepEqual(r,o1);
+                are_same(r,o1);
             }
         }
         ok(c == 1, "got correct number of results");
@@ -268,12 +346,10 @@ if (acre.store) {
         }
 
         var o3 = acre.store.get(id1);
-        delete o3._;
-        deepEqual(o1,o3);
+        are_same(o1,o3);
 
         var o4 = acre.store.get(id2);
-        delete o4._;
-        deepEqual(o2,o4);
+        are_same(o2,o4);
 
         acre.store.remove([key,id1,id2]);
     });

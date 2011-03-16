@@ -58,13 +58,17 @@ var augment;
     }
     
     function remove(key) {
-        var appid = get_appid();
+        if (!key) throw "Can't remove an object with a null or undefined key";
+        
         if (key instanceof Array) {
             for each (var k in key) {
-                store.remove(appid, k);
+                remove(k);
             }
+        } else if (typeof key == "object") {
+            if (typeof key._ == "undefined") throw "Can only remove objects retrieved from the store";
+            remove(key._.key);
         } else {
-            store.remove(appid, key);
+            store.remove(get_appid(), key);
         }
     }
 
@@ -80,6 +84,10 @@ var augment;
         } catch (e) {
             return undefined;
         }
+    }
+    
+    Result.prototype.cursor = function() {
+        return this.result.get_cursor();
     }
     
     Result.prototype.__iterator__ = function() {
@@ -98,8 +106,8 @@ var augment;
         }
     }
     
-    function find(query) {
-        var result = store.find(get_appid(), query);
+    function find(query,cursor) {
+        var result = store.find(get_appid(), query, cursor);
         return new Result(result);
     }
 
