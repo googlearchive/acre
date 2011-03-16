@@ -38,8 +38,8 @@ Available Options:
   -p <port> ........... The port acre should listen to
                         [default: 8115]
 
-  -v <level> .......... Log verbosity level (one of "DEBUG,INFO,WARN,ERROR")
-                        [default: INFO]
+  -v <level> .......... Log verbosity level (one of "FINE,INFO,WARNING,SEVERE")
+                        [default: FINE]
 
   -w <dir> ............ War location
                         [default: _build/war]
@@ -156,6 +156,16 @@ build_appengine() {
     ant -f build.xml -Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\" compile-appengine || exit 1
 }
 
+run_appengine() {
+    check_appengine
+    prepare_configurations
+    echo "Log level: $ACRE_LOG_LEVEL"
+    if [ "$ACRE_PORT" != "" ]; then
+        APPSERVER_PARAMS="-p $ACRE_PORT"
+    fi
+    $APPENGINE_HOME/bin/dev_appserver.sh --disable_update_check $APPSERVER_PARAMS webapp || exit 1
+}
+
 build_appengine_war() {
     check_appengine
     prepare_configurations
@@ -205,7 +215,7 @@ while [ $# -ne 0 ]; do
         continue;;
         
     -v) shift
-        export ACRE_LOG_LEVEL="$1"
+        CLI_ACRE_LOG_LEVEL="$1"
         shift
         continue;;
 
@@ -234,6 +244,11 @@ if [ "$CONF" != "" ]; then
     fi
 fi
 
+# Overwrite logging property with cli config --------------
+if [ "$CLI_ACRE_LOG_LEVEL" != "" ]; then
+    export ACRE_LOG_LEVEL="$CLI_ACRE_LOG_LEVEL"
+fi
+
 # Overload the port if it was set -------------------------
 if [ "$PORT" != "" ]; then
     export ACRE_PORT="$PORT"
@@ -244,8 +259,8 @@ ACTION=$1
 COMMAND=
 shift
 
-# Overwrite defaults with local configs (if present) ------
-if [ -f "config/project.local.conf" ] && [ "$ACTION" != "appengine-deploy" ] && [ "$ACTION" != "appengine-internal-deploy" ] & [ "$ACTION" != "appengine-build-war" ]; then
+# Overwrite defaults with local configs (if present and not in the way) ------
+if [ -f "config/project.local.conf" ] && [ "$ACTION" != "appengine-build-war" ]; then
     load "config/project.local.conf"
 fi
 
@@ -279,15 +294,15 @@ case "$ACTION" in
         SCRIPT="build"
         COMMAND="distclean" 
         invoke;;
+        
     appengine-build) 
         build_appengine;;
     appengine-run) 
-        if [ "$ACRE_PORT" != "" ]; then
-            APPSERVER_PARAMS="-p $ACRE_PORT"
-        fi
-        $APPENGINE_HOME/bin/dev_appserver.sh --disable_update_check $APPSERVER_PARAMS webapp;;
+        run_appengine;;
+        
     appengine-build-war) 
         build_appengine_war;;
+
     appengine-deploy) 
         if [ -f "_build/war/WEB-INF/appengine-web.xml" ]; then
             get_appid
@@ -299,6 +314,7 @@ case "$ACTION" in
         echo "App is ready at http://$DEPLOYED_ACRE_HOST_BASE/";;
     appengine-rollback) 
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS rollback "$WAR";;
+        
     appengine-internal-deploy) 
         if [ -f "_build/war/WEB-INF/appengine-web.xml" ]; then
             get_appid
@@ -311,6 +327,7 @@ case "$ACTION" in
         echo "App is ready at http://$DEPLOYED_ACRE_HOST_BASE/";;
     appengine-internal-rollback) 
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS rollback "$WAR";;
+
     *) 
         SCRIPT="$ACTION" 
         invoke $*;;
