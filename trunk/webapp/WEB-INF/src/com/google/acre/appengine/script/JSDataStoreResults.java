@@ -31,20 +31,32 @@ public class JSDataStoreResults extends JSObject {
         
     private static final long serialVersionUID = 529101157247378231L;
 
-    public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) {
-        Scriptable scope = ScriptableObject.getTopLevelScope(ctorObj);
-        return new JSDataStoreResults(((JSDataStoreResults) args[0]).getWrapped(), (args.length > 1) ? args[1] : null, scope);
-    }
-    
-    public JSDataStoreResults() { }
+    private PreparedQuery _result;
 
-    private Object _result;
-    
     @SuppressWarnings("rawtypes")
     private QueryResultIterator _iterator;
     
+    public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) {
+        Scriptable scope = ScriptableObject.getTopLevelScope(ctorObj);
+        return new JSDataStoreResults(((JSDataStoreResults) args[0]).getIterator(), scope);
+    }
+    
+    public JSDataStoreResults() { }
+    
+    public Object getResult() {
+        return _result;
+    }
+    
+    public Object getIterator() {
+        return _iterator;
+    }
+    
+    public String getClassName() {
+        return "DataStoreResults";
+    }
+    
     public JSDataStoreResults(Object result, Object cursor, Scriptable scope) {
-        _result = result;
+        _result = (PreparedQuery) result;
         if (cursor != null && !(cursor instanceof Undefined)) {
             FetchOptions fetchOptions = FetchOptions.Builder.withStartCursor(Cursor.fromWebSafeString(cursor.toString()));
             _iterator = ((PreparedQuery) _result).asQueryResultIterator(fetchOptions);
@@ -53,15 +65,13 @@ public class JSDataStoreResults extends JSObject {
         }
         _scope = scope;
     }
-    
-    public Object getWrapped() {
-        return _result;
+
+    @SuppressWarnings("rawtypes")
+    public JSDataStoreResults(Object iterator, Scriptable scope) {
+        _scope = scope;
+        _iterator = (QueryResultIterator) iterator;
     }
     
-    public String getClassName() {
-        return "DataStoreResults";
-    }
-        
     // -------------------------------------------------------------
     
     public Object jsFunction_as_iterator() {
