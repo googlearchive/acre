@@ -296,7 +296,7 @@ case "$ACTION" in
         fi
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR"
         echo ""
-        echo "App is ready at http://$ACRE_HOST_BASE/";;
+        echo "App is ready at http://$DEPLOYED_ACRE_HOST_BASE/";;
     appengine-rollback) 
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS rollback "$WAR";;
     appengine-internal-deploy) 
@@ -308,7 +308,7 @@ case "$ACTION" in
         echo "Appengine Internal Params: $APPENGINE_INTERNAL_DEPLOY_PARAMS"
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS update "$WAR"
         echo ""
-        echo "App is ready at http://$ACRE_HOST_BASE/";;
+        echo "App is ready at http://$DEPLOYED_ACRE_HOST_BASE/";;
     appengine-internal-rollback) 
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS rollback "$WAR";;
     *) 
