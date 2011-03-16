@@ -877,8 +877,12 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         long sub_deadline = req._deadline - HostEnv.SUBREQUEST_DEADLINE_ADVANCE;
         int reentrances = req._reentries + 1;
         header_map.put(HostEnv.ACRE_QUOTAS_HEADER, "td=" + sub_deadline + ",r=" + reentrances);
-        
-        _async_fetch.make_request(url, method, timeout, header_map, content, system, log_to_user, response_encoding, callback);
+
+        try {
+            _async_fetch.make_request(url, method, timeout, header_map, content, system, log_to_user, response_encoding, callback);
+        } catch (Exception e) {
+            throw new JSConvertableException(e.getMessage()).newJSException(this);
+        }
     }
 
     @JS_Function
