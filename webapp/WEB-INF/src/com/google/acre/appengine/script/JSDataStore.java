@@ -153,12 +153,12 @@ public class JSDataStore extends JSObject {
         }
     }
     
-    public Scriptable jsFunction_find(String app_id, Scriptable query) {
+    public Scriptable jsFunction_find(String app_id, Scriptable query, Object cursor) {
         try {
             Query aequery = new Query(app_id);
             compile_query("", query, aequery);
             PreparedQuery pq = _store.prepare(aequery);
-            JSDataStoreResults results = new JSDataStoreResults(pq,_scope);
+            JSDataStoreResults results = new JSDataStoreResults(pq,cursor,_scope);
             return results.makeJSInstance();
         } catch (Exception e) {
             throw new JSConvertableException("Failed to query store: " + e.getMessage()).newJSException(_scope);
@@ -318,9 +318,7 @@ public class JSDataStore extends JSObject {
     }
     
     static String keyToString(Key key) {
-        System.out.println("key: " + key.toString());
         String str = KeyFactory.keyToString(key); 
-        System.out.println("str: " + str);
         return str;
     }
     

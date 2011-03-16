@@ -14,16 +14,18 @@
 
 package com.google.acre.appengine.script;
 
-import java.util.Iterator;
-
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.Undefined;
 
 import com.google.acre.javascript.JSObject;
 import com.google.acre.script.exceptions.JSConvertableException;
+import com.google.appengine.api.datastore.Cursor;
+import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.PreparedQuery;
+import com.google.appengine.api.datastore.QueryResultIterator;
 
 public class JSDataStoreResults extends JSObject {
         
@@ -31,15 +33,24 @@ public class JSDataStoreResults extends JSObject {
 
     public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) {
         Scriptable scope = ScriptableObject.getTopLevelScope(ctorObj);
-        return new JSDataStoreResults(((JSDataStoreResults) args[0]).getWrapped(), scope);
+        return new JSDataStoreResults(((JSDataStoreResults) args[0]).getWrapped(), (args.length > 1) ? args[1] : null, scope);
     }
     
     public JSDataStoreResults() { }
 
     private Object _result;
     
-    public JSDataStoreResults(Object result, Scriptable scope) {
+    @SuppressWarnings("rawtypes")
+    private QueryResultIterator _iterator;
+    
+    public JSDataStoreResults(Object result, Object cursor, Scriptable scope) {
         _result = result;
+        if (cursor != null && !(cursor instanceof Undefined)) {
+            FetchOptions fetchOptions = FetchOptions.Builder.withStartCursor(Cursor.fromWebSafeString(cursor.toString()));
+            _iterator = ((PreparedQuery) _result).asQueryResultIterator(fetchOptions);
+        } else {
+            _iterator = ((PreparedQuery) _result).asQueryResultIterator();
+        }
         _scope = scope;
     }
     
@@ -55,14 +66,19 @@ public class JSDataStoreResults extends JSObject {
     
     public Object jsFunction_as_iterator() {
         try {
-            @SuppressWarnings("rawtypes")
-            Iterator iterator = ((PreparedQuery) _result).asIterator();
-            JSDataStoreResultsIterator resultIterator = new JSDataStoreResultsIterator(iterator,_scope);
+            JSDataStoreResultsIterator resultIterator = new JSDataStoreResultsIterator(_iterator,_scope);
             return resultIterator.makeJSInstance();
         } catch (Exception e) {
-            e.printStackTrace();
             throw new JSConvertableException("" + e.getMessage()).newJSException(_scope);
         }
     }
-        
+
+    public Object jsFunction_get_cursor() {
+        try {
+            return _iterator.getCursor().toWebSafeString();
+        } catch (Exception e) {
+            throw new JSConvertableException("" + e.getMessage()).newJSException(_scope);
+        }
+    }
+    
 }
