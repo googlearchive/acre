@@ -167,19 +167,6 @@ if (acre.store) {
         }
     });
 
-    test('acre.store multiple remove works', function() {
-        var o1 = { 
-            "a" : "A"
-        };
-        var id1 = acre.store.put(o1);
-        var o2 = { 
-            "b" : "B"
-        };
-        var id2 = acre.store.put(o2);
-        
-        acre.store.remove([id1,id2]);
-    });
-
     test('acre.store update via find works', function() {
         var o1 = { "foo" : "1", "this" : "this" };
         var o2 = { "foo" : "2", "this" : "that" };
@@ -228,6 +215,33 @@ if (acre.store) {
         ok(c == 2, "got correct number of results");
         
         acre.store.remove([id1,id2,id3]);
+    });
+
+    test('acre.store find cursors work', function() {
+        var o1 = { 
+            "a" : "A",
+            "b" : "B"
+        };
+        var id1 = acre.store.put(o1);
+        var o2 = { 
+            "a" : "A",
+            "b" : "A"
+        };
+        var id2 = acre.store.put(o2);
+
+        var query = {
+            "a" : "A"
+        };
+        var result1 = acre.store.find(query);
+        var r1 = result1.first();
+        are_same(r1,o1);
+        
+        var cursor = result1.get_cursor();
+        var result2 = acre.store.find(query,cursor);
+        var r2 = result2.first();
+        are_same(r2,o2);
+        
+        acre.store.remove([id1,id2]);
     });
 
     test('acre.store find works against nested objects', function() {

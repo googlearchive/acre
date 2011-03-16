@@ -86,7 +86,7 @@ var augment;
         }
     }
     
-    Result.prototype.cursor = function() {
+    Result.prototype.get_cursor = function() {
         return this.result.get_cursor();
     }
     
