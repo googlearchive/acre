@@ -70,6 +70,7 @@ def gen_manifest(apps):
 def drive_apps(apps,color,jsn):
     out = sys.stdout
     total_failures = 0
+    total_errors = 0
     total_skips = 0
     total_tests = 0
     test_results = {}
@@ -91,6 +92,10 @@ def drive_apps(apps,color,jsn):
 
         out.write(app + ":\n")
         for test_url in test_urls:
+            errors = 0
+            skips = 0
+            failures = 0
+            fetch_starttime = time.time()
             path = test_url.split("/")[3:]
             last = path.pop()
             module = re.split('(\?|.sjs\?)', last)[0]
@@ -105,28 +110,29 @@ def drive_apps(apps,color,jsn):
             except KeyboardInterrupt:
                 raise
             except:
-                failures = 1
+                errors = 1
                 tests = 1
-                skips = 0
                 results = {\
                   "%s/%s" % (pack, module):\
                   ["ERROR","error fetching url: " +\
-                  test_url + " %s %s" % sys.exc_info()[:2]]\
+                  test_url + "time elapsed: %2.3fs" % (time.time() - fetch_starttime) +\
+                  " py_exception: %s %s" % sys.exc_info()[:2]]\
                   } 
             # add results
             test_results = dict(test_results.items() + results.items())
-            if failures > 0 or skips > 0:
+            if failures > 0 or skips > 0 or errors > 0:
                 fail_log += "\n" + testoutput(results)
             total_tests += tests
             total_failures += failures
+            total_errors += errors 
             total_skips += skips
             out.write(module.ljust(60,'.'))
             if color:
-                if failures == 0:
-                    out.write(colors.OK)
-                else:
+                if failures > 0 or errors > 0:
                     out.write(colors.FAIL)
-            out.write(" %i/%i" % ((tests - failures - skips), tests))
+                else:
+                    out.write(colors.OK)
+            out.write(" %i/%i" % ((tests - failures - skips - errors), tests))
             if color:
                 out.write(colors.RESET)
             out.write("\n")
@@ -135,11 +141,11 @@ def drive_apps(apps,color,jsn):
     out.write("\n")
     out.write("Total: ")
     if color:
-        if total_failures == 0:
-            out.write(colors.OK)
-        else: 
+        if total_failures > 0 or total_errors > 0:
             out.write(colors.FAIL)
-    out.write("%i/%i" % ((total_tests - total_failures - total_skips), total_tests))
+        else: 
+            out.write(colors.OK)
+    out.write("%i/%i" % ((total_tests - total_failures - total_skips - total_errors), total_tests))
     if total_failures > 0: 
         ret = 1
     if color:
@@ -157,6 +163,7 @@ def drive_apps(apps,color,jsn):
             "host": "%s:%s" % (acre_host, acre_port),
             "passed":(total_tests - total_failures - total_skips),
             "failed":total_failures,
+            "errors":total_errors,
             "skipped":total_skips,
             "elapsed": time.time() - starttime,
             "testresults":test_results
