@@ -1,4 +1,3 @@
-
 /*   acreboot.js - implementation of acre host environment using liveconnect and java */
 
 /**
@@ -2529,7 +2528,8 @@ var handle_request = function (request_path, req_body, skip_routes) {
 
     // Set up the list of paths we're going to try before failing altogether, 
     // (routes, not_found, default scripts, etc.)
-    function fallbacks_for(host, path) {
+    function fallbacks_for(req_path) {
+        var [host, path] = decompose_req_path(req_path);
         var FALLTHROUGH_SCRIPTS = {
             'robots.txt':true,
             'favicon.ico':true,
@@ -2559,7 +2559,7 @@ var handle_request = function (request_path, req_body, skip_routes) {
 
         return fallbacks;
     };
-    var fallbacks = fallbacks_for(req_host, req_pathinfo);
+    var fallbacks = fallbacks_for(req_path);
 
     // Work our way down the list until we find one that works:
     var script = null;
