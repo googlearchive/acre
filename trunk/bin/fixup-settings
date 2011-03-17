@@ -44,8 +44,7 @@ else
 fi
 
 # Set Acre PID file
-ACRE_PID=/home/bneutra/aeacre/_data/acre/acre.pid
-
+ACRE_PID=acre.pid
 
 # If verbosity is not specified, set syslog threshold level to INFO
 if [ -z "$ACRE_LOG_LEVEL" ]; then
