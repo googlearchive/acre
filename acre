@@ -304,6 +304,9 @@ case "$ACTION" in
         build_appengine_war;;
 
     appengine-deploy) 
+        if [ ! -f "_build/war" ]; then
+            build_appengine_war
+        fi
         if [ -f "_build/war/WEB-INF/appengine-web.xml" ]; then
             get_appid
             DEPLOYED_ACRE_HOST_BASE="$APP_ID.appspot.com"
@@ -316,6 +319,9 @@ case "$ACTION" in
         $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS rollback "$WAR";;
         
     appengine-internal-deploy) 
+        if [ ! -f "_build/war" ]; then
+            build_appengine_war
+        fi
         if [ -f "_build/war/WEB-INF/appengine-web.xml" ]; then
             get_appid
             DEPLOYED_ACRE_HOST_BASE="$APP_ID.prom.corp.google.com"
