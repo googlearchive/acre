@@ -7,7 +7,6 @@ var u = acre.require.call(this, "__utils__");
 test('acre.urlfetch works',function() {
     var results = {};
     results.google    = acre.urlfetch("http://www.google.com/");
-    results.google    = acre.urlfetch("http://freebase.com/view/en/united_states");
     results.youtube   = acre.urlfetch("http://www.youtube.com/");
     u.has_content(results.google,"Google");
     u.has_content(results.youtube,"YouTube");
