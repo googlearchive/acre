@@ -2494,15 +2494,15 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
  *  2. run it
  *  3. repeat (if acre.route is called)
  */
-var handle_request = function (request_path, req_body, skip_routes) {
+var handle_request = function (req_path, req_body, skip_routes) {
     // reset the response
     acre.response = new AcreResponse();
     
     // we might need the original path for situations 
     // like "/acre/" URLs, so let's set it aside
-    var source_path = request_path;
+    var source_path = req_path;
 
-    var [req_host, req_pathinfo, req_query_string] = decompose_req_path(request_path);
+    var [req_host, req_pathinfo, req_query_string] = decompose_req_path(req_path);
 
     // Now that we know what the path we're running, 
     // set up rest of acre.request
@@ -2513,9 +2513,9 @@ var handle_request = function (request_path, req_body, skip_routes) {
     set_request_params();
     
     // Fill in missing values
-	var host = req_host ? req_host : _DEFAULT_APP;
-	var path = req_pathinfo ? req_pathinfo : _DEFAULT_FILE;
-    request_path = compose_req_path(host, path);
+    var host = req_host ? req_host : _DEFAULT_APP;
+    var pathinfo = req_pathinfo ? req_pathinfo : _DEFAULT_FILE;
+    var path = compose_req_path(host, pathinfo);
 
     // support /acre/ special case -- these are OTS routing rules 
     // that allow certain global scripts to run within the context of any app
@@ -2531,7 +2531,7 @@ var handle_request = function (request_path, req_body, skip_routes) {
 
     // Set up the list of paths we're going to try before failing altogether, 
     // (routes, not_found, default scripts, etc.)
-    function fallbacks_for(host, path, req_path) {
+    function fallbacks_for(host, pathinfo, req_pathinfo) {
         var FALLTHROUGH_SCRIPTS = {
             'robots.txt':true,
             'favicon.ico':true,
@@ -2541,14 +2541,14 @@ var handle_request = function (request_path, req_body, skip_routes) {
         var fallbacks = [];
         
         if (skip_routes !== true) {
-            fallbacks.push(compose_req_path(host,  'routes' + '/' + req_path));
+            fallbacks.push(compose_req_path(host,  'routes' + '/' + req_pathinfo));
         }
 
-        fallbacks.push(compose_req_path(host, path));
+        fallbacks.push(compose_req_path(host, pathinfo));
 
         for (var sname in  FALLTHROUGH_SCRIPTS) {
             if (file_in_path(sname, path)[1]) {
-                fallbacks.push(compose_req_path(_DEFAULTS_HOST, path));
+                fallbacks.push(compose_req_path(_DEFAULTS_HOST, pathinfo));
             }
         }
 
@@ -2561,7 +2561,7 @@ var handle_request = function (request_path, req_body, skip_routes) {
 
         return fallbacks;
     };
-    var fallbacks = fallbacks_for(host, path, req_pathinfo);
+    var fallbacks = fallbacks_for(host, pathinfo, req_pathinfo);
 
     // Work our way down the list until we find one that works:
     var script = null;
@@ -2576,14 +2576,14 @@ var handle_request = function (request_path, req_body, skip_routes) {
         
         if (script !== null) {
             return false;
-        }        
+        }
     });
 
     // this is a catastrophic lookup failure
     if (script == null) {
         acre.response.set_header('content-type', 'text/plain');
         acre.response.status = 404;
-        acre.write('No valid acre script found at ' + request_path + ' (or defaults)\n');
+        acre.write('No valid acre script found at ' + path + ' (or defaults)\n');
         acre.exit();
     }
 
@@ -2603,8 +2603,8 @@ var handle_request = function (request_path, req_body, skip_routes) {
             'id': host_to_namespace(host),
             'path': compose_req_path(host)
         },
-        'name': path,
-        'path': request_path
+        'name': pathinfo,
+        'path': path
     };
 
     // before the script is actually run, we want to set the app guid aside
