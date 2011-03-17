@@ -2513,7 +2513,9 @@ var handle_request = function (request_path, req_body, skip_routes) {
     set_request_params();
     
     // Fill in missing values
-    request_path = compose_req_path(req_host || _DEFAULT_APP, req_pathinfo || _DEFAULT_FILE);
+	var host = req_host ? req_host : _DEFAULT_APP;
+	var path = req_pathinfo ? req_pathinfo : _DEFAULT_FILE;
+    request_path = compose_req_path(host, path);
 
     // support /acre/ special case -- these are OTS routing rules 
     // that allow certain global scripts to run within the context of any app
@@ -2529,9 +2531,7 @@ var handle_request = function (request_path, req_body, skip_routes) {
 
     // Set up the list of paths we're going to try before failing altogether, 
     // (routes, not_found, default scripts, etc.)
-    function fallbacks_for(req_path) {
-		var [host, path] = decompose_req_path(req_path);
-		
+    function fallbacks_for(host, path, req_path) {
         var FALLTHROUGH_SCRIPTS = {
             'robots.txt':true,
             'favicon.ico':true,
@@ -2541,7 +2541,7 @@ var handle_request = function (request_path, req_body, skip_routes) {
         var fallbacks = [];
         
         if (skip_routes !== true) {
-            fallbacks.push(compose_req_path(host,  'routes' + '/' + path));
+            fallbacks.push(compose_req_path(host,  'routes' + '/' + req_path));
         }
 
         fallbacks.push(compose_req_path(host, path));
@@ -2561,7 +2561,7 @@ var handle_request = function (request_path, req_body, skip_routes) {
 
         return fallbacks;
     };
-    var fallbacks = fallbacks_for(request_path);
+    var fallbacks = fallbacks_for(host, path, req_pathinfo);
 
     // Work our way down the list until we find one that works:
     var script = null;
@@ -2600,10 +2600,10 @@ var handle_request = function (request_path, req_body, skip_routes) {
     // version once scope_augmentation is run
     acre.request.script = {
         'app': {
-            'id': host_to_namespace(req_host),
-            'path': compose_req_path(req_host)
+            'id': host_to_namespace(host),
+            'path': compose_req_path(host)
         },
-        'name': req_pathinfo,
+        'name': path,
         'path': request_path
     };
 
