@@ -146,7 +146,7 @@ def drive_apps(apps,color,jsn):
         else: 
             out.write(colors.OK)
     out.write("%i/%i" % ((total_tests - total_failures - total_skips - total_errors), total_tests))
-    if total_failures > 0: 
+    if total_failures > 0 or total_errors > 0: 
         ret = 1
     if color:
         out.write(colors.RESET)
@@ -285,4 +285,3 @@ if __name__ == "__main__":
     main()
                 
 #---------------------------- End of File ------------------------------#
-
