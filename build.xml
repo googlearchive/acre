@@ -55,7 +55,10 @@
     <property name="appengine.lib.dir" value="${appengine.dir}/lib" />
     <property name="appengine.classes.dir" value="${appengine.dir}/classes" />
 
-    <property name="war.dir" value="${build.dir}/war"/>
+    <condition property="war.dir" value="${build.dir}/war">
+        <not><isset property="war.dir"/></not>
+    </condition>
+
     <property name="war.config.dir" value="${war.dir}/META-INF"/>
     <property name="war.web-inf" value="${war.dir}/WEB-INF"/>
     <property name="war.lib.dir" value="${war.web-inf}/lib" />
@@ -289,10 +292,11 @@
                 <include name="appengine-api-*-sdk-*.jar" />
             </fileset>
         </delete>
+        <delete dir="${war.dir}" />
+        <delete dir="${build.dir}" />
     </target>
 
     <target name="distclean" description="Remove all files not in version control" depends="clean">
-        <delete dir="${build.dir}" />
         <delete dir="${dist.dir}" />
         <delete dir="${data.dir}" />
         <delete dir="${logs.dir}" />

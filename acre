@@ -56,9 +56,8 @@ Available Commands:
     zap ............... Remove the Acre PID file
     
     appengine-build ... Build a WAR package of Acre to run on Google App Engine
-    appengine-run ..... Run Acre in the local Google App Engine simulator (must call 'appengine-build' first)
-    appengine-build-war Build a WAR package of Acre to run on Google App Engine
-    appengine-deploy .. Deploy Acre on Google App Engine (must call 'appengine-build and appengine-build-war' first)
+    appengine-run ..... Run Acre in the local Google App Engine simulator
+    appengine-deploy .. Deploy Acre on Google App Engine
     appengine-rollback. Rollback a deployment that failed
 
     test .............. run a suite of integration tests (start acre first)
@@ -85,6 +84,7 @@ check_appengine() {
     if [ ! -f "$APPENGINE_HOME/bin/appcfg.sh" ]; then
         error "can\'t find 'appcfg.sh' in $APPENGINE_HOME. Is this the Google AppEngine SDK for Java?"
     fi
+    APPENGINE_BASE_HOST="appspot.com"
 }
 
 check_python() {
@@ -125,7 +125,7 @@ get_revision() {
 
 # Get appengine application ID ---------------------------------------------
 get_appid() {
-    APP_ID=`cat _build/war/WEB-INF/appengine-web.xml | grep '<application>' | cut -d '>' -f 2 | cut -d '<' -f 1`
+    APP_ID=`cat $WAR/WEB-INF/appengine-web.xml | grep '<application>' | cut -d '>' -f 2 | cut -d '<' -f 1`
 }
 
 # ----------------------- commands --------------------------
@@ -141,7 +141,18 @@ invoke() {
     fi
 }
 
-prepare_configurations() {
+appengine_build() {
+    check_appengine
+    ant -f build.xml -Dconfig.file=\"$CONF\" -Dsdk.dir=\"$APPENGINE_HOME\" compile-appengine || exit 1
+}
+
+check_appengine_build() {
+    if [ ! -d "webapp/WEB-INF/classes/com/google/acre" ]; then
+        appengine_build
+    fi
+}
+
+appengine_build_config() {
     check_python
     if [ "$CONF_DIR" != "" ] && [ "$CONF" != "" ]; then
         bin/appengine-config.py -c $CONF -d $CONF_DIR
@@ -150,15 +161,16 @@ prepare_configurations() {
     fi
 }
 
-build_appengine() {
-    check_appengine
-    prepare_configurations
-    ant -f build.xml -Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\" compile-appengine || exit 1
+check_appengine_build_config() {
+    if [ ! -f "webapp/META-INF/acre.properties" ]; then
+        appengine_build_config
+    fi
 }
 
-run_appengine() {
+appengine_run() {
     check_appengine
-    prepare_configurations
+    check_appengine_build
+    check_appengine_build_config
     echo "Log level: $ACRE_LOG_LEVEL"
     if [ "$ACRE_PORT" != "" ]; then
         APPSERVER_PARAMS="-p $ACRE_PORT"
@@ -166,10 +178,43 @@ run_appengine() {
     $APPENGINE_HOME/bin/dev_appserver.sh --disable_update_check $APPSERVER_PARAMS webapp || exit 1
 }
 
-build_appengine_war() {
+appengine_build_war() {
     check_appengine
-    prepare_configurations
-    ant -f build.xml -Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\" appengine-war || exit 1
+    check_appengine_build
+    check_appengine_build_config
+    ant -f build.xml -Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\" -Dwar.dir=\"$WAR\" appengine-war || exit 1
+}
+
+check_appengine_build_war() {
+    if [ ! -d "$WAR" ]; then
+        appengine_build_war
+    fi
+}
+
+appengine_deploy() {
+    check_appengine
+    check_appengine_build_war    
+
+    if [ ! -f "$WAR/WEB-INF/appengine-web.xml" ]; then
+        fatal "Can't deploy, the war is missing WEB-INF/appengine-web.xml"
+    fi
+    
+    if [ "$DEPLOYED_ACRE_HOST_BASE" == "" ]; then
+        get_appid
+        DEPLOYED_ACRE_HOST_BASE="$APP_ID.$APPENGINE_BASE_HOST"
+    fi
+    
+    sed -i bak "s/ACRE_HOST_BASE=.*/ACRE_HOST_BASE=$DEPLOYED_ACRE_HOST_BASE/g" "$WAR/META-INF/acre.properties"
+
+    #$APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR"
+
+    echo ""
+    echo "App is ready at http://$DEPLOYED_ACRE_HOST_BASE/"
+}
+
+appengine_rollback() {
+    check_appengine
+    $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS rollback "$WAR"
 }
 
 # -------------------------------------------------------------------------------------
@@ -190,8 +235,8 @@ fi
 # Default Values ------------------------------------------
 
 export CONF="sandbox"
-export WAR="_build/war"
 export CONF_DIR=""
+export WAR="_build/war"
 
 # Extract the options -------------------------------------
 
@@ -296,43 +341,32 @@ case "$ACTION" in
         invoke;;
         
     appengine-build) 
-        build_appengine;;
+        appengine_build;;
+
+    appengine-build-config) 
+        appengine_build_config;;
+        
     appengine-run) 
-        run_appengine;;
+        appengine_run;;
         
     appengine-build-war) 
-        build_appengine_war;;
+        appengine_build_war;;
 
     appengine-deploy) 
-        if [ ! -f "_build/war" ]; then
-            build_appengine_war
-        fi
-        if [ -f "_build/war/WEB-INF/appengine-web.xml" ]; then
-            get_appid
-            DEPLOYED_ACRE_HOST_BASE="$APP_ID.appspot.com"
-            sed -i bak "s/ACRE_HOST_BASE=.*/ACRE_HOST_BASE=$DEPLOYED_ACRE_HOST_BASE/g" "_build/war/META-INF/acre.properties"
-        fi
-        $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR"
-        echo ""
-        echo "App is ready at http://$DEPLOYED_ACRE_HOST_BASE/";;
+        appengine_deploy;;
+        
     appengine-rollback) 
-        $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS rollback "$WAR";;
+        appengine_rollback;;
         
     appengine-internal-deploy) 
-        if [ ! -f "_build/war" ]; then
-            build_appengine_war
-        fi
-        if [ -f "_build/war/WEB-INF/appengine-web.xml" ]; then
-            get_appid
-            DEPLOYED_ACRE_HOST_BASE="$APP_ID.prom.corp.google.com"
-            sed -i bak "s/ACRE_HOST_BASE=.*/ACRE_HOST_BASE=$DEPLOYED_ACRE_HOST_BASE/g" "_build/war/META-INF/acre.properties"
-        fi
-        echo "Appengine Internal Params: $APPENGINE_INTERNAL_DEPLOY_PARAMS"
-        $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS update "$WAR"
-        echo ""
-        echo "App is ready at http://$DEPLOYED_ACRE_HOST_BASE/";;
-    appengine-internal-rollback) 
-        $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_INTERNAL_DEPLOY_PARAMS rollback "$WAR";;
+        APPENGINE_DEPLOY_PARAMS="-p cache.corp.google.com:3128 -s admin-console.prom.corp.google.com"
+        APPENGINE_BASE_HOST="prom.corp.google.com"
+        appengine_deploy;;
+
+    appengine-internal-rollback)
+        APPENGINE_DEPLOY_PARAMS="-p cache.corp.google.com:3128 -s admin-console.prom.corp.google.com"
+        APPENGINE_BASE_HOST="prom.corp.google.com"
+        appengine_rollback;;
 
     *) 
         SCRIPT="$ACTION" 
