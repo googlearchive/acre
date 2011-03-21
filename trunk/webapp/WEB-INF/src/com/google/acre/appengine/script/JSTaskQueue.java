@@ -113,7 +113,7 @@ public class JSTaskQueue extends JSObject {
                                 if (e instanceof String) {
                                     encoding = (String) e;
                                 } else {
-                                    throw new JSConvertableException("'property-encoding' property must contain a string").newJSException(_scope);
+                                    throw new JSConvertableException("'payload_encoding' property must contain a string").newJSException(_scope);
                                 }
                             }
                             task = task.payload((String) v, encoding);
@@ -132,7 +132,7 @@ public class JSTaskQueue extends JSObject {
                         if (v instanceof Number) {
                             task = task.etaMillis(((Number) v).longValue());
                         } else {
-                            throw new JSConvertableException("'countdown' property must contain a number").newJSException(_scope);
+                            throw new JSConvertableException("'eta' property must contain a number").newJSException(_scope);
                         }
                     } else if ("headers".equals(p)) {
                         if (v instanceof Scriptable && "Object".equals(((Scriptable) v).getClassName())) {
