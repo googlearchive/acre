@@ -1025,6 +1025,13 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
     }
 
+    @JS_Function
+    public void wait(int millis) {
+        synchronized (this) {
+            this.wait(millis);
+        }
+    }
+    
     // ------------------------------------- private methods --------------------------------------------
 
     private void startErrorPage() {

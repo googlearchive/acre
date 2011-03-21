@@ -358,6 +358,9 @@ acre.exit = function () {
     throw new _hostenv.AcreExitException();
 };
 
+acre.wait = function(millis) {
+    _hostenv.wait(millis);
+}
 
 // ------------------------------- acre.host -----------------------------------------
 
