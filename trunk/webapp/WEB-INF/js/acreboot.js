@@ -359,7 +359,7 @@ acre.exit = function () {
 };
 
 acre.wait = function(millis) {
-    _hostenv.wait(millis);
+    _hostenv.do_wait(millis);
 }
 
 // ------------------------------- acre.host -----------------------------------------

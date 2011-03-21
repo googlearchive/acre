@@ -1026,9 +1026,13 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     }
 
     @JS_Function
-    public void wait(int millis) {
+    public void do_wait(int millis) {
         synchronized (this) {
-            this.wait(millis);
+            try {
+                this.wait(millis);
+            } catch (InterruptedException e) {
+                // not much to do here, so ignore
+            }
         }
     }
     
