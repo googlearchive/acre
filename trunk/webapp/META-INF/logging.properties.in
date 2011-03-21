@@ -14,8 +14,8 @@ handlers=java.util.logging.ConsoleHandler
 # Set the default logging level for all loggers
 .level=SEVERE
 
-java.util.logging.ConsoleHandler.level=FINEST
-java.util.logging.ConsoleHandler.formatter=com.google.acre.logging.SimpleFormatterr
+java.util.logging.ConsoleHandler.level=FINE
+java.util.logging.ConsoleHandler.formatter=com.google.acre.logging.SimpleFormatter
 
 # Specify logging levels for specific namespaces
 com.google.apphosting.utils.jetty.level=SEVERE

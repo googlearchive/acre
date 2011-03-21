@@ -39,6 +39,7 @@ public class Configuration implements ConfigurationMBean {
     public static enum Values {
         
         // strings
+        ACRE_LOG_LEVEL("FINE"),
         ACRE_VERSION("[default]"),
         ACRE_HOST(DEFAULT_HOST),
         ACRE_WEBAPP("webapp"),
