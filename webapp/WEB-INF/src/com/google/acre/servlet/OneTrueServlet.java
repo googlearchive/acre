@@ -19,6 +19,11 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import javax.servlet.RequestDispatcher;
@@ -33,10 +38,11 @@ import org.slf4j.MDC;
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
 import com.google.acre.logging.AcreLogger;
+import com.google.acre.logging.SimpleFormatter;
 import com.google.acre.util.Supervisor;
 import com.google.acre.util.TIDGenerator;
 
-public class OneTrueServlet extends javax.servlet.http.HttpServlet implements javax.servlet.Servlet {
+public class OneTrueServlet extends javax.servlet.http.HttpServlet implements javax.servlet.Servlet, java.util.logging.Filter {
     
     private final static AcreLogger _logger = new AcreLogger(OneTrueServlet.class);
 
@@ -49,6 +55,8 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
     protected static final List<String[]> urlmap;
 
     private static String server;
+    
+    private int log_level;
     
     public static String getServer() {
         return server;
@@ -75,6 +83,7 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
+        initializeLogging();
         this.servletContext = config.getServletContext();
         server = this.servletContext.getServerInfo().toLowerCase();
         Supervisor s = (Supervisor) this.servletContext.getAttribute(SUPERVISOR);
@@ -91,7 +100,35 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
             s.cancel();
         }
     }
+
+    @Override
+    public boolean isLoggable(LogRecord r) {
+        return (r.getLevel().intValue() >= this.log_level); 
+    }
     
+    private void initializeLogging() {
+        this.log_level = Level.parse(Configuration.Values.ACRE_LOG_LEVEL.getValue()).intValue();
+        Logger logger = Logger.getLogger("com.google.acre");
+        Formatter formatter = new SimpleFormatter();
+        Handler[] handlers = logger.getHandlers();
+        if (handlers.length == 0) {
+            try {
+                Handler h = (Handler) Class.forName("java.util.logging.ConsoleHandler").newInstance();
+                h.setFilter(this);
+                h.setFormatter(formatter);
+                logger.addHandler(h);
+            } catch (Exception e) {
+                // ignore (this might be triggered by appengine
+            }
+        } else {
+            for (Handler h : handlers) {
+                h.setFilter(this);
+                h.setFormatter(formatter);
+            }
+        }
+        logger.setUseParentHandlers(false);
+    }
+
     private final static boolean app_thresholding = Configuration.Values.ACRE_APP_THRESHOLDING.getBoolean();
     private final static float max_request_rate = Configuration.Values.ACRE_MAX_REQUEST_RATE.getFloat();
     
@@ -335,5 +372,5 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
                      
         return buf.toString();
     }
-
+    
 }

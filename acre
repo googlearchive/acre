@@ -170,8 +170,14 @@ check_appengine_build_config() {
 appengine_run() {
     check_appengine
     check_appengine_build
-    check_appengine_build_config
-    echo "Log level: $ACRE_LOG_LEVEL"
+    appengine_build_config
+    echo ""
+    echo "=========== Starting Acre ======================================= "
+    echo ""
+    echo " Freebase APIs: $ACRE_METAWEB_API_ADDR"
+    echo " Trusted Mode: $ACRE_TRUSTED_MODE"
+    echo " Log level: $ACRE_LOG_LEVEL"
+    echo ""
     if [ "$ACRE_PORT" != "" ]; then
         APPSERVER_PARAMS="-p $ACRE_PORT"
     fi
@@ -206,7 +212,7 @@ appengine_deploy() {
     
     sed -i bak "s/ACRE_HOST_BASE=.*/ACRE_HOST_BASE=$DEPLOYED_ACRE_HOST_BASE/g" "$WAR/META-INF/acre.properties"
 
-    #$APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR"
+    $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR"
 
     echo ""
     echo "App is ready at http://$DEPLOYED_ACRE_HOST_BASE/"
