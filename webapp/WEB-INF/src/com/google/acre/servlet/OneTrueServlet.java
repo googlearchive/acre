@@ -117,7 +117,8 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
                 h.setFilter(this);
                 h.setFormatter(formatter);
                 logger.addHandler(h);
-            } catch (Exception e) {
+                logger.setUseParentHandlers(false);
+            } catch (Throwable e) {
                 // ignore (this might be triggered by appengine
             }
         } else {
@@ -125,8 +126,8 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
                 h.setFilter(this);
                 h.setFormatter(formatter);
             }
+            logger.setUseParentHandlers(false);
         }
-        logger.setUseParentHandlers(false);
     }
 
     private final static boolean app_thresholding = Configuration.Values.ACRE_APP_THRESHOLDING.getBoolean();
