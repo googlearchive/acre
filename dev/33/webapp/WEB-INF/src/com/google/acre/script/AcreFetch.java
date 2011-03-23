@@ -308,12 +308,13 @@ public class AcreFetch extends JsConvertable {
 
         long startTime = System.currentTimeMillis();
 
+        HashMap<String, String> res_logmsg = new HashMap<String, String>();
+        res_logmsg.put("Http.url", request_url);
+        
         try {
             // this sends the http request and waits
             HttpResponse hres = client.execute(method);
             status = hres.getStatusLine().getStatusCode();
-            HashMap<String, String> res_logmsg = new HashMap<String, String>();
-            res_logmsg.put("Http.url", request_url);
             res_logmsg.put("Http.rep.status", ((Integer)status).toString());
 
             Header content_type_header = null;
@@ -443,19 +444,20 @@ public class AcreFetch extends JsConvertable {
             }
         } catch (IllegalArgumentException e) {
             Throwable cause = e.getCause();
-            if (cause == null) {
-                cause = e;
-            }
-            throw new AcreURLFetchException("failed to fetch URL "+ request_url +
-                                            " - Request Error: "+ cause.getMessage());
+            if (cause == null) cause = e;
+            String message = cause.getMessage();
+            res_logmsg.put("Http.rep.status", "000");
+            res_logmsg.put("Http.rep.msg", message);
+            _logger.debug("urlfetch.response", res_logmsg);
+            throw new AcreURLFetchException("failed to fetch URL "+ request_url + " - Request Error: " + message);
         } catch (IOException e) {
             Throwable cause = e.getCause();
-            if (cause == null) {
-                cause = e;
-            }
-            throw new AcreURLFetchException("Failed to fetch URL " + request_url +
-                                            " - Network Error: " + cause.getMessage());
-
+            if (cause == null) cause = e;
+            String message = cause.getMessage();
+            res_logmsg.put("Http.rep.status", "000");
+            res_logmsg.put("Http.rep.msg", message);
+            _logger.debug("urlfetch.response", res_logmsg);
+            throw new AcreURLFetchException("failed to fetch URL "+ request_url + " - Request Error: " + message);
         } finally {
             method.abort();
         }
