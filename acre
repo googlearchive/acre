@@ -161,12 +161,6 @@ appengine_build_config() {
     fi
 }
 
-check_appengine_build_config() {
-    if [ ! -f "webapp/META-INF/acre.properties" ]; then
-        appengine_build_config
-    fi
-}
-
 appengine_run() {
     check_appengine
     check_appengine_build
@@ -187,7 +181,7 @@ appengine_run() {
 appengine_build_war() {
     check_appengine
     check_appengine_build
-    check_appengine_build_config
+    appengine_build_config
     ant -f build.xml -Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\" -Dwar.dir=\"$WAR\" appengine-war || exit 1
 }
 
