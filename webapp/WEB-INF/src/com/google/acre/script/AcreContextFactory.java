@@ -34,7 +34,8 @@ public class AcreContextFactory extends ContextFactory {
     private final static AcreLogger _logger = new AcreLogger(AcreContextFactory.class);    
     
     private static boolean GENERATE_JS_DEBUG_INFO = Configuration.Values.GENERATE_JS_DEBUG_INFO.getBoolean();
-
+    private static boolean LIMIT_EXECUTION_TIME = Configuration.Values.ACRE_LIMIT_EXECUTION_TIME.getBoolean();
+    
     // Custom {@link Context} to store execution time.
     @SuppressWarnings("deprecation")
     public static class AcreContext extends Context {
@@ -49,9 +50,13 @@ public class AcreContextFactory extends ContextFactory {
         // this allows for script line numbers in stack traces
         cx.setGeneratingDebug(GENERATE_JS_DEBUG_INFO);
 
-        // Make Rhino runtime to call observeInstructionCount
-        // each 10000 bytecode instructions
-        cx.setInstructionObserverThreshold(1000);
+        if (LIMIT_EXECUTION_TIME) {
+            // Make Rhino runtime to call observeInstructionCount
+            // each 10000 bytecode instructions or disable if
+            // the supervisor thread has been disabled 
+            // (this useful in appengine who does its own supervision)
+            cx.setInstructionObserverThreshold((LIMIT_EXECUTION_TIME) ? 1000 : 0);
+        }
 
         // these will be used to lock down the LiveConnect things
         cx.setClassShutter(new AcreClassShutter());

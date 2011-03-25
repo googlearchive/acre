@@ -114,8 +114,10 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     
     private static final String DEFAULT_HOST_PATH = "//default." + ACRE_HOST_DELIMITER_PATH;
 
-    private static boolean ENABLE_SUPERVISOR = Configuration.Values.ACRE_SUPERVISOR_THREAD.getBoolean();
+    public static boolean LIMIT_EXECUTION_TIME = Configuration.Values.ACRE_LIMIT_EXECUTION_TIME.getBoolean();
 
+    public static final int ACRE_URLFETCH_TIMEOUT = Configuration.Values.ACRE_URLFETCH_TIMEOUT.getInteger();
+    
     // in order to allow error scripts to handle timeouts in the main
     // script, we extend their deadline by this many msec.
     public static final int ERROR_DEADLINE_EXTENSION = 20000;
@@ -134,7 +136,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     //  number of threads that may be occupied to handle
     //  a single request.
     // a single external request may occupy
-    //  (ACRE_REQUEST_MAX_TIME / NETWORK_DEADLINE_ADVANCE) threads
+    //  (ACRE_URLFETCH_TIMEOUT / NETWORK_DEADLINE_ADVANCE) threads
     //  
     public static final int NETWORK_DEADLINE_ADVANCE = 4000;
 
@@ -358,7 +360,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         // if the supervisor is there and enabled,
         // schedule the thread to be stopped after a certain time
-        if (_supervisor != null && ENABLE_SUPERVISOR) {
+        if (_supervisor != null && LIMIT_EXECUTION_TIME) {
             _supervisor.watch(thread, req._deadline + SUPERVISOR_GRACE_PERIOD);
             _supervised = true;
         }
@@ -453,7 +455,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
             // we ought to make sure acreboot has initialized before
             // throwing this error
-            if (System.currentTimeMillis() > req._deadline) {
+            if (LIMIT_EXECUTION_TIME && System.currentTimeMillis() > req._deadline) {
                 throw new AcreDeadlineError("Request chain time quota expired");
             }
 
@@ -747,7 +749,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             throw new JSConvertableException("Urlfetch is allowed to re-enter only once").newJSException(this);
         }
         
-        if (System.currentTimeMillis() > req._deadline) {
+        if (LIMIT_EXECUTION_TIME && (System.currentTimeMillis() > req._deadline)) {
             throw new RuntimeException("Cannot call urlfetch, the script ran out of time");
         }
 
@@ -759,7 +761,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
         
         // give the subrequest a shorter deadline so this request can handle any failure
-        long net_deadline = req._deadline - NETWORK_DEADLINE_ADVANCE;
+        long net_deadline = (LIMIT_EXECUTION_TIME) ? req._deadline - NETWORK_DEADLINE_ADVANCE : ACRE_URLFETCH_TIMEOUT;
 
         AcreFetch fetch = new AcreFetch(url, method, net_deadline, req._reentries, res, AcreFactory.getClientConnectionManager());
         
@@ -829,10 +831,10 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             throw new RuntimeException("Cannot call urlfetch, the script ran out of time");
         }
 
-        // give the subrequest a shorter deadline so this request can
+        // if execution is limited, give the subrequest a shorter deadline so this request can
         // handle any failure
-        long timeout = req._deadline - System.currentTimeMillis() - NETWORK_DEADLINE_ADVANCE;
-
+        long timeout = (LIMIT_EXECUTION_TIME) ? req._deadline - NETWORK_DEADLINE_ADVANCE : ACRE_URLFETCH_TIMEOUT;
+        
         if (!timeout_ms.isNaN() && timeout_ms.longValue() < timeout) {
         	timeout = timeout_ms.longValue();
         }
@@ -874,7 +876,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             }
         }
         
-        long sub_deadline = req._deadline - HostEnv.SUBREQUEST_DEADLINE_ADVANCE;
+        long sub_deadline = (LIMIT_EXECUTION_TIME) ? req._deadline - HostEnv.SUBREQUEST_DEADLINE_ADVANCE : ACRE_URLFETCH_TIMEOUT;
         int reentrances = req._reentries + 1;
         header_map.put(HostEnv.ACRE_QUOTAS_HEADER, "td=" + sub_deadline + ",r=" + reentrances);
 
@@ -887,7 +889,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     @JS_Function
     public void async_wait(Double timeout_ms) {
-        long timeout = req._deadline - System.currentTimeMillis() - NETWORK_DEADLINE_ADVANCE;
+        long timeout = (LIMIT_EXECUTION_TIME) ? req._deadline - System.currentTimeMillis() - NETWORK_DEADLINE_ADVANCE : ACRE_URLFETCH_TIMEOUT;
 
         // XXX consider throwing, or at least warning if this condition fails
         if (!timeout_ms.isNaN() && timeout_ms.longValue() < timeout) {
