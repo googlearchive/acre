@@ -50,7 +50,7 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         
     public static final String SUPERVISOR = "com.google.acre.supervisor";
      
-    private static boolean ENABLE_SUPERVISOR = Configuration.Values.ACRE_SUPERVISOR_THREAD.getBoolean();
+    private static boolean LIMIT_EXECUTION_TIME = Configuration.Values.ACRE_LIMIT_EXECUTION_TIME.getBoolean();
    
     protected static final List<String[]> urlmap;
 
@@ -88,7 +88,7 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         server = this.servletContext.getServerInfo().toLowerCase();
         Supervisor s = (Supervisor) this.servletContext.getAttribute(SUPERVISOR);
         if (s == null) {
-            Supervisor news = (ENABLE_SUPERVISOR ? new Supervisor() : null);
+            Supervisor news = (LIMIT_EXECUTION_TIME ? new Supervisor() : null);
             this.servletContext.setAttribute(SUPERVISOR, news);
         }
     }

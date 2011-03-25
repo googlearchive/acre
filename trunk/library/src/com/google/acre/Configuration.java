@@ -71,7 +71,7 @@ public class Configuration implements ConfigurationMBean {
         GENERATE_JS_DEBUG_INFO("true"), 
         HIDE_ACREBOOT_STACK("false"), 
         ACRE_AUTORELOADING("false"),
-        ACRE_SUPERVISOR_THREAD("true"),
+        ACRE_LIMIT_EXECUTION_TIME("true"),
         ACRE_APP_THRESHOLDING("false"),
         ACRE_DEVELOPER_MODE("false"),
         ACRE_TRUSTED_MODE("false"),
@@ -99,6 +99,7 @@ public class Configuration implements ConfigurationMBean {
         ACRE_SQL_TABLE_VERSION("1"),
         ACRE_MAX_REQUEST_RATE("100.0"), // in req/sec
         ACRE_REQUEST_MAX_TIME("30000"), // in ms
+        ACRE_URLFETCH_TIMEOUT("30000"), // in ms, used only if ACRE_LIMIT_EXECUTION_TIME is false
         ACRE_MAX_ASYNC_CONNECTIONS("10"),
 
         ACRE_APIARY_ADDR,

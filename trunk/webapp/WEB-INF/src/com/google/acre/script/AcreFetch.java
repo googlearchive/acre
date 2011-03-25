@@ -151,10 +151,10 @@ public class AcreFetch extends JsConvertable {
         // NOTE: this is done *after* the user sets the headers to overwrite
         // whatever settings they might have tried to change for this value
         // (which could be a security hazard)
-        long sub_deadline = _deadline - HostEnv.SUBREQUEST_DEADLINE_ADVANCE;
+        long sub_deadline = (HostEnv.LIMIT_EXECUTION_TIME) ? _deadline - HostEnv.SUBREQUEST_DEADLINE_ADVANCE : HostEnv.ACRE_URLFETCH_TIMEOUT;
         int reentries = _reentries + 1;
         request_headers.put(HostEnv.ACRE_QUOTAS_HEADER, "td=" + sub_deadline + ",r=" + reentries);
-
+        
         // if this is not an internal call, we need to invoke the call thru a proxy
         if (!_internal) {
             // XXX No sense wasting the resources to gzip inside the network.
@@ -169,8 +169,7 @@ public class AcreFetch extends JsConvertable {
             if (!(proxy_host.length() == 0)) {
                 proxy_port = Configuration.Values.HTTP_PROXY_PORT.getInteger();
                 HttpHost proxy = new HttpHost(proxy_host, proxy_port, "http");
-                client.getParams().setParameter(AllClientPNames.DEFAULT_PROXY,
-                                                proxy);
+                client.getParams().setParameter(AllClientPNames.DEFAULT_PROXY,proxy);
             }
         }
 
