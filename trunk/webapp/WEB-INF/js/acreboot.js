@@ -79,7 +79,7 @@ var _DEFAULT_ACRE_HOST_PATH = "/z/acre";
 var _DEFAULTS_HOST = _hostenv.DEFAULT_HOST_PATH.substr(2);
 var _METADATA_FILE = "METADATA";
 var _DEFAULT_FILE = "index";
-var _DEFAULT_APP = "helloworld.examples." + _DELIMITER_PATH;
+var _DEFAULT_APP = "main." + _DELIMITER_PATH;
 
 //------------------------------- Utils ---------------------------------------
 
