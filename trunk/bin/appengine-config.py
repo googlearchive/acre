@@ -84,7 +84,7 @@ def copy_configuration_files(options):
 
 
     #these two files require a default
-    for source_target in [('appengine-web.%s.xml', 'appengine-web.xml'), ('web.%s.xml', 'web.xml')]:
+    for source_target in [('appengine-web.%s.xml', 'appengine-web.xml'), ('web.%s.xml', 'web.xml'), ('cron.%s.xml', 'cron.xml')]:
 
       target = 'webapp/WEB-INF/%s' % source_target[1]
       if os.path.exists(target):
@@ -104,7 +104,7 @@ def copy_configuration_files(options):
   #only do this for appengine-web.xml - no default ots (there is one already in the standard checkout)
   else:
 
-    for source_target in [('appengine-web.default.xml', 'appengine-web.xml'), ('web.default.xml', 'web.xml')]:
+    for source_target in [('appengine-web.default.xml', 'appengine-web.xml'), ('web.default.xml', 'web.xml'), ('cron.%s.xml', 'cron.xml')]:
       target = 'webapp/WEB-INF/%s' % source_target[1]
       if os.path.exists(target):
         os.chmod(target, 0777)
