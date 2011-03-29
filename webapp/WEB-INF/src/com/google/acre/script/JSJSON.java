@@ -45,9 +45,9 @@ public class JSJSON extends JSObject {
         return "JSON";
     }
 
-    public Scriptable jsFunction_parse(String obj) {
+    public Object jsFunction_parse(String obj) {
         try {
-            return (Scriptable) JSON.parse(obj, _scope);
+            return JSON.parse(obj, _scope);
         } catch (JSONException e) {
             throw new JSConvertableException(e.getMessage()).newJSException(_scope);
         }
