@@ -330,7 +330,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 syslog(ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
             }
         } catch (ClassNotFoundException e1) {
-            syslog(DEBUG, "hostenv.datastore.init.failed", "DataStore provider not found and will not be present");
+            syslog(DEBUG, "hostenv.datastore.init.failed", "DataStore provider not found and will not be available");
         }
 
         try {
@@ -340,14 +340,31 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             try {
                 ScriptableObject.defineClass(scope, jsTaskQueueClass, false, true);
             } catch (IllegalAccessException e) {
-                syslog(ERROR, "hostenv.datastore.init.failed", "Failed to load TaskQueue object: " + e);
+                syslog(ERROR, "hostenv.taskqueue.init.failed", "Failed to load TaskQueue object: " + e);
             } catch (InstantiationException e) {
-                syslog(ERROR, "hostenv.datastore.init.failed", "Failed to load TaskQueue object: " + e);
+                syslog(ERROR, "hostenv.taskqueue.init.failed", "Failed to load TaskQueue object: " + e);
             } catch (InvocationTargetException e) {
-                syslog(ERROR, "hostenv.datastore.init.failed", "Failed to load TaskQueue object: " + e);
+                syslog(ERROR, "hostenv.taskqueue.init.failed", "Failed to load TaskQueue object: " + e);
             }
         } catch (ClassNotFoundException e1) {
-            syslog(DEBUG, "hostenv.taskqueue.init.failed", "TaskQueue provider not found and will not be present");
+            syslog(DEBUG, "hostenv.taskqueue.init.failed", "TaskQueue provider not found and will not be available");
+        }
+
+        try {
+            @SuppressWarnings("unchecked")
+            Class<? extends Scriptable> jsAppCacheClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSAppCache");
+
+            try {
+                ScriptableObject.defineClass(scope, jsAppCacheClass, false, true);
+            } catch (IllegalAccessException e) {
+                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load AppCache object: " + e);
+            } catch (InstantiationException e) {
+                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load AppCache object: " + e);
+            } catch (InvocationTargetException e) {
+                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load AppCache object: " + e);
+            }
+        } catch (ClassNotFoundException e1) {
+            syslog(DEBUG, "hostenv.appcache.init.failed", "AppCache provider not found and will not be available");
         }
         
         return scope;
