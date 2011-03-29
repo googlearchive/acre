@@ -5,7 +5,7 @@
 # *DO NOT* change this file, make a copy called "project.local.conf" and change that instead
 # 
 
-####### select what URL acre expects to be responding to (your DNS or /etc/host should mount *.acre.z to 127.0.0.1)
+####### select what URL acre expects to be responding to (your DNS or /etc/host should mount *.localhost to 127.0.0.1)
 ACRE_HOST_BASE="localhost"
 ACRE_FREEBASE_SITE_ADDR="devel.$ACRE_METAWEB_BASE_ADDR"
 ACRE_FREEBASE_SITE_ADDR_PORT="8115"
