@@ -168,8 +168,10 @@ appengine_run() {
     echo ""
     echo "=========== Starting Acre ======================================= "
     echo ""
+    echo " Host Base: $ACRE_HOST_BASE"
     echo " Freebase APIs: $ACRE_METAWEB_API_ADDR"
     echo " Trusted Mode: $ACRE_TRUSTED_MODE"
+    echo " Limit Execution Time: $ACRE_LIMIT_EXECUTION_TIME"
     echo " Log level: $ACRE_LOG_LEVEL"
     echo ""
     if [ "$ACRE_PORT" != "" ]; then
