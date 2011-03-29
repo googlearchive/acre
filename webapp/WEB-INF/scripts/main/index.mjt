@@ -1,7 +1,15 @@
+<acre:script>
+  var title = "Welcome to Acre!";
+</acre:script>
 <html>
+  <head>
+    <title>$title</title>
+    <link href='/acre/static/style.css' rel='stylesheet' type='text/css'>
+  </head>
   <body>
-    <h2>Hello World</h2>
-    
-    Acre version: <em>$acre.version</em>
+    <div id='body'>
+      <h2>$title</h2>
+      <p>Version: <em>$acre.version</em></p>
+    </div>
   </body>
 </html>
