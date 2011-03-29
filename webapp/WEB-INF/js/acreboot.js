@@ -63,6 +63,12 @@ if (typeof TaskQueue != 'undefined') {
     delete TaskQueue;
 }
 
+// obtain appcache if present and remove from scope
+if (typeof AppCache != 'undefined') {
+    var _appcache = new AppCache();
+    delete AppCache;
+}
+
 
 //----------------------------- globals ---------------------------------------
 
@@ -988,6 +994,16 @@ if (_request.trusted && _taskqueue) { // the _taskqueue object won't be availabl
     queue_scope.augment(acre);
 }
 
+//------------------------ cache --------------------------
+
+if (_request.trusted && _appcache) { // the _appcache object won't be available in all environments so we need to check first
+    var appcache_scope = {};
+    appcache_scope.syslog = syslog;
+    appcache_scope.cache = _appcache;
+    appcache_scope.acreboot = _topscope;
+    _hostenv.load_system_script('appcache.js', appcache_scope);
+    appcache_scope.augment(acre);
+}
 
 // ------------------------------ urlfetch -----------------------------------
 
