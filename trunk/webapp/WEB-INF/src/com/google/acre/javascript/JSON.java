@@ -85,7 +85,7 @@ public class JSON {
         Object res;
         Input in = new Input(s);
         consumeWhitespace(in);
-        if (in.peek() !=  '{' && in.peek() != '[') throw new JSONException(in.generateError("A JSON payload must begin with an object or array"));
+        //if (in.peek() !=  '{' && in.peek() != '[') throw new JSONException(in.generateError("A JSON payload must begin with an object or array"));
         res = decodeReader(in, scope, want_java);
         // Trailing space is probably non-compliant, but enough input has it that we probably
         // should chew it up.

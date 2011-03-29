@@ -114,21 +114,4 @@ class test_class(TestController):
 	    if not (a == "fail29.json" or a == "fail30.json" or a == "fail31.json"):
                 yield test_fail, a
 
-    @tag(bug=False, bugid="ACRE-397")
-    def test_json_check_log_for_err_msg(self):
-        from urllib2 import HTTPError
-        data = "hello there"
-        self.set_acre_script("json_parse", {'string': data } )
-        log_err= "A JSON payload must begin with an object or array"
-        p = re.compile( log_err);
-        log_pattern = re.compile(log_err);
-
-        self.get({"x-acre-enable-log":"debug"});
-        response = self.response.read();
-        res = simplejson.loads(response)
-        message = simplejson.loads(res["body"])["message"]
-
-        # verify that error message is returned in the response body
-        self.assert_(p.search(message), "Did not find error message in result: %s " % message);
-
 test_class.reviewed = True
