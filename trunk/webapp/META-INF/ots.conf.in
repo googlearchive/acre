@@ -55,6 +55,15 @@
             },
             {
                 "from":{
+                    "path":"/acre/cron"
+                },
+                "to":{
+                    "route_as":"script",
+                    "location":"/local/cron"
+                }
+            },
+            {
+                "from":{
                     "path":"/acre/touch"
                 },
                 "to":{
