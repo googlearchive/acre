@@ -47,6 +47,28 @@ if (acre.store) {
             ok(true,"exception was triggered");
         }
     });
+
+    test('acre.store stored objects have the right metadata', function() {
+        var o1 = { "foo" : "bar" };
+        var now = (new Date()).getTime();
+        var id = acre.store.put(o1);
+        var o2 = acre.store.get(id);
+        are_same(o1,o2);
+        ok(typeof o2._ != "undefined", "metadata container exists");
+        ok(typeof o2._.key != "undefined", "key exists");
+        ok(id == o2._.key, "key is the same");
+        ok(o2._.creation_time, "creation_time exists");
+        ok(o2._.creation_time - now < 10, "creation_time is reasonable");
+        ok(o2._.last_modified_time, "last_modified_time exists");
+        ok(o2._.last_modified_time == o2._.creation_time, "for new objects last_modified_time and creation_time are the same");
+        acre.wait(100);
+        now = (new Date()).getTime();
+        acre.store.update(id,o1);
+        o2 = acre.store.get(id);
+        ok(o2._.last_modified_time != o2._.creation_time, "for updated objects last_modified_time and creation_time are different");
+        ok(o2._.last_modified_time - now < 10, "last_modified_time is reasonable");
+        acre.store.remove(id);
+    });
     
     test('acre.store remove by object works', function() {
         var o = { "foo" : "bar" };

@@ -123,7 +123,7 @@ public class JSDataStore extends JSObject {
                     entity = new Entity(app_id, name, stringToKey(parent_key));
                 }
             }
-            embed(entity, obj);
+            embed(entity, obj, false);
             Key k = _store.put(_transaction, entity);
             return keyToString(k);
         } catch (Exception e) {
@@ -136,7 +136,7 @@ public class JSDataStore extends JSObject {
         try {
             Key key = stringToKey(obj_key);
             Entity entity = _store.get(_transaction, key);
-            embed(entity, obj);
+            embed(entity, obj, true);
             Key k = _store.put(_transaction, entity);
             return keyToString(k);
         } catch (Exception e) {
@@ -168,18 +168,29 @@ public class JSDataStore extends JSObject {
     // -------------------------------------------------------------------------------------------------------------
     
     private final static String JSON_PROPERTY = "@#@JSON@#@";
+    private final static String CREATION_TIME_PROPERTY = "@#@CREATION_TIME@#@";
+    private final static String LAST_MODIFIED_TIME_PROPERTY = "@#@LAST_MODIFIED_TIME@#@";
     
     public static Scriptable extract(Entity entity, Scriptable scope) throws JSONException {
         Object json = entity.getProperty(JSON_PROPERTY);
+        Object creation_time = entity.getProperty(CREATION_TIME_PROPERTY);
+        Object last_modified_time = entity.getProperty(LAST_MODIFIED_TIME_PROPERTY);
         Scriptable o = (Scriptable) JSON.parse(((Text) json).getValue(), scope, false);
         Scriptable metadata = Context.getCurrentContext().newObject(scope);
         ScriptableObject.putProperty(metadata, "key", keyToString(entity.getKey()));
+        ScriptableObject.putProperty(metadata, "creation_time", creation_time);
+        ScriptableObject.putProperty(metadata, "last_modified_time", last_modified_time);
         ScriptableObject.putProperty(o,"_",metadata);
         return o;
     }
     
-    public void embed(Entity entity, Scriptable obj) throws JSONException {
+    public void embed(Entity entity, Scriptable obj, boolean update) throws JSONException {
+        long now = System.currentTimeMillis();
         entity.setUnindexedProperty(JSON_PROPERTY, new Text(JSON.stringify(obj)));
+        entity.setUnindexedProperty(LAST_MODIFIED_TIME_PROPERTY, now);
+        if (!update) {
+            entity.setUnindexedProperty(CREATION_TIME_PROPERTY, now);
+        }
         index_object("", obj, entity);
     }
 
