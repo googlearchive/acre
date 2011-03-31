@@ -1887,7 +1887,7 @@ for (var k in _mjt.freebase) {
 
 var freebase_scope = {};
 freebase_scope.syslog = syslog;
-var fb_script = (_request.apiary_service_url !== "http://") ? "apiary.js" : "freebase.js";
+var fb_script = (_request.apiary_service_url !== "https://") ? "apiary.js" : "freebase.js";
 _hostenv.load_system_script(fb_script, freebase_scope);
 
 // decorate acreboot objects with just what we need... a lot
