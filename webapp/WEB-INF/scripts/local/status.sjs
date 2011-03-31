@@ -24,6 +24,7 @@ try {
       acre.write('Graph status: '+ response.graph_status + '\n');
       acre.write('Graph server: '+ response.graph_server + '\n'); 
       acre.write('Version: '+ response.version + '\n');
+      acre.write('Host base: '+ acre.host.name + '\n');
       if (response.error) { acre.write('Error: ' + response.error); }
    }
 
