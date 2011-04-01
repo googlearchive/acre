@@ -84,10 +84,8 @@ def drive_apps(apps,color,jsn):
         manifest = gen_manifest(apps)
 
     # this will login to freebase if the env var is defined
-    r = Fetcher(username=os.environ.get("FSTEST_USERNAME"), 
-        password=os.environ.get("FSTEST_PASSWORD"),
-        api_url=os.environ.get("ACRE_METAWEB_BASE_ADDR"))
-    
+    r = Fetcher()
+
     for app, test_urls in manifest.iteritems():
 
         out.write(app + ":\n")
@@ -105,7 +103,20 @@ def drive_apps(apps,color,jsn):
                 pack = app
             try:
                 # fetch test file!
-                data = simplejson.loads(r.fetch(test_url))
+                i = 0
+                max_retry = 5
+                while i <= max_retry:
+                    i += 1
+                    try:
+                        # sometimes the Fetcher goes stale and gets socket
+                        # errors, re-init seems to work (brendan)
+                        if i > 1: r = Fetcher()
+                        data = simplejson.loads(r.fetch(test_url))
+                        break
+                    except socket.error:
+                      print "WARN: error fetching (%s) %s" % (i, module)
+                      if i > max_retry: raise
+                      time.sleep(10)
                 [tests, failures, skips, results] = parse_json(pack, module, data)
             except KeyboardInterrupt:
                 raise
@@ -203,6 +214,9 @@ def parse_json(pack, module, data):
 class Fetcher:
 
     def __init__(self, username=None, password=None, api_url=None):
+        if not username: username = os.environ.get("FSTEST_USERNAME")
+        if not password: password = os.environ.get("FSTEST_PASSWORD")
+        if not api_url: api_url = os.environ.get("ACRE_METAWEB_BASE_ADDR")
         self.username=username
         self.password=password
         self.api_url=api_url
