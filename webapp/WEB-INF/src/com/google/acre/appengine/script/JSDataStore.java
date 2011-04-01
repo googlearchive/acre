@@ -86,7 +86,7 @@ public class JSDataStore extends JSObject {
 
     public void jsFunction_rollback() {
         if (_transaction == null) {
-            throw new JSConvertableException("There is no transaction to commit, have you called acre.store.begin() first?").newJSException(_scope);
+            throw new JSConvertableException("There is no transaction to roll back, have you called acre.store.begin() first?").newJSException(_scope);
         }
         try {
             if (_transaction.isActive()) {
