@@ -95,6 +95,18 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
     }
 
 
+    /**
+     * lookup the freebase apiary api key in the datastore and return it if present. 
+     * throw an exception if not found
+     */
+    function get_freebase_api_key() {
+        try { 
+          return acre.keystore.get('freebase_api')[0];
+        } catch (e) { 
+          throw new Error('Failed to get Freebase Site API Key from keystore, try /acre/keystore_console on this host to see available keys.')
+        }
+    }
+
     function compose_get_or_post(url, opts) {
         if (typeof opts !== "object") {
             opts = {};
@@ -104,13 +116,17 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
             opts.content = "";
         }
 
+        api_key = get_freebase_api_key();
+
         if ((!opts.method || opts.method === "GET") && url.length + opts.content.length < URL_SIZE_LIMIT) {
             opts.method = "GET";
-            url += "?" + opts.content;
+            url += "?key=" + api_key + "&" + opts.content;
             delete opts.content;
         } else {
             opts.method = "POST";
+            opts.content.key = api_key;
         }
+        console.log(opts.method + url);
         return [url, opts];
     }
 
@@ -230,7 +246,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
      */
     function mqlread(q,e,o,composer) {
         var [api_opts, fetch_opts] = decant_options(o);
-        var url = freebase.service_url + "/api/service/mqlread";
+        var url = freebase.apiary_url + "/mqlread";
         fetch_opts.content = composer(q,e,api_opts);
         return fetch.apply(this, compose_get_or_post(url, fetch_opts));
     }
@@ -400,23 +416,30 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
 
         var [api_opts, fetch_opts] = decant_options(options);
 
-        mode = mode || "raw";
-        var base_url = freebase.service_url + "/api/trans/";
+        mode = mode || "plain";
+        var base_url = freebase.apiary_url + "/text" + id + "?key=" + get_freebase_api_key();
         switch (mode) {
-            case "unsafe":
+          case "escaped": 
+          case "unsafe":
+              base_url += "&format=raw";
+              break;
             case "blurb":
+            case "plain":
+              base_url += "&format=plain";
+              break;
             case "raw":
-                base_url += mode;
-                break;
+            case "html":
+              base_url += "&format=html"
+              break;
             default:
-                throw new Error("Invalid mode; must be 'raw' or 'blurb' or 'unsafe'");
+              throw new Error("Invalid mode; must be 'html' or 'plain' or 'escaped'");
         }
-        base_url += id;
+
         // TODO -- this will get the callbacks
         var url = acre.form.build_url(base_url, api_opts);
         fetch_opts.method = "GET";
         fetch_opts.headers = {'X-Requested-With' : '1' },
-        fetch_opts.check_results = "raw";
+        fetch_opts.check_results = "json";
         return fetch(url, fetch_opts);
     };
 
