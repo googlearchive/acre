@@ -446,7 +446,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         if (ACRE_METAWEB_API_ADDR_PORT != 80) req.freebase_service_url += ":" + ACRE_METAWEB_API_ADDR_PORT;
         req.freebase_site_host = "http://" + ACRE_FREEBASE_SITE_ADDR;
         if (ACRE_FREEBASE_SITE_ADDR_PORT != 80) req.freebase_site_host += ":" + ACRE_FREEBASE_SITE_ADDR_PORT;
-        req.apiary_service_url = "https://" + ACRE_APIARY_ADDR;
+        req.apiary_service_url = ACRE_APIARY_ADDR;
 
         _scope.put("PROTECTED_HOSTENV", _scope, this);
 
