@@ -76,7 +76,7 @@ cd tests/acre_py_tests
 if [ -z "$1" ]; then
     # if no specific test is passed as parameter, run them all
     $ECHO -n "Running all tests: " 
-    $NOSETESTS -da '!bug','!deprecated'
+    $NOSETESTS -vda '!bug','!deprecated'
 else
     
     # if something is passed as a parameter, first check to see if it's a group of tests (a directory)
