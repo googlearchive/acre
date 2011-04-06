@@ -36,7 +36,7 @@
     <load-on-startup>1</load-on-startup>
   </servlet>
 
-  <servlet>
+  <!--servlet>
     <description>static content</description>
     <display-name>DefaultServlet</display-name>
     <servlet-name>DefaultServlet</servlet-name>
@@ -57,13 +57,7 @@
         <param-name>gzip</param-name>
         <param-value>true</param-value>
     </init-param>
-  </servlet>
-
-  <filter>
-    <description>GZIP Filter This filter will gzip the content of a response</description>
-    <filter-name>GzipFilter</filter-name>
-    <filter-class>org.mortbay.servlet.GzipFilter</filter-class>
-  </filter>
+  </servlet-->
 
   <servlet-mapping>
     <servlet-name>OneTrueServlet</servlet-name>
@@ -80,11 +74,18 @@
    </auth-constraint>
  </security-constraint>
 
+<!--
+  <filter>
+   <description>GZIP Filter This filter will gzip the content of a response</description>
+   <filter-name>GzipFilter</filter-name>
+   <filter-class>org.mortbay.servlet.GzipFilter</filter-class>
+  </filter>
 
-  <!-- filter-mapping>
+  <filter-mapping>
     <filter-name>GzipFilter</filter-name>
     <url-pattern>*</url-pattern>
-  </filter-mapping -->
+  </filter-mapping>
+-->
   
 <!-- TODO: Prevent access to '.svn' directories. -->
 <!-- The following should work, but doesn't. -->

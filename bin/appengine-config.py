@@ -3,7 +3,6 @@
 import os, re, pdb, shutil, subprocess
 from optparse import OptionParser
 
-IN_DIR = 'webapp/META-INF'
 IN_SUFFIX = '.in'
 
 class ConfigParser:
@@ -84,7 +83,7 @@ def copy_configuration_files(options):
 
 
     #these two files require a default
-    for source_target in [('appengine-web.%s.xml', 'appengine-web.xml'), ('web.%s.xml', 'web.xml'), ('cron.%s.xml', 'cron.xml')]:
+    for source_target in [('appengine-web.%s.xml.in', 'appengine-web.xml.in'), ('web.%s.xml.in', 'web.xml.in'), ('cron.%s.xml.in', 'cron.xml.in')]:
 
       target = 'webapp/WEB-INF/%s' % source_target[1]
       if os.path.exists(target):
@@ -104,7 +103,7 @@ def copy_configuration_files(options):
   #only do this for appengine-web.xml - no default ots (there is one already in the standard checkout)
   else:
 
-    for source_target in [('appengine-web.default.xml', 'appengine-web.xml'), ('web.default.xml', 'web.xml'), ('cron.default.xml', 'cron.xml')]:
+    for source_target in [('appengine-web.default.xml.in', 'appengine-web.xml.in'), ('web.default.xml.in', 'web.xml.in'), ('cron.default.xml.in', 'cron.xml.in')]:
       target = 'webapp/WEB-INF/%s' % source_target[1]
       if os.path.exists(target):
         os.chmod(target, 0777)
@@ -147,11 +146,11 @@ def modify_config_params():
   os.environ['ACRE_VERSION'] = ver
   return True
 
-def create_configuration_files():
+def create_configuration_files(dir):
 
-  #for every .in file, produce the equivalient .conf file without the .in
-  for filename in [x for x in os.listdir(IN_DIR) if x.endswith(IN_SUFFIX)]:
-    parser = ConfigParser(IN_DIR, filename)
+  #for every .in file, produce the equivalent .conf file without the .in
+  for filename in [x for x in os.listdir(dir) if x.endswith(IN_SUFFIX) and not x.endswith(".default.xml" + IN_SUFFIX)]:
+    parser = ConfigParser(dir, filename)
     parser.convert()
 
   return True
@@ -175,8 +174,9 @@ copy_configuration_files(options)
 #Step 2: evaluate any configuration values that need to be calculated at build time
 modify_config_params()
 
-#Step 3: Create configuration files under webapp/META-INF from their source .in files
-create_configuration_files()
+#Step 3: Create configuration files from their source .in files
+create_configuration_files("webapp/META-INF")
+create_configuration_files("webapp/WEB-INF")
 
 
 
