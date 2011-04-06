@@ -123,11 +123,6 @@ get_revision() {
     REVISION=`echo $INFO | sed 's/.*Revision: /r/' | sed 's/ .*//'`
 }
 
-# Get appengine application ID ---------------------------------------------
-get_appid() {
-    APP_ID=`cat $WAR/WEB-INF/appengine-web.xml | grep '<application>' | cut -d '>' -f 2 | cut -d '<' -f 1`
-}
-
 # ----------------------- commands --------------------------
 
 invoke() {
@@ -180,11 +175,32 @@ appengine_run() {
     $APPENGINE_HOME/bin/dev_appserver.sh --disable_update_check $APPSERVER_PARAMS webapp || exit 1
 }
 
+appengine_hostbase() {
+    if [ "$APPENGINE_APP_ID" != "" ]; then
+        ACRE_HOST_BASE="$APPENGINE_APP_ID.$APPENGINE_BASE_HOST"
+
+        if [ "$APPENGINE_APP_VERSION" != "release" ]; then
+            ACRE_HOST_BASE="$APPENGINE_APP_VERSION.$ACRE_HOST_BASE"
+        fi
+    fi
+}
+
 appengine_build_war() {
     check_appengine
     check_appengine_build
+    
+    appengine_hostbase
     appengine_build_config
+    
     ant -f build.xml -Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\" -Dwar.dir=\"$WAR\" appengine-war || exit 1
+    
+    echo ""
+    echo "=========== Prepared Appengine WAR =============================== "
+    echo ""
+    echo "  Appengine App id: $APPENGINE_APP_ID"
+    echo "  Appengine App version: $APPENGINE_APP_VERSION"
+    echo "  Expected Deployment URL: http://$ACRE_HOST_BASE/"
+    echo ""
 }
 
 check_appengine_build_war() {
@@ -196,22 +212,20 @@ check_appengine_build_war() {
 appengine_deploy() {
     check_appengine
     check_appengine_build_war    
+    appengine_hostbase
 
     if [ ! -f "$WAR/WEB-INF/appengine-web.xml" ]; then
         fatal "Can't deploy, the war is missing WEB-INF/appengine-web.xml"
     fi
-    
-    if [ "$DEPLOYED_ACRE_HOST_BASE" == "" ]; then
-        get_appid
-        DEPLOYED_ACRE_HOST_BASE="$APP_ID.$APPENGINE_BASE_HOST"
-    fi
-    
-    sed -i bak "s/ACRE_HOST_BASE=.*/ACRE_HOST_BASE=$DEPLOYED_ACRE_HOST_BASE/g" "$WAR/META-INF/acre.properties"
 
+    echo ""
+    echo "Deploying $APPENGINE_APP_ID [$APPENGINE_APP_VERSION] at http://$ACRE_HOST_BASE/"
+    echo ""
+    
     $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR"
 
     echo ""
-    echo "App is ready at http://$DEPLOYED_ACRE_HOST_BASE/"
+    echo "App is ready at http://$ACRE_HOST_BASE/"
 }
 
 appengine_rollback() {
