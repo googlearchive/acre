@@ -96,6 +96,10 @@ var augment;
     }
     
     function update(key, obj) {
+        if (typeof key == "object" && typeof obj == "undefined") {
+            obj = key;
+            key = obj._.key;
+        }
         return store.update(get_appid(), key, obj);
     }
     
