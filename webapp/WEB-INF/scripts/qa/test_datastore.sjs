@@ -132,13 +132,26 @@ if (acre.store) {
         }
     });
 
-    test('acre.store update works', function() {
+    test('acre.store update by id works', function() {
         var o1 = { "foo" : "bar" };
         var id = acre.store.put(o1);
         var o2 = { "foo" : "whatever", "this" : "that" };
         id = acre.store.update(id, o2);
         var o3 = acre.store.get(id);
         are_same(o2,o3);
+        acre.store.remove(id);
+    });
+
+    test('acre.store update by object works', function() {
+        var o1 = { "foo" : "bar" };
+        var id = acre.store.put(o1);
+        var o2 = acre.store.get(id);
+        o2["foo"] = "whatever";
+        o2["this"] = "that";
+        var o3 = { "foo" : "whatever", "this" : "that" };
+        id = acre.store.update(o2);
+        var o4 = acre.store.get(id);
+        are_same(o3,o4);
         acre.store.remove(id);
     });
 
