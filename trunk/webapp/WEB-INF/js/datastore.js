@@ -127,6 +127,14 @@ var augment;
             return undefined;
         }
     }
+
+    Result.prototype.as_array = function() {
+        var a = [];
+        for (var o in this) {
+            a.push(o);
+        }
+        return a;
+    }
     
     Result.prototype.get_cursor = function() {
         return this.result.get_cursor();
