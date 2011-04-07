@@ -266,6 +266,31 @@ if (acre.store) {
         acre.store.remove([id1,id2]);
     });
 
+    test('acre.store find as_array work', function() {
+        var o1 = { 
+            "a" : "A",
+            "b" : "B"
+        };
+        var id1 = acre.store.put(o1);
+        var o2 = { 
+            "a" : "A",
+            "b" : "A"
+        };
+        var id2 = acre.store.put(o2);
+
+        var query = {
+            "a" : "A"
+        };
+        
+        var results = acre.store.find(query).as_array();
+        ok(results instanceof Array, "results is an array");
+        
+        are_same(results[0],o1);
+        are_same(results[1],o2);
+        
+        acre.store.remove([id1,id2]);
+    });
+
     test('acre.store find works against nested objects', function() {
         var o1 = { 
             "a" : {
