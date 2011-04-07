@@ -36,7 +36,7 @@
     <load-on-startup>1</load-on-startup>
   </servlet>
 
-  <!--servlet>
+  <servlet>
     <description>static content</description>
     <display-name>DefaultServlet</display-name>
     <servlet-name>DefaultServlet</servlet-name>
@@ -57,7 +57,7 @@
         <param-name>gzip</param-name>
         <param-value>true</param-value>
     </init-param>
-  </servlet-->
+  </servlet>
 
   <servlet-mapping>
     <servlet-name>OneTrueServlet</servlet-name>
