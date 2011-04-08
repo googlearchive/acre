@@ -59,6 +59,19 @@
     </init-param>
   </servlet>
 
+<!--
+  <servlet>
+    <description>This enables the use of appengine appcfg.py to talk to this app when running in appengine</description>
+    <servlet-name>RemoteApiServlet</servlet-name>
+    <servlet-class>com.google.apphosting.utils.remoteapi.RemoteApiServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>RemoteApiServlet</servlet-name>
+    <url-pattern>/remote_api</url-pattern>
+  </servlet-mapping>
+-->
+  
   <servlet-mapping>
     <servlet-name>OneTrueServlet</servlet-name>
     <url-pattern>/*</url-pattern>
@@ -87,18 +100,4 @@
   </filter-mapping>
 -->
   
-<!-- TODO: Prevent access to '.svn' directories. -->
-<!-- The following should work, but doesn't. -->
-<!--
-  <security-constraint>
-    <web-resources-collection>
-      <web-resource-name>Forbidden</web-resource-name>
-      <url-pattern>/.svn/*</url-pattern>
-    </web-resources-collection>
-  </security-constraint>
--->
-  
-  <welcome-file-list>
-        <welcome-file>index.html</welcome-file>
-  </welcome-file-list>
 </web-app>
