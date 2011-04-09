@@ -78,7 +78,6 @@ public class JSDataStoreResults extends JSObject {
                 _count = ((PreparedQuery) _result).countEntities(fetchOptions);
             } else {
                 FetchOptions fetchOptions = FetchOptions.Builder.withDefaults();
-                System.out.println("3aa: " + _result);
                 _count = ((PreparedQuery) _result).countEntities(fetchOptions);
             }
         }
