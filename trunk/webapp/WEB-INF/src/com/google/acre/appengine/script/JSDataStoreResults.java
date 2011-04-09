@@ -72,7 +72,6 @@ public class JSDataStoreResults extends JSObject {
         
     public int getCount() {
         if (_count == -1) {
-            System.out.println("1");
             if (_cursor != null && !(_cursor instanceof Undefined)) {
                 FetchOptions fetchOptions = FetchOptions.Builder.withStartCursor(Cursor.fromWebSafeString(_cursor.toString()));
                 _count = ((PreparedQuery) _result).countEntities(fetchOptions);
