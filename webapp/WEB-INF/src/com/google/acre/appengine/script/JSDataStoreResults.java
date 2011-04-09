@@ -32,62 +32,87 @@ public class JSDataStoreResults extends JSObject {
     private static final long serialVersionUID = 529101157247378231L;
 
     private PreparedQuery _result;
-
-    @SuppressWarnings("rawtypes")
-    private QueryResultIterator _iterator;
+    private Object _cursor;
+    private QueryResultIterator<?> _iterator;
+    private int _count = -1;
     
     public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) {
         Scriptable scope = ScriptableObject.getTopLevelScope(ctorObj);
-        return new JSDataStoreResults(((JSDataStoreResults) args[0]).getIterator(), scope);
+        return new JSDataStoreResults(((JSDataStoreResults) args[0]).getResult(), ((JSDataStoreResults) args[0]).getCursor(), scope);
     }
     
     public JSDataStoreResults() { }
     
+    public JSDataStoreResults(Object result, Object cursor, Scriptable scope) {
+        _result = (PreparedQuery) result;
+        _cursor = cursor;
+        _scope = scope;
+    }
+    
     public Object getResult() {
         return _result;
     }
-    
-    public Object getIterator() {
-        return _iterator;
+
+    public Object getCursor() {
+        return _cursor;
     }
     
+    public QueryResultIterator<?> getIterator() {
+        if (_iterator == null) {
+            if (_cursor != null && !(_cursor instanceof Undefined)) {
+                FetchOptions fetchOptions = FetchOptions.Builder.withStartCursor(Cursor.fromWebSafeString(_cursor.toString()));
+                _iterator = ((PreparedQuery) _result).asQueryResultIterator(fetchOptions);
+            } else {
+                FetchOptions fetchOptions = FetchOptions.Builder.withDefaults();
+                _iterator = ((PreparedQuery) _result).asQueryResultIterator(fetchOptions);
+            }
+        }
+        return _iterator;
+    }
+        
+    public int getCount() {
+        if (_count == -1) {
+            System.out.println("1");
+            if (_cursor != null && !(_cursor instanceof Undefined)) {
+                FetchOptions fetchOptions = FetchOptions.Builder.withStartCursor(Cursor.fromWebSafeString(_cursor.toString()));
+                _count = ((PreparedQuery) _result).countEntities(fetchOptions);
+            } else {
+                FetchOptions fetchOptions = FetchOptions.Builder.withDefaults();
+                System.out.println("3aa: " + _result);
+                _count = ((PreparedQuery) _result).countEntities(fetchOptions);
+            }
+        }
+        return _count;
+    }
+
     public String getClassName() {
         return "DataStoreResults";
     }
-    
-    public JSDataStoreResults(Object result, Object cursor, Scriptable scope) {
-        _result = (PreparedQuery) result;
-        if (cursor != null && !(cursor instanceof Undefined)) {
-            FetchOptions fetchOptions = FetchOptions.Builder.withStartCursor(Cursor.fromWebSafeString(cursor.toString()));
-            _iterator = ((PreparedQuery) _result).asQueryResultIterator(fetchOptions);
-        } else {
-            _iterator = ((PreparedQuery) _result).asQueryResultIterator();
-        }
-        _scope = scope;
-    }
 
-    @SuppressWarnings("rawtypes")
-    public JSDataStoreResults(Object iterator, Scriptable scope) {
-        _scope = scope;
-        _iterator = (QueryResultIterator) iterator;
-    }
-    
     // -------------------------------------------------------------
     
     public Object jsFunction_as_iterator() {
         try {
-            JSDataStoreResultsIterator resultIterator = new JSDataStoreResultsIterator(_iterator,_scope);
+            JSDataStoreResultsIterator resultIterator = new JSDataStoreResultsIterator(getIterator(),_scope);
             return resultIterator.makeJSInstance();
         } catch (Exception e) {
-            throw new JSConvertableException("" + e.getMessage()).newJSException(_scope);
+            throw new JSConvertableException(e.getMessage()).newJSException(_scope);
+        }
+    }
+    
+    public int jsFunction_get_count() {
+        try {
+            return getCount();
+        } catch (Exception e) {
+            throw new JSConvertableException(e.getMessage()).newJSException(_scope);
         }
     }
 
     public Object jsFunction_get_cursor() {
         try {
-            return _iterator.getCursor().toWebSafeString();
+            return getIterator().getCursor().toWebSafeString();
         } catch (Exception e) {
-            throw new JSConvertableException("" + e.getMessage()).newJSException(_scope);
+            throw new JSConvertableException(e.getMessage()).newJSException(_scope);
         }
     }
     

@@ -164,6 +164,16 @@ if (acre.store) {
         acre.store.remove(id);
     });
 
+    test('acre.store count works', function() {
+        var o1 = { "foo" : "bar1" };
+        var o2 = { "foo" : "bar2" };
+        var id1 = acre.store.put(o1);
+        var id2 = acre.store.put(o2);
+        var count = acre.store.find({}).get_count();
+        equal(count,2,"get_count() returns the right number of items");
+        acre.store.remove([id1,id2]);
+    });
+
     test('acre.store must complain if objs have "." in properties', function() {
         var o = { 
             "a.a" : "A"
