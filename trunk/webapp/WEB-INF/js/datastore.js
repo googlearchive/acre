@@ -139,6 +139,10 @@ var augment;
         }
         return a;
     }
+
+    Result.prototype.get_count = function() {
+        return this.result.get_count();
+    }
     
     Result.prototype.get_cursor = function() {
         return this.result.get_cursor();
