@@ -190,11 +190,14 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
                 break;
             case "freebase" :
             default:
+                response = result;
                 result = JSON.parse(result.body);
-                if (result.status != "200 OK" || result.code != "/api/status/ok") {
-
+                //result.status != "200 OK" || result.code != "/api/status/ok") {
+                //TODO: better error handling 
+                if (result.result === undefined) {
                     if (result.status != "200 OK") {
-                        var message = 'HTTP error: ' + result.status;
+                        var message = JSON.stringify(response, null, 2);
+                        //var message = 'HTTP error: ' + result.status;
                     } else if ('message' in result.messages[0]) {
                         var message = result.code + ': ' + result.messages[0].message;
                     } else {
@@ -217,10 +220,9 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
     function prepareContent(query, envelope, params) {
         if (!query) throw new Error("You must provide a query");
         if (!envelope) envelope = {};
-        envelope.query = query;
-        envelope.escape = false;
         if (!params) params = {};
-        params.query = envelope;
+        acre.freebase.extend_query(params, envelope);
+        params.query = query;
         return form_encode(params);
     }
 
