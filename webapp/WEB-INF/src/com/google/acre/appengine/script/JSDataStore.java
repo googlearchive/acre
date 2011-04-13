@@ -312,7 +312,7 @@ public class JSDataStore extends JSObject {
                 } else if (value instanceof Scriptable) {
                     compile_query(path + prop + ".",(Scriptable) value,query);
                 } else {
-                    throw new JSConvertableException("Sorry, you can't have null or underfined constrains").newJSException(_scope);
+                    throw new JSConvertableException("Sorry, you can't have null or undefined constrains").newJSException(_scope);
                     // NOTE(SM): I suspect this is going to be hard to digest for people used to MQL where 'null' basically means
                     // to constraint by the existence of that property. Since appengine does not support querying for objects that
                     // have a property defined, no matter its value, this is going to be hard to do efficiently.
