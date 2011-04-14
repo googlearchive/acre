@@ -124,7 +124,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
             delete opts.content;
         } else {
             opts.method = "POST";
-            opts.content.key = api_key;
+            opts.content += "&key=" + api_key;
         }
         console.log(opts.method + url);
         return [url, opts];
@@ -144,17 +144,6 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
                 opts.headers['Content-Type'] = "application/x-www-form-urlencoded";
             }
             opts.headers['X-Requested-With'] = "1";
-            if (opts.content && mwlt_mode == true && opts.content !== ''
-                && opts.headers['Content-Type'] === "application/x-www-form-urlencoded") {
-                opts.content += '&mw_cookie_scope=domain';
-            } else if (mwlt_mode == true
-                    && opts.headers['Content-Type'] === "application/x-www-form-urlencoded") {
-                opts.content = 'mw_cookie_scope=domain';
-            } else if (mwlt_mode === true && url.indexOf('?') > -1) {
-                opts.url += '&mw_cookie_scope=domain';
-            } else if (mwlt_mode === true) {
-                opts.url += "?mw_cookie_scope=domain";
-            }
         }
 
         if (callback || errback) {
@@ -419,22 +408,23 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
         var [api_opts, fetch_opts] = decant_options(options);
 
         mode = mode || "plain";
-        var base_url = freebase.apiary_url + "/text" + id + "?key=" + get_freebase_api_key();
+        var base_url = freebase.apiary_url + "/text" + id;
+        api_opts.key = get_freebase_api_key();
         switch (mode) {
           case "escaped": 
           case "unsafe":
-              base_url += "&format=raw";
-              break;
-            case "blurb":
-            case "plain":
-              base_url += "&format=plain";
-              break;
-            case "raw":
-            case "html":
-              base_url += "&format=html"
-              break;
-            default:
-              throw new Error("Invalid mode; must be 'html' or 'plain' or 'escaped'");
+            api_opts.format = 'raw';
+            break;
+          case "blurb":
+          case "plain":
+            api_opts.format = 'plain';
+            break;
+          case "raw":
+          case "html":
+            api_opts.format = 'html';
+            break;
+          default:
+            throw new Error("Invalid mode; must be 'html' or 'plain' or 'escaped'");
         }
 
         // TODO -- this will get the callbacks
