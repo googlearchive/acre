@@ -2541,12 +2541,14 @@ var handle_request = function (req_path, req_body, skip_routes) {
     // e.g., keystore, auth, test, etc.
     if (request_url.split('/')[3] == 'acre') {
         var [h, p] = decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
-        if (h) {
+        try {
           var source_app = proto_require(compose_req_path(h), null, true)[0];
           if (source_app !== null) {
               source_path = compose_req_path(h, p);
               _topscope._request_app_guid = source_app.guid;
-          }          
+          }
+        } catch(e) {
+          syslog.warn("Unresolvable host used with a /acre/ URL.", "handle_request.host");
         }
     }
 
