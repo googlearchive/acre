@@ -941,6 +941,29 @@ if (typeof acre.keystore == 'undefined') {
     acre.keystore = {};
 }
 
+if (typeof acre.system_keystore == 'undefined') { 
+    acre.system_keystore = {};
+}
+
+//acre system keystore
+acre.system_keystore.get = function (name) { 
+    return _ks.get_key(name, "acre");
+}
+
+acre.system_keystore.put = function (name, token, secret) { 
+    return _ks.put_key(name, "acre", token, secret);
+}
+
+acre.system_keystore.keys = function () {
+    return _ks.get_keys("acre");
+};
+
+acre.keystore.remove = function (name) {
+    _ks.delete_key(name, "acre");
+};
+
+//per app keystore
+
 acre.keystore.get = function (name) {
     if (_topscope._request_app_guid !== null) {
         return _ks.get_key(name, _topscope._request_app_guid);
@@ -963,15 +986,13 @@ acre.keystore.remove = function (name) {
     }
 };
 
-if (_request.trusted) {
-    acre.keystore.put = function (name, token, secret) {
-        if (_topscope._request_app_guid !== null) {
-            return _ks.put_key(name, _topscope._request_app_guid, token, secret);
-        } else {
-            return null;
-        }
-    };
-}
+acre.keystore.put = function (name, token, secret) {
+  if (_topscope._request_app_guid !== null) {
+      return _ks.put_key(name, _topscope._request_app_guid, token, secret);
+  } else {
+      return null;
+  }
+};
 
 //------------------------ datastore --------------------------
 
