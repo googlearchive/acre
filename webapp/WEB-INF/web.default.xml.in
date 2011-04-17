@@ -87,6 +87,16 @@
    </auth-constraint>
  </security-constraint>
 
+  <!-- Secure access to the Acre System keystore UI - only available to AppEngine app admins -->
+ <security-constraint>
+   <web-resource-collection>
+     <url-pattern>/acre/system_keystore_console</url-pattern>
+   </web-resource-collection>
+   <auth-constraint>
+     <role-name>admin</role-name>
+   </auth-constraint>
+ </security-constraint>
+
 <!--
   <filter>
    <description>GZIP Filter This filter will gzip the content of a response</description>
