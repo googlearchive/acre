@@ -1,5 +1,6 @@
 var _system_freebase;
-var URL_SIZE_LIMIT = 2047;
+//var URL_SIZE_LIMIT = 2047;
+var URL_SIZE_LIMIT = 4096;
 
 /**
  * Attach the functions defined in this script to the given API object
@@ -80,7 +81,6 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
         return [api_opts, fetch_opts];
     }
 
-
     /**
      * perform url-encoding of a complex js object by JSON-stringifying the
      * the values of the first level that are js objects
@@ -94,20 +94,38 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
         return acre.form.encode(obj);
     }
 
-
     /**
-     * lookup the freebase apiary api key in the datastore and return it if present. 
+     * lookup the per app freebase apiary api key in the datastore and return it if present. 
      * throw an exception if not found
      */
-    function get_freebase_api_key() {
+    function get_app_freebase_api_key() {
         try { 
           return acre.keystore.get('freebase_api')[0];
         } catch (e) { 
-          throw new Error('Failed to get Freebase Site API Key from keystore, try /acre/keystore_console on this host to see available keys.')
+          throw new Error('Failed to get Freebase API Key from keystore for this app, try /acre/keystore_console on this host to see available keys.')
         }
     }
 
-    function compose_get_or_post(url, opts) {
+    //per app client-side (/image) api key
+    function get_app_freebase_image_api_key() {
+        try { 
+          return acre.keystore.get('freebase_image_api')[0];
+        } catch (e) { 
+          syslog.warn({}, "freebase_api_key.exposed", "You have not set up a freebase_image_api key in your keystore - using your freebase_api key instead - warning this might be exposed to users");
+          return get_app_freebase_api_key();
+        }
+    }
+
+    //acre system keystore
+    function get_acre_freebase_api_key() { 
+        try { 
+          return acre.system_keystore.get('freebase_api')[0];
+        } catch (e) { 
+          throw new Error('Failed to get Acre System Freebase API Key from keystore, try /acre/system_keystore_console on this host to see available keys.')
+        }
+    }
+
+    function compose_get_or_post(url, opts, rpc_opts) {
         if (typeof opts !== "object") {
             opts = {};
         }
@@ -116,15 +134,28 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
             opts.content = "";
         }
 
-        api_key = get_freebase_api_key();
+        //we were either passed the key in the request (acre itself probably)
+        //or we get the per app key from the keystore
+        var api_key = opts.key || get_app_freebase_api_key();
 
         if ((!opts.method || opts.method === "GET") && url.length + opts.content.length < URL_SIZE_LIMIT) {
             opts.method = "GET";
             url += "?key=" + api_key + "&" + opts.content;
             delete opts.content;
         } else {
+
             opts.method = "POST";
-            opts.content += "&key=" + api_key;
+
+            //if rpc_opts were supplied by the calling function 
+            //use them to do POST requests
+            if (rpc_opts) { 
+                //TODO: move to config
+                url = "https://www.googleapis.com/rpc";
+                rpc_opts.params.key = api_key;
+                opts.content = JSON.stringify(rpc_opts);
+            } else { 
+                opts.content += "&key=" + api_key;
+            }
         }
         console.log(opts.method + url);
         return [url, opts];
@@ -141,7 +172,8 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
         if (opts.method === "POST") {
             if (!opts.headers) opts.headers = {};
             if (typeof opts.headers['Content-Type'] == 'undefined') {
-                opts.headers['Content-Type'] = "application/x-www-form-urlencoded";
+                //opts.headers['Content-Type'] = "application/x-www-form-urlencoded";
+                opts.headers['Content-Type'] = "application/json";
             }
             opts.headers['X-Requested-With'] = "1";
         }
@@ -239,7 +271,16 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
         var [api_opts, fetch_opts] = decant_options(o);
         var url = freebase.apiary_url + "/mqlread";
         fetch_opts.content = composer(q,e,api_opts);
-        return fetch.apply(this, compose_get_or_post(url, fetch_opts));
+        fetch_opts.rpc_method_name = "mql.read";
+
+        //TODO: move apiVersion to config
+        //TODO: move this functionality to prepareContent
+        rpc_opts = { 'method' : 'mql.read', 'apiVersion' : 'v1-sandbox', 'params' : {'query' : JSON.stringify(q)  } };
+        
+        acre.freebase.extend_query(rpc_opts['params'], e);
+        acre.freebase.extend_query(rpc_opts['params'], o);
+
+        return fetch.apply(this, compose_get_or_post(url, fetch_opts, rpc_opts));
     }
 
     /**
@@ -409,7 +450,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
 
         mode = mode || "plain";
         var base_url = freebase.apiary_url + "/text" + id;
-        api_opts.key = get_freebase_api_key();
+        api_opts.key = get_app_freebase_api_key();
         switch (mode) {
           case "escaped": 
           case "unsafe":
@@ -562,14 +603,14 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, si
         qargs.errorid = errorid;
       }
 
-      var qstr = '';
+      var qstr = 'key=' + get_app_freebase_image_api_key();
       for (var a in qargs) {
         if (!qargs[a]) continue;
         if (qstr !== '') qstr += '&';
         qstr += a+'='+encodeURIComponent(qargs[a]);
       }
 
-      return freebase.service_url + '/api/trans/image_thumb' + cid + "?" + qstr;
+      return freebase.apiary_url + '/image' + cid + "?" + qstr;
   };
 }
 
@@ -806,7 +847,7 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
          }
 
          try {
-             var res = _system_freebase.mqlread(q, envelope).result;
+             var res = _system_freebase.mqlread(q, envelope, {'key' : get_acre_freebase_api_key() }).result;
          } catch (e) {
              syslog.error(e, "appfetch.graph.mqlread.error");
              throw make_appfetch_error("Mqlread Error", APPFETCH_ERROR_METHOD, e);
@@ -911,9 +952,9 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
 
      var graph_get_content = function() {
          if (this.handler === 'binary') {
-             return _system_freebase.get_blob(this.content_id, 'raw');
+             return _system_freebase.get_blob(this.content_id, 'raw', {'key' : get_acre_freebase_api_key() });
          } else {
-             return _system_freebase.get_blob(this.content_id, 'unsafe');
+             return _system_freebase.get_blob(this.content_id, 'unsafe', { 'key' : get_acre_freebase_api_key() });
          }
      };
 
