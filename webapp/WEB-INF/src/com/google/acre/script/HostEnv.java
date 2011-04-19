@@ -107,6 +107,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     private static int ACRE_FREEBASE_SITE_ADDR_PORT = Configuration.Values.ACRE_FREEBASE_SITE_ADDR_PORT.getInteger();
     
     private static String ACRE_APIARY_ADDR = Configuration.Values.ACRE_APIARY_ADDR.getValue();
+    private static String ACRE_APIARY_KEY = Configuration.Values.ACRE_APIARY_KEY.getValue();
+
 
     private static String ACRE_HOST_BASE = Configuration.Values.ACRE_HOST_BASE.getValue();
     private static String ACRE_HOST_DELIMITER_PATH = Configuration.Values.ACRE_HOST_DELIMITER_PATH.getValue();
@@ -447,6 +449,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         req.freebase_site_host = "http://" + ACRE_FREEBASE_SITE_ADDR;
         if (ACRE_FREEBASE_SITE_ADDR_PORT != 80) req.freebase_site_host += ":" + ACRE_FREEBASE_SITE_ADDR_PORT;
         req.apiary_service_url = ACRE_APIARY_ADDR;
+        req.apiary_key = ACRE_APIARY_KEY;
 
         _scope.put("PROTECTED_HOSTENV", _scope, this);
 
