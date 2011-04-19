@@ -29,6 +29,8 @@ public class AppEngineKeyStore implements KeyStore {
     
     private static KeyStore _singleton;
     
+    private static final String KEY_KIND = "__acre_keystore_key__";
+    
     public static synchronized KeyStore getKeyStore() {
         if (_singleton == null) {
             _singleton = new AppEngineKeyStore();
@@ -43,7 +45,7 @@ public class AppEngineKeyStore implements KeyStore {
     }
 
     public void put_key(String keyname, String appid, String token, String secret) {
-        Entity key = new Entity("Key");
+        Entity key = new Entity(KEY_KIND);
         key.setProperty("name", keyname);
         key.setProperty("appid", appid);
         key.setUnindexedProperty("token", token);
@@ -58,7 +60,7 @@ public class AppEngineKeyStore implements KeyStore {
     }
 
     public void delete_key(String keyname, String appid) {
-        Query query = new Query("Key");
+        Query query = new Query(KEY_KIND);
         query.addFilter("name", Query.FilterOperator.EQUAL, keyname);
         query.addFilter("appid", Query.FilterOperator.EQUAL, appid);
         for (Entity key : _datastore.prepare(query).asIterable()) {
@@ -68,7 +70,7 @@ public class AppEngineKeyStore implements KeyStore {
     }
 
     public String[] get_key(String keyname, String appid) {
-        Query query = new Query("Key");
+        Query query = new Query(KEY_KIND);
         query.addFilter("name", Query.FilterOperator.EQUAL, keyname);
         query.addFilter("appid", Query.FilterOperator.EQUAL, appid);
         for (Entity key : _datastore.prepare(query).asIterable()) {
@@ -82,7 +84,7 @@ public class AppEngineKeyStore implements KeyStore {
     public List<Map<String,String>> get_full_keys(String appid) {
         List<Map<String,String>> res = new ArrayList<Map<String,String>>();
 
-        Query query = new Query("Key");
+        Query query = new Query(KEY_KIND);
         query.addFilter("appid", Query.FilterOperator.EQUAL, appid);
         for (Entity key : _datastore.prepare(query).asIterable()) {
             Map<String,String> map = new HashMap<String,String>();
@@ -98,7 +100,7 @@ public class AppEngineKeyStore implements KeyStore {
     public List<String> get_keys(String appid) {
         List<String> res = new ArrayList<String>();
             
-        Query query = new Query("Key");
+        Query query = new Query(KEY_KIND);
         query.addFilter("appid", Query.FilterOperator.EQUAL, appid);
         for (Entity key : _datastore.prepare(query).asIterable()) {
             res.add((String) key.getProperty("name"));
