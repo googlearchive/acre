@@ -303,6 +303,10 @@ if [ "$CONF" != "" ]; then
     else 
       error "configuration file config/project.$CONF.conf not found";
     fi
+
+    if [ "$CONF_DIR" != "" ] && [ -f "$CONF_DIR/private.$CONF.conf.in" ]; then
+  	  load "$CONF_DIR/private.$CONF.conf.in"
+    fi
 fi
 
 # Overwrite logging property with cli config --------------
