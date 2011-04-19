@@ -102,7 +102,9 @@ public class Configuration implements ConfigurationMBean {
         ACRE_URLFETCH_TIMEOUT("30000"), // in ms, used only if ACRE_LIMIT_EXECUTION_TIME is false
         ACRE_MAX_ASYNC_CONNECTIONS("10"),
 
+        //APIARY address and api key for acre API use
         ACRE_APIARY_ADDR,
+        ACRE_APIARY_KEY,
         
         // values that are better without defaults because they could expose security-sensitive info
         ACRE_AUTH_SECRET, 

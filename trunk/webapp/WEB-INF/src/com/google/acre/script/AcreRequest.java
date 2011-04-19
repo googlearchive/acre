@@ -71,6 +71,7 @@ public class AcreRequest extends JsConvertable {
     public String freebase_site_host;
 
     public String apiary_service_url;
+    public String apiary_key;
 
     // if non-empty, this overrides the script_path computed from the url
     public String handler_script_path;
