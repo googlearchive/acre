@@ -73,9 +73,11 @@ def copy_configuration_files(options):
         print 'ERROR: specified directory %s does not exist' % options.directory
         exit(-1)
 
-    f = os.path.join(options.directory, 'ots.%s.conf.in' % options.config)
-    if os.path.exists(f):
-        target = 'webapp/META-INF/ots.other.conf.in'
+
+    for source_target in [('ots.%s.conf.in', 'ots.other.conf.in'), ('private.%s.conf.in', 'private.conf.in')]:
+      f = os.path.join(options.directory, source_target[0] % options.config)
+      if os.path.exists(f):
+        target = 'webapp/META-INF/%s' % source_target[1]
         if os.path.exists(target):
           os.chmod(target, 0777)
         shutil.copy(f, target)
