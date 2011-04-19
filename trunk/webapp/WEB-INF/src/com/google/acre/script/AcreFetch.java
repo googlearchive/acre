@@ -423,7 +423,7 @@ public class AcreFetch extends JsConvertable {
         } catch (IllegalArgumentException e) {
             Throwable cause = e.getCause();
             if (cause == null) cause = e;
-            throw new AcreURLFetchException("failed to fetch URL "+ request_url + " - Request Error: "+ cause.getMessage());
+            throw new AcreURLFetchException("failed to fetch URL "+ request_url + " - Request Error: " + cause.getMessage());
         } catch (IOException e) {
             Throwable cause = e.getCause();
             if (cause == null) cause = e;

@@ -847,7 +847,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             throw new JSConvertableException("Urlfetch is allowed to re-enter only once").newJSException(this);
         }
 
-        if (System.currentTimeMillis() > req._deadline) {
+        if (LIMIT_EXECUTION_TIME && System.currentTimeMillis() > req._deadline) {
             throw new RuntimeException("Cannot call urlfetch, the script ran out of time");
         }
 
