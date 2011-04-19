@@ -98,7 +98,7 @@ public class JSDataStore extends JSObject {
         _transaction = null; // remove transaction even after failure or we won't be able to create another one
     }
     
-    public Scriptable jsFunction_get(String app_id, String obj_key) {
+    public Scriptable jsFunction_get(String obj_key) {
         try {
             Key key = stringToKey(obj_key);
             return extract(_store.get(_transaction, key), _scope);
@@ -107,32 +107,31 @@ public class JSDataStore extends JSObject {
         }
     }
 
-    public Object jsFunction_put(String app_id, Scriptable obj, String name, String parent_key) {
+    public Object jsFunction_put(String kind, Scriptable obj, String name, String parent_key) {
         try {
             Entity entity = null;
             if (name == null || "null".equals(name) || "undefined".equals(name) ) {
                 if (parent_key == null || "null".equals(parent_key) || "undefined".equals(parent_key)) {
-                    entity = new Entity(app_id);
+                    entity = new Entity(kind);
                 } else {
-                    entity = new Entity(app_id, stringToKey(parent_key));
+                    entity = new Entity(kind, stringToKey(parent_key));
                 }
             } else {
                 if (parent_key == null || "null".equals(parent_key) || "undefined".equals(parent_key)) {
-                    entity = new Entity(app_id, name);
+                    entity = new Entity(kind, name);
                 } else {
-                    entity = new Entity(app_id, name, stringToKey(parent_key));
+                    entity = new Entity(kind, name, stringToKey(parent_key));
                 }
             }
             embed(entity, obj, false);
             Key k = _store.put(_transaction, entity);
             return keyToString(k);
         } catch (Exception e) {
-            e.printStackTrace();
             throw new JSConvertableException("Failed to save object: " + e.getMessage()).newJSException(_scope);
         }
     }
 
-    public Object jsFunction_update(String app_id, String obj_key, Scriptable obj) {
+    public Object jsFunction_update(String obj_key, Scriptable obj) {
         try {
             Key key = stringToKey(obj_key);
             Entity entity = _store.get(_transaction, key);
@@ -144,7 +143,7 @@ public class JSDataStore extends JSObject {
         }
     }
     
-    public void jsFunction_remove(String app_id, String obj_key) {
+    public void jsFunction_remove(String obj_key) {
         try {
             Key key = stringToKey(obj_key);
             _store.delete(_transaction, key);
@@ -153,9 +152,9 @@ public class JSDataStore extends JSObject {
         }
     }
     
-    public Scriptable jsFunction_find(String app_id, Scriptable query, Object cursor) {
+    public Scriptable jsFunction_find(String kind, Scriptable query, Object cursor) {
         try {
-            Query aequery = new Query(app_id);
+            Query aequery = new Query(kind);
             compile_query("", query, aequery);
             PreparedQuery pq = _store.prepare(aequery);
             JSDataStoreResults results = new JSDataStoreResults(pq,cursor,_scope);
@@ -252,7 +251,7 @@ public class JSDataStore extends JSObject {
             // TODO (SM): implement Array indexing
         } else {
             // this should never happen but better safe than sorry
-            throw new JSConvertableException("Sorry, don't know how to index this type of object (" + className + ")").newJSException(_scope);
+            throw new JSConvertableException("Sorry, don't know how to index this class of object (" + className + ")").newJSException(_scope);
         }
     }
 
@@ -324,7 +323,7 @@ public class JSDataStore extends JSObject {
             throw new JSConvertableException("Sorry, Array selection is not supported yet").newJSException(_scope);
         } else {
             // this should never happen but better safe than sorry
-            throw new JSConvertableException("Sorry, don't know how to index this type of object (" + className + ")").newJSException(_scope);
+            throw new JSConvertableException("Sorry, don't know how to index this class of object (" + className + ")").newJSException(_scope);
         }
     }
     

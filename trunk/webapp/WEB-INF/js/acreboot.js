@@ -931,7 +931,7 @@ acre.hash.b64_hmac_md5 = function (key, data) {
 
 // ------------------------------------------------------------------------
 
-// used by the keystore and the datastore to partition data based on app_id
+// used by the keystore and the appcache to partition data based on the app_guid
 
 _topscope._request_app_guid = null;
 
@@ -979,7 +979,6 @@ if (_request.trusted && _datastore) { // the _datastore object won't be availabl
     var store_scope = {};
     store_scope.syslog = syslog;
     store_scope.store = _datastore;
-    store_scope.acreboot = _topscope;
     _hostenv.load_system_script('datastore.js', store_scope);
     store_scope.augment(acre);
 }
@@ -2632,7 +2631,7 @@ var handle_request = function (req_path, req_body, skip_routes) {
 
     // before the script is actually run, we want to set the app guid aside
     // if we didn't already do so
-    // app_guid is primarily used for accessing the keystore and the datastore
+    // app_guid is primarily used for accessing the keystore and the appcache
     if (_topscope._request_app_guid === null) {
         _topscope._request_app_guid = script.app.guid;
     }

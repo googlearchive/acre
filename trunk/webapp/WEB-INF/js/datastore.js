@@ -20,54 +20,6 @@ var augment;
 
     };
 
-    var graphd_guid_prefix = "#9202a8c04000641f8";
-
-    var keyStr = "_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-=";
-
-
-    // turn a number into its base64 representation
-    function compress_num(n) {
-      var o = "";
-      
-      for (var i = 0; i < 5; i++) {
-        var mask = (1 << (6*(i+1))) - 1;
-        var masked = n & mask;
-        var adjusted = masked >> (6*i);
-        o += keyStr[adjusted];
-      }
-      
-      return o;
-    }
-
-    // remove trailing underscores since they don't provide any differentiation signal
-    function remove_trailing_underscores(str) {
-        for (var i = str.length - 1; str.charAt(i) == "_"; i--);
-        return str.substring(0,i+1);
-      }
-    
-    // given a freebase guid, return the shortest possible string
-    // that we can use to keep unicity between apps
-    function compress(guid) {
-      if (guid.indexOf(graphd_guid_prefix) != 0) return guid;
-      var str = guid.substring(graphd_guid_prefix.length);
-      var str1 = str.substring(0,7);
-      var str2 = str.substring(8,15);
-      var sep_ch = str.charAt(7);
-      var sep = parseInt(sep_ch,16);
-      var n1 = (parseInt(str1,16) << 2) + (sep >> 2);
-      var n2 = parseInt(str2,16) + (sep << 28);
-      var c1 = compress_num(n1);
-      var c2 = compress_num(n2);
-      return remove_trailing_underscores(c2 + c1);
-    }
-    
-    function get_appid() {
-        var appid = acreboot._request_app_guid;
-        if (!appid) throw Error("appid can't be null or undefined");
-        appid = compress(appid);
-        return appid;
-    }
-
     function begin() {
         store.begin();
     }
@@ -81,7 +33,7 @@ var augment;
     }
     
     function get(key) {
-        return store.get(get_appid(), key);
+        return store.get(key);
     }
     
     function put(obj, name, parent_key) {
@@ -92,7 +44,8 @@ var augment;
             var obj = name;
             var name = temp;
         }
-        return store.put(get_appid(), obj, name, parent_key);
+        var kind = obj.type || "untyped";
+        return store.put(kind, obj, name, parent_key);
     }
     
     function update(key, obj) {
@@ -100,7 +53,7 @@ var augment;
             obj = key;
             key = obj._.key;
         }
-        return store.update(get_appid(), key, obj);
+        return store.update(key, obj);
     }
     
     function remove(key) {
@@ -112,9 +65,9 @@ var augment;
             }
         } else if (typeof key == "object") {
             if (typeof key._ == "undefined") throw "Can only remove objects retrieved from the store";
-            remove(key._.key);
+            store.remove(key._.key);
         } else {
-            store.remove(get_appid(), key);
+            store.remove(key);
         }
     }
 
@@ -165,7 +118,8 @@ var augment;
     }
     
     function find(query,cursor) {
-        var result = store.find(get_appid(), query, cursor);
+        var kind = query.type || "untyped";
+        var result = store.find(kind, query, cursor);
         return new Result(result);
     }
 
