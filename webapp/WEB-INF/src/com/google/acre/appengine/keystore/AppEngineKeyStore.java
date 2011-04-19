@@ -29,7 +29,7 @@ public class AppEngineKeyStore implements KeyStore {
     
     private static KeyStore _singleton;
     
-    private static final String KEY_KIND = "__acre_keystore_key__";
+    private static final String KEY_KIND = "@@acre_keystore_key@@";
     
     public static synchronized KeyStore getKeyStore() {
         if (_singleton == null) {
