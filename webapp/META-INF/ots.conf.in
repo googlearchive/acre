@@ -46,15 +46,6 @@
             },
             {
                 "from":{
-                    "path":"/acre/system_keystore_console"
-                },
-                "to":{
-                    "route_as":"script",
-                    "location":"/default/system_keystore"
-                }
-            },
-            {
-                "from":{
                     "path":"/acre/test"
                 },
                 "to":{
