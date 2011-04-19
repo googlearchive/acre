@@ -2526,8 +2526,8 @@ var handle_request = function (req_path, req_body, skip_routes) {
     // set up rest of acre.request
     // path_info will get set once we know which part
     // of the path is file vs. path_info (in proto_require)
-    acre.request.body = req_body;
-    acre.request.query_string = req_query_string;
+    acre.request.body = req_body || "";
+    acre.request.query_string = req_query_string || "";
     set_request_params();
     
     // Fill in missing values
