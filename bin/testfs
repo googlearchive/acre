@@ -21,8 +21,8 @@ def discover(host, port, env, nomock, whitelist):
         params += '&mock=0'
     else:
         params += '&mock=1'
-    url = "http://environments.svn.freebase-site.googlecode.dev.%s:%s/%s"\
-    % (host, port, env)
+    url = "http://%s:%s/_fs_routing"\
+    % (env, port)
     try:
         response = urllib2.urlopen(url)
     except:
@@ -122,4 +122,3 @@ def main(argv=None):
 
 if __name__ == '__main__':
     sys.exit(main())
-
