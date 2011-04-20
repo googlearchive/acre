@@ -5,7 +5,7 @@ var URL_SIZE_LIMIT = 2047;
  * Attach the functions defined in this script to the given API object
  * to make them available to the user scope
  */
-function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, site_host, mwlt_mode) {
+function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, apiary_key, site_host, mwlt_mode) {
 
     // tuck this away so we can use it in handler and appfetcher creation
 
