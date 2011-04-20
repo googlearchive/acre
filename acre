@@ -164,7 +164,14 @@ appengine_run() {
     echo "=========== Starting Acre ======================================= "
     echo ""
     echo " Host Base: $ACRE_HOST_BASE"
-    echo " Freebase APIs: $ACRE_METAWEB_API_ADDR"
+    if [ "$ACRE_APIARY_ADDR" != "" ]; then
+        echo " Freebase APIs: $ACRE_APIARY_ADDR"
+      if [ ! "$ACRE_APIARY_KEY" ]; then
+        echo " WARNING: You are using the new Freebase APIs (Apiary) but have no apiary acre key specified in your project or private config. Visit https://code.google.com/apis/console to obtain a key and specify the ACRE_APIARY_KEY configuration parameter. Your acre installation will be unstable until acre can do registered Freebase API calls."
+      fi
+    else
+        echo " Freebase APIs: $ACRE_METAWEB_API_ADDR"
+    fi       
     echo " Trusted Mode: $ACRE_TRUSTED_MODE"
     echo " Limit Execution Time: $ACRE_LIMIT_EXECUTION_TIME"
     echo " Log level: $ACRE_LOG_LEVEL"
