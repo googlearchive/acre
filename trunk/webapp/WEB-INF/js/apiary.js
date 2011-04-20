@@ -117,7 +117,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
         }
     }
 
-    function compose_get_or_post(url, opts, rpc_opts) {
+    function compose_get_or_post(url, opts) {
         if (typeof opts !== "object") {
             opts = {};
         }
@@ -233,6 +233,18 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
         return form_encode(params);
     }
 
+    function legacy_prepareContent(query, envelope, params) {
+        if (!query) throw new Error("You must provide a query");
+        if (!envelope) envelope = {};
+        envelope.query = query;
+        envelope.escape = false;
+        if (!params) params = {};
+        params.query = envelope;
+        return form_encode(params);
+    }
+
+
+
     /**
      * Prepare the content payload of the POST request with multiple queries
      */
@@ -257,17 +269,24 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
         var [api_opts, fetch_opts] = decant_options(o);
         var url = freebase.apiary_url + "/mqlread";
         fetch_opts.content = composer(q,e,api_opts);
-        fetch_opts.rpc_method_name = "mql.read";
 
         //TODO: move apiVersion to config
         //TODO: move this functionality to prepareContent
-        rpc_opts = { 'method' : 'mql.read', 'apiVersion' : 'v1-sandbox', 'params' : {'query' : JSON.stringify(q)  } };
-        
-        acre.freebase.extend_query(rpc_opts['params'], e);
-        acre.freebase.extend_query(rpc_opts['params'], o);
+        //fetch_opts.rpc_method_name = "mql.read";
+        //rpc_opts = { 'method' : 'mql.read', 'apiVersion' : 'v1-sandbox', 'params' : {'query' : JSON.stringify(q)  } };
+        //acre.freebase.extend_query(rpc_opts['params'], e);
+        //acre.freebase.extend_query(rpc_opts['params'], o);
 
-        return fetch.apply(this, compose_get_or_post(url, fetch_opts, rpc_opts));
+        return fetch.apply(this, compose_get_or_post(url, fetch_opts));
     }
+
+    function legacy_mqlread(q,e,o,composer) {
+        var [api_opts, fetch_opts] = decant_options(o);
+        var url = freebase.service_url + "/api/service/mqlread";
+        fetch_opts.content = composer(q,e,api_opts);
+        return fetch.apply(this, compose_get_or_post(url, fetch_opts));
+    }
+
 
     /**
      * Get info about topics using the Topic API
@@ -362,7 +381,11 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
      * Perform a mqlread
      */
     freebase.mqlread = function(query,envelope,options) {
-        return mqlread(query,envelope,options,prepareContent);
+        if (envelope && envelope['extended']) { 
+            return legacy_mqlread(query,envelope,options,legacy_prepareContent);
+        } else{
+            return mqlread(query,envelope,options,prepareContent);
+        }
     };
 
     /**
