@@ -25,13 +25,13 @@ usage() {
 Usage: $0 [options] <command>
 
 Available Options:
-    
+
   -h .................. Show this help screen
-  
+
   -c <conf> ........... The configuration file that acre should use
                         (or name in config/project.<name>.conf)
                         [default: sandbox]
-                        
+
   -d <dir> ............ The directory to use to look for additional configuration files
                         [default: none]
 
@@ -43,7 +43,7 @@ Available Options:
 
   -w <dir> ............ War location
                         [default: _build/war]
-                                                
+
 Available Commands:
 
     build ............. Build Acre
@@ -54,7 +54,7 @@ Available Commands:
     start ............. Start Acre as a daemon
     stop .............. Stop Acre that was started as a daemon
     zap ............... Remove the Acre PID file
-    
+
     appengine-build ... Build a WAR package of Acre to run on Google App Engine
     appengine-run ..... Run Acre in the local Google App Engine simulator
     appengine-deploy .. Deploy Acre on Google App Engine
@@ -62,17 +62,17 @@ Available Commands:
 
     test .............. run a suite of integration tests (start acre first)
     testng ............ run the next generation suite of integration tests (start acre first)
-    
+
     clean ............. Remove all class files
     clean-whitespace .. Normalize tabs and newlines
     distclean ......... Restore everything to checkout state
-    
+
     setup-keystore .... Initialize the KeyStore SQL tables
     get-mysql-driver .. Obtain the MySQL JDBC Driver
     freebase_check .... basic check of the freebase api endpoint
 
     dist <version> .... Builds a tar.gz distribution for acre
-    
+
 EOF
     exit 0
 }
@@ -166,12 +166,12 @@ appengine_run() {
     echo " Host Base: $ACRE_HOST_BASE"
     if [ "$ACRE_APIARY_ADDR" != "" ]; then
         echo " Freebase APIs: $ACRE_APIARY_ADDR"
-      if [ ! "$ACRE_APIARY_KEY" ]; then
-        echo " WARNING: You are using the new Freebase APIs (Apiary) but have no apiary acre key specified in your project or private config. Visit https://code.google.com/apis/console to obtain a key and specify the ACRE_APIARY_KEY configuration parameter. Your acre installation will be unstable until acre can do registered Freebase API calls."
-      fi
+        if [ ! "$ACRE_APIARY_KEY" ]; then
+            echo " WARNING: You are using the new Freebase APIs (Apiary) but have no apiary acre key specified in your project or private config. Visit https://code.google.com/apis/console to obtain a key and specify the ACRE_APIARY_KEY configuration parameter. Your acre installation will be unstable until acre can do registered Freebase API calls."
+        fi
     else
         echo " Freebase APIs: $ACRE_METAWEB_API_ADDR"
-    fi       
+    fi
     echo " Trusted Mode: $ACRE_TRUSTED_MODE"
     echo " Limit Execution Time: $ACRE_LIMIT_EXECUTION_TIME"
     echo " Log level: $ACRE_LOG_LEVEL"
@@ -195,12 +195,12 @@ appengine_hostbase() {
 appengine_build_war() {
     check_appengine
     check_appengine_build
-    
+
     appengine_hostbase
     appengine_build_config
-    
+
     ant -f build.xml -Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\" -Dwar.dir=\"$WAR\" appengine-war || exit 1
-    
+
     echo ""
     echo "=========== Prepared Appengine WAR =============================== "
     echo ""
@@ -228,7 +228,7 @@ appengine_deploy() {
     echo ""
     echo "Deploying $APPENGINE_APP_ID [$APPENGINE_APP_VERSION] at http://$ACRE_HOST_BASE/"
     echo ""
-    
+
     $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR"
 
     echo ""
@@ -266,7 +266,7 @@ export WAR="_build/war"
 while [ $# -ne 0 ]; do
   case "$1" in
     -h) usage;;
-    
+
     -c) shift 
         export CONF="$1" 
         shift
@@ -276,12 +276,12 @@ while [ $# -ne 0 ]; do
         export CONF_DIR="$1" 
         shift
         continue;;
-        
+
     -p) shift 
         export PORT="$1"
         shift
         continue;;
-        
+
     -v) shift
         CLI_ACRE_LOG_LEVEL="$1"
         shift
@@ -294,7 +294,7 @@ while [ $# -ne 0 ]; do
 
     -*) echo "$0: invalid option: $1" >&2
         exit 1;;
-        
+
     *) break;;
   esac
 done
@@ -302,17 +302,17 @@ done
 # Overwrite defaults with cli config ----------------------
 if [ "$CONF" != "" ]; then
     if [ "$CONF_DIR" != "" ] && [ -f "$CONF_DIR/project.$CONF.conf" ]; then
-	  load "$CONF_DIR/project.$CONF.conf"
+        load "$CONF_DIR/project.$CONF.conf"
     elif [ -f $CONF ]; then
-      load $CONF
+        load $CONF
     elif [ -f "config/project.$CONF.conf" ]; then
-  	  load "config/project.$CONF.conf"
+        load "config/project.$CONF.conf"
     else 
-      error "configuration file config/project.$CONF.conf not found";
+        error "configuration file config/project.$CONF.conf not found";
     fi
 
     if [ "$CONF_DIR" != "" ] && [ -f "$CONF_DIR/private.$CONF.conf.in" ]; then
-  	  load "$CONF_DIR/private.$CONF.conf.in"
+        load "$CONF_DIR/private.$CONF.conf.in"
     fi
 fi
 
@@ -366,25 +366,25 @@ case "$ACTION" in
         SCRIPT="build"
         COMMAND="distclean" 
         invoke;;
-        
+
     appengine-build) 
         appengine_build;;
 
     appengine-build-config) 
         appengine_build_config;;
-        
+
     appengine-run) 
         appengine_run;;
-        
+
     appengine-build-war) 
         appengine_build_war;;
 
     appengine-deploy) 
         appengine_deploy;;
-        
+
     appengine-rollback) 
         appengine_rollback;;
-        
+
     appengine-internal-deploy) 
         APPENGINE_DEPLOY_PARAMS="-p cache.corp.google.com:3128 -s admin-console.prom.corp.google.com"
         APPENGINE_BASE_HOST="prom.corp.google.com"
