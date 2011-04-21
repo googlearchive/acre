@@ -1890,8 +1890,8 @@ var fb_script = (_request.apiary_service_url !== "") ? "apiary.js" : "freebase.j
 _hostenv.load_system_script(fb_script, freebase_scope);
 
 // decorate acreboot objects with just what we need... a lot
-    freebase_scope.augment(acre.freebase, acre.urlfetch, acre.async.urlfetch, _request.freebase_service_url, _request.apiary_service_url, _request.apiary_key, _request.freebase_site_host, mwlt_mode);
-    freebase_scope.augment(_system_freebase, _system_urlfetch, _system_async_urlfetch, _request.freebase_service_url, _request.apiary_service_url, _request.apiary_key, _request.freebase_site_host, mwlt_mode);
+freebase_scope.augment(acre.freebase, acre.urlfetch, acre.async.urlfetch, _request.freebase_service_url, _request.apiary_service_url, _request.apiary_key, _request.freebase_site_host, mwlt_mode);
+freebase_scope.augment(_system_freebase, _system_urlfetch, _system_async_urlfetch, _request.freebase_service_url, _request.apiary_service_url, _request.apiary_key, _request.freebase_site_host, mwlt_mode);
 freebase_scope.appfetcher(register_appfetch_method, make_appfetch_error);
 acre.handlers.mqlquery = freebase_scope.handler();
 
