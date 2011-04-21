@@ -183,12 +183,16 @@ appengine_run() {
 }
 
 appengine_hostbase() {
-    if [ "$APPENGINE_APP_ID" != "" ]; then
-        ACRE_HOST_BASE="$APPENGINE_APP_ID.$APPENGINE_BASE_HOST"
+    if [ "$DEPLOYED_ACRE_HOST_BASE" == "" ]; then
+        if [ "$APPENGINE_APP_ID" != "" ]; then
+            ACRE_HOST_BASE="$APPENGINE_APP_ID.$APPENGINE_BASE_HOST"
 
-        if [ "$APPENGINE_APP_VERSION" != "release" ]; then
-            ACRE_HOST_BASE="$APPENGINE_APP_VERSION.$ACRE_HOST_BASE"
+            if [ "$APPENGINE_APP_VERSION" != "release" ]; then
+                ACRE_HOST_BASE="$APPENGINE_APP_VERSION.$ACRE_HOST_BASE"
+            fi
         fi
+    else
+        ACRE_HOST_BASE="$DEPLOYED_ACRE_HOST_BASE"
     fi
 }
 
