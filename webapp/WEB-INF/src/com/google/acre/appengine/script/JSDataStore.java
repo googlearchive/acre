@@ -38,6 +38,8 @@ public class JSDataStore extends JSObject {
     
     private static final long serialVersionUID = -2496958331292538818L;
 
+    private static final int STRING_SIZE_INDEXING_CUTOFF = 200;
+    
     public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) {
         Scriptable scope = ScriptableObject.getTopLevelScope(ctorObj);
         return new JSDataStore(scope);
@@ -238,13 +240,20 @@ public class JSDataStore extends JSObject {
                 if (value instanceof Number && !(value instanceof Double)) {
                     value = new Double(((Number) value).doubleValue());
                 }
+
+                String p = path + prop;
                 
-                if (value instanceof String || value instanceof Boolean || value instanceof Number) {
-                    entity.setProperty(path + prop, value);
+                if (value instanceof String) {
+                    // don't index big strings, since we won't used them as query filters anyway
+                    if (((String) value).length() < STRING_SIZE_INDEXING_CUTOFF) {
+                        entity.setProperty(p, value);
+                    }
+                } else if (value instanceof Boolean || value instanceof Number) {
+                    entity.setProperty(p, value);
                 } else if (value instanceof Scriptable) {
-                    index_object(path + prop + ".", (Scriptable) value, entity);
+                    index_object(p + ".", (Scriptable) value, entity);
                 } else {
-                    //throw new JSConvertableException("Sorry, you can't save objects with null or undefined properties (" + path + prop + ")").newJSException(_scope);
+                    //throw new JSConvertableException("Sorry, you can't save objects with null or undefined properties (" + p + ")").newJSException(_scope);
                 }
             }
         } else if ("Array".equals(className)) {
