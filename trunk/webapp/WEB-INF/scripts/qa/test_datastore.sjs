@@ -48,6 +48,24 @@ if (acre.store) {
         }
     });
 
+    test('acre.store put/get/remove with big strings works', function() {
+        var str = "";
+        for (var i = 0; i < 500; i++) {
+            str += "a";
+        }
+        var o1 = { "foo" : str };
+        var id = acre.store.put(o1);
+        var o2 = acre.store.get(id);
+        are_same(o1,o2);
+        acre.store.remove(id);
+        try {
+            acre.store.get(id);
+            ok(false,"exception wasn't triggered");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+    });
+
     test('acre.store stored objects have the right metadata', function() {
         var o1 = { "foo" : "bar" };
         var now = (new Date()).getTime();
