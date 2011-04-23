@@ -229,6 +229,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
         if (!envelope) envelope = {};
         if (!params) params = {};
         acre.freebase.extend_query(params, envelope);
+        params.html_escape = false;
         params.query = query;
         return form_encode(params);
     }
