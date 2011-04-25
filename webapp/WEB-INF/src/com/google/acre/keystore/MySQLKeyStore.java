@@ -134,7 +134,9 @@ public class MySQLKeyStore implements KeyStore {
     }
 
     public String[] get_key(String keyname, String appid) {
-    	if (!active) throw new RuntimeException(ERROR_MSG);
+        
+        String[] res = null;
+    	if (!active) return res;
 
         String q = "SELECT token, secret FROM " + _table_name +
             " WHERE key_id = ? AND app_id = ?;";
@@ -142,7 +144,6 @@ public class MySQLKeyStore implements KeyStore {
         Connection conn = null;
         PreparedStatement stat = null;
         ResultSet rs = null;
-        String[] res = null;
 
         try {
             conn = DriverManager.getConnection(DATASOURCE);
@@ -168,7 +169,9 @@ public class MySQLKeyStore implements KeyStore {
     }
 
     public List<Map<String,String>> get_full_keys(String appid) {
-    	if (!active) throw new RuntimeException(ERROR_MSG);
+        
+        ArrayList<Map<String,String>> list = new ArrayList<Map<String,String>>();
+    	if (!active) return list;
 
         String q = "SELECT key_id, token, secret FROM " + _table_name + 
             " WHERE app_id = ?;";
@@ -176,7 +179,6 @@ public class MySQLKeyStore implements KeyStore {
         Connection conn = null;
         PreparedStatement stat = null;
         ResultSet rs = null;
-        ArrayList<Map<String,String>> list = new ArrayList<Map<String,String>>();
 
         try {
             conn = DriverManager.getConnection(DATASOURCE);
@@ -206,14 +208,15 @@ public class MySQLKeyStore implements KeyStore {
     }
     
     public List<String> get_keys(String appid) {
-    	if (!active) throw new RuntimeException(ERROR_MSG);
+        
+        ArrayList<String> list = new ArrayList<String>();
+    	if (!active) return list;
 
         String q = "SELECT key_id FROM " + _table_name + " WHERE app_id = ?;";
-                
+        
         Connection conn = null;
         PreparedStatement stat = null;
         ResultSet rs = null;
-        ArrayList<String> list = new ArrayList<String>();
 
         try {
             conn = DriverManager.getConnection(DATASOURCE);
