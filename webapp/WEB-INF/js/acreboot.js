@@ -1929,7 +1929,8 @@ oauth_scope.syslog = syslog;
 oauth_scope.parseUri = u.parseUri;
 oauth_scope.system_urlfetch = _system_urlfetch;
 _hostenv.load_system_script('oauth.js',      oauth_scope);
-_hostenv.load_system_script('acre_oauth.js', oauth_scope);
+var oauth_script = (_request.apiary_service_url !== "") ? "apiary_oauth.js" : "acre_oauth.js";
+_hostenv.load_system_script(oauth_script, oauth_scope);
 oauth_scope.augment(acre);
 
 // fish this function out because _urlfetch needs it
