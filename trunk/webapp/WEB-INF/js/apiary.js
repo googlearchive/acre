@@ -17,7 +17,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
     freebase.service_url = service_url;
     freebase.site_host = site_host;
     APIARY_KEY = apiary_key;
-
+  
     // XXX FreebaseError is getting built twice because this is called for
     // user and system
 
@@ -58,7 +58,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
     function decant_options(options) {
         var reserved = {
             callback          : true,
-            errback           : true,
+            errback           : true
         };
 
         if (options) {
@@ -103,7 +103,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
         try { 
           return acre.keystore.get('freebase_api')[0];
         } catch (e) { 
-          throw new Error('Failed to get Freebase API Key from keystore for this app, try /acre/keystore_console on this host to see available keys.')
+          throw new Error('Failed to get Freebase API Key from keystore for this app, try /acre/keystore_console on this host to see available keys.');
         }
     }
 
@@ -287,8 +287,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
         fetch_opts.content = composer(q,e,api_opts);
         return fetch.apply(this, compose_get_or_post(url, fetch_opts));
     }
-
-
+  
     /**
      * Get info about topics using the Topic API
      */
@@ -337,17 +336,15 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
      */
      freebase.get_user_info = function(options) {
          var [api_opts, fetch_opts] = decant_options(options);
-         var url = freebase.service_url + "/api/service/user_info";
-         fetch_opts.method = "POST";
-         fetch_opts.content = form_encode(api_opts);
+         var base_url = freebase.apiary_url + "/user_info";
+         api_opts.key = get_app_freebase_api_key();
+         var url = acre.form.build_url(base_url, api_opts);
          fetch_opts.sign = true;
+         fetch_opts.check_results = "json";
 
          function handle_get_user_info_success(res) {
-             if ('metaweb-user' in acre.request.cookies) {
-                 //acre.response.vary_cookies['metaweb-user'] = 1;
-             } else {
-                 acre.oauth.has_credentials(); // this sets vary_cookies on the oauth cookies for us
-             }
+             // this sets vary_cookies on the oauth cookies for us
+             acre.oauth.has_credentials();
              return res;
          }
 
@@ -361,10 +358,10 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
          var errback = fetch_opts.errback;
 
          if(callback) {
-             fetch_opts.callback = function(res){
+             fetch_opts.callback = function(res) {
                  callback(handle_get_user_info_success(res));
              };
-             fetch_opts.errback = function(e){
+             fetch_opts.errback = function(e) {
                  callback(handle_get_user_info_error(e));
              };
              return fetch(url, fetch_opts);
@@ -401,11 +398,10 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
      */
     freebase.mqlwrite = function(query,envelope,options) {
         var [api_opts, fetch_opts] = decant_options(options);
-        var url = freebase.service_url + "/api/service/mqlwrite";
+        var url = freebase.apiary_url + "/mqlwrite";
         fetch_opts.method = "POST";
         fetch_opts.content = prepareContent(query,envelope,api_opts);
         if (typeof fetch_opts.sign === 'undefined') fetch_opts.sign = true;
-        //acre.response.vary_cookies['mwLastWriteTime'] = 1;
         return fetch(url, fetch_opts);
     };
 
@@ -435,7 +431,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
         if (typeof name != 'undefined') {
             var params = { 'name' : name };
         } else {
-            var params = {}
+            var params = {};
         }
         fetch_opts.method = "POST";
         fetch_opts.content = form_encode(api_opts);
@@ -492,7 +488,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
     freebase.get_topic = function(id,options) {
         if (!id) throw new Error('You must provide the id of the topic you want');
         if (id.indexOf(',') > 0) throw new Error('Use get_topic_multi if you want to retrieve multiple topics');
-        if (typeof id != 'string') throw new Error("'get_topic' needs a string as ID, if you need to get multiple topics use 'get_topic_multi' instead.")
+        if (typeof id != 'string') throw new Error("'get_topic' needs a string as ID, if you need to get multiple topics use 'get_topic_multi' instead.");
 
         if (options.callback) {
             var callback = options.callback;
@@ -510,7 +506,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
      */
     freebase.get_topic_multi = function(ids,options) {
         if (!ids) throw new Error('You must provide an array of ids of the topics you want');
-        if (!(ids instanceof Array)) throw new Error("'get_topic_multi' needs an array of IDs, if you need to get a single topic use 'get_topic' instead.")
+        if (!(ids instanceof Array)) throw new Error("'get_topic_multi' needs an array of IDs, if you need to get a single topic use 'get_topic' instead.");
         return topic(ids,options);
     };
 
