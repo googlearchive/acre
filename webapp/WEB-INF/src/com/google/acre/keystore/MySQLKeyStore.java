@@ -109,34 +109,34 @@ public class MySQLKeyStore implements KeyStore {
     }
 
     public void delete_key(String keyname, String appid) {
-    	if (!active) throw new RuntimeException(ERROR_MSG);
-    	
+        if (!active) throw new RuntimeException(ERROR_MSG);
+
         String q = "DELETE FROM " + _table_name +
-            " WHERE key_id = ? AND app_id = ?;";
+          " WHERE key_id = ? AND app_id = ?;";
 
         Connection conn = null;
         PreparedStatement stat = null;
 
         try {
-            conn = DriverManager.getConnection(DATASOURCE);
+          conn = DriverManager.getConnection(DATASOURCE);
 
-            stat = conn.prepareStatement(q);
-            stat.setString(1, keyname);
-            stat.setString(2, appid);
+          stat = conn.prepareStatement(q);
+          stat.setString(1, keyname);
+          stat.setString(2, appid);
 
-            stat.executeUpdate();
+          stat.executeUpdate();
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+          throw new RuntimeException(e);
         } finally {
-            try { stat.close(); } catch(Exception e) { }
-            try { conn.close(); } catch(Exception e) { }
+          try { stat.close(); } catch(Exception e) { }
+          try { conn.close(); } catch(Exception e) { }
         }
     }
 
     public String[] get_key(String keyname, String appid) {
         
         String[] res = null;
-    	if (!active) return res;
+        if (!active) return res;
 
         String q = "SELECT token, secret FROM " + _table_name +
             " WHERE key_id = ? AND app_id = ?;";
@@ -171,7 +171,7 @@ public class MySQLKeyStore implements KeyStore {
     public List<Map<String,String>> get_full_keys(String appid) {
         
         ArrayList<Map<String,String>> list = new ArrayList<Map<String,String>>();
-    	if (!active) return list;
+        if (!active) return list;
 
         String q = "SELECT key_id, token, secret FROM " + _table_name + 
             " WHERE app_id = ?;";
@@ -210,7 +210,7 @@ public class MySQLKeyStore implements KeyStore {
     public List<String> get_keys(String appid) {
         
         ArrayList<String> list = new ArrayList<String>();
-    	if (!active) return list;
+        if (!active) return list;
 
         String q = "SELECT key_id FROM " + _table_name + " WHERE app_id = ?;";
         
@@ -245,7 +245,7 @@ public class MySQLKeyStore implements KeyStore {
     private void insert_key(String keyname, String appid, String token,
                             String secret) {
 
-    	if (!active) throw new RuntimeException(ERROR_MSG);
+        if (!active) throw new RuntimeException(ERROR_MSG);
 
         // new apporach:
         //  - select keyname/appid
