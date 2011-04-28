@@ -257,13 +257,13 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
             Future<HTTPResponse> futr = asyncreq.request;
             Function callback = asyncreq.callback;
             if (futr.isCancelled()) {
-                _requests.remove(i);
                 JSURLError jse = new JSURLError("Request cancelled");
 
                 callback.call(ctx, _scope, null, new Object[] {
                     asyncreq.url.toString(),
                     jse.toJSError(_scope)
                 });
+                _requests.remove(i);
                 continue;
             }
 
@@ -286,6 +286,8 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                     asyncreq.url.toString(),
                     jse.toJSError(_scope)
                 });
+                _requests.remove(i);
+                continue;
             } catch (InterruptedException e) {
                 JSURLError jse = new JSURLError(e.getMessage());
 
@@ -293,6 +295,8 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                     asyncreq.url.toString(),
                     jse.toJSError(_scope)
                 });
+                _requests.remove(i);
+                continue;
             }
 
             i++;
