@@ -204,7 +204,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
                     if (result.status != "200 OK") {
                         var message = JSON.stringify(response, null, 2);
                         //var message = 'HTTP error: ' + result.status;
-                    } else if ('message' in result.messages[0]) {
+                    } else if ('messages' in result && result.messages[0] && 'message' in result.messages[0]) {
                         var message = result.code + ': ' + result.messages[0].message;
                     } else {
                         var message = result.code;
