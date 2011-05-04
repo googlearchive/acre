@@ -237,6 +237,9 @@ class Fetcher:
         respobj = urllib2.urlopen(request)
         respdata = respobj.read()
         cookies = self.cookiejar.make_cookies(respobj, request)
+        url = "http://%s:%s/account/signin" % (devel_host, acre_port)
+        self.fetch(url)
+
 
     def logout(self):
         data = urllib.urlencode({ 'mw_cookie_scope':'domain' })
