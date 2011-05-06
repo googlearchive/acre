@@ -110,6 +110,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
             delete opts.content;
         } else {
             opts.method = "POST";
+            opts.bless = true;  // because this helper only used for safe requests (mqlread, search)
         }
         return [url, opts];
     }
@@ -274,6 +275,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
         //acre.response.vary_cookies['mwLastWriteTime'] = 1;
         var url = freebase.service_url + "/api/service/touch";
         fetch_opts.method = "POST";
+        fetch_opts.bless = true;  // safe request, even though it's POST
         return fetch(url, fetch_opts);
     };
 

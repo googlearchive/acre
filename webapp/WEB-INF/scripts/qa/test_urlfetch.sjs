@@ -90,6 +90,69 @@ test('acre.async.urlfetch fails with recursive re-entry',function() {
     }
 });
 
+// ------------------------- sub-request security -----------------------------
+var subreq_url = acre.request.base_url + "subrequest_urlfetch";
+
+test('acre.urlfetch safe subrequest',function() {
+    var response = acre.urlfetch(subreq_url);
+    equal(response.body, "success");
+});
+
+test('unsafe subrequest using GET',function() {
+    var url = acre.form.build_url(subreq_url, {
+        "unsafe": true
+    });
+    var response = acre.urlfetch(url);
+    equal(response.body, "subrequest error");
+});
+
+test('unsafe subrequest using GET and bless',function() {
+    var url = acre.form.build_url(subreq_url, {
+        "unsafe": true,
+        "bless": true
+    });
+    var response = acre.urlfetch(url);
+    equal(response.body, "success");
+});
+
+/* TODO - Test has to be called with POST to work
+// TODO - remove once x-requested-with restriction turned on
+test('unsafe subrequest using POST',function() {
+    var url = acre.form.build_url(subreq_url, {
+        "unsafe": true
+    });
+    var response = acre.urlfetch(url, {
+        "method": "POST"
+    });
+    equal(response.body, "success");
+});
+
+
+/* TODO - switch to these tests
+test('unsafe subrequest using just POST',function() {
+    var url = acre.form.build_url(subreq_url, {
+        "unsafe": true
+    });
+    var response = acre.urlfetch(url, {
+        "method": "POST"
+    });
+    equal(response.body, "subrequest error");
+});
+
+test('unsafe subrequest using POST & X-Requested-With header',function() {
+    var url = acre.form.build_url(subreq_url, {
+        "unsafe": true
+    });
+    var response = acre.urlfetch(url, {
+        "method": "POST",
+        "headers": {
+            "X-Requested-With": 1
+        }
+    });
+    equal(response.body, "success");
+});
+*/
+
 // --------------------------- mixed ----------------------------------------
 
 test('sync and async urlfetch obtain the same cookies',{"bug": "with ae 1.4.2 getting diff google cookies in buildbot, no clue"}, function() {
