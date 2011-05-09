@@ -296,7 +296,7 @@ mjt.formdecode = function (qstr) {
 
         if (splitpt < 1) {
             mjt.log('bad uri query argument, missing "=": ', qpairs[i]);
-            continue;
+            var splitpt = qpairs[i].length;
         }
 
         var m = [qpairs[i].substring(0, splitpt), qpairs[i].substring(splitpt+1)];
