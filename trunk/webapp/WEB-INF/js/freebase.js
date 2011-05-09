@@ -287,6 +287,7 @@ function augment(freebase, urlfetch, async_urlfetch, service_url, apiary_url, ap
          var [api_opts, fetch_opts] = decant_options(options);
          var url = freebase.service_url + "/api/service/user_info";
          fetch_opts.method = "POST";
+         fetch_opts.bless = true;  // safe request, even though it's POST
          fetch_opts.content = form_encode(api_opts);
          fetch_opts.sign = true;
 
