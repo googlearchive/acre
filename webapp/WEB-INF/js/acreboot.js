@@ -805,7 +805,32 @@ function set_environ() {
         delete acre.environ;
     }
     
-    acre.environ = _request;
+    acre.environ = {
+        version: _request.version,
+        script_name: _request.script_name,
+        script_id: _request.script_id,
+        script_namespace: _request.script_namespace,
+        path_info: _request.path_info,
+        query_string: _request.query_string,
+        headers: _request.headers,
+        cookies: _request.cookies,
+        server_name: _request.server_name,
+        server_host: _request.server_host,
+        server_host_base: _request.server_host_base,
+        server_port: _request.server_port,
+        server_protocol: _request.server_protocol,
+        request_body: _request.request_body,
+        request_method: _request.request_method,
+        request_path_info: _request.request_path_info,
+        request_server_name: _request.request_server_name,
+        request_server_port: _request.request_server_port,
+        request_start_time: _request.request_start_time,
+        request_url: _request.request_url,
+        request_app_url: _request.request_app_url,
+        request_base_url: _request.request_base_url,
+        freebase_service_url: _request.freebase_service_url,
+        freebase_site_host: _request.freebase_site_host
+    };
     acre.environ.params = acre.request.params;
     acre.environ.body_params = acre.request.body_params;
     
@@ -933,7 +958,7 @@ acre.hash.b64_hmac_md5 = function (key, data) {
 
 // used by the keystore and the appcache to partition data based on the app_guid
 
-_topscope._request_app_guid = null;
+_request.app_guid = null;
 
 // ------------------------ keystore --------------------------------------
 
@@ -942,31 +967,31 @@ if (typeof acre.keystore == 'undefined') {
 }
 
 acre.keystore.get = function (name) {
-    if (_topscope._request_app_guid !== null) {
-        return _ks.get_key(name, _topscope._request_app_guid);
+    if (_request.app_guid !== null) {
+        return _ks.get_key(name, _request.app_guid);
     } else {
         return null;
     }
 };
 
 acre.keystore.keys = function () {
-    if (_topscope._request_app_guid !== null) {
-        return _ks.get_keys(_topscope._request_app_guid);
+    if (_request.app_guid !== null) {
+        return _ks.get_keys(_request.app_guid);
     } else {
         return null;
     }
 };
 
 acre.keystore.remove = function (name) {
-    if (_topscope._request_app_guid !== null) {
-        _ks.delete_key(name, _topscope._request_app_guid);
+    if (_request.app_guid !== null) {
+        _ks.delete_key(name, _request.app_guid);
     }
 };
 
 if (_request.trusted) { 
   acre.keystore.put = function (name, token, secret) {
-    if (_topscope._request_app_guid !== null) {
-      return _ks.put_key(name, _topscope._request_app_guid, token, secret);
+    if (_request.app_guid !== null) {
+      return _ks.put_key(name, _request.app_guid, token, secret);
     } else {
       return null;
     }
@@ -1000,6 +1025,7 @@ if (_request.trusted && _appcache) { // the _appcache object won't be available 
     appcache_scope.syslog = syslog;
     appcache_scope.cache = _appcache;
     appcache_scope.acreboot = _topscope;
+    appcache_scope.request = _request;
     _hostenv.load_system_script('appcache.js', appcache_scope);
     appcache_scope.augment(acre);
 }
@@ -1147,7 +1173,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     // state-changing sub-requests by default.
     // this behavior can be over-ridden with a 'bless': true option
     // TODO: Turn x-requested-with back on once there's a FORM solution
-    if (_hostenv.csrf_protection) {
+    if (_request.csrf_protection) {
         if (!(method === "GET" || method == "HEAD") && !bless) {
             if (acre.request.method === "GET" || acre.request.method === "HEAD" || !("x-requested-with" in acre.request.headers)) {
                 throw new acre.errors.URLError("Request to " + url + " appears to be a state-changing subrequest made " +
@@ -2277,7 +2303,7 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
             aug_scope.acre.request.script = script;
             
             if (app.csrf_protection) {
-                _hostenv.csrf_protection = true;
+                _request.csrf_protection = true;
             }
 
             if (app.error_page) {
@@ -2566,7 +2592,7 @@ var handle_request = function (req_path, req_body, skip_routes) {
           var source_app = proto_require(compose_req_path(h), null, true)[0];
           if (source_app !== null) {
               source_path = compose_req_path(h, p);
-              _topscope._request_app_guid = source_app.guid;
+              _request.app_guid = source_app.guid;
           }
         } catch(e) {
           syslog.warn("Unresolvable host used with a /acre/ URL.", "handle_request.host");
@@ -2654,8 +2680,8 @@ var handle_request = function (req_path, req_body, skip_routes) {
     // before the script is actually run, we want to set the app guid aside
     // if we didn't already do so
     // app_guid is primarily used for accessing the keystore and the appcache
-    if (_topscope._request_app_guid === null) {
-        _topscope._request_app_guid = script.app.guid;
+    if (_request.app_guid === null) {
+        _request.app_guid = script.app.guid;
     }
     
     // View Source link
