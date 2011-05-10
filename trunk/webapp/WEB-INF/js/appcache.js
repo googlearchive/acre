@@ -35,7 +35,7 @@ var augment;
     // -----------------------------------------------------
     
     function key(k) {
-        var appid = acreboot._request_app_guid;
+        var appid = request.app_guid;
         if (!appid) throw Error("appid can't be null or undefined");
         return appid + ":" + k;
     }
