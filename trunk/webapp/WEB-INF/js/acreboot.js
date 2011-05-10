@@ -425,7 +425,7 @@ if ('cache-control' in acre.request.headers && !('x-acre-cache-control' in acre.
     }
 }
 
-var mwlt_mode = false;
+_request.mwlt_mode = false;
 
 // Close to avoid leaking variables into the scope
 (function () {
@@ -440,7 +440,7 @@ var mwlt_mode = false;
          }
      }
      if (ok)
-         mwlt_mode = true;
+         _request.mwlt_mode = true;
 
     for (var name in _request.cookies) {
         if (name == 'metaweb-user-info') {
@@ -1175,10 +1175,11 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     // TODO: Turn x-requested-with back on once there's a FORM solution
     if (_request.csrf_protection) {
         if (!(method === "GET" || method == "HEAD") && !bless) {
-            if (acre.request.method === "GET" || acre.request.method === "HEAD" || !("x-requested-with" in acre.request.headers)) {
+            if (acre.request.method === "GET" || acre.request.method === "HEAD" || 
+                !("x-requested-with" in acre.request.headers || true /* token check*/)) {
                 throw new acre.errors.URLError("Request to " + url + " appears to be a state-changing subrequest made " +
                 "from an insecure top-level request.  Top-level request must use a method beside 'GET' or 'HEAD' " +
-                //"and include an 'X-Requested-With' header " + 
+                "and include either an 'X-Requested-With' header or valid csrf_token " + 
                 "to be considered secure. To force the subrequest anyway, use the 'bless' option to acre.urlfetch.");
             }
         }        
@@ -1407,7 +1408,7 @@ function cookiejar_domain_match(url) {
     return [null, null];
 }
 
-if (mwlt_mode === false) {
+if (_request.mwlt_mode === false) {
     var cj_val = ('acre_cookiejar' in acre.request.cookies) ?
         acre.request.cookies.acre_cookiejar : '';
 
@@ -1933,8 +1934,8 @@ var fb_script = (_request.apiary_service_url !== "") ? "apiary.js" : "freebase.j
 _hostenv.load_system_script(fb_script, freebase_scope);
 
 // decorate acreboot objects with just what we need... a lot
-freebase_scope.augment(acre.freebase, acre.urlfetch, acre.async.urlfetch, _request.freebase_service_url, _request.apiary_service_url, _request.apiary_key, _request.freebase_site_host, mwlt_mode);
-freebase_scope.augment(_system_freebase, _system_urlfetch, _system_async_urlfetch, _request.freebase_service_url, _request.apiary_service_url, _request.apiary_key, _request.freebase_site_host, mwlt_mode);
+freebase_scope.augment(acre.freebase, acre.urlfetch, acre.async.urlfetch, _request);
+freebase_scope.augment(_system_freebase, _system_urlfetch, _system_async_urlfetch, _request);
 freebase_scope.appfetcher(register_appfetch_method, make_appfetch_error);
 acre.handlers.mqlquery = freebase_scope.handler();
 
@@ -2748,7 +2749,7 @@ _hostenv.finish_response = function () {
     // for the special case of mwLastWriteTime, we propagate mwLastWriteTime from
     // the acre cookie jar up to the browser
     if (_cookie_jar_best_match !== null) {
-        if (mwlt_mode === false) {
+        if (_request.mwlt_mode === false) {
             acre.response.set_cookie('acre_cookiejar', serialize_cookiejar(_cookie_jar),
                                      {
                                          path:'/',
