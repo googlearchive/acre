@@ -267,8 +267,10 @@ mjt.formencode = function(values) {
             qtext.push(sep);
             sep = '&';
             qtext.push(mjt.formquote(k));
-            qtext.push('=');
-            qtext.push(mjt.formquote(lv));
+            if (lv) {
+              qtext.push('=');
+              qtext.push(mjt.formquote(lv));              
+            }
         }
     }
     return qtext.join('');
