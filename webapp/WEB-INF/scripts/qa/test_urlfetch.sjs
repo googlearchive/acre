@@ -115,21 +115,7 @@ test('unsafe subrequest using GET and bless',function() {
     equal(response.body, "success");
 });
 
-/* TODO - Test has to be called with POST to work
-// TODO - remove once x-requested-with restriction turned on
-test('unsafe subrequest using POST',function() {
-    var url = acre.form.build_url(subreq_url, {
-        "unsafe": true
-    });
-    var response = acre.urlfetch(url, {
-        "method": "POST"
-    });
-    equal(response.body, "success");
-});
-
-
-/* TODO - switch to these tests
-test('unsafe subrequest using just POST',function() {
+test('unsafe subrequest using just POST', {"bug": "can't run since test driver doesn't support making safe requests"}, function() {
     var url = acre.form.build_url(subreq_url, {
         "unsafe": true
     });
@@ -139,7 +125,7 @@ test('unsafe subrequest using just POST',function() {
     equal(response.body, "subrequest error");
 });
 
-test('unsafe subrequest using POST & X-Requested-With header',function() {
+test('unsafe subrequest using POST & X-Requested-With header', {"bug": "can't run since test driver doesn't support making safe requests"}, function() {
     var url = acre.form.build_url(subreq_url, {
         "unsafe": true
     });
@@ -151,7 +137,7 @@ test('unsafe subrequest using POST & X-Requested-With header',function() {
     });
     equal(response.body, "success");
 });
-*/
+
 
 // --------------------------- mixed ----------------------------------------
 

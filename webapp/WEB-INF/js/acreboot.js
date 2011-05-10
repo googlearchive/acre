@@ -1147,13 +1147,15 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     // state-changing sub-requests by default.
     // this behavior can be over-ridden with a 'bless': true option
     // TODO: Turn x-requested-with back on once there's a FORM solution
-    if (!(method === "GET" || method == "HEAD") && !bless) {
-        if (acre.request.method === "GET" || acre.request.method === "HEAD" /*|| !("x-requested-with" in acre.request.headers) */) {
-            throw new acre.errors.URLError("Request to " + url + " appears to be a state-changing subrequest made " +
-            "from an insecure top-level request.  Top-level request must use a method beside 'GET' or 'HEAD' " +
-            //"and include an 'X-Requested-With' header " + 
-            "to be considered secure. To force the subrequest anyway, use the 'bless' option to acre.urlfetch.");
-        }
+    if (_hostenv.csrf_protection) {
+        if (!(method === "GET" || method == "HEAD") && !bless) {
+            if (acre.request.method === "GET" || acre.request.method === "HEAD" || !("x-requested-with" in acre.request.headers)) {
+                throw new acre.errors.URLError("Request to " + url + " appears to be a state-changing subrequest made " +
+                "from an insecure top-level request.  Top-level request must use a method beside 'GET' or 'HEAD' " +
+                //"and include an 'X-Requested-With' header " + 
+                "to be considered secure. To force the subrequest anyway, use the 'bless' option to acre.urlfetch.");
+            }
+        }        
     }
 
     // set the User-Agent and X-Acre-App headers
@@ -2273,6 +2275,10 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
          */
         if (aug_scope == _request_scope && script.name.indexOf("not_found.") !== 0) {
             aug_scope.acre.request.script = script;
+            
+            if (app.csrf_protection) {
+                _hostenv.csrf_protection = true;
+            }
 
             if (app.error_page) {
                 _hostenv.error_handler_path = normalize_path(app.error_page);
@@ -2399,7 +2405,7 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
               
             path = normalize_path(path, version);
             var sobj = proto_require(path, override_metadata);
-        
+            
             if (sobj === null) {
                 throw new Error('Could not fetch data from ' + path);
             }
