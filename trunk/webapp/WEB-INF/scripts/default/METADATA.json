@@ -1,5 +1,6 @@
 {
     "ttl": 600000,
+    "csrf_protection": false,
     "error_page": "//default.dev/error.mjt",
     "extensions": {
         "sjs": {
