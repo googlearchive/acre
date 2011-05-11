@@ -58,7 +58,7 @@
         <p class="msg">${einfo.message}</p>
         
         <p acre:if="user_script">
-          frat ${sourcelink(einfo.filename, einfo.line, user_script)}
+          at ${sourcelink(einfo.filename, einfo.line, user_script)}
         </p>
     
         <ul>
