@@ -100,7 +100,6 @@ var util_scope = {};
 _hostenv.load_system_script("util.js", util_scope);
 var u = util_scope.exports;
 
-
 // helpers for common activities in acreboot
 function make_scope(start, style) {
     // XXX find a more elegant way to do this
@@ -256,6 +255,24 @@ function req_path_to_script_id(req_path) {
     script = script.split("/").pop();
     return host_to_namespace(host) + "/" + script;
 }
+
+// random number generator used in CSRF protection
+function get_random() {
+    return Math.floor(Math.random()*10e15).toString();
+};
+
+function get_csrf_secret(that) {
+    if (!_request.csrf_secret) {
+        var key = _ks.get_key("csrf", _request.app_guid);
+        if (key && key[1]) {
+            _request.csrf_secret = key[1];
+        } else {
+            _request.csrf_secret = get_random();
+            _ks.put_key("csrf", _request.app_guid, null, _request.csrf_secret);
+        }
+    }
+    return _request.csrf_secret;
+};
 
 
 //--------------------------------- syslog --------------------------------------------
@@ -425,9 +442,9 @@ if ('cache-control' in acre.request.headers && !('x-acre-cache-control' in acre.
     }
 }
 
-_request.mwlt_mode = false;
-
+// Deal with old metaweb cookie weirdness (TODO - destroy this asap)
 // Close to avoid leaking variables into the scope
+_request.mwlt_mode = false;
 (function () {
     var _MWAUTH_HOSTS = _hostenv.ACRE_ALLOW_MWAUTH_HOST_SUFFIX.split(' ');
      var ok = false;
@@ -506,6 +523,8 @@ var AcreResponse_availability = false;
 var AcreResponse_max_age = 0;
 var AcreResponse_vary = [];
 var AcreResponse_vary_cookies = {};
+var AcreResponse_session = acre.request.cookies['ACRE_SESSION'];
+var AcreResponse_set_session_cookie = false;
 
 var AcreResponse_validate_header = function(name, value) {
     // according to http://www.w3.org/Protocols/rfc2616/rfc2616-sec2.html#sec2
@@ -727,6 +746,20 @@ var AcreResponse_set_metaweb_vary = function (that) {
 
     if (vary.length > 0) {
         acre.response.set_header_default('x-metaweb-vary', vary.join(', '));
+    }
+};
+
+var AcreResponse_get_session = function(that) {
+    if (typeof AcreResponse_session === 'undefined') {
+        AcreResponse_session = get_random();
+        AcreResponse_set_session_cookie = true;
+    }
+    return AcreResponse_session;
+};
+
+var AcreResponse_set_session = function(that) {
+    if (AcreResponse_set_session_cookie) {
+        that.set_cookie("ACRE_SESSION", AcreResponse_session);
     }
 };
 
@@ -1175,14 +1208,24 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     // TODO: Turn x-requested-with back on once there's a FORM solution
     if (_request.csrf_protection) {
         if (!(method === "GET" || method == "HEAD") && !bless) {
-            if (acre.request.method === "GET" || acre.request.method === "HEAD" || 
-                !("x-requested-with" in acre.request.headers || true /* token check*/)) {
-                throw new acre.errors.URLError("Request to " + url + " appears to be a state-changing subrequest made " +
-                "from an insecure top-level request.  Top-level request must use a method beside 'GET' or 'HEAD' " +
-                "and include either an 'X-Requested-With' header or valid csrf_token " + 
-                "to be considered secure. To force the subrequest anyway, use the 'bless' option to acre.urlfetch.");
+            var reject = true;
+            var token = acre.request.body_params["ACRE_CSRF_TOKEN"];
+            if (acre.request.method === "GET" || acre.request.method === "HEAD") {
+                // reject
+            } else if (token && acre.form.validate_csrf_token(token)) {
+                reject = false;
+            } else if ((_request.csrf_protection !== "strong") && 
+                       ("x-requested-with" in acre.request.headers)) {
+                reject = false;
             }
-        }        
+            if (reject) {
+                throw new acre.errors.URLError("Request to " + url + " appears to be a state-changing subrequest made " +
+                "from an insecure top-level request and csrf_protection is enabled. " +
+                "Top-level request must use a method beside 'GET' or 'HEAD' " +
+                "and include a csrf_token or an 'X-Requested-With' header (if csrf_protection not set to 'strong') " + 
+                "to be considered secure. To force the subrequest anyway, use the 'bless' option to acre.urlfetch.");                
+            }
+        }
     }
 
     // set the User-Agent and X-Acre-App headers
@@ -1851,7 +1894,45 @@ acre.form = {
     quote : mjt.formquote,
     encode : mjt.formencode,
     decode : mjt.formdecode,
-    build_url : mjt.form_url
+    build_url : mjt.form_url,
+    generate_csrf_token : function() {
+        var time = new Date().getTime();
+        var s = time + AcreResponse_get_session() + get_csrf_secret();
+        var hash = acre.hash.b64_sha1(s);
+        return hash + time;
+    },
+    csrf_protect: function() {
+        var input = [];
+        input.push("<input type='hidden' ");
+        input.push("name='ACRE_CSRF_TOKEN' ");
+        input.push("value='");
+        input.push(acre.form.generate_csrf_token());
+        input.push("'/>");
+        return acre.markup.bless(input.join(""));
+    },
+    validate_csrf_token : function(token, seconds) {
+        var max_age = seconds || 600;
+        var time = new Date().getTime();
+        var token_hash = token.substring(0,28);
+        var token_time = parseInt(token.substring(28), 10);
+
+        // Fail if token is more than 10 minutes old
+        var age = Math.ceil((time - token_time) / 1000);
+        if (age > max_age) {
+            console.error("CSRF token is " + age + " seconds old.  Must be less than " + max_age);
+            return false;
+        }
+
+        // Fail if can't correctly regenerate hash
+        var s = token_time + AcreResponse_get_session() + get_csrf_secret();
+        var hash = acre.hash.b64_sha1(s);
+        if (hash !== token_hash) {
+            console.error("Invalid CSRF token");
+            return false; 
+        }
+
+        return true;
+    }
 };
 
 acre.formquote =  acre.form.quote; // deprecated
@@ -2770,12 +2851,15 @@ _hostenv.finish_response = function () {
             }
         }
     }
-
+    
     AcreResponse_set_cache_control(acre.response);
     AcreResponse_set_vary(acre.response);
     AcreResponse_set_metaweb_vary(acre.response);
     AcreResponse_set_last_modified(acre.response);
     AcreResponse_set_expires(acre.response);
+    if (_request.csrf_protection) {
+        AcreResponse_set_session(acre.response);
+    }
 
     _hostenv.start_response(parseInt(acre.response.status, 10),
                             acre.response.headers, acre.response.cookies);
