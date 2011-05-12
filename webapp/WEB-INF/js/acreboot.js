@@ -1895,8 +1895,9 @@ acre.form = {
     encode : mjt.formencode,
     decode : mjt.formdecode,
     build_url : mjt.form_url,
-    generate_csrf_token : function() {
-        var time = new Date().getTime();
+    generate_csrf_token : function(timeout) {
+        timeout = (timeout || 600) * 1000;
+        var time = new Date().getTime() + timeout;
         var s = time + AcreResponse_get_session() + get_csrf_secret();
         var hash = acre.hash.b64_sha1(s);
         return hash + time;
@@ -1910,20 +1911,16 @@ acre.form = {
         input.push("'/>");
         return acre.markup.bless(input.join(""));
     },
-    validate_csrf_token : function(token, seconds) {
-        var max_age = seconds || 600;
+    validate_csrf_token : function(token) {
         var time = new Date().getTime();
         var token_hash = token.substring(0,28);
         var token_time = parseInt(token.substring(28), 10);
 
-        // Fail if token is more than 10 minutes old
-        var age = Math.ceil((time - token_time) / 1000);
-        if (age > max_age) {
-            console.error("CSRF token is " + age + " seconds old.  Must be less than " + max_age);
+        if (time > token_time) {
+            console.error("CSRF token has expired");
             return false;
         }
 
-        // Fail if can't correctly regenerate hash
         var s = token_time + AcreResponse_get_session() + get_csrf_secret();
         var hash = acre.hash.b64_sha1(s);
         if (hash !== token_hash) {
