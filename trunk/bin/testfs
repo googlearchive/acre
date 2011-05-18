@@ -40,7 +40,11 @@ def discover(host, port, env, nomock, whitelist):
             if not m: continue
             app = m.groups()[0]
             path = app + m.groups()[1]
-            apps[path] = prefix
+            #
+            # Some routing rules have a script, need to key off of both
+            #
+            extra = ('/'+p.get('script')) if 'script' in p else ''
+            apps[path+extra] = prefix
     
     test_paths = {}
     os.chdir(www_path)
