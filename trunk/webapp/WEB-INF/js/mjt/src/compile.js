@@ -381,14 +381,14 @@ mjt.TemplateCompiler.prototype.compile_task = function(taskname, n) {
  *  looking for $$ or $var or ${expr} and expanding
  *
  *  @param s string            the source text
- *  @param attrtext   boolean  flag indicating that the text is inside an xml attribute
- *  @trim_leading_ws  boolean  flag to ignore whitespace at the start of the text
- *  @trim_trailing_ws boolean  flag to ignore whitespace at the end of the text
- *  @complex_substitutions_only boolean  flag to only allow ${} style substitutions
+ *  @param opt object
+ *     attrtext   boolean  flag indicating that the text is inside an xml attribute
+ *     href_attr boolean flag to indicate attrtext is expected to be a url
+ *     trim_leading_ws  boolean  flag to ignore whitespace at the start of the text
+ *     trim_trailing_ws boolean  flag to ignore whitespace at the end of the text
+ *     complex_substitutions_only boolean  flag to only allow ${} style substitutions
  */
-mjt.TemplateCompiler.prototype.compile_text = function(s, attrtext,
-                                                       trim_leading_ws, trim_trailing_ws,
-                                                       complex_substitutions_only) {
+mjt.TemplateCompiler.prototype.compile_text = function(s, opt) {
     var endsimplesub = /[^A-Za-z0-9_.]/gm;
     var closebrace = /\}/gm;
     var closebracket = /\]/gm;
@@ -398,15 +398,18 @@ mjt.TemplateCompiler.prototype.compile_text = function(s, attrtext,
       next_node_leading_ws : null
     };
     
-    if (typeof attrtext == 'undefined')
-        attrtext = false;
+    opt = opt || {};    
+    if (typeof opt.attrtext == 'undefined')
+        opt.attrtext = false;
+    if (typeof opt.href_attr == 'undefined')
+        opt.href_attr = false;
+    if (typeof opt.trim_leading_ws == 'undefined')
+        opt.trim_leading_ws = false;
+    if (typeof opt.trim_trailing_ws == 'undefined')
+        opt.trim_trailing_ws = false;
+    if (typeof opt.complex_substitutions_only == 'undefined')
+        opt.complex_substitutions_only = false;
 
-    if (typeof trim_leading_ws == 'undefined')
-        trim_leading_ws = false;
-    if (typeof trim_trailing_ws == 'undefined')
-        trim_trailing_ws = false;
-    if (typeof complex_substitutions_only == 'undefined')
-        complex_substitutions_only = false;
 
     // temporaries: match and substring
     var m, ss, nlines;
@@ -419,9 +422,9 @@ mjt.TemplateCompiler.prototype.compile_text = function(s, attrtext,
     if (si == -1) {
         nlines = s.split('\n').length - 1;
 
-        if (trim_leading_ws)
+        if (opt.trim_leading_ws)
             s = s.replace(/^\s+/m, '');
-        if (trim_trailing_ws)
+        if (opt.trim_trailing_ws)
             s = s.replace(/\s+$/m, '');
         
         var re = /\n\s*$/.exec(s);
@@ -440,7 +443,7 @@ mjt.TemplateCompiler.prototype.compile_text = function(s, attrtext,
         ss = s.substring(lasti, si);
 
         nlines = ss.split('\n').length - 1;
-        if (lasti == 0 && trim_leading_ws)
+        if (lasti == 0 && opt.trim_leading_ws)
             ss = ss.replace(/^\s+/m, '');
 
         this.markup(this.htmlencode(ss));
@@ -454,7 +457,7 @@ mjt.TemplateCompiler.prototype.compile_text = function(s, attrtext,
 
         switch (s.charAt(si)) {
           case '$':
-            if (complex_substitutions_only) {
+            if (opt.complex_substitutions_only) {
                 this.markup('$');
                 break;
             }
@@ -482,8 +485,9 @@ mjt.TemplateCompiler.prototype.compile_text = function(s, attrtext,
             if (/\{/.test(ss))
                 throw new Error('template compiler: "{" and "}" are forbidden inside "${...}"');
 
-            if (attrtext)
-                this.emitln('__m[__n++]=__pkg.runtime.make_attr_safe(', ss, ');');
+            var is_url = (opt.href_attr && ((si - ss.length)==3)) ? true : false; // full substitution only
+            if (opt.attrtext)
+                this.emitln('__m[__n++]=__pkg.runtime.make_attr_safe(', ss, ',', is_url, ');');
             else
                 this.emitln('__m[__n++]=(', ss, ');');
             ret.has_subs = true;
@@ -491,13 +495,13 @@ mjt.TemplateCompiler.prototype.compile_text = function(s, attrtext,
             break;
 
           case '[':
-            if (complex_substitutions_only) {
+            if (opt.complex_substitutions_only) {
                 this.markup('$');
                 break;
             }
 
             // "$[" is for wikiref-like behavior
-            if (attrtext)
+            if (opt.attrtext)
                 throw new Error('template compiler: "$[...]" is illegal in an attribute');
 
             closebracket.lastIndex = si+1;
@@ -518,7 +522,7 @@ mjt.TemplateCompiler.prototype.compile_text = function(s, attrtext,
             break;
 
           default:
-            if (complex_substitutions_only) {
+            if (opt.complex_substitutions_only) {
                 this.markup('$');
                 break;
             }
@@ -537,8 +541,9 @@ mjt.TemplateCompiler.prototype.compile_text = function(s, attrtext,
                 this.warn('unknown character following $ in ' + this.jsencode(s));
                 return ret;
             }
-            if (attrtext)
-                this.emitln('__m[__n++]=__pkg.runtime.make_attr_safe(', ss, ');');
+            var is_url = (opt.href_attr && ((si - ss.length)==1)) ? true : false; // full substitution only
+            if (opt.attrtext)
+                this.emitln('__m[__n++]=__pkg.runtime.make_attr_safe(', ss, ',', is_url, ');');
             else
                 this.emitln('__m[__n++]=', ss, ';');
             ret.has_subs = true;
@@ -551,7 +556,7 @@ mjt.TemplateCompiler.prototype.compile_text = function(s, attrtext,
         ss = s.substring(lasti);
         nlines = ss.split('\n').length - 1;
 
-        if (trim_trailing_ws)
+        if (opt.trim_trailing_ws)
             ss = ss.replace(/\s+$/m, '');
         
         var re = /\n\s*$/.exec(ss);
@@ -563,6 +568,7 @@ mjt.TemplateCompiler.prototype.compile_text = function(s, attrtext,
         this.markup(this.htmlencode(ss));
         this.source_loc += nlines;
     }
+
     return ret;
 };
 
@@ -648,7 +654,7 @@ mjt.TemplateCompiler.prototype.get_attributes = function(n, attrs, mjtattrs) {
                  throw new Error('template compiler: ambiguous template attribute: both '
                                  + aname + ' and ' + attr.nodeName + ' are specified');
             mjtattrs[aname] = attr.nodeValue;
-            continue;            
+            continue;
         }
 
         // hold off on src= attribute in case mjt.src= is present.
@@ -899,7 +905,7 @@ mjt.TemplateCompiler.prototype.generate_open_tag = function (tagname, attrs, att
                     this.markup(' ', k);
                 } else {
                     this.markup(' ', k, '="');
-                    this.compile_text(v, true);
+                    this.compile_text(v, {attrtext: true, href_attr: k=='href'});
                     this.markup('"');
                 }
             }
@@ -925,9 +931,8 @@ mjt.TemplateCompiler.prototype.generate_open_tag = function (tagname, attrs, att
     } else {
         for (ai = 0; ai < attrs.length; ai++) {
             var a = attrs[ai];
-
             this.markup(' ', a.name, '="');
-            this.compile_text(a.value, true);
+            this.compile_text(a.value, {attrtext: true, href_attr: a.name=='href'});
             this.markup('"');
         }
 
@@ -986,7 +991,8 @@ mjt.TemplateCompiler.prototype.compile_node = function(n, options) {
 
       case 3: // TEXT_NODE
         var text = n.nodeValue;
-        var text_compile = this.compile_text(text, false, options.trim_leading_ws, options.trim_trailing_ws);
+        options.attrtext = false;
+        var text_compile = this.compile_text(text, options);
         next_node_leading_ws = text_compile.next_node_leading_ws;
         break;
 
@@ -995,7 +1001,8 @@ mjt.TemplateCompiler.prototype.compile_node = function(n, options) {
         //mjt.log('CDATA node');
         if (options.leading_ws)
             this.markup(options.leading_ws);
-        this.compile_text(n.nodeValue, false);
+        options.attrtext = false;
+        this.compile_text(n.nodeValue, options);
         break;
       case 5: // ENTITY_REFERENCE_NODE     &foo;
         // maybe these should be folded into unicode by the time we see them?
@@ -1222,8 +1229,7 @@ mjt.TemplateCompiler.prototype.compile_element = function(n, choose_state, leadi
 
                 this.emitln(' __m[__n++]=(function () {');
                 this.emitln('var __m=__pkg.runtime.new_markuplist(),__n=0;');
-
-                var text_compile = this.compile_text(bodyelt.nodeValue, false, false, false, true);
+                var text_compile = this.compile_text(bodyelt.nodeValue, {complex_substitutions_only: true});
                 var has_subs = text_compile.has_subs;
 
                 // need to do substitution on any </script> or </style> that might
