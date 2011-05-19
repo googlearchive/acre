@@ -172,11 +172,21 @@ mjt.Markup.prototype.toMarkup = function () {
  *   the purpose here is to avoid generating ill-formed markup
  *   if someone generates an xml tag into an attribute.
  */
-mjt.make_attr_safe = function (v) {
-    return mjt.bless(mjt.flatten_markup(v)
-           .replace(/\</g,'&lt;')
-           .replace(/\>/g,'&gt;')
-           .replace(/\"/g,'&quot;'));
+mjt.make_attr_safe = function (v, is_url) {
+    var markup = mjt.flatten_markup(v);
+    
+    if (is_url) {
+      var m = /^.*:/.exec(markup);
+      if (m && !/^https?:/.test(m[0])) {
+        mjt.warn("Only http and https protocols are allowed in dynamic substitutions of entire 'href' attribute values");
+        markup = "";
+      }
+    }
+
+    return mjt.bless(markup
+      .replace(/\</g,'&lt;')
+      .replace(/\>/g,'&gt;')
+      .replace(/\"/g,'&quot;'));
 };
 
 
