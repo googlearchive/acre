@@ -177,7 +177,12 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
             return async_urlfetch(url, opts);
         } else {
             // run synchronously
-            return check_results(urlfetch(url, opts), opts.check_results);
+            try {
+              var result = urlfetch(url, opts);
+              return check_results(result, opts.check_results);              
+            } catch(e if e.response) {
+              return check_results(e.response, opts.check_results);
+            }
         }
     }
 
@@ -200,21 +205,12 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
             default:
                 response = result;
                 result = JSON.parse(result.body);
-                //result.status != "200 OK" || result.code != "/api/status/ok") {
-                //TODO: better error handling 
-                if (result.result === undefined) {
-                    if (result.status != "200 OK") {
-                        var message = JSON.stringify(response, null, 2);
-                        //var message = 'HTTP error: ' + result.status;
-                    } else if ('messages' in result && result.messages[0] && 'message' in result.messages[0]) {
-                        var message = result.code + ': ' + result.messages[0].message;
-                    } else {
-                        var message = result.code;
-                    }
 
-                    var exception = new freebase.Error(message);
-                    exception.code = result.code;
-                    exception.info = result;
+                if (result.error) {
+                    var error = result.error
+                    var exception = new freebase.Error(error.message);
+                    exception.code = error.code;
+                    exception.errors = error.errors;
                     exception.response = result;
                     throw exception;
                 }
