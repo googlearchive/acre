@@ -6,7 +6,7 @@ var APIARY_KEY = null;
  * Attach the functions defined in this script to the given API object
  * to make them available to the user scope
  */
-function augment(freebase, urlfetch, async_urlfetch, request);
+function augment(freebase, urlfetch, async_urlfetch, request) {
     // tuck this away so we can use it in handler and appfetcher creation
 
     // XXX - relies on augment being called for system *after* user...
@@ -16,7 +16,7 @@ function augment(freebase, urlfetch, async_urlfetch, request);
     freebase.service_url = request.freebase_service_url;
     freebase.site_host = request.freebase_site_host;
 
-    freebase.apiary_url = reqeust.apiary_service_url;   // XXX - for transition only... will remove later
+    freebase.apiary_url = request.apiary_service_url;   // XXX - for transition only... will remove later
     APIARY_KEY = request.apiary_key;
   
     // XXX FreebaseError is getting built twice because this is called for
