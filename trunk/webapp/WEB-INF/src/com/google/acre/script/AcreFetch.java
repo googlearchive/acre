@@ -137,7 +137,7 @@ public class AcreFetch extends JsConvertable {
     public void fetch(boolean system, String response_encoding, boolean log_to_user) {
         
         if (request_url.length() > 2047) {
-            throw new AcreURLFetchException("fetching URL failed - url is too long\n" + request_url.substring(0, 40) + " ..." );
+            throw new AcreURLFetchException("fetching URL failed - url is too long");
         }
 
         DefaultHttpClient client = new DefaultHttpClient(_connectionManager, null);
@@ -218,9 +218,9 @@ public class AcreFetch extends JsConvertable {
             }
             method.getParams().setBooleanParameter(AllClientPNames.USE_EXPECT_CONTINUE,false);
         } catch (java.lang.IllegalArgumentException e) {
-            throw new AcreURLFetchException("Unable to handle URL: " + request_url + "; this is most likely an issue with URL encoding.");
+            throw new AcreURLFetchException("Unable to fetch URL; this is most likely an issue with URL encoding.");
         } catch (java.lang.IllegalStateException e) {
-            throw new AcreURLFetchException("Unable to handle URL: " + request_url + "; possibly an illegal protocol?");
+            throw new AcreURLFetchException("Unable to fetch URL; possibly an illegal protocol?");
         }
 
         StringBuffer request_header_log = new StringBuffer();
@@ -272,7 +272,7 @@ public class AcreFetch extends JsConvertable {
                     em.setEntity(ent);
                 }
             } catch (UnsupportedEncodingException e) {
-                throw new AcreURLFetchException("Failed to fetch URL " + request_url +
+                throw new AcreURLFetchException("Failed to fetch URL. " +
                                        " - Unsupported charset: " + content_type_charset);
             }
         }
@@ -423,15 +423,15 @@ public class AcreFetch extends JsConvertable {
         } catch (IllegalArgumentException e) {
             Throwable cause = e.getCause();
             if (cause == null) cause = e;
-            throw new AcreURLFetchException("failed to fetch URL "+ request_url + " - Request Error: " + cause.getMessage());
+            throw new AcreURLFetchException("failed to fetch URL. " + " - Request Error: " + cause.getMessage());
         } catch (IOException e) {
             Throwable cause = e.getCause();
             if (cause == null) cause = e;
-            throw new AcreURLFetchException("Failed to fetch URL " + request_url + " - Network Error: " + cause.getMessage());
+            throw new AcreURLFetchException("Failed to fetch URL. " + " - Network Error: " + cause.getMessage());
         } catch (RuntimeException e) {
             Throwable cause = e.getCause();
             if (cause == null) cause = e;
-            throw new AcreURLFetchException("Failed to fetch URL " + request_url + " - Network Error: " + cause.getMessage());
+            throw new AcreURLFetchException("Failed to fetch URL. " + " - Network Error: " + cause.getMessage());
         } finally {
             method.abort();
         }
