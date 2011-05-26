@@ -9,7 +9,6 @@
 ACRE_HOST_BASE="localhost"
 ACRE_FREEBASE_SITE_ADDR="devel.$ACRE_METAWEB_BASE_ADDR"
 ACRE_FREEBASE_SITE_ADDR_PORT="8115"
-ACRE_APIARY_ADDR="googleapis.com/freebase-sandbox"
 
 ####### for development is better to autoreload and avoid committing suicide
 #ACRE_AUTORELOADING="TRUE"
