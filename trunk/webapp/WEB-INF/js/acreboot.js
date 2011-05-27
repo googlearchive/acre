@@ -1660,7 +1660,6 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
                     var app = e.args[0];
                     var ckey = "METADATA:"+app.guid+":"+app.as_of;
                     if (ckey in METADATA_CACHE) {
-                        syslog.debug({'s' : 'inprocess', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
                         return METADATA_CACHE[ckey];
                     } else {
                         var r2 = _cache.get(ckey);
@@ -1725,7 +1724,6 @@ function get_appfetch_method(method_name) {
  */
 var appfetch_cache = function(host) {
     if (host in METADATA_CACHE) {
-        syslog.debug({'host': host, 's': 'inprocess', 'm': 'appfetch_cache'}, 'appfetch.cache.success');
         return METADATA_CACHE[host];
     }
 
