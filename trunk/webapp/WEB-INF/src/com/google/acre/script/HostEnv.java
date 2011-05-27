@@ -702,11 +702,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             }
         }
 
-        syslog4j(DEBUG, "hostenv.script.load.from_cache",
-               "script_name", script.getScriptName(),
-               "cache_key", className,
-               "content_id", content_id
-               );
         return execute(script, scope, swizzle);
     }
 
