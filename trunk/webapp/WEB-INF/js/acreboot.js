@@ -2597,13 +2597,12 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
 
             // get compiled javascript, either directly from the class cache or 
             // by generating raw javascript and compiling (and caching the result)
-            var compiled_js = _hostenv.load_script_from_cache(class_name, hash, 
-                                                              scope, false);
+            var compiled_js = _hostenv.load_script_from_cache(class_name, hash, scope);
             if (compiled_js == null) {
                 var jsstr = _handler.to_js(this);
                 if (jsstr) {
                     compiled_js = _hostenv.load_script_from_string(jsstr, class_name, hash, 
-                                                                   scope, this.linemap, false);
+                                                                   scope, this.linemap);
                 }
             }
 
