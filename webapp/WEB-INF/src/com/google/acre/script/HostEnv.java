@@ -650,11 +650,11 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         String script_id_hash = Integer.toHexString(script_id.hashCode());
                 
-        Scriptable newScope = load_script_from_cache(script_name, script_id_hash, scope, false);
+        Scriptable newScope = load_script_from_cache(script_name, script_id_hash, scope);
 
         if (newScope == null) {
             String content = openResourceFile(script);
-            newScope = load_script_from_string(content, script_name, script_id_hash, scope, null, false);
+            newScope = load_script_from_string(content, script_name, script_id_hash, scope, null);
         }
 
         return newScope;
@@ -663,8 +663,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     @JS_Function
     public Scriptable load_script_from_cache(String script_name,
                                              String content_id,
-                                             Object scopearg,
-                                             boolean swizzle) {
+                                             Object scopearg) {
 
         // because rhino won't convert js null to match a Scriptable arg on a
         // java method.
@@ -702,7 +701,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             }
         }
 
-        return execute(script, scope, swizzle);
+        return execute(script, scope);
     }
 
     @JS_Function
@@ -710,8 +709,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                                               String script_name,
                                               String content_id,
                                               Object scopearg,
-                                              Object linemaparg,
-                                              boolean swizzle) {
+                                              Object linemaparg) {
         
         // because rhino won't convert js null to match a Scriptable arg on a
         // java method.
@@ -746,7 +744,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         syslog(DEBUG, "hostenv.script.load.from_string", "loading script '" + script.getScriptName() + "'");
 
-        return execute(script, scope, swizzle);
+        return execute(script, scope);
     }
 
     @JS_Function
@@ -1300,35 +1298,15 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
      *
      * @param script
      */
-    private Scriptable execute(CachedScript script, Scriptable scope, boolean swizzle) {
-                                 
+    private Scriptable execute(CachedScript script, Scriptable scope) {
+                                         
         String className = script.getClassName();
-
+        
         // check if this script (package) has already been included
         // XXX note that the scope passed in is ignored in this case!
-        // should have an assertion to make sure there's no inconsistency.
-        // however, there should be no problem in practice because of how this
-        // is used in acreboot:
-        // - scope is non-null only for the toplevel script handling the request
-        // - subsequent scripts are loaded via acre.require() with an empty scope.
-        // XXX most of this function should really be in js.
         Scriptable result = _scriptResults.get(className);
         if (null != result) {
             return result;
-        }
-
-        // if no namespace was passed in, create a new "script scope" namespace
-        // object
-        if (swizzle == true) {
-            // hook the new namespace's prototype to the request global
-            // namespace.  the script will be able to reference names defined
-            // in the request scope, but new names created by the script
-            // will go in the script scope.
-            scope.setPrototype(_scope);
-
-            // the new scope is from a separate "file", so it is not
-            // lexically enclosed by _scope.
-            scope.setParentScope(null);
         }
 
         // save the scope-in-progress before running the script.
