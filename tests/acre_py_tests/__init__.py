@@ -13,7 +13,10 @@ import httplib
 import cookielib
 import re
 from unittest import TestCase
-import simplejson
+try:
+    import simplejson
+except ImportError:
+    import json as simplejson
 import urllib
 from urllib2 import Request
 import string
@@ -28,7 +31,6 @@ __all__ = ['TestController', 'tag']
 here_dir = os.path.dirname(os.path.abspath(__file__))
 conf_file = here_dir + '/test.ini'
 
-import simplejson
 from nose.tools import *
 
 def setup_context():
