@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from acre_py_tests import *
 import re
-import simplejson
+try:
+    import simplejson
+except ImportError:
+    import json as simplejson
 from urllib2 import HTTPError
 
 class test_class(TestController):

@@ -1,6 +1,9 @@
 from acre_py_tests import *
 import re
-import simplejson
+try:
+    import simplejson
+except ImportError:
+    import json as simplejson
 
 
 class test_class(TestController):

@@ -1,6 +1,9 @@
 from acre_py_tests import *
 from urllib2 import HTTPError
-import simplejson
+try:
+    import simplejson
+except ImportError:
+    import json as simplejson
 import re
 
 class test_class(TestController):

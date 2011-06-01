@@ -1,6 +1,5 @@
 from acre_py_tests import *
 import re
-import simplejson
 import urllib2
 class test_class(TestController):
 

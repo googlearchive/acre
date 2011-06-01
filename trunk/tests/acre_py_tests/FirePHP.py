@@ -6,6 +6,10 @@
 # http://www.firephp.org/Wiki/Reference/Protocol
 
 import re
+try:
+    import simplejson
+except ImportError:
+    import json as simplejson
 import simplejson
 
 def FirePHP_decode(headers):
