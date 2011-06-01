@@ -1526,16 +1526,20 @@ var _load_handler = function(scope, handler_name, handler_path) {
     handler_name = handler_name || "passthrough";
 
     if (handler_path) {
-        handler = scope.acre.require(handler_path).handler();
+        handler_path = scope.acre.resolve(handler_path);
+        var sobj = proto_require(handler_path);
+        handler = sobj.to_module().handler();
+        handler.content_hash = sobj.content_hash;
         scope.acre.handlers[handler_name] = handler;
     } else if (scope.acre.handlers[handler_name]){
         handler = scope.acre.handlers[handler_name];
     } else {
         throw make_appfetch_error("Unsupported handler: " + handler_name, APPFETCH_ERROR_APP);
     }
-    
+
     handler.name = handler_name;
     handler.path = handler_path || handler_name;
+    handler.content_hash = handler.content_hash || handler.path;
 
     return handler;
 };
@@ -2592,7 +2596,7 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
             // let's make sure we don't end up with the cached compiled_js 
             // from a different file version or different handler
             var class_name = this.path;
-            var hash =  this.content_hash + "." + _handler.path;
+            var hash = acre.hash.hex_md5(this.content_hash + "." + _handler.content_hash);
             this.linemap = null;
 
             // get compiled javascript, either directly from the class cache or 
