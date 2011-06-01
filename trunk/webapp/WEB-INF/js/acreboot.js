@@ -718,7 +718,7 @@ var AcreResponse_set_cache_control = function (that) {
 };
 
 var AcreResponse_set_vary = function (that) {
-    if (AcreResponse_vary_cookies) {
+    if (AcreResponse_vary_cookies.__count__) {
         var vary = ['Cookie'];
     } else {
         var vary = [];
@@ -735,7 +735,7 @@ var AcreResponse_set_vary = function (that) {
 
 var AcreResponse_set_metaweb_vary = function (that) {
     var varied_cookies = [];
-    for (var c in AcreResponse_vary_cookies) {
+    for (var c in AcreResponse_vary_cookies.__count__) {
         varied_cookies.push('Cookie['+c+']');
     }
 
