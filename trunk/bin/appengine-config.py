@@ -33,6 +33,7 @@ class ConfigParser:
         return ''
 
     if os.environ.get(k):
+        print '%s: %s' % (k, os.environ[k])
         return os.environ[k]
     
     print "No value found for variable %s in %s" % (k, self.full_path)
