@@ -96,7 +96,13 @@ public class ScriptManager {
             // increment 'file memcache get' cost header
             res.collect("afmg");
             
+            final long start_time = System.currentTimeMillis();
+            
             StoredClass sc = _class_store.get(className);
+            
+            // track how long memcache gets take
+            res.collect("afmw", System.currentTimeMillis() - start_time);
+            
             if (sc != null) {
                 Script compiledScript = compileScript(_classLoader, new Object[] { sc.name(), sc.code() });
                 script.setCompiledScript(compiledScript);
