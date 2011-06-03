@@ -79,6 +79,9 @@ public class ScriptManager {
             _scriptsByClassName.clear();
             _classLoader = null;
             _classLoader = createClassLoader();
+            
+            // increment 'file class loader' cost header
+            res.collect("afcl");
         }
 
         // script not found in cache, compile it and cache it
@@ -141,8 +144,6 @@ public class ScriptManager {
             StoredClass sc = _class_store.new_storedclass((String)compiled[0],(byte[])compiled[1]);
             synchronized (_class_store) {
                 _class_store.set((String)compiled[0], sc);
-                // increment 'file class loader' cost header
-                res.collect("afcl");
             }
         }
 
