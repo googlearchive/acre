@@ -650,11 +650,11 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         String script_id_hash = Integer.toHexString(script_id.hashCode());
                 
-        Scriptable newScope = load_script_from_cache(script_name, script_id_hash, scope);
+        Scriptable newScope = load_script_from_cache(script_name, script_id_hash, scope, true);
 
         if (newScope == null) {
             String content = openResourceFile(script);
-            newScope = load_script_from_string(content, script_name, script_id_hash, scope, null);
+            newScope = load_script_from_string(content, script_name, script_id_hash, scope, null, true);
         }
 
         return newScope;
@@ -663,7 +663,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     @JS_Function
     public Scriptable load_script_from_cache(String script_name,
                                              String content_id,
-                                             Object scopearg) {
+                                             Object scopearg,
+                                             boolean system) {
 
         // because rhino won't convert js null to match a Scriptable arg on a
         // java method.
@@ -701,7 +702,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             }
         }
 
-        return execute(script, scope);
+        return execute(script, scope, system);
     }
 
     @JS_Function
@@ -709,7 +710,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                                               String script_name,
                                               String content_id,
                                               Object scopearg,
-                                              Object linemaparg) {
+                                              Object linemaparg,
+                                              boolean system) {
         
         // because rhino won't convert js null to match a Scriptable arg on a
         // java method.
@@ -744,7 +746,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         syslog(DEBUG, "hostenv.script.load.from_string", "loading script '" + script.getScriptName() + "'");
 
-        return execute(script, scope);
+        return execute(script, scope, system);
     }
 
     @JS_Function
@@ -1298,7 +1300,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
      *
      * @param script
      */
-    private Scriptable execute(CachedScript script, Scriptable scope) {
+    private Scriptable execute(CachedScript script, Scriptable scope, boolean system) {
                                          
         String className = script.getClassName();
         
@@ -1314,6 +1316,9 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         // it will return the incomplete scope object rather then trying
         // to create a new scope when one is already under construction.
         _scriptResults.put(className, scope);
+        
+        // increment 'file count' cost header
+        res.collect((system) ? "afsc" : "afuc");
 
         Script compiledScript = script.getCompiledScript();
 
