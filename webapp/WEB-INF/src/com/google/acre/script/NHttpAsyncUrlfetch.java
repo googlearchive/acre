@@ -379,8 +379,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
                                                           end_time);
 
                 _response.collect((system) ? "asuc":"auuc")
-                    .collect((system) ? "asuw":"auuw", waiting_time)
-                    .collect((system) ? "asur":"auur", reading_time);
+                    .collect((system) ? "asuw":"auuw", waiting_time);
                 
             }
 
