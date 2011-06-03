@@ -742,7 +742,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
 
         // get the script (this will compile it if it wasn't done before)
-        script = _scriptManager.getScript(script);
+        script = _scriptManager.getScript(script, res);
 
         syslog(DEBUG, "hostenv.script.load.from_string", "loading script '" + script.getScriptName() + "'");
 
