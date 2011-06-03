@@ -417,8 +417,7 @@ public class AcreFetch extends JsConvertable {
                 Statistics.instance().collectUrlfetchTime(startTime, firstByteTime, endTime);
 
                 _acre_response.collect((system) ? "asuc":"auuc")
-                    .collect((system) ? "asuw":"auuw", waitingTime)
-                    .collect((system) ? "asur":"auur", readingTime);
+                    .collect((system) ? "asuw":"auuw", waitingTime);
             }
         } catch (IllegalArgumentException e) {
             Throwable cause = e.getCause();

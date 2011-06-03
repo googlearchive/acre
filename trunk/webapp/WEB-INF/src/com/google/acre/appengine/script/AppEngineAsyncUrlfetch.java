@@ -169,6 +169,9 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
     }
 
     private Scriptable callback_result(AsyncRequest req, HTTPResponse res) {    
+
+        long waiting_time = System.currentTimeMillis() - req.start_time;
+
         URL furl = res.getFinalUrl();
         if (furl == null) {
             furl = req.url;
@@ -229,7 +232,8 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                                 "Headers", response_header_log);
         }
         
-        _response.collect((system) ? "asuc":"auuc");
+        _response.collect((system) ? "asuc":"auuc")
+            .collect((system) ? "asuw":"auuw", waiting_time);
         
         return out;
     }
