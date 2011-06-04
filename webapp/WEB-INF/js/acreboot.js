@@ -2075,6 +2075,10 @@ for (var name in _topscope) {
 
 // ---------------------------- proto_require ---------------------------------
 
+// acre.get_metadata() requires a deep copy, so we 
+// don't want to do it more than once/app/request.
+GET_METADATA_CACHE = {};
+
 var proto_require = function(req_path, override_metadata, metadata_only) {
     syslog.info(req_path, "proto_require.path");
     
@@ -2440,21 +2444,18 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
                 return null;
             }
 
-            // create cleaned-up copies of the metadata
-            if (filename) {
-                var ext_md = get_extension_metadata(app_md.files[filename].name, app_md.extensions);
-                var file = u.extend(true, {}, ext_md, app_md.files[filename]);
-                file.app = create_mini_app(app_md);
-                return file;
-            } else {
-                var app = u.extend(true, {}, app_md);
-                delete app.filenames;
-                for (var f in app.files) {
-                    var ext_md = get_extension_metadata(app.files[f].name, app.extensions);
-                    app.files[f] = u.extend({}, ext_md, app.files[f]);
-                }
-                return app;
+            var app = GET_METADATA_CACHE[host];
+            if (!app) {
+              app = u.extend(true, {}, app_md);
+              delete app.filenames;
+              for (var f in app.files) {
+                  var ext_md = get_extension_metadata(app.files[f].name, app.extensions);
+                  app.files[f] = u.extend({}, ext_md, app.files[f]);
+              }
+              GET_METADATA_CACHE[host] = app;
             }
+            
+            return (filename) ? app.files[filename] : app;
         };
 
         aug_scope.acre.resolve = function(path) {
