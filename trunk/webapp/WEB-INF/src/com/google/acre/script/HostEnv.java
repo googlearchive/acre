@@ -219,6 +219,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         allocationLimit = Configuration.Values.ACRE_MAX_OBJECT_COUNT_PER_SCRIPT.getInteger();
 
         JSUtil.populateScriptable(this, (AnnotatedForJS) this);
+        
+        syslog(INFO, "hostenv.init", "");
     }
 
     public String getClassName() {
@@ -471,7 +473,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         _scope.put("ACRE_REQUEST", _scope, req.toJsObject(_scope));
 
         try {
-            syslog(DEBUG, "hostenv.script.start", "");
+            syslog(INFO, "hostenv.script.start", "");
 
             // we ought to make sure acreboot has initialized before
             // throwing this error
