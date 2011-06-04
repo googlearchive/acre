@@ -1559,7 +1559,7 @@ var _load_handler = function(scope, handler_name, handler_path) {
  */
 
  var appfetch_methods = [],
- METADATA_CACHE = {};
+     METADATA_CACHE = {};
 
 /*
 *  Helper functions for creating appfetch methods
@@ -2077,7 +2077,7 @@ for (var name in _topscope) {
 
 // acre.get_metadata() requires a deep copy, so we 
 // don't want to do it more than once/app/request.
-GET_METADATA_CACHE = {};
+var GET_METADATA_CACHE = {};
 
 var proto_require = function(req_path, override_metadata, metadata_only) {
     syslog.info(req_path, "proto_require.path");
