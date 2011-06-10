@@ -244,7 +244,8 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
 
     public void wait_on_result(long time, TimeUnit tunit) {
         int i = 0;
-        long endtime = System.currentTimeMillis() + tunit.toMillis(time);
+        long start_time = System.currentTimeMillis();
+        long endtime = start_time + tunit.toMillis(time);
 
         Context ctx = Context.getCurrentContext();
         while (_requests.size() > 0) {
@@ -305,5 +306,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
 
             i++;
         }
+
+        _response.collect("auub", System.currentTimeMillis() - start_time);
     }
 }
