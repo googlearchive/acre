@@ -545,11 +545,11 @@ public class NHttpClient {
         _requests.add(closure);
     }
 
-    public void wait_on_result() throws NHttpException {
-        wait_on_result(-1L, TimeUnit.MILLISECONDS);
+    public void wait_on_result(AcreResponse res) throws NHttpException {
+        wait_on_result(-1L, TimeUnit.MILLISECONDS, res);
     }
 
-    public void wait_on_result(long time, TimeUnit tunit) throws NHttpException {
+    public void wait_on_result(long time, TimeUnit tunit, AcreResponse res) throws NHttpException {
 
         if (_reactor != null && _reactor.getStatus() != IOReactorStatus.INACTIVE) {
             throw new NHttpException("Can not run wait_on_results while it is already running [current status: " + _reactor.getStatus() + "]");
@@ -561,6 +561,8 @@ public class NHttpClient {
 
         int i = 0;
         while (_requests.size() > 0) {
+            long pass_start_time = System.currentTimeMillis();
+            
             if (i > _requests.size()-1) i = 0;
 
             if (time != -1L && endtime <= System.currentTimeMillis()) {
@@ -620,6 +622,7 @@ public class NHttpClient {
                 // pass
             }
 
+            res.collect("auub", System.currentTimeMillis() - pass_start_time);
             i++;
         }
         

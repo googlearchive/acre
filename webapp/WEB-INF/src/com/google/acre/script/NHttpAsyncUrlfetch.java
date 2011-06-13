@@ -394,18 +394,13 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
     }
 
     public void wait_on_result(long time, TimeUnit tunit) {
-        long start_time = System.currentTimeMillis();
-        
         try {
-            _nhttp.wait_on_result(time, tunit);
-            _response.collect("auub", System.currentTimeMillis() - start_time);
+            _nhttp.wait_on_result(time, tunit, _response);
         } catch (NHttpClient.NHttpTimeoutException e) {
             _nhttp.stop();
-            _response.collect("auub", System.currentTimeMillis() - start_time);
             throw new JSURLTimeoutError(e.getMessage()).newJSException(_scope);
         } catch (NHttpClient.NHttpException e) {
             _nhttp.stop();
-            _response.collect("auub", System.currentTimeMillis() - start_time);
             throw new JSURLError(e.getMessage()).newJSException(_scope);
         }
     }
