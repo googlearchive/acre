@@ -244,11 +244,12 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
 
     public void wait_on_result(long time, TimeUnit tunit) {
         int i = 0;
-        long start_time = System.currentTimeMillis();
-        long endtime = start_time + tunit.toMillis(time);
+        long endtime = System.currentTimeMillis() + tunit.toMillis(time);
 
         Context ctx = Context.getCurrentContext();
         while (_requests.size() > 0) {
+            long pass_start_time = System.currentTimeMillis();
+            
             if (i > _requests.size()-1) i = 0;
 
             if (time != -1 && endtime <= System.currentTimeMillis()) {
@@ -286,7 +287,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                 // pass, handled by isCancelled
             } catch (ExecutionException e) {
                 JSURLError jse = new JSURLError(e.getMessage());
-                
+
                 callback.call(ctx, _scope, null, new Object[] {
                     asyncreq.url.toString(),
                     jse.toJSError(_scope)
@@ -304,9 +305,8 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                 continue;
             }
 
+            _response.collect("auub", System.currentTimeMillis() - pass_start_time);
             i++;
         }
-
-        _response.collect("auub", System.currentTimeMillis() - start_time);
     }
 }
