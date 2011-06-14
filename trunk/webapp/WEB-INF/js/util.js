@@ -83,20 +83,28 @@ function extend() {
     var ar = false;
     for ( ; i < length; i++ ) {
         if ( (options = arguments[i]) != null ) {
-            for (name in options) {
-                src = target[name];
-                copy = options[name];
-                if (target === copy) continue;
-                if (deep && copy && (isPlainObject(copy) || (copyIsArray = isArray(copy)))) {
-                    if (copyIsArray) {
-                        copyIsArray = false;
-                        clone = src && isArray(src) ? src : [];
-                    } else {
-                        clone = src && isPlainObject(src) ? src : {};
+            var node_stack = [];
+            node_stack.push([target, options]);
+            while (node_stack.length > 0) {
+                var node = node_stack.pop(),
+                    node_src = node[0],
+                    node_copy = node[1];
+                for (name in node_copy) {
+                    src = node_src[name];
+                    copy = node_copy[name];
+                    if (node_src === copy) continue;
+                    if (deep && copy && (isPlainObject(copy) || (copyIsArray = isArray(copy)))) {
+                        if (copyIsArray) {
+                            copyIsArray = false;
+                            clone = src && isArray(src) ? src : [];
+                        } else {
+                            clone = src && isPlainObject(src) ? src : {};
+                        }
+                        node_src[name] = clone;
+                        node_stack.push([clone, copy]);
+                    } else if (copy !== undefined) {
+                        node_src[name] = copy;
                     }
-                    target[name] = extend(deep, clone, copy);
-                } else if (copy !== undefined) {
-                    target[name] = copy;
                 }
             }
         }
