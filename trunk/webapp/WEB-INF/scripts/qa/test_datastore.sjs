@@ -29,6 +29,7 @@ if (acre.store) {
         ok(typeof acre.store.remove == "function", "store.remove exists");
         ok(typeof acre.store.update == "function", "store.update exists");
         ok(typeof acre.store.find == "function", "store.find exists");
+        ok(typeof acre.store.find_keys == "function", "store.find_keys exists");
         ok(typeof acre.store.begin == "function", "store.begin exists");
         ok(typeof acre.store.commit == "function", "store.commit exists");
         ok(typeof acre.store.rollback == "function", "store.rollback exists");
@@ -187,8 +188,19 @@ if (acre.store) {
         var o2 = { "foo" : "bar2" };
         var id1 = acre.store.put(o1);
         var id2 = acre.store.put(o2);
-        var count = acre.store.find({}).get_count();
+        var count = acre.store.find_keys({}).get_count();
         equal(count,2,"get_count() returns the right number of items");
+        acre.store.remove([id1,id2]);
+    });
+
+    test('acre.store find_keys works', function() {
+        var o1 = { "foo" : "bar1" };
+        var o2 = { "foo" : "bar2" };
+        var id1 = acre.store.put(o1);
+        var id2 = acre.store.put(o2);
+        var keys = acre.store.find_keys({}).as_array();
+        equal(id1,keys[0],"find_keys returns the right key");
+        equal(id2,keys[1],"find_keys returns the right key");
         acre.store.remove([id1,id2]);
     });
 

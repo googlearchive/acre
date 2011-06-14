@@ -36,10 +36,12 @@ public class JSDataStoreResultsIterator extends JSObject {
     
     public JSDataStoreResultsIterator() { }
 
-    private Object _iterator;
+    @SuppressWarnings("rawtypes")
+    private Iterator _iterator;
     
+    @SuppressWarnings("rawtypes")
     public JSDataStoreResultsIterator(Object iterator, Scriptable scope) {
-        _iterator = iterator;
+        _iterator = (Iterator) iterator;
         _scope = scope;
     }
     
@@ -53,21 +55,20 @@ public class JSDataStoreResultsIterator extends JSObject {
         
     // -------------------------------------------------------------
 
-    @SuppressWarnings("rawtypes")
     public boolean jsFunction_has_next() {
         try {
-            return ((Iterator) _iterator).hasNext();
+            return _iterator.hasNext();
         } catch (java.lang.Exception e) {
-            throw new JSConvertableException("" + e.getMessage()).newJSException(_scope);
+            throw new JSConvertableException(e.getMessage()).newJSException(_scope);
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    public Scriptable jsFunction_next() {
+    public Object jsFunction_next() {
         try {
-            return JSDataStore.extract((Entity) ((Iterator) _iterator).next(),_scope);
+            return JSDataStore.extract((Entity) _iterator.next(),_scope);
         } catch (java.lang.Exception e) {
-            throw new JSConvertableException("" + e.getMessage()).newJSException(_scope);
+            e.printStackTrace();
+            throw new JSConvertableException(e.getMessage()).newJSException(_scope);
         }
     }
     

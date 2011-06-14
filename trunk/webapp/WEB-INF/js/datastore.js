@@ -15,7 +15,8 @@ var augment;
             "put" : put,
             "update" : update,
             "remove" : remove,
-            "find" : find
+            "find" : find,
+            "find_keys" : find_keys
         };
 
     };
@@ -133,5 +134,11 @@ var augment;
         return new Result(result);
     }
 
+    function find_keys(query,cursor) {
+        var kind = query.type || "untyped";
+        var result = store.find_keys(kind, query, cursor);
+        return new Result(result);
+    }
+    
 })();
 
