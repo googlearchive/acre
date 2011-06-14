@@ -183,12 +183,11 @@ appengine_run() {
 }
 
 appengine_hostbase() {
-
-    if [ "$ACRE_HOST_BASE" != "" ] &&  [ "$ACRE_HOST_BASE" != "localhost" ]; then
-        return
-    fi
-    
     if [ "$DEPLOYED_ACRE_HOST_BASE" == "" ]; then
+        if [ "$ACRE_HOST_BASE" != "" ] &&  [ "$ACRE_HOST_BASE" != "localhost" ]; then
+            return
+        fi
+        
         if [ "$APPENGINE_APP_ID" != "" ]; then
             ACRE_HOST_BASE="$APPENGINE_APP_ID.$APPENGINE_BASE_HOST"
 
