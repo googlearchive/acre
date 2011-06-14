@@ -100,7 +100,7 @@ public class JSDataStore extends JSObject {
         _transaction = null; // remove transaction even after failure or we won't be able to create another one
     }
     
-    public Scriptable jsFunction_get(String obj_key) {
+    public Object jsFunction_get(String obj_key) {
         try {
             Key key = stringToKey(obj_key);
             return extract(_store.get(_transaction, key), _scope);
@@ -165,6 +165,18 @@ public class JSDataStore extends JSObject {
             throw new JSConvertableException("Failed to query store: " + e.getMessage()).newJSException(_scope);
         }
     }
+
+    public Scriptable jsFunction_find_keys(String kind, Scriptable query, Object cursor) {
+        try {
+            Query aequery = new Query(kind);
+            compile_query("", query, aequery.setKeysOnly());
+            PreparedQuery pq = _store.prepare(aequery);
+            JSDataStoreResults results = new JSDataStoreResults(pq,cursor,_scope);
+            return results.makeJSInstance();
+        } catch (Exception e) {
+            throw new JSConvertableException("Failed to query store: " + e.getMessage()).newJSException(_scope);
+        }
+    }
     
     // -------------------------------------------------------------------------------------------------------------
     
@@ -172,17 +184,21 @@ public class JSDataStore extends JSObject {
     private final static String CREATION_TIME_PROPERTY = "@#@CREATION_TIME@#@";
     private final static String LAST_MODIFIED_TIME_PROPERTY = "@#@LAST_MODIFIED_TIME@#@";
     
-    public static Scriptable extract(Entity entity, Scriptable scope) throws JSONException {
+    public static Object extract(Entity entity, Scriptable scope) throws JSONException {
         Object json = entity.getProperty(JSON_PROPERTY);
-        Object creation_time = entity.getProperty(CREATION_TIME_PROPERTY);
-        Object last_modified_time = entity.getProperty(LAST_MODIFIED_TIME_PROPERTY);
-        Scriptable o = (Scriptable) JSON.parse(((Text) json).getValue(), scope, false);
-        Scriptable metadata = Context.getCurrentContext().newObject(scope);
-        ScriptableObject.putProperty(metadata, "key", keyToString(entity.getKey()));
-        ScriptableObject.putProperty(metadata, "creation_time", creation_time);
-        ScriptableObject.putProperty(metadata, "last_modified_time", last_modified_time);
-        ScriptableObject.putProperty(o,"_",metadata);
-        return o;
+        if (json != null) {
+            Object creation_time = entity.getProperty(CREATION_TIME_PROPERTY);
+            Object last_modified_time = entity.getProperty(LAST_MODIFIED_TIME_PROPERTY);
+            Scriptable o = (Scriptable) JSON.parse(((Text) json).getValue(), scope, false);
+            Scriptable metadata = Context.getCurrentContext().newObject(scope);
+            ScriptableObject.putProperty(metadata, "key", keyToString(entity.getKey()));
+            ScriptableObject.putProperty(metadata, "creation_time", creation_time);
+            ScriptableObject.putProperty(metadata, "last_modified_time", last_modified_time);
+            ScriptableObject.putProperty(o,"_",metadata);
+            return o;
+        } else {
+            return keyToString(entity.getKey());
+        }
     }
     
     public void embed(Entity entity, Scriptable obj, boolean update) throws JSONException {
