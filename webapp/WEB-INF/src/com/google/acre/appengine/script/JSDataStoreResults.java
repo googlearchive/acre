@@ -35,6 +35,8 @@ public class JSDataStoreResults extends JSObject {
     private Object _cursor;
     private QueryResultIterator<?> _iterator;
     private int _count = -1;
+    private int _limit = -1;
+    private int _offset = -1;
     
     public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) {
         Scriptable scope = ScriptableObject.getTopLevelScope(ctorObj);
@@ -59,26 +61,14 @@ public class JSDataStoreResults extends JSObject {
     
     public QueryResultIterator<?> getIterator() {
         if (_iterator == null) {
-            if (_cursor != null && !(_cursor instanceof Undefined)) {
-                FetchOptions fetchOptions = FetchOptions.Builder.withStartCursor(Cursor.fromWebSafeString(_cursor.toString()));
-                _iterator = ((PreparedQuery) _result).asQueryResultIterator(fetchOptions);
-            } else {
-                FetchOptions fetchOptions = FetchOptions.Builder.withDefaults();
-                _iterator = ((PreparedQuery) _result).asQueryResultIterator(fetchOptions);
-            }
+            _iterator = ((PreparedQuery) _result).asQueryResultIterator(getFetchOptions());
         }
         return _iterator;
     }
         
     public int getCount() {
         if (_count == -1) {
-            if (_cursor != null && !(_cursor instanceof Undefined)) {
-                FetchOptions fetchOptions = FetchOptions.Builder.withStartCursor(Cursor.fromWebSafeString(_cursor.toString()));
-                _count = ((PreparedQuery) _result).countEntities(fetchOptions);
-            } else {
-                FetchOptions fetchOptions = FetchOptions.Builder.withDefaults();
-                _count = ((PreparedQuery) _result).countEntities(fetchOptions);
-            }
+            _count = ((PreparedQuery) _result).countEntities(getFetchOptions());
         }
         return _count;
     }
@@ -87,7 +77,37 @@ public class JSDataStoreResults extends JSObject {
         return "DataStoreResults";
     }
 
+    private FetchOptions getFetchOptions() {
+        FetchOptions fetchOptions = FetchOptions.Builder.withDefaults();
+        if (_cursor != null && !(_cursor instanceof Undefined)) {
+            fetchOptions.startCursor(Cursor.fromWebSafeString(_cursor.toString()));
+        }
+        if (_limit > -1) {
+            fetchOptions.limit(_limit);
+        }
+        if (_offset > -1) {
+            fetchOptions.offset(_offset);
+        }
+        return fetchOptions;
+    }
+
     // -------------------------------------------------------------
+
+    public void jsFunction_limit(int limit) {
+        try {
+            this._limit = limit;
+        } catch (Exception e) {
+            throw new JSConvertableException(e.getMessage()).newJSException(_scope);
+        }
+    }
+
+    public void jsFunction_offset(int offset) {
+        try {
+            this._offset = offset;
+        } catch (Exception e) {
+            throw new JSConvertableException(e.getMessage()).newJSException(_scope);
+        }
+    }
     
     public Object jsFunction_as_iterator() {
         try {

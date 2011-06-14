@@ -307,6 +307,55 @@ if (acre.store) {
         acre.store.remove([id1,id2]);
     });
 
+    test('acre.store find works with limit', function() {
+        var o1 = { 
+            "a" : "A",
+            "b" : "B"
+        };
+        var id1 = acre.store.put(o1);
+        var o2 = { 
+            "a" : "A",
+            "b" : "A"
+        };
+        var id2 = acre.store.put(o2);
+
+        var query = {
+            "a" : "A"
+        };
+        var result = acre.store.find(query);
+        result.limit(1);
+        var result_array = result.as_array();
+        equal(result_array.length, 1);
+        are_same(result_array[0],o1);
+        
+        acre.store.remove([id1,id2]);
+    });
+
+    test('acre.store find works with limit and offset', function() {
+        var o1 = { 
+            "a" : "A",
+            "b" : "B"
+        };
+        var id1 = acre.store.put(o1);
+        var o2 = { 
+            "a" : "A",
+            "b" : "A"
+        };
+        var id2 = acre.store.put(o2);
+
+        var query = {
+            "a" : "A"
+        };
+        var result = acre.store.find(query);
+        result.limit(1);
+        result.offset(1);
+        var result_array = result.as_array();
+        equal(result_array.length, 1);
+        are_same(result_array[0],o2);
+        
+        acre.store.remove([id1,id2]);
+    });
+
     test('acre.store find as_array work', function() {
         var o1 = { 
             "a" : "A",
