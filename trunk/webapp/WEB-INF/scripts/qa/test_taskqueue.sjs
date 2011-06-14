@@ -18,26 +18,6 @@ if (acre.tasks) {
         }
     });
 
-    test("acre.tasks won't add tasks with spaces or underscore in name", function() {
-        try {
-            acre.tasks.add({
-                "name" : "test task"
-            });
-            ok(false,"task was added");
-        } catch (e) {
-            ok(true,"exception was triggered");
-        }
-        
-        try {
-            acre.tasks.add({
-                "name" : "test_task"
-            });
-            ok(false,"task was added");
-        } catch (e) {
-            ok(true,"exception was triggered");
-        }
-    });
-
     test('acre.tasks add works with countdown and GET method', function() {
         try {
             acre.tasks.add({
