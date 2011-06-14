@@ -370,6 +370,23 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         } catch (ClassNotFoundException e1) {
             syslog(DEBUG, "hostenv.appcache.init.failed", "AppCache provider not found and will not be available");
         }
+
+        try {
+            @SuppressWarnings("unchecked")
+            Class<? extends Scriptable> jsMailServiceClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSMailService");
+
+            try {
+                ScriptableObject.defineClass(scope, jsMailServiceClass, false, true);
+            } catch (IllegalAccessException e) {
+                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load MailService object: " + e);
+            } catch (InstantiationException e) {
+                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load MailService object: " + e);
+            } catch (InvocationTargetException e) {
+                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load MailService object: " + e);
+            }
+        } catch (ClassNotFoundException e1) {
+            syslog(DEBUG, "hostenv.mailer.init.failed", "MailService provider not found and will not be available");
+        }
         
         return scope;
     }

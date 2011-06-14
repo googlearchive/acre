@@ -69,6 +69,12 @@ if (typeof AppCache != 'undefined') {
     delete AppCache;
 }
 
+// obtain mailer if present and remove from scope
+if (typeof MailService != 'undefined') {
+    var _mailer = new MailService();
+    delete MailService;
+}
+
 
 //----------------------------- globals ---------------------------------------
 
@@ -1061,6 +1067,16 @@ if (_request.trusted && _appcache) { // the _appcache object won't be available 
     appcache_scope.request = _request;
     _hostenv.load_system_script('appcache.js', appcache_scope);
     appcache_scope.augment(acre);
+}
+
+//------------------------ mailer --------------------------
+
+if (_request.trusted && _mailer) { // the _mailer object won't be available in all environments so we need to check first
+    var mailer_scope = {};
+    mailer_scope.syslog = syslog;
+    mailer_scope.mailer = _mailer;
+    _hostenv.load_system_script('mailservice.js', mailer_scope);
+    mailer_scope.augment(acre);
 }
 
 // ------------------------------ urlfetch -----------------------------------
