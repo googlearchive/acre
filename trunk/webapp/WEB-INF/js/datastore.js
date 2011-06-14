@@ -86,11 +86,13 @@ var augment;
     }
 
     Result.prototype.limit = function(limit) {
-        return this.result.limit(limit);
+        this.result.limit(limit);
+        return this;
     }
 
     Result.prototype.offset = function(offset) {
-        return this.result.offset(offset);
+        this.result.offset(offset);
+        return this;
     }
 
     Result.prototype.as_array = function() {
