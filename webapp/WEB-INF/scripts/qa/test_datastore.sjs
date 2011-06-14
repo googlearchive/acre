@@ -322,8 +322,7 @@ if (acre.store) {
         var query = {
             "a" : "A"
         };
-        var result = acre.store.find(query);
-        result.limit(1);
+        var result = acre.store.find(query).limit(1);
         var result_array = result.as_array();
         equal(result_array.length, 1);
         are_same(result_array[0],o1);
@@ -346,9 +345,7 @@ if (acre.store) {
         var query = {
             "a" : "A"
         };
-        var result = acre.store.find(query);
-        result.limit(1);
-        result.offset(1);
+        var result = acre.store.find(query).limit(1).offset(1);
         var result_array = result.as_array();
         equal(result_array.length, 1);
         are_same(result_array[0],o2);
