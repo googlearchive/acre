@@ -39,6 +39,10 @@ if (acre.cache) {
             {"bar":"bar"}
         ]);
     });
+
+    test('acre.cache returns null for values that are not present', function() {
+        equal(acre.cache.get("blah"),null,"returns null as expected");
+    });
         
 }
 
