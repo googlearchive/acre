@@ -103,7 +103,7 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
     function get_app_freebase_api_key() {
         try { 
           return acre.keystore.get('freebase_api')[0];
-        } catch (e) { 
+        } catch (e) {
           throw new Error('Failed to get Freebase API Key from keystore for this app, try /acre/keystore_console on this host to see available keys.');
         }
     }
@@ -207,7 +207,7 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
                 result = JSON.parse(result.body);
 
                 if (result.error) {
-                    var error = result.error
+                    var error = result.error;
                     var exception = new freebase.Error(error.message);
                     exception.code = error.code;
                     exception.errors = error.errors;
@@ -335,8 +335,7 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
      */
      freebase.get_user_info = function(options) {
          var [api_opts, fetch_opts] = decant_options(options);
-         var base_url = freebase.apiary_url + "/user_info";
-         api_opts.key = get_app_freebase_api_key();
+         var base_url = freebase.apiary_url + "/user/info";
          var url = acre.form.build_url(base_url, api_opts);
          fetch_opts.sign = true;
          fetch_opts.check_results = "json";

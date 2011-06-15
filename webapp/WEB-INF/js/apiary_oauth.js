@@ -65,6 +65,15 @@ var augment;
           authorization_params: {scope: "https://www.googleapis.com/auth/freebase"}
         },
 
+        "freebase_dev" : {
+          domain: "www.googleapis.com",
+          request_token_URL: "https://gaiastaging.corp.google.com/accounts/OAuthGetRequestToken",
+          access_token_URL: "https://gaiastaging.corp.google.com/accounts/OAuthGetAccessToken",
+          user_authorization_URL: "https://gaiastaging.corp.google.com/accounts/OAuthAuthorizeToken",
+          authorization_params: {scope: "https://www.googleapis.com/auth/freebase"}
+        },
+
+
         // ---------------------------- google ---------------------------------
 
         // http://code.google.com/intl/it/apis/accounts/docs/OAuth.html
