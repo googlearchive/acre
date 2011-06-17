@@ -767,6 +767,7 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
                             "handler_key" : null,
                             "optional" : true
                         },
+                        "/freebase/apps/acre_doc/handler_key" : null,
                         "doc:type" : "/freebase/apps/acre_doc",
                         "guid" : null,
                         "id" : null,
@@ -879,8 +880,8 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
                  if (file_data['/common/document/content'] != null) {
                      file_result.name = _system_freebase.mqlkey_unquote(f.value);
                      var handler = file_data['/freebase/apps/acre_doc/handler'];
-                     file_result.handler = (handler && 'handler_key' in handler ?
-                                            handler.handler_key : 'passthrough');
+                     file_result.handler = file_data['/freebase/apps/acre_doc/handler_key'] ||
+                        (handler && 'handler_key' in handler ? handler.handler_key : null);
                      file_result.media_type =
                         file_data['/common/document/content'].media_type.substr(12);
                     file_result.content_id = file_data['/common/document/content'].id;
