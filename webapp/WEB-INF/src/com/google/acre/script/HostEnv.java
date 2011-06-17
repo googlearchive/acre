@@ -561,6 +561,11 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             renderErrorPage("Execution time limit exceeded", td, "hostenv.script.error.threaddeath");
         } catch (AcreDeadlineError td) {
             renderErrorPage("Execution time limit exceeded", td, "hostenv.script.error.deadline");
+        } catch (java.io.IOException ioe) {
+            reportDisaster("java exception reached toplevel", ioe);
+            if (ioe.getMessage().matches("Too many open files")) {
+                System.exit(1);
+            }
         } catch (Throwable t) {
             reportDisaster("java exception reached toplevel", t);
         } finally {
