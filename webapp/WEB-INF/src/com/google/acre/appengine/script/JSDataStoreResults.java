@@ -28,7 +28,7 @@ import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.QueryResultIterator;
 
 public class JSDataStoreResults extends JSObject {
-        
+            
     private static final long serialVersionUID = 529101157247378231L;
 
     private PreparedQuery _result;
@@ -80,7 +80,9 @@ public class JSDataStoreResults extends JSObject {
     private FetchOptions getFetchOptions() {
         FetchOptions fetchOptions = FetchOptions.Builder.withDefaults();
         if (_cursor != null && !(_cursor instanceof Undefined)) {
-            fetchOptions.startCursor(Cursor.fromWebSafeString(_cursor.toString()));
+            Cursor cursor = Cursor.fromWebSafeString(_cursor.toString());
+            //_logger.syslog4j("INFO", "store.fetch_options", "Cursor", cursor.toString());
+            fetchOptions.startCursor(cursor);
         }
         if (_limit > -1) {
             fetchOptions.limit(_limit);

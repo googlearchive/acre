@@ -9,8 +9,6 @@ var augment;
         
         obj.store = {
             "begin" : begin,
-            "commit" : commit,
-            "rollback" : rollback,
             "get" : get,
             "put" : put,
             "update" : update,
@@ -22,22 +20,14 @@ var augment;
     };
 
     function begin() {
-        store.begin();
+        return store.begin();
+    }
+        
+    function get(key, transaction) {
+        return store.get(key, transaction);
     }
     
-    function commit() {
-        store.commit();
-    }
-    
-    function rollback() {
-        store.rollback();
-    }
-    
-    function get(key) {
-        return store.get(key);
-    }
-    
-    function put(obj, name, parent_key) {
+    function put(obj, name, parent_key, transaction) {
         // allow put() to be used both as (value,key) and (key,value)
         // this is useful to be able to say put(value) without specifying a key
         if (typeof obj == 'string' && typeof name == 'object') {
@@ -46,29 +36,29 @@ var augment;
             var name = temp;
         }
         var kind = obj.type || "untyped";
-        return store.put(kind, obj, name, parent_key);
+        return store.put(kind, obj, name, parent_key, transaction);
     }
     
-    function update(key, obj) {
+    function update(key, obj, transaction) {
         if (typeof key == "object" && typeof obj == "undefined") {
             obj = key;
             key = obj._.key;
         }
-        return store.update(key, obj);
+        return store.update(key, obj, transaction);
     }
     
-    function remove(key) {
+    function remove(key, transaction) {
         if (!key) throw "Can't remove an object with a null or undefined key";
         
         if (key instanceof Array) {
             for each (var k in key) {
-                remove(k);
+                remove(k, transaction);
             }
         } else if (typeof key == "object") {
             if (typeof key._ == "undefined") throw "Can only remove objects retrieved from the store";
-            store.remove(key._.key);
+            store.remove(key._.key, transaction);
         } else {
-            store.remove(key);
+            store.remove(key, transaction);
         }
     }
 

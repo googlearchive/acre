@@ -322,10 +322,14 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             @SuppressWarnings("unchecked")
             Class<? extends Scriptable> jsDataStoreResultsIteratorClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSDataStoreResultsIterator");
 
+            @SuppressWarnings("unchecked")
+            Class<? extends Scriptable> jsDataStoreTransactionClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSDataStoreTransaction");
+            
             try {
                 ScriptableObject.defineClass(scope, jsDataStoreClass, false, true);
                 ScriptableObject.defineClass(scope, jsDataStoreResultsClass, false, true);
                 ScriptableObject.defineClass(scope, jsDataStoreResultsIteratorClass, false, true);
+                ScriptableObject.defineClass(scope, jsDataStoreTransactionClass, false, true);
             } catch (IllegalAccessException e) {
                 syslog(ERROR, "hostenv.datastore.init.failed", "Failed to load DataStore object: " + e);
             } catch (InstantiationException e) {
