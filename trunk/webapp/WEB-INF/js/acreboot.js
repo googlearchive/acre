@@ -2089,14 +2089,17 @@ for (var name in _topscope) {
 }
 
 
-// ---------------------------- proto_require ---------------------------------
+// ------------------------------- require ------------------------------------
 
 // acre.get_metadata() requires a deep copy, so we 
 // don't want to do it more than once/app/request.
 var GET_METADATA_CACHE = {};
 
-var proto_require = function(req_path, override_metadata, metadata_only) {
-    syslog.info(req_path, "proto_require.path");
+// main require function
+var proto_require = function(req_path, req_opts) {
+    req_opts = req_opts || {};
+    syslog.info(req_path, "proto_require.path");    
+    
     
     /*
      *  Helper functions for copying/setting metadata
@@ -2296,7 +2299,7 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
     if (app_data === null) {
         // cache complete misses in the request cache
         METADATA_CACHE[host] = null;
-        return metadata_only ? [null, null] : null;
+        return req_opts.metadata_only ? [null, null] : null;
     }
 
     // splice in metadata file before caching app
@@ -2348,9 +2351,9 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
     // If there are overrides, create a clean copy and apply
     // them now, after caching, so they only affect this scope
     var app = app_data;
-    if (override_metadata) {
+    if (req_opts.override_metadata) {
         app = u.extend(true, {}, app_data);
-        set_app_metadata(app, override_metadata);
+        set_app_metadata(app, req_opts.override_metadata);
     }
 
     // Note that we wait till after we've cached the app_data before
@@ -2365,9 +2368,9 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
             var fn = path_segs.join("/");
             path_info = file_in_path(fn, path)[0];
             
-            if (app.mounts[fn] && (path_info.length > 1)) {
+            if (app.mounts[fn]) {
                 var mount_path = normalize_path(app.mounts[fn] + path_info);
-                return proto_require(mount_path, null, metadata_only);
+                return route_require(mount_path, req_opts);
             }
 
             filename = get_file(fn);
@@ -2376,7 +2379,7 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
         }
     }
 
-    if (metadata_only) {
+    if (req_opts.metadata_only) {
         return [app, filename];
     }
 
@@ -2394,7 +2397,7 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
      */
     function scope_augmentation(script, aug_scope) {
         aug_scope.acre.current_script = script;
-        
+
         /*
          * _request_scope augmentation:
          *   This is stuff we only do for 
@@ -2453,7 +2456,7 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
 
         aug_scope.acre.get_metadata = function(path) {
             path = normalize_path(path, null, true);
-            var [app_md, filename] = proto_require(path, null, true);
+            var [app_md, filename] = proto_require(path, {metadata_only: true});
             var [host, path_info] = decompose_req_path(path);
             
             if (!app_md || (path_info && !filename)) {
@@ -2476,7 +2479,7 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
 
         aug_scope.acre.resolve = function(path) {
             path = normalize_path(path, null, true);
-            var [app_md, filename] = proto_require(path, null, true);
+            var [app_md, filename] = route_require(path, {metadata_only: true});
             var [host, path_info] = decompose_req_path(path);
 
             if (!app_md || (path_info && !filename)) {
@@ -2514,11 +2517,11 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
          *  can be a version string (path must be a freebase ID) 
          */
         function get_sobj(path, metadata) {
-            var override_metadata,
-                version;
+            var version,
+                require_opts = {};
             
             if (u.isPlainObject(metadata)) {
-                override_metadata = metadata;
+                require_opts.override_metadata = metadata;
             } else {
                 version = metadata;
             }
@@ -2528,7 +2531,7 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
             }    
               
             path = normalize_path(path, version);
-            var sobj = proto_require(path, override_metadata);
+            var sobj = route_require(path, require_opts);
             
             if (sobj === null) {
                 throw new Error('Could not fetch data from ' + path);
@@ -2548,7 +2551,7 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
             
             return sobj.to_module(scope);
         };
-    
+
         // XXX to_http_response() is largely unimplemented
         aug_scope.acre.include = function(path, metadata) {
             var scope = (this !== aug_scope.acre) ? this : undefined;
@@ -2648,53 +2651,24 @@ var proto_require = function(req_path, override_metadata, metadata_only) {
     return Script(app, filename, path_info);
 };
 
-
-//----------------------------------- Main ---------------------------------
-
 /*
- * this is the main function where we:
- *  1. figure out which script to run
- *  2. run it
- *  3. repeat (if acre.route is called)
+ * route_require is a wrapper around proto_require that resolves
+ * to a specific script based on options (all default false)
+ *  - routes: whether to try routes file first
+ *  - fallbacks: whether to fail through to the defaults app
+                 for known files (e.g., error, robots.txt)
+ *  - not_found: whether to return a not_found script 
+ *               if no script is found
  */
-var handle_request = function (req_path, req_body, skip_routes) {
-    // reset the response
-    acre.response = new AcreResponse();
+var route_require = function(req_path, req_opts, opts) {
+    opts = opts || {};
     
-    // we might need the original path for situations 
-    // like "/acre/" URLs, so let's set it aside
-    var source_path = req_path;
-
     var [req_host, req_pathinfo, req_query_string] = decompose_req_path(req_path);
-
-    // Now that we know what the path we're running, 
-    // set up rest of acre.request
-    // path_info will get set once we know which part
-    // of the path is file vs. path_info (in proto_require)
-    acre.request.body = req_body || "";
-    acre.request.query_string = req_query_string || "";
-    set_request_params();
     
     // Fill in missing values
-    var host = req_host ? req_host : _DEFAULT_APP;
+    var host = req_host;
     var pathinfo = req_pathinfo ? req_pathinfo : _DEFAULT_FILE;
     var path = compose_req_path(host, pathinfo);
-
-    // support /acre/ special case -- these are OTS routing rules 
-    // that allow certain global scripts to run within the context of any app
-    // e.g., keystore, auth, test, etc.
-    if (request_url.split('/')[3] == 'acre') {
-        var [h, p] = decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
-        try {
-          var source_app = proto_require(compose_req_path(h), null, true)[0];
-          if (source_app !== null) {
-              source_path = compose_req_path(h, p);
-              _request.app_guid = source_app.guid;
-          }
-        } catch(e) {
-          syslog.warn("Unresolvable host used with a /acre/ URL.", "handle_request.host");
-        }
-    }
 
     // Set up the list of paths we're going to try before failing altogether, 
     // (routes, not_found, default scripts, etc.)
@@ -2707,24 +2681,28 @@ var handle_request = function (req_path, req_body, skip_routes) {
         
         var fallbacks = [];
         
-        if (skip_routes !== true) {
+        if (opts.routes) {
             fallbacks.push(compose_req_path(host,  'routes' + '/' + req_pathinfo));
         }
 
         fallbacks.push(compose_req_path(host, pathinfo));
 
-        for (var sname in  FALLTHROUGH_SCRIPTS) {
-            if (file_in_path(sname, path)[1]) {
-                fallbacks.push(compose_req_path(_DEFAULTS_HOST, pathinfo));
+        if (opts.fallbacks) {
+            for (var sname in  FALLTHROUGH_SCRIPTS) {
+                if (file_in_path(sname, path)[1]) {
+                    fallbacks.push(compose_req_path(_DEFAULTS_HOST, pathinfo));
+                }
             }
         }
 
-        fallbacks = fallbacks.concat(
-            [
-                compose_req_path(host, 'not_found'),
-                compose_req_path(_DEFAULTS_HOST, 'not_found')
-            ]
-        );
+        if (opts.not_found) {
+            fallbacks = fallbacks.concat(
+                [
+                    compose_req_path(host, 'not_found'),
+                    compose_req_path(_DEFAULTS_HOST, 'not_found')
+                ]
+            );
+        }
 
         return fallbacks;
     };
@@ -2733,18 +2711,83 @@ var handle_request = function (req_path, req_body, skip_routes) {
     // Work our way down the list until we find one that works:
     var script = null;
     u.each(fallbacks, function(i, fpath) {
-        try {
-            script = proto_require(fpath);
-        } catch (e if e.__code__ == APPFETCH_ERROR_METHOD) {
-            acre.response.status = 503;
-            acre.write("Service Temporarily Unavailable\n");
-            acre.exit();
-        }
-        
-        if (script !== null) {
-            return false;
-        }
+        script = proto_require(fpath, req_opts);
+        if (script !== null) return false;
     });
+    
+    return script;
+}
+
+
+//----------------------------------- Main ---------------------------------
+
+/*
+ * this is the main function where we:
+ *  1. figure out which script to run
+ *  2. run it
+ *  3. repeat (if acre.route is called)
+ */
+var handle_request = function (req_path, req_body, skip_routes) {
+    // reset the response
+    acre.response = new AcreResponse();
+
+    // we might need the original path for situations 
+    // like "/acre/" URLs, so let's set it aside
+    var source_path = req_path;
+
+    // support /acre/ special case -- these are OTS routing rules 
+    // that allow certain global scripts to run within the context of any app
+    // e.g., keystore, auth, test, etc.
+    if (request_url.split('/')[3] == 'acre') {
+        var [h, p] = decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
+        try {
+          var source_app = proto_require(compose_req_path(h), {metadata_only: true})[0];
+          if (source_app !== null) {
+              source_path = compose_req_path(h, p);
+              _request.app_guid = source_app.guid;
+          }
+        } catch(e) {
+          syslog.warn("Unresolvable host used with a /acre/ URL.", "handle_request.host");
+        }
+    }
+
+    var [req_host, req_pathinfo, req_query_string] = decompose_req_path(req_path);
+    if (!req_host) {
+        req_host = _DEFAULT_APP;
+        req_path = compose_req_path(req_host);
+    }
+
+    // Now that we know what the path we're running, 
+    // set up rest of acre.request
+    // path_info will get set once we know which part
+    // of the path is file vs. path_info (in proto_require)
+    acre.request.body = req_body || "";
+    acre.request.query_string = req_query_string || "";
+    set_request_params();
+    
+    // This information is needed to run the not_found page
+    // it will actually get overriden with a proper
+    // version once scope_augmentation is run
+    acre.request.script = {
+        'app': {
+            'id': host_to_namespace(req_host),
+            'path': compose_req_path(req_host)
+        },
+        'name': req_pathinfo,
+        'path': req_path
+    };
+
+    try {
+        script = route_require(req_path, null, {
+            routes: skip_routes ? false : true, 
+            fallbacks: true,
+            not_found: true
+        });
+    } catch (e if e.__code__ == APPFETCH_ERROR_METHOD) {
+        acre.response.status = 503;
+        acre.write("Service Temporarily Unavailable\n");
+        acre.exit();
+    }
 
     // this is a catastrophic lookup failure
     if (script == null) {
@@ -2753,7 +2796,7 @@ var handle_request = function (req_path, req_body, skip_routes) {
         acre.write('No valid acre script found at ' + path + ' (or defaults)\n');
         acre.exit();
     }
-
+    
     // This information is needed by the error page
     _hostenv.script_name = script.name;
     _hostenv.script_path = script.path;
@@ -2761,18 +2804,6 @@ var handle_request = function (req_path, req_body, skip_routes) {
     if ('error' in acre && 'script_path' in acre.error) {
         source_path = acre.error.script_path;       
     }
-    
-    // This information is needed to run the not_found page
-    // it will actually get overriden with a proper
-    // version once scope_augmentation is run
-    acre.request.script = {
-        'app': {
-            'id': host_to_namespace(host),
-            'path': compose_req_path(host)
-        },
-        'name': pathinfo,
-        'path': path
-    };
 
     // before the script is actually run, we want to set the app guid aside
     // if we didn't already do so
@@ -2889,7 +2920,7 @@ _hostenv.finish_response = function () {
 // doing this here so it's once per request rather than for every require
 // XXX - there's probably a less hacky way to do this, but it gets the job done
 acre.response = {};
-var defaults = proto_require(compose_req_path(_DEFAULTS_HOST), null, true)[0];
+var defaults = proto_require(compose_req_path(_DEFAULTS_HOST), {metadata_only: true})[0];
 var _default_metadata = {
   "error_page": defaults.error_page,
   "extensions": defaults.extensions,
