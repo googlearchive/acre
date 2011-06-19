@@ -14,65 +14,65 @@
 
 package com.google.acre.appengine.script;
 
-import java.util.Iterator;
-
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
 import com.google.acre.javascript.JSObject;
-import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.exceptions.JSConvertableException;
-import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.Transaction;
 
-public class JSDataStoreResultsIterator extends JSObject {
-        
-    private final static AcreLogger _logger = new AcreLogger(JSDataStoreResultsIterator.class); 
-    
-    private static final long serialVersionUID = -704340676845729749L;
+public class JSDataStoreTransaction extends JSObject {
+            
+    private static final long serialVersionUID = -3489974928304659714L;
 
     public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) {
         Scriptable scope = ScriptableObject.getTopLevelScope(ctorObj);
-        return new JSDataStoreResultsIterator(((JSDataStoreResultsIterator) args[0]).getWrapped(), scope);
+        return new JSDataStoreTransaction(((JSDataStoreTransaction) args[0]).getWrapped(), scope);
     }
     
-    public JSDataStoreResultsIterator() { }
+    public JSDataStoreTransaction() { }
 
-    @SuppressWarnings("rawtypes")
-    private Iterator _iterator;
+    private Transaction _transaction;
     
-    @SuppressWarnings("rawtypes")
-    public JSDataStoreResultsIterator(Object iterator, Scriptable scope) {
-        _iterator = (Iterator) iterator;
+    public JSDataStoreTransaction(Transaction transaction, Scriptable scope) {
+        _transaction = transaction;
         _scope = scope;
     }
     
-    public Object getWrapped() {
-        return _iterator;
+    public Transaction getWrapped() {
+        return _transaction;
     }
     
     public String getClassName() {
-        return "DataStoreResultsIterator";
+        return "DataStoreTransaction";
     }
         
     // -------------------------------------------------------------
 
-    public boolean jsFunction_has_next() {
+    public boolean jsFunction_is_active() {
         try {
-            return _iterator.hasNext();
+            return _transaction.isActive();
         } catch (java.lang.Exception e) {
-            _logger.syslog4j("ERROR", "store.results.iterator", "Exception for hasNext()", AcreLogger.getStringFromException(e));
+            throw new JSConvertableException(e.getMessage()).newJSException(_scope);
+        }
+    }
+    
+    public void jsFunction_commit() {
+        try {
+            _transaction.commit();
+        } catch (java.lang.Exception e) {
             throw new JSConvertableException(e.getMessage()).newJSException(_scope);
         }
     }
 
-    public Object jsFunction_next() {
+    public void jsFunction_rollback() {
         try {
-            return JSDataStore.extract((Entity) _iterator.next(),_scope);
+            _transaction.rollback();
         } catch (java.lang.Exception e) {
-            _logger.syslog4j("ERROR", "store.results.iterator", "Exception for next()", AcreLogger.getStringFromException(e));
             throw new JSConvertableException(e.getMessage()).newJSException(_scope);
         }
     }
+
 }

@@ -14,6 +14,9 @@
 
 package com.google.acre.logging;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -51,6 +54,27 @@ public class AcreLogger {
         }
     }
     
+    public static String getStringFromException(Exception exception) {
+        if (exception == null) return null;
+        
+        StringWriter stringWriter = null;
+        PrintWriter printWriter = null;
+    
+        try {
+            stringWriter = new StringWriter();
+            printWriter = new PrintWriter(stringWriter);
+            exception.printStackTrace(printWriter);
+            return stringWriter.toString();
+        } finally {
+            printWriter.close();
+            try {
+                stringWriter.close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+    }    
+
     private Logger _logger;
 
     public AcreLogger() {

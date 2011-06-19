@@ -31,8 +31,6 @@ if (acre.store) {
         ok(typeof acre.store.find == "function", "store.find exists");
         ok(typeof acre.store.find_keys == "function", "store.find_keys exists");
         ok(typeof acre.store.begin == "function", "store.begin exists");
-        ok(typeof acre.store.commit == "function", "store.commit exists");
-        ok(typeof acre.store.rollback == "function", "store.rollback exists");
     });
     
     test('acre.store put/get/remove works', function() {
@@ -492,16 +490,16 @@ if (acre.store) {
     test('acre.store commit works', function() {
         var root = { "root" : "yeah!" };
         var key = acre.store.put("root",root);
+        var t = acre.store.begin();
         try {
-            acre.store.begin();
             var o1 = { "a" : "A" };
-            var id1 = acre.store.put("o1", o1, key);
+            var id1 = acre.store.put("o1", o1, key, t);
             var o2 = { "b" : "B" };
-            var id2 = acre.store.put("o2", o2, key);
-            acre.store.commit();
+            var id2 = acre.store.put("o2", o2, key, t);
+            if (t.is_active()) t.commit();
             ok(true,"commit worked");
         } catch (e) {
-            acre.store.rollback();
+            if (t.is_active()) t.rollback();
             ok(false,"exception wasn't supposed to be triggered");
         }
 
@@ -510,6 +508,8 @@ if (acre.store) {
 
         var o4 = acre.store.get(id2);
         are_same(o2,o4);
+        
+        ok(!t.is_active(),"transaction is no longer active");
 
         acre.store.remove([key,id1,id2]);
     });
@@ -517,22 +517,24 @@ if (acre.store) {
     test('acre.store rollback works', function() {
         var root = { "root" : "yeah!" };
         var key = acre.store.put("root",root);
+        var t = acre.store.begin();
         try {
-            acre.store.begin();
             var o1 = { "a" : "A" , "type" : "blah" };
-            var id1 = acre.store.put("o1", o1, key);
+            var id1 = acre.store.put("o1", o1, key, t);
             var o2 = { "b" : "B" , "type" : "blah" };
-            var id2 = acre.store.put("o2", o2, key);
+            var id2 = acre.store.put("o2", o2, key, t);
             JSON.parse("["); // this will throw (on purpose)
-            acre.store.commit();
+            if (t.is_active()) t.commit();
             ok(false,"exception should have been triggered");
         } catch (e) {
-            acre.store.rollback();
+            if (t.is_active()) t.rollback();
             ok(true,"exception was triggered");
         }
 
-        var result = acre.store.find({ "type" : "blah" });
-        ok(typeof result.first() == 'undefined', "nothing was added");
+        ok(!t.is_active(),"transaction is no longer active");
+
+        var result = acre.store.find({ "type" : "blah" }).first();
+        ok(typeof result == 'undefined', "nothing was added");
         acre.store.remove(key);
     });
         

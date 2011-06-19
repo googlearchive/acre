@@ -48,7 +48,6 @@ public class JSDataStore extends JSObject {
     // ------------------------------------------------------------------------------------------
 
     private DatastoreService _store;
-    private Transaction _transaction;
 
     public JSDataStore() { }
     
@@ -63,53 +62,27 @@ public class JSDataStore extends JSObject {
     
     // ---------------------------------- public functions  ---------------------------------
     
-    public void jsFunction_begin() {
-        if (_transaction != null) {
-            throw new JSConvertableException("A transaction has already been established").newJSException(_scope);
-        }
+    public Scriptable jsFunction_begin() {
         try {
-            _transaction = _store.beginTransaction();
+            Transaction transaction = _store.beginTransaction();
+            JSDataStoreTransaction jsTransaction = new JSDataStoreTransaction(transaction,_scope);
+            return jsTransaction.makeJSInstance();
         } catch (Exception e) {
             throw new JSConvertableException("Failed to initiate transaction: " + e.getMessage()).newJSException(_scope);
         }
     }
-
-    public void jsFunction_commit() {
-        if (_transaction == null) {
-            throw new JSConvertableException("There is no transaction to commit, have you called acre.store.begin() first?").newJSException(_scope);
-        }
-        try {
-            _transaction.commit();
-        } catch (Exception e) {
-            throw new JSConvertableException("Failed to commit transaction: " + e.getMessage()).newJSException(_scope);
-        }
-        _transaction = null; // remove transaction even after failure or we won't be able to create another one
-    }
-
-    public void jsFunction_rollback() {
-        if (_transaction == null) {
-            throw new JSConvertableException("There is no transaction to roll back, have you called acre.store.begin() first?").newJSException(_scope);
-        }
-        try {
-            if (_transaction.isActive()) {
-                _transaction.rollback();
-            }
-        } catch (Exception e) {
-            throw new JSConvertableException("Failed to roll back transaction: " + e.getMessage()).newJSException(_scope);
-        }
-        _transaction = null; // remove transaction even after failure or we won't be able to create another one
-    }
     
-    public Object jsFunction_get(String obj_key) {
+    public Object jsFunction_get(String obj_key, Scriptable transaction) {
         try {
             Key key = stringToKey(obj_key);
-            return extract(_store.get(_transaction, key), _scope);
+            Entity e = (transaction instanceof JSDataStoreTransaction) ? _store.get(((JSDataStoreTransaction) transaction).getWrapped(), key) : _store.get(key);
+            return extract(e, _scope);
         } catch (Exception e) {
             throw new JSConvertableException("Failed to obtain object with id '" + obj_key + ": " + e.getMessage()).newJSException(_scope);
         }
     }
 
-    public Object jsFunction_put(String kind, Scriptable obj, String name, String parent_key) {
+    public Object jsFunction_put(String kind, Scriptable obj, String name, String parent_key, Scriptable transaction) {
         try {
             Entity entity = null;
             if (name == null || "null".equals(name) || "undefined".equals(name) ) {
@@ -126,29 +99,33 @@ public class JSDataStore extends JSObject {
                 }
             }
             embed(entity, obj, false);
-            Key k = _store.put(_transaction, entity);
+            Key k = (transaction instanceof JSDataStoreTransaction) ? _store.put(((JSDataStoreTransaction) transaction).getWrapped(), entity) : _store.put(entity);
             return keyToString(k);
         } catch (Exception e) {
             throw new JSConvertableException("Failed to save object: " + e.getMessage()).newJSException(_scope);
         }
     }
 
-    public Object jsFunction_update(String obj_key, Scriptable obj) {
+    public Object jsFunction_update(String obj_key, Scriptable obj, Scriptable transaction) {
         try {
             Key key = stringToKey(obj_key);
-            Entity entity = _store.get(_transaction, key);
+            Entity entity = (transaction instanceof JSDataStoreTransaction) ? _store.get(((JSDataStoreTransaction) transaction).getWrapped(), key) : _store.get(key);
             embed(entity, obj, true);
-            Key k = _store.put(_transaction, entity);
+            Key k = (transaction instanceof JSDataStoreTransaction) ? _store.put(((JSDataStoreTransaction) transaction).getWrapped(), entity) : _store.put(entity);
             return keyToString(k);
         } catch (Exception e) {
             throw new JSConvertableException("Failed to update object: " + e.getMessage()).newJSException(_scope);
         }
     }
     
-    public void jsFunction_remove(String obj_key) {
+    public void jsFunction_remove(String obj_key, Scriptable transaction) {
         try {
             Key key = stringToKey(obj_key);
-            _store.delete(_transaction, key);
+            if (transaction instanceof JSDataStoreTransaction) {
+                _store.delete(((JSDataStoreTransaction) transaction).getWrapped(), key);
+            } else {
+                _store.delete(key);
+            }
         } catch (Exception e) {
             throw new JSConvertableException("Failed to remove object: " + e.getMessage()).newJSException(_scope);
         }
