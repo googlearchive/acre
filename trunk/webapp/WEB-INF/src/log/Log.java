@@ -1,3 +1,4 @@
+package log;
 // Copyright 2007-2010 Google, Inc.
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,8 +12,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-package com.google.acre.logging;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -30,7 +29,8 @@ import com.google.acre.Configuration;
 import com.google.acre.javascript.JSON;
 import com.google.acre.javascript.JSONException;
 
-public class AcreLogger {
+
+public class Log {
 
     public static final byte ERROR = 0;
     public static final byte WARN = 1;
@@ -77,15 +77,15 @@ public class AcreLogger {
 
     private Logger _logger;
 
-    public AcreLogger() {
+    public Log() {
         this(Configuration.Values.SERVICE_NAME.getValue());
     }
 
-    public AcreLogger(String logger_name) {
+    public Log(String logger_name) {
         _logger = LoggerFactory.getLogger(logger_name);
     }
 
-    public AcreLogger(Class<?> clazz) {
+    public Log(Class<?> clazz) {
         _logger = LoggerFactory.getLogger(clazz);
     }
     

@@ -14,8 +14,11 @@
 
 package com.google.acre.script;
 
+
 import java.util.HashMap;
 import java.util.Map;
+
+import log.Log;
 
 import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Context;
@@ -29,12 +32,11 @@ import com.google.acre.AcreFactory;
 import com.google.acre.Configuration;
 import com.google.acre.classstore.ClassStore;
 import com.google.acre.classstore.StoredClass;
-import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.exceptions.AcreInternalError;
 
 public class ScriptManager {
 
-    private final static AcreLogger _logger = new AcreLogger(ScriptManager.class);    
+    private final static Log _logger = new Log(ScriptManager.class);    
     
     private static final int ACRE_MAX_CACHED_SCRIPT_CLASSES = Configuration.Values.ACRE_MAX_CACHED_SCRIPT_CLASSES.getInteger();
 

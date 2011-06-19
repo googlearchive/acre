@@ -14,7 +14,10 @@
 
 package com.google.acre.appengine.script;
 
+
 import java.util.Iterator;
+
+import log.Log;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -22,13 +25,12 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
 import com.google.acre.javascript.JSObject;
-import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.exceptions.JSConvertableException;
 import com.google.appengine.api.datastore.Entity;
 
 public class JSDataStoreResultsIterator extends JSObject {
         
-    private final static AcreLogger _logger = new AcreLogger(JSDataStoreResultsIterator.class); 
+    private final static Log _logger = new Log(JSDataStoreResultsIterator.class); 
     
     private static final long serialVersionUID = -704340676845729749L;
 
@@ -62,7 +64,7 @@ public class JSDataStoreResultsIterator extends JSObject {
         try {
             return _iterator.hasNext();
         } catch (java.lang.Exception e) {
-            _logger.syslog4j("ERROR", "store.results.iterator", "Exception for hasNext()", AcreLogger.getStringFromException(e));
+            _logger.syslog4j("ERROR", "store.results.iterator", "Exception for hasNext()", Log.getStringFromException(e));
             throw new JSConvertableException(e.getMessage()).newJSException(_scope);
         }
     }
@@ -71,7 +73,7 @@ public class JSDataStoreResultsIterator extends JSObject {
         try {
             return JSDataStore.extract((Entity) _iterator.next(),_scope);
         } catch (java.lang.Exception e) {
-            _logger.syslog4j("ERROR", "store.results.iterator", "Exception for next()", AcreLogger.getStringFromException(e));
+            _logger.syslog4j("ERROR", "store.results.iterator", "Exception for next()", Log.getStringFromException(e));
             throw new JSConvertableException(e.getMessage()).newJSException(_scope);
         }
     }

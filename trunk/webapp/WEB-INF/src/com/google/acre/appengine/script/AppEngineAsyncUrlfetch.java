@@ -29,6 +29,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import log.Log;
+
 import org.apache.http.Header;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.cookie.CookieOrigin;
@@ -40,7 +42,6 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 
-import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.AcreCookie;
 import com.google.acre.script.AcreResponse;
 import com.google.acre.script.AsyncUrlfetch;
@@ -56,7 +57,7 @@ import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 
 public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
 
-    private final static AcreLogger _logger = new AcreLogger(AppEngineAsyncUrlfetch.class);    
+    private final static Log _logger = new Log(AppEngineAsyncUrlfetch.class);    
     
     class AsyncRequest {
         public AsyncRequest(URL url, Future<HTTPResponse> request, Function callback, long start_time, boolean system, boolean log_to_user, String response_encoding) {
