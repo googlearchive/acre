@@ -566,13 +566,13 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             renderErrorPage("Execution time limit exceeded", td, "hostenv.script.error.threaddeath");
         } catch (AcreDeadlineError td) {
             renderErrorPage("Execution time limit exceeded", td, "hostenv.script.error.deadline");
-        } catch (java.io.IOException ioe) {
-            reportDisaster("java exception reached toplevel", ioe);
+        } catch (IOException ioe) {
+            reportDisaster("I/O exception reached toplevel", ioe);
             if (ioe.getMessage().matches("Too many open files")) {
                 System.exit(1);
             }
         } catch (Throwable t) {
-            reportDisaster("java exception reached toplevel", t);
+            reportDisaster("Fatal exception reached toplevel", t);
         } finally {
             _async_fetch = null;
             // clean up after running a user script.
@@ -1263,8 +1263,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                     }
                 }
 
-                syslog(ERROR, logevent, log_msg + " [" + script_path + "]");
-
                 // handle the error using the local error handler for the script
                 // this will fall back to the default error handler if no local handler is found
                 if ("UNKNOWN".equals(script_host_path) || "UNKNOWN".equals(script_name)) {
@@ -1309,9 +1307,23 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 }
 
                 userlog("error", log_msg);
+                
+                AcreExceptionInfo einfo = new AcreExceptionInfo(script_path, message, t, _scriptManager, _scope);
 
+                // build the stacktrace
+                StringBuffer b = new StringBuffer();
+                for (AcreStackFrame frame : einfo.stack) {
+                    b.append("\n  ");
+                    b.append(frame.filename);
+                    b.append(": ");
+                    b.append(frame.line);
+                }
+
+                // log the error + stacktrace to the syslog
+                syslog(ERROR, logevent, log_msg + b.toString());
+                
                 // pass the exception info to the error script
-                req.error_info = new AcreExceptionInfo(script_path, message, t, _scriptManager, _scope);
+                req.error_info = einfo;
 
                 internalRedirect(error_script_path, true);
             } catch (RhinoException e) {
