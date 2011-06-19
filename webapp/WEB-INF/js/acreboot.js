@@ -2662,51 +2662,44 @@ var proto_require = function(req_path, req_opts) {
  */
 var route_require = function(req_path, req_opts, opts) {
     opts = opts || {};
-    
+
     var [req_host, req_pathinfo, req_query_string] = decompose_req_path(req_path);
-    
+
     // Fill in missing values
     var host = req_host;
     var pathinfo = req_pathinfo ? req_pathinfo : _DEFAULT_FILE;
     var path = compose_req_path(host, pathinfo);
 
-    // Set up the list of paths we're going to try before failing altogether, 
-    // (routes, not_found, default scripts, etc.)
-    function fallbacks_for(host, pathinfo, req_pathinfo) {
+    // Set up the list of paths we're going to try
+    var fallbacks = [];
+
+    if (opts.routes) {
+        fallbacks.push(compose_req_path(host,  'routes' + '/' + req_pathinfo));
+    }
+
+    fallbacks.push(compose_req_path(host, pathinfo));
+
+    if (opts.fallbacks) {
         var FALLTHROUGH_SCRIPTS = {
             'robots.txt':true,
             'favicon.ico':true,
             'error':true
         };
-        
-        var fallbacks = [];
-        
-        if (opts.routes) {
-            fallbacks.push(compose_req_path(host,  'routes' + '/' + req_pathinfo));
-        }
-
-        fallbacks.push(compose_req_path(host, pathinfo));
-
-        if (opts.fallbacks) {
-            for (var sname in  FALLTHROUGH_SCRIPTS) {
-                if (file_in_path(sname, path)[1]) {
-                    fallbacks.push(compose_req_path(_DEFAULTS_HOST, pathinfo));
-                }
+        for (var sname in  FALLTHROUGH_SCRIPTS) {
+            if (file_in_path(sname, path)[1]) {
+                fallbacks.push(compose_req_path(_DEFAULTS_HOST, pathinfo));
             }
         }
+    }
 
-        if (opts.not_found) {
-            fallbacks = fallbacks.concat(
-                [
-                    compose_req_path(host, 'not_found'),
-                    compose_req_path(_DEFAULTS_HOST, 'not_found')
-                ]
-            );
-        }
-
-        return fallbacks;
-    };
-    var fallbacks = fallbacks_for(host, pathinfo, req_pathinfo);
+    if (opts.not_found) {
+        fallbacks = fallbacks.concat(
+            [
+                compose_req_path(host, 'not_found'),
+                compose_req_path(_DEFAULTS_HOST, 'not_found')
+            ]
+        );
+    }
 
     // Work our way down the list until we find one that works:
     var script = null;
