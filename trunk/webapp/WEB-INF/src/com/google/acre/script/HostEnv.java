@@ -1324,8 +1324,15 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 
                 // pass the exception info to the error script
                 req.error_info = einfo;
-
-                internalRedirect(error_script_path, true);
+                
+                // if this request is an appengine task, there is no point exeucting the error page
+                // since the output of a task is lost anyway, so just initialize the error headers
+                // in the response
+                if (isAppEngineTask()) {
+                    startErrorPage();
+                } else {
+                    internalRedirect(error_script_path, true);
+                }
             } catch (RhinoException e) {
                 simpleReportRhinoException("error running error script " + error_script_path, e);
             }
@@ -1334,6 +1341,13 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
     }
 
+    /**
+     * Returns true if this request is an AppEngine task
+     */
+    private boolean isAppEngineTask() {
+        return req.headers.containsKey("x-appengine-taskname");
+    }
+    
     /**
      * Execute the script and save it in the map to enable stack trace "legend" <br>
      * something <b>should</b> known about the script that we were asked to execute.<br>
