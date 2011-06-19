@@ -14,6 +14,7 @@
 
 package com.google.acre.keystore;
 
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -24,6 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import log.Log;
+
 import org.apache.commons.dbcp.ConnectionFactory;
 import org.apache.commons.dbcp.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp.PoolableConnectionFactory;
@@ -31,11 +34,10 @@ import org.apache.commons.dbcp.PoolingDriver;
 import org.apache.commons.pool.impl.GenericObjectPool;
 
 import com.google.acre.Configuration;
-import com.google.acre.logging.AcreLogger;
 
 public class MySQLKeyStore implements KeyStore {
 
-    private final static AcreLogger _logger = new AcreLogger(MySQLKeyStore.class);    
+    private final static Log _logger = new Log(MySQLKeyStore.class);    
 	
     private static final String DRIVER_PREFIX = "jdbc:apache:commons:dbcp:";
     private static final String DATASOURCE_NAME = "keystore";

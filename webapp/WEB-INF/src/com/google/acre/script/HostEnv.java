@@ -14,10 +14,10 @@
 
 package com.google.acre.script;
 
-import static com.google.acre.logging.AcreLogger.DEBUG;
-import static com.google.acre.logging.AcreLogger.ERROR;
-import static com.google.acre.logging.AcreLogger.INFO;
-import static com.google.acre.logging.AcreLogger.WARN;
+import static log.Log.DEBUG;
+import static log.Log.ERROR;
+import static log.Log.INFO;
+import static log.Log.WARN;
 
 import java.io.BufferedReader;
 import java.io.CharArrayWriter;
@@ -42,6 +42,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+
+import log.Log;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
@@ -80,7 +82,6 @@ import com.google.acre.javascript.DOM.JSNodeList;
 import com.google.acre.javascript.DOM.JSNotation;
 import com.google.acre.javascript.DOM.JSProcessingInstruction;
 import com.google.acre.javascript.DOM.JSText;
-import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.AcreContextFactory.AcreContext;
 import com.google.acre.script.exceptions.AcreDeadlineError;
 import com.google.acre.script.exceptions.AcreInternalError;
@@ -98,7 +99,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     public static final String ACRE_QUOTAS_HEADER = "X-acre-quotas";
     
-    private final static AcreLogger _logger = new AcreLogger(HostEnv.class);
+    private final static Log _logger = new Log(HostEnv.class);
 
     private static String ACRE_METAWEB_API_ADDR = Configuration.Values.ACRE_METAWEB_API_ADDR.getValue();
     private static int ACRE_METAWEB_API_ADDR_PORT = Configuration.Values.ACRE_METAWEB_API_ADDR_PORT.getInteger();
@@ -1012,7 +1013,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         byte lvl = INFO;
         
         if (level instanceof String) {
-            lvl = AcreLogger.toLevel((String) level);
+            lvl = Log.toLevel((String) level);
         } else if (level instanceof Number) {
             lvl = ((Number) level).byteValue();
         } else {

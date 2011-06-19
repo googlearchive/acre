@@ -14,13 +14,14 @@
 
 package com.google.acre.script;
 
+import log.Log;
+
 import org.mozilla.javascript.Callable;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
 import com.google.acre.Configuration;
-import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.exceptions.AcreScriptError;
 
 /**
@@ -31,7 +32,7 @@ import com.google.acre.script.exceptions.AcreScriptError;
  */
 public class AcreContextFactory extends ContextFactory {
 
-    private final static AcreLogger _logger = new AcreLogger(AcreContextFactory.class);    
+    private final static Log _logger = new Log(AcreContextFactory.class);    
     
     private static boolean GENERATE_JS_DEBUG_INFO = Configuration.Values.GENERATE_JS_DEBUG_INFO.getBoolean();
     private static boolean LIMIT_EXECUTION_TIME = Configuration.Values.ACRE_LIMIT_EXECUTION_TIME.getBoolean();

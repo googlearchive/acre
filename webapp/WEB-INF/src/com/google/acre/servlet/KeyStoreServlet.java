@@ -14,6 +14,7 @@
 
 package com.google.acre.servlet;
 
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -31,12 +32,13 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import log.Log;
+
 import com.google.acre.AcreFactory;
 import com.google.acre.Configuration;
 import com.google.acre.javascript.JSON;
 import com.google.acre.javascript.JSONException;
 import com.google.acre.keystore.KeyStore;
-import com.google.acre.logging.AcreLogger;
 
 /**
  * <p>This Servlet implements a web service on top of the KeyStore that allows
@@ -49,7 +51,7 @@ public class KeyStoreServlet extends HttpServlet {
     
     private static final long serialVersionUID = -526354280010592746L;
     
-    private final static AcreLogger _logger = new AcreLogger(KeyStoreServlet.class);    
+    private final static Log _logger = new Log(KeyStoreServlet.class);    
     
     protected transient KeyStore _store;
     

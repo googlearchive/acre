@@ -14,6 +14,7 @@
 
 package com.google.acre.servlet;
 
+
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -33,18 +34,19 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import log.Log;
+
 import org.slf4j.MDC;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
-import com.google.acre.logging.AcreLogger;
 import com.google.acre.logging.SimpleFormatter;
 import com.google.acre.util.Supervisor;
 import com.google.acre.util.TIDGenerator;
 
 public class OneTrueServlet extends javax.servlet.http.HttpServlet implements javax.servlet.Servlet, java.util.logging.Filter {
     
-    private final static AcreLogger _logger = new AcreLogger(OneTrueServlet.class);
+    private final static Log _logger = new Log(OneTrueServlet.class);
 
     private static final long serialVersionUID = -7572688360464348578L;
         

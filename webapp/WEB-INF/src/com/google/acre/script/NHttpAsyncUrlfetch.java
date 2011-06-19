@@ -14,6 +14,7 @@
 
 package com.google.acre.script;
 
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +30,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+
+import log.Log;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
@@ -48,12 +51,11 @@ import org.mozilla.javascript.Scriptable;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
-import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.exceptions.JSURLTimeoutError;
 
 public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
     
-    private final static AcreLogger _logger = new AcreLogger(NHttpAsyncUrlfetch.class);    
+    private final static Log _logger = new Log(NHttpAsyncUrlfetch.class);    
     
     private AcreResponse _response;
     private Scriptable _scope;

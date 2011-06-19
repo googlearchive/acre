@@ -14,6 +14,7 @@
 
 package com.google.acre.script;
 
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +30,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+
+import log.Log;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
@@ -55,7 +58,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
-import com.google.acre.logging.AcreLogger;
 import com.google.acre.script.exceptions.AcreURLFetchException;
 import com.google.acre.util.http.HttpPropFind;
 
@@ -66,7 +68,7 @@ import com.google.acre.util.http.HttpPropFind;
  */
 public class AcreFetch extends JsConvertable {
 
-    private final static AcreLogger _logger = new AcreLogger(AcreFetch.class);    
+    private final static Log _logger = new Log(AcreFetch.class);    
     
     private static String ACRE_METAWEB_API_ADDR = Configuration.Values.ACRE_METAWEB_API_ADDR.getValue();
     private static String ACRE_FREEBASE_SITE_ADDR = Configuration.Values.ACRE_FREEBASE_SITE_ADDR.getValue();
