@@ -2179,6 +2179,14 @@ Script.prototype.normalize_path = function(path, version, new_only) {
 
     // Mode 3: relative require
     else {
+        // resolve ./
+        if (path.indexOf("./") === 0) {
+            var segs = this.name.split("/");
+            segs.pop();
+            segs.push(path.replace("./", ""));
+            path = segs.join("/");
+        }
+        
         // check whether there's a matching mount
         if (this.app && this.app.mounts) {
             var path_segs = path.split("/");
