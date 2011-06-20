@@ -214,6 +214,23 @@ function file_in_path(filename, path) {
     return [path_info, in_path];
 }
 
+function get_extension_metadata(name, extensions) {
+    // match from longest to shortest (i.e., .mf.css before .css)
+    var exts = name.split(".");
+    exts.shift();
+    while (exts.length) {
+      var ext = exts.join(".");
+      var ext_data = {};
+      if (ext && extensions && extensions[ext]) {
+          ext_data = extensions[ext];
+          break;
+      }
+      exts.shift();
+    }
+    
+    return ext_data;
+};
+
 
 // helpers for backward-compatibility with the days of script_ids
 // it sure would be nice to get rid of these...
@@ -261,6 +278,7 @@ function req_path_to_script_id(req_path) {
     script = script.split("/").pop();
     return host_to_namespace(host) + "/" + script;
 }
+
 
 // random number generator used in CSRF protection
 function get_random() {
@@ -1575,7 +1593,8 @@ var _load_handler = function(scope, handler_name, handler_path) {
  */
 
  var appfetch_methods = [],
-     METADATA_CACHE = {};
+     METADATA_CACHE = {},
+     GET_METADATA_CACHE = {};
 
 /*
 *  Helper functions for creating appfetch methods
@@ -2089,21 +2108,328 @@ for (var name in _topscope) {
 }
 
 
+//-------------------------------- Script object -------------------------------
+
+/*
+ * Acre's internal representation of a script 
+ * used to create modules (acre.require) or
+ * generate output (http request, acre.include)
+ */
+function Script(app, name, path_info) {
+    this.app = app;
+    
+    // get backfill metadata
+    // we need to do this post-overrides being applied
+    var ext_md = get_extension_metadata(name, app.extensions);
+
+    // Create a good looking copy of script metadata 
+    // this will be used in acre.current_script, etc.
+    var script_data = u.extend({}, ext_md, app.files[name]);
+
+    script_data.path_info = path_info;
+    script_data.path = compose_req_path(app.host, name);
+    script_data.id = host_to_namespace(app.host) + "/" + name;
+
+    for (var key in script_data) {
+        this[key] = script_data[key];
+    }
+
+    script_data.app = {
+        source: app.source,
+        path: compose_req_path(app.host),
+        host: app.host,
+        hosts: app.hosts,
+        guid: app.guid,
+        as_of: app.as_of,
+        id: app.id,
+        mounts: app.mounts,
+        version: (app.versions.length > 0 ? app.versions[0] : null),
+        versions: app.versions,
+        base_url : acre.host.protocol + "://" + 
+                (app.host.match(/\.$/) ? app.host.replace(/\.$/, "") : (app.host + "." + acre.host.name)) +
+                (acre.host.port !== 80 ? (":" + acre.host.port) : "")              
+    };  
+    this.script_data = script_data;
+
+    this.get_content = get_appfetch_method(this.source).get_content;
+
+    return this;
+}
+
+Script.prototype.normalize_path = function(path, version, new_only) {
+    path = path || "";
+    var parts = path.split('//');
+
+    // Mode 1: new require syntax
+    if (parts.length >= 2) {
+        return path;
+    } 
+
+    // Mode 2: old require syntax
+    else if (/^(freebase:)?\//.test(path)) {
+        if (new_only) throw new Error("Freebase ID syntax is not supported for this method.  Use URL syntax.");
+
+        var namespace = path.replace(/^freebase:/,"").split('/');
+        var script = namespace.pop();
+        if (version) namespace.push(version);
+        namespace = namespace.join('/');
+        path = compose_req_path(namespace_to_host(namespace), script);
+        return path;
+    } 
+
+    // Mode 3: relative require
+    else {
+        // check whether there's a matching mount
+        if (this.app && this.app.mounts) {
+            var path_segs = path.split("/");
+            while (path_segs.length) {
+                var mpath = path_segs.join("/");
+                if (mpath in this.app.mounts) {
+                    return this.app.mounts[mpath] + path.replace(mpath, "");
+                }
+                path_segs.pop();
+            }
+        }
+
+        // otherwise just push current host back on
+        return compose_req_path(this.app.host, path);
+    }
+}
+
+Script.prototype.set_scope = function(scope) {
+    var script = this,
+        script_data = this.script_data,
+        scope = scope || make_scope();
+        
+    scope.acre.current_script = script.script_data;
+
+    /*
+     * _request_scope augmentation:
+     *   This is stuff we only do for 
+     *   the top-level requested script:
+     */
+    if (scope == _request_scope && script.name.indexOf("not_found.") !== 0) {
+        scope.acre.request.script = script.script_data;
+
+        if (script.app.csrf_protection) {
+            _request.csrf_protection = true;
+        }
+
+        if (script.app.error_page) {
+            _hostenv.error_handler_path = script.normalize_path(script.app.error_page);
+        }
+
+        // XXX - freebase appfetch method-specific hacks
+        if (script.app.freebase && script.app.freebase.write_user) {
+            _hostenv.write_user = script.app.freebase.write_user;
+        }
+
+        if (script.app.freebase &&
+            script.app.freebase.service_url &&
+            /^http(s?):\/\//.test(script.app.freebase.service_url)) {
+            acre.freebase.set_service_url(script.app.freebase.service_url);    
+        }
+
+
+        // Setup deprecated values and decorate with warning messages
+        set_environ();
+
+        var script_id = req_path_to_script_id(script.path);
+        var [namespace, script_name] = split_script_id(script_id);
+
+        scope.acre.request_context = { // deprecated
+            script_name : script_name,
+            script_id : script_id,
+            script_namespace : namespace,
+            script_version : (script_data.app.versions.length > 0 ? script_data.app.versions[0] : null)
+        };
+
+        scope.acre.environ.path_info = scope.acre.request.path_info; // deprecated
+
+        scope.acre.context = scope.acre.request_context; // deprecated
+        scope.acre.environ.script_name = script.name; // deprecated
+        scope.acre.environ.script_id = host_to_namespace(script_data.app.host) + '/' + script_data.name; // deprecated
+        scope.acre.environ.script_namespace = host_to_namespace(script_data.app.host); // deprecated
+
+        deprecate(scope);
+    }
+
+
+    scope.acre.mount = function(path, local_path) {
+        script.app.mounts[local_path] = script.normalize_path(path, null, true);
+    };
+
+    scope.acre.get_metadata = function(path) {
+        path = script.normalize_path(path, null, true);
+        var [app_md, filename] = proto_require(path, {metadata_only: true});
+        var [host, path_info] = decompose_req_path(path);
+
+        if (!app_md || (path_info && !filename)) {
+            return null;
+        }
+
+        var app = GET_METADATA_CACHE[host];
+        if (!app) {
+          app = u.extend(true, {}, app_md);
+          delete app.filenames;
+          for (var f in app.files) {
+              var ext_md = get_extension_metadata(app.files[f].name, app.extensions);
+              app.files[f] = u.extend({}, ext_md, app.files[f]);
+          }
+          GET_METADATA_CACHE[host] = app;
+        }
+
+        return (filename) ? app.files[filename] : app;
+    };
+
+    scope.acre.resolve = function(path) {
+        path = script.normalize_path(path, null, true);
+        var [app_md, filename] = route_require(path, {metadata_only: true});
+        var [host, path_info] = decompose_req_path(path);
+
+        if (!app_md || (path_info && !filename)) {
+            return null;
+        }
+
+        return compose_req_path(app_md.host, filename);
+    };
+
+    scope.acre.route = function(path, body, skip_routes) {
+        path = script.normalize_path(path, null, true);
+        var [h, p, qs] = decompose_req_path(path);
+
+        var route_e = new acre.errors.AcreRouteException;
+        route_e.route_to = path;
+        route_e.body = body || acre.request.body;
+        route_e.skip_routes = (skip_routes ? true : (script.app.host == h));
+        throw route_e;
+    };
+
+    scope.acre.response.set_error_page = function(path) {
+        path = script.normalize_path(path, null, true);
+        _hostenv.error_handler_path = path;
+    };
+
+
+    /*
+     * helper for the following functions (require, include, get_source)
+     *
+     * all take a path as the primary arugment, but
+     * optionally can take a metadata object in the second 
+     * position to be spliced on to the context of the app.
+     *
+     * ... or, for backward-compatibility, the metadata slot
+     *  can be a version string (path must be a freebase ID) 
+     */
+    function get_sobj(path, metadata) {
+        var version,
+            require_opts = {};
+
+        if (u.isPlainObject(metadata)) {
+            require_opts.override_metadata = metadata;
+        } else {
+            version = metadata;
+        }
+
+        if (!path) {
+            throw new Error("No URL provided");
+        }    
+
+        path = script.normalize_path(path, version);
+        var sobj = route_require(path, require_opts);
+
+        if (sobj === null) {
+            throw new Error('Could not fetch data from ' + path);
+        }
+
+        if (compose_req_path(sobj.app.host, sobj.name) === script.path) {
+            throw new Error("A script can not require itself");                
+        }
+
+        return sobj;
+    }
+
+    scope.acre.require = function(path, metadata) {
+        var scope = (this !== script.scope.acre) ? this : undefined;
+
+        var sobj = get_sobj(path, metadata);
+
+        return sobj.to_module(scope);
+    };
+
+    // XXX to_http_response() is largely unimplemented
+    scope.acre.include = function(path, metadata) {
+        var scope = (this !== script.scope.acre) ? this : undefined;
+
+        var sobj = get_sobj(path, metadata);
+
+        return sobj.to_http_response(scope).body;
+    };
+
+    scope.acre.get_source = function(path, metadata) {
+        var sobj = get_sobj(path, metadata);
+
+        return sobj.get_content().body;
+    };
+
+    script.scope = scope;
+}
+
+Script.prototype.to_module = function(scope) {
+    this.set_scope(scope);
+
+    // now that the scope's all set up, we can finally load our handler
+    var handler_path = (this.app.handlers && this.app.handlers[this.handler]) ? 
+                        this.normalize_path(this.app.handlers[this.handler]) : 
+                        undefined;
+    this._handler = _load_handler(this.scope, this.handler, handler_path);
+
+    // let's make sure we don't end up with the cached compiled_js 
+    // from a different file version or different handler
+    var class_name = this.path;
+    var hash = acre.hash.hex_md5(this.content_hash + "." + this._handler.content_hash);
+    this.linemap = null;
+
+    // get compiled javascript, either directly from the class cache or 
+    // by generating raw javascript and compiling (and caching the result)
+    var compiled_js = _hostenv.load_script_from_cache(class_name, hash, this.scope, false);
+    if (compiled_js == null) {
+        var jsstr = this._handler.to_js(this);
+        if (jsstr) {
+            compiled_js = _hostenv.load_script_from_string(jsstr, class_name, hash, 
+                                                           this.scope, this.linemap, false);
+        }
+    }
+
+    // have the handler run our compiled js
+    return this._handler.to_module(compiled_js, this);
+};
+
+Script.prototype.to_http_response = function(scope) {
+    // if we're running at the top-level, reset path_info
+    if (scope === _request_scope) {
+        acre.request.path_info = this.path_info;
+    }
+
+    var module = this.to_module(scope);
+    return this._handler.to_http_response(module, this);
+};
+
+
 // ------------------------------- require ------------------------------------
 
-// acre.get_metadata() requires a deep copy, so we 
-// don't want to do it more than once/app/request.
-var GET_METADATA_CACHE = {};
-
-// main require function
+/*
+ * main require function:
+ * - finds apps using appfetchers
+ * - augments and caches app metadata
+ * - finds the correct file within an app (or mount)
+ * - returns a new Script object for found file
+ */
 var proto_require = function(req_path, req_opts) {
     req_opts = req_opts || {};
-    syslog.info(req_path, "proto_require.path");    
-    
-    
-    /*
-     *  Helper functions for copying/setting metadata
-     */
+    syslog.info(req_path, "proto_require.path");
+
+    // splice additional metadata on to an app
     function set_app_metadata(app, md) {
         app = app || {};
 
@@ -2145,46 +2471,7 @@ var proto_require = function(req_path, req_opts) {
 
         return app;
     };
-    
-    function create_mini_app(app) {
-        return {
-          source: app.source,
-          path: compose_req_path(app.host),
-          host: app.host,
-          hosts: app.hosts,
-          guid: app.guid,
-          as_of: app.as_of,
-          id: app.id,
-          mounts: app.mounts,
-          version: (app.versions.length > 0 ? app.versions[0] : null),
-          versions: app.versions,
-          base_url : acre.host.protocol + "://" + 
-              (app.host.match(/\.$/) ? app.host.replace(/\.$/, "") : (app.host + "." + acre.host.name)) +
-              (acre.host.port !== 80 ? (":" + acre.host.port) : "")              
-        };
-    };
-    
-    function get_extension_metadata(name, extensions) {
-        // match from longest to shortest (i.e., .mf.css before .css)
-        var exts = name.split(".");
-        exts.shift();
-        while (exts.length) {
-          var ext = exts.join(".");
-          var ext_data = {};
-          if (ext && extensions && extensions[ext]) {
-              ext_data = extensions[ext];
-              break;
-          }
-          exts.shift();
-        }
-        
-        return ext_data;
-    };
-    
-    
-    // NOTE: get_file and normalize_path both rely 
-    // on app_data already having been defined
-    
+
     /*
      * utility for resolving filenames to files
      * using the filenames lookup hash in app_data
@@ -2232,52 +2519,7 @@ var proto_require = function(req_path, req_opts) {
 
         return filename;
     };
-    
-    /*
-     * utility for converting all paths relative to an app
-     * into fully-qualified paths (for acre.require, etc.)
-     */
-    function normalize_path(path, version, new_only) {
-        path = path || "";
-        if (typeof path !== 'string') throw new Error("Path must be a string");
-        var parts = path.split('//');
-        
-        if (parts.length >= 2) {
-            
-            // Mode 1: new require syntax                
-            return path;
-            
-        } else if (/^(freebase:)?\//.test(path)) {
-            if (new_only) throw new Error("Freebase ID syntax is not supported for this method.  Use URL syntax.");
-            
-            // Mode 2: old require syntax
-            var namespace = path.replace(/^freebase:/,"").split('/');
-            var script = namespace.pop();
-            if (version) namespace.push(version);
-            namespace = namespace.join('/');
-            path = compose_req_path(namespace_to_host(namespace), script);
-            return path;
-            
-        } else {
-            // Mode 3: relative require
 
-            // check whether there's a matching mount
-            if (app && app.mounts) {
-                var path_segs = path.split("/");
-                while (path_segs.length) {
-                    var mpath = path_segs.join("/");
-                    if (mpath in app.mounts) {
-                        return app.mounts[mpath] + path.replace(mpath, "");
-                    }
-                    path_segs.pop();
-                }
-            }
-
-            // otherwise just push current host back on
-            return compose_req_path(host, path);
-        }
-    }
-    
     // parse path
     var [host, path] = decompose_req_path(req_path);
 
@@ -2305,7 +2547,7 @@ var proto_require = function(req_path, req_opts) {
     // splice in metadata file before caching app
     var md_filename = get_file(_METADATA_FILE);
     if (md_filename && method.cachable) {
-        var md_file = Script(app_data, md_filename).to_module();
+        var md_file = new Script(app_data, md_filename).to_module();
         try {
           var md = md_file[_METADATA_FILE] || JSON.parse(md_file.body);
           syslog.info("Loaded app metadata file in //" + host, "proto_require.metadata");
@@ -2369,8 +2611,7 @@ var proto_require = function(req_path, req_opts) {
             path_info = file_in_path(fn, path)[0];
             
             if (app.mounts[fn]) {
-                var mount_path = normalize_path(app.mounts[fn] + path_info);
-                return route_require(mount_path, req_opts);
+                return route_require(app.mounts[fn] + path_info, req_opts);
             }
 
             filename = get_file(fn);
@@ -2386,274 +2627,13 @@ var proto_require = function(req_path, req_opts) {
     // we don't have a script to run
     if (!filename) return null;
     
-    // we've found our script, now we need to:
-    // set up its scope and run it
-     
-    /*
-     * augment the script's scope with context-sensitive APIs
-     *
-     * - all path-based acre APIs (require, include, route, etc.)
-     *   because of relative references
-     */
-    function scope_augmentation(script, aug_scope) {
-        aug_scope.acre.current_script = script;
-
-        /*
-         * _request_scope augmentation:
-         *   This is stuff we only do for 
-         *   the top-level requested script:
-         */
-        if (aug_scope == _request_scope && script.name.indexOf("not_found.") !== 0) {
-            aug_scope.acre.request.script = script;
-            
-            if (app.csrf_protection) {
-                _request.csrf_protection = true;
-            }
-
-            if (app.error_page) {
-                _hostenv.error_handler_path = normalize_path(app.error_page);
-            }
-
-            // XXX - freebase appfetch method-specific hacks
-            if (app.freebase && app.freebase.write_user) {
-                _hostenv.write_user = app.freebase.write_user;
-            }
-
-            if (app.freebase &&
-                app.freebase.service_url &&
-                /^http(s?):\/\//.test(app.freebase.service_url)) {
-                acre.freebase.set_service_url(app.freebase.service_url);    
-            }
-            
-
-            // Setup deprecated values and decorate with warning messages
-            set_environ();
-            
-            var script_id = req_path_to_script_id(script.path);
-            var [namespace, script_name] = split_script_id(script_id);
-
-            aug_scope.acre.request_context = { // deprecated
-                script_name : script_name,
-                script_id : script_id,
-                script_namespace : namespace,
-                script_version : (script.app.versions.length > 0 ? script.app.versions[0] : null)
-            };
-
-            aug_scope.acre.environ.path_info = aug_scope.acre.request.path_info; // deprecated
-
-            aug_scope.acre.context = aug_scope.acre.request_context; // deprecated
-            aug_scope.acre.environ.script_name = script.name; // deprecated
-            aug_scope.acre.environ.script_id = host_to_namespace(script.app.host) + '/' + script.name; // deprecated
-            aug_scope.acre.environ.script_namespace = host_to_namespace(script.app.host); // deprecated
-            
-            deprecate(aug_scope);
-        }
-
-
-        aug_scope.acre.mount = function(path, local_path) {
-            app.mounts[local_path] = normalize_path(path, null, true);
-        };
-
-        aug_scope.acre.get_metadata = function(path) {
-            path = normalize_path(path, null, true);
-            var [app_md, filename] = proto_require(path, {metadata_only: true});
-            var [host, path_info] = decompose_req_path(path);
-            
-            if (!app_md || (path_info && !filename)) {
-                return null;
-            }
-
-            var app = GET_METADATA_CACHE[host];
-            if (!app) {
-              app = u.extend(true, {}, app_md);
-              delete app.filenames;
-              for (var f in app.files) {
-                  var ext_md = get_extension_metadata(app.files[f].name, app.extensions);
-                  app.files[f] = u.extend({}, ext_md, app.files[f]);
-              }
-              GET_METADATA_CACHE[host] = app;
-            }
-            
-            return (filename) ? app.files[filename] : app;
-        };
-
-        aug_scope.acre.resolve = function(path) {
-            path = normalize_path(path, null, true);
-            var [app_md, filename] = route_require(path, {metadata_only: true});
-            var [host, path_info] = decompose_req_path(path);
-
-            if (!app_md || (path_info && !filename)) {
-                return null;
-            }
-            
-            return compose_req_path(app_md.host, filename);
-        };
-
-        aug_scope.acre.route = function(path, body, skip_routes) {
-            path = normalize_path(path, null, true);
-            var [h, p, qs] = decompose_req_path(path);
-
-            var route_e = new acre.errors.AcreRouteException;
-            route_e.route_to = path;
-            route_e.body = body || acre.request.body;
-            route_e.skip_routes = (skip_routes ? true : (app.host == h));
-            throw route_e;
-        };
-
-        aug_scope.acre.response.set_error_page = function(path) {
-            path = normalize_path(path, null, true);
-            _hostenv.error_handler_path = path;
-        };
-
-
-        /*
-         * helper for the following functions (require, include, get_source)
-         *
-         * all take a path as the primary arugment, but
-         * optionally can take a metadata object in the second 
-         * position to be spliced on to the context of the app.
-         *
-         * ... or, for backward-compatibility, the metadata slot
-         *  can be a version string (path must be a freebase ID) 
-         */
-        function get_sobj(path, metadata) {
-            var version,
-                require_opts = {};
-            
-            if (u.isPlainObject(metadata)) {
-                require_opts.override_metadata = metadata;
-            } else {
-                version = metadata;
-            }
-            
-            if (!path) {
-                throw new Error("No URL provided");
-            }    
-              
-            path = normalize_path(path, version);
-            var sobj = route_require(path, require_opts);
-            
-            if (sobj === null) {
-                throw new Error('Could not fetch data from ' + path);
-            }
-
-            if (compose_req_path(sobj.app.host, sobj.name) === script.path) {
-                throw new Error("A script can not require itself");                
-            }
-
-            return sobj;
-        }
-
-        aug_scope.acre.require = function(path, metadata) {
-            var scope = (this !== aug_scope.acre) ? this : undefined;
-
-            var sobj = get_sobj(path, metadata);
-            
-            return sobj.to_module(scope);
-        };
-
-        // XXX to_http_response() is largely unimplemented
-        aug_scope.acre.include = function(path, metadata) {
-            var scope = (this !== aug_scope.acre) ? this : undefined;
-
-            var sobj = get_sobj(path, metadata);
-
-            return sobj.to_http_response(scope).body;
-        };
-
-        aug_scope.acre.get_source = function(path, metadata) {
-            var sobj = get_sobj(path, metadata);
-
-            return sobj.get_content().body;
-        };
-
-        return aug_scope;
-    }
-
-
-    // Acre's internal representation of a script 
-    // used to create modules (acre.require) or
-    // geenrate output (http request, acre.include)
-    function Script(app, name, path_info) {
-        // get backfill metadata
-        // we need to do this post-overrides being applied
-        var ext_md = get_extension_metadata(name, app.extensions);
-
-        // Create a good looking copy of script metadata 
-        // this will be used in acre.current_script, etc.
-        var script_data = u.extend({}, ext_md, app.files[name]);
-
-        script_data.path_info = path_info;
-        script_data.path = compose_req_path(app.host, name);
-        script_data.id = host_to_namespace(app.host) + "/" + name;
-        // so.source_url ?
-
-        script_data.app = create_mini_app(app);
-
-        // private variable for storing the handler we'll use to 
-        // process the script. the exact handler will depend on the 
-        // scope the script is loaded into, however, so we don't
-        // actually load it until to_module
-        var _handler;
-
-        // copy script_data into a new object that we can decorate 
-        // with methods for internal and handler use
-        var script = u.extend({}, script_data);
-
-        script.get_content = get_appfetch_method(script.source).get_content;
-
-        script.to_module = function(scope) {
-            // build up the script's scope
-            scope = scope || make_scope();
-            this.scope = scope = scope_augmentation(script_data, scope);
-
-            // now that the scope's all set up, we can finally load our handler
-            var handler_path = (app.handlers && app.handlers[this.handler]) ? 
-                                normalize_path(app.handlers[this.handler]) : 
-                                undefined;
-            _handler = _load_handler(scope, this.handler, handler_path);
-
-            // let's make sure we don't end up with the cached compiled_js 
-            // from a different file version or different handler
-            var class_name = this.path;
-            var hash = acre.hash.hex_md5(this.content_hash + "." + _handler.content_hash);
-            this.linemap = null;
-
-            // get compiled javascript, either directly from the class cache or 
-            // by generating raw javascript and compiling (and caching the result)
-            var compiled_js = _hostenv.load_script_from_cache(class_name, hash, scope, false);
-            if (compiled_js == null) {
-                var jsstr = _handler.to_js(this);
-                if (jsstr) {
-                    compiled_js = _hostenv.load_script_from_string(jsstr, class_name, hash, 
-                                                                   scope, this.linemap, false);
-                }
-            }
-
-            // have the handler run our compiled js
-            return _handler.to_module(compiled_js, this);
-        };
-
-        script.to_http_response = function(scope) {
-            // if we're running at the top-level, reset path_info
-            if (scope === _request_scope) {
-                acre.request.path_info = this.path_info;
-            }
-
-            var module = this.to_module(scope);
-            return _handler.to_http_response(module, this);
-        };
-
-        return script;
-    }
-
-
-    return Script(app, filename, path_info);
+    return new Script(app, filename, path_info);
 };
 
 /*
- * route_require is a wrapper around proto_require that resolves
- * to a specific script based on options (all default false)
+ * route_require is a wrapper around proto_require that
+ * tries multiple paths until one is found based on
+ * the following specified options (all default false)
  *  - routes: whether to try routes file first
  *  - fallbacks: whether to fail through to the defaults app
                  for known files (e.g., error, robots.txt)
@@ -2716,8 +2696,8 @@ var route_require = function(req_path, req_opts, opts) {
 
 /*
  * this is the main function where we:
- *  1. figure out which script to run
- *  2. run it
+ *  1. finish setting up acre.request
+ *  2. run the top-level script
  *  3. repeat (if acre.route is called)
  */
 var handle_request = function (req_path, req_body, skip_routes) {
