@@ -144,11 +144,7 @@ public class JSTaskQueue extends JSObject {
                                 }
                                 String pp = (String) ii;
                                 Object vv = o.get(pp,obj);
-                                if (vv instanceof String) {
-                                    task = task.header(pp, (String) vv);
-                                } else {
-                                    throw new JSConvertableException("Headers values can only be strings").newJSException(_scope);
-                                }
+                                task = task.header(pp, vv.toString());
                             }
                         } else {
                             throw new JSConvertableException("'headers' property must contain an object").newJSException(_scope);
@@ -163,11 +159,7 @@ public class JSTaskQueue extends JSObject {
                                 }
                                 String pp = (String) ii;
                                 Object vv = o.get(pp,obj);
-                                if (vv instanceof String) {
-                                    task = task.param(pp, (String) vv);
-                                } else {
-                                    throw new JSConvertableException("Params values can only be strings").newJSException(_scope);
-                                }
+                                task = task.param(pp, vv.toString());
                             }
                         } else {
                             throw new JSConvertableException("'params' property must contain an object").newJSException(_scope);
