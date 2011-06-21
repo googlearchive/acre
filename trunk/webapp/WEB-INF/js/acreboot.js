@@ -93,6 +93,7 @@ var _METADATA_FILE = "METADATA";
 var _DEFAULT_FILE = "index";
 var _DEFAULT_APP = "main." + _DELIMITER_PATH;
 
+
 //------------------------------- Utils ---------------------------------------
 
 /*
@@ -287,12 +288,12 @@ function get_random() {
 
 function get_csrf_secret(that) {
     if (!_request.csrf_secret) {
-        var key = _ks.get_key("csrf", _request.app_guid);
+        var key = _ks.get_key("csrf", _request.app_project);
         if (key && key[1]) {
             _request.csrf_secret = key[1];
         } else {
             _request.csrf_secret = get_random();
-            _ks.put_key("csrf", _request.app_guid, null, _request.csrf_secret);
+            _ks.put_key("csrf", _request.app_project, null, _request.csrf_secret);
         }
     }
     return _request.csrf_secret;
@@ -1015,7 +1016,7 @@ acre.hash.b64_hmac_md5 = function (key, data) {
 
 // used by the keystore and the appcache to partition data based on the app_guid
 
-_request.app_guid = null;
+_request.app_project = null;
 
 // ------------------------ keystore --------------------------------------
 
@@ -1024,31 +1025,31 @@ if (typeof acre.keystore == 'undefined') {
 }
 
 acre.keystore.get = function (name) {
-    if (_request.app_guid !== null) {
-        return _ks.get_key(name, _request.app_guid);
+    if (_request.app_project !== null) {
+        return _ks.get_key(name, _request.app_project);
     } else {
         return null;
     }
 };
 
 acre.keystore.keys = function () {
-    if (_request.app_guid !== null) {
-        return _ks.get_keys(_request.app_guid);
+    if (_request.app_project !== null) {
+        return _ks.get_keys(_request.app_project);
     } else {
         return null;
     }
 };
 
 acre.keystore.remove = function (name) {
-    if (_request.app_guid !== null) {
-        _ks.delete_key(name, _request.app_guid);
+    if (_request.app_project !== null) {
+        _ks.delete_key(name, _request.app_project);
     }
 };
 
 if (_request.trusted) { 
   acre.keystore.put = function (name, token, secret) {
-    if (_request.app_guid !== null) {
-      return _ks.put_key(name, _request.app_guid, token, secret);
+    if (_request.app_project !== null) {
+      return _ks.put_key(name, _request.app_project, token, secret);
     } else {
       return null;
     }
@@ -2111,9 +2112,9 @@ for (var name in _topscope) {
 //-------------------------------- Script object -------------------------------
 
 /*
- * Acre's internal representation of a script 
- * used to create modules (acre.require) or
- * generate output (http request, acre.include)
+ * Acre's internal representation of a script that is
+ * passed to handlers to create modules (e.g., acre.require)
+ * or generate output (e.g., top-level http request)
  */
 function Script(app, name, path_info) {
     this.app = app;
@@ -2448,6 +2449,7 @@ var proto_require = function(req_path, req_opts) {
             'host': true,
             'hosts': true,
             'guid': true,
+            'project': true,
             'as_of': true,
             'path': true,
             'id': true
@@ -2462,13 +2464,31 @@ var proto_require = function(req_path, req_opts) {
                                 u.extend(true, app[key] || {}, md[key]) : 
                                 md[key];
                 }
-            }        
+            }
+            
+            // set project specified in metadata
+            // as long as it's a step up from host
+            function check_project(host, project) {
+                var host_parts = host.split(".");
+                var project_parts = project.split(".");
+                while (project_parts.length) {
+                    if (project_parts.pop() !== host_parts.pop()) 
+                        return false;
+                }
+                return true;
+            }
+            if (app.host && md.project) {
+                if (check_project(app.host, md.project)) {
+                    app.project = md.project;
+                }
+            }
         }
 
         // initialize values used by acre
         if (app.host) {
             app.hosts = app.hosts || [app.host];
             app.guid = app.guid || app.host;
+            app.project = app.project || app.guid;
             app.as_of = app.as_of || null; 
             app.path = app.path || compose_req_path(app.host);
             app.id = app.id || host_to_namespace(app.host);
@@ -2619,7 +2639,7 @@ var proto_require = function(req_path, req_opts) {
             path_info = file_in_path(fn, path)[0];
             
             if (app.mounts[fn]) {
-                return route_require(app.mounts[fn] + path_info, req_opts);
+                return route_require(app.mounts[fn] + path_info, req_opts, {routes: true});
             }
 
             filename = get_file(fn);
@@ -2725,7 +2745,7 @@ var handle_request = function (req_path, req_body, skip_routes) {
           var source_app = proto_require(compose_req_path(h), {metadata_only: true})[0];
           if (source_app !== null) {
               source_path = compose_req_path(h, p);
-              _request.app_guid = source_app.guid;
+              _request.app_project = source_app.project;
           }
         } catch(e) {
           syslog.warn("Unresolvable host used with a /acre/ URL.", "handle_request.host");
@@ -2789,8 +2809,8 @@ var handle_request = function (req_path, req_body, skip_routes) {
     // before the script is actually run, we want to set the app guid aside
     // if we didn't already do so
     // app_guid is primarily used for accessing the keystore and the appcache
-    if (_request.app_guid === null) {
-        _request.app_guid = script.app.guid;
+    if (_request.app_project === null) {
+        _request.app_project = script.app.project;
     }
     
     // View Source link
@@ -2802,6 +2822,7 @@ var handle_request = function (req_path, req_body, skip_routes) {
     try {
         _request_scope = make_scope();
         var res = script.to_http_response(_request_scope);
+        console.log(_request.app_project)
 
         if (res !== null) {
             // fill out the acre.response object.
