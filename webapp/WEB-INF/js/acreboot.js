@@ -2822,7 +2822,6 @@ var handle_request = function (req_path, req_body, skip_routes) {
     try {
         _request_scope = make_scope();
         var res = script.to_http_response(_request_scope);
-        console.log(_request.app_project)
 
         if (res !== null) {
             // fill out the acre.response object.
