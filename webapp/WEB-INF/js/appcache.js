@@ -35,7 +35,7 @@ var augment;
     // -----------------------------------------------------
     
     function key(k) {
-        var appid = request.app_guid;
+        var appid = request.app_project;
         if (!appid) throw Error("appid can't be null or undefined");
         return appid + ":" + k;
     }
