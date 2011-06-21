@@ -546,7 +546,6 @@ function AcreResponse() {
 // Variables set by internal private helpers
 var AcreResponse_availability = false;
 var AcreResponse_max_age = 0;
-var AcreResponse_vary = [];
 var AcreResponse_vary_cookies = {};
 var AcreResponse_session = acre.request.cookies['ACRE_SESSION'];
 var AcreResponse_set_session_cookie = false;
@@ -569,11 +568,13 @@ var AcreResponse_validate_header = function(name, value) {
 
 // AcreResponse methods are exposed to user scripts as acre.response.*
 AcreResponse.prototype.set_header = function (name, value) {
+    name = name.toLowerCase();
     AcreResponse_validate_header(name, value);
     this.headers[name] = value;
 };
 
 AcreResponse.prototype.add_header = function (name, value) {
+    name = name.toLowerCase();
     AcreResponse_validate_header(name, value);
 
     // RFC2616 sec 4.2: It MUST be possible to combine the multiple
@@ -590,7 +591,8 @@ AcreResponse.prototype.add_header = function (name, value) {
 };
 
 AcreResponse.prototype.set_header_default = function (name, value) {
-    if (name.toLowerCase() in this.headers) {
+    name = name.toLowerCase();
+    if (name in this.headers) {
         return;
     }
     this.set_header(name, value);
@@ -743,30 +745,26 @@ var AcreResponse_set_cache_control = function (that) {
 };
 
 var AcreResponse_set_vary = function (that) {
-    if (AcreResponse_vary_cookies.__count__) {
-        var vary = ['Cookie'];
+    if (acre.response.headers.vary){
+        var vary = acre.response.headers.vary.split(", ");
     } else {
         var vary = [];
     }
-
-    for (var a=0; a < AcreResponse_vary.length; a++) {
-        vary.push(a);
+    
+    for (key in AcreResponse_vary_cookies) {
+        vary.push('Cookie');
+        break;
     }
 
     if (vary.length > 0) {
-        acre.response.set_header_default('Vary', vary.join(', '));
+        acre.response.set_header('Vary', vary.join(', '));
     }
 };
 
 var AcreResponse_set_metaweb_vary = function (that) {
-    var varied_cookies = [];
+    var vary = [];
     for (var c in AcreResponse_vary_cookies.__count__) {
-        varied_cookies.push('Cookie['+c+']');
-    }
-
-    var vary = varied_cookies;
-    for (var a=0; a < AcreResponse_vary.length; a++) {
-        vary.push(a);
+        vary.push('Cookie['+c+']');
     }
 
     if (vary.length > 0) {
