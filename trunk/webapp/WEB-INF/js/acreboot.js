@@ -2810,6 +2810,7 @@ var handle_request = function (req_path, req_body, skip_routes) {
     if (_request.app_project === null) {
         _request.app_project = script.app.project;
     }
+    syslog("Using keystore: " + _request.app_project, "request.keystore");
     
     // View Source link
     acre.response.set_header('x-acre-source-url',
