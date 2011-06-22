@@ -873,7 +873,7 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
          if (app_version_t !== null) {
              // Handle the case that we've hit a version node
              var target_host = namespace_to_host(app_version_t['id']);
-             app.guid = app_version_t['guid'];
+             app.guid = app.project = app_version_t['guid'];
              app.as_of = res['/freebase/apps/acre_app_version/as_of_time'];
 
              /*
@@ -916,7 +916,7 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
          // Explictly build out the metadata here, filling in any blanks, in case
          // we didn't hit a version node up front.
          app.id = res.id;
-         app.guid = res.guid;
+         app.guid = app.project = res.guid;
          app.ttl = (app.versions && app.versions.length) ? 600000 : 0;
 
          app.freebase = app.freebase || {};
