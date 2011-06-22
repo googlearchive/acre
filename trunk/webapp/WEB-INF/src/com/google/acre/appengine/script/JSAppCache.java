@@ -51,15 +51,15 @@ public class JSAppCache extends JSObject {
     
     // ---------------------------------- public functions  ---------------------------------
     
-    public String jsFunction_get(String key) {
+    public Object jsFunction_get(String key) {
         try {
-            return (String) _cache.get(key);
+            return _cache.get(key);
         } catch (java.lang.Exception e) {
             throw new JSConvertableException("Failed to get object: " + e.getMessage()).newJSException(_scope);
         }
     }
 
-    public void jsFunction_put(String key, String obj, Object expires) {
+    public void jsFunction_put(String key, Object obj, Object expires) {
         try {
             if (expires instanceof Number) { 
                 _cache.put(key,obj,Expiration.byDeltaMillis(((Number) expires).intValue()));
@@ -68,6 +68,18 @@ public class JSAppCache extends JSObject {
             }
         } catch (java.lang.Exception e) {
             throw new JSConvertableException("Failed to put object: " + e.getMessage()).newJSException(_scope);
+        }
+    }
+
+    public int jsFunction_increment(String key, int delta, Object initValue) {
+        try {
+            if (initValue instanceof Number) { 
+                return _cache.increment(key, delta, ((Number) initValue).longValue()).intValue();
+            } else {
+                return _cache.increment(key, delta).intValue();
+            }
+        } catch (java.lang.Exception e) {
+            throw new JSConvertableException("Failed to increment object: " + e.getMessage()).newJSException(_scope);
         }
     }
     
