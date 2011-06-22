@@ -12,6 +12,7 @@ if (acre.cache) {
 
     var do_test = function(obj) {
         var id = "o1";
+        acre.cache.remove(id);
         var o1 = obj;
         acre.cache.put(id,o1);
         var o2 = acre.cache.get(id);
@@ -27,6 +28,21 @@ if (acre.cache) {
 
     test('acre.cache put/get/remove works with numbers', function() {
         do_test(1);
+    });
+
+    test('acre.cache increment works', function() {
+        var id = "o1";
+        acre.cache.remove(id);
+        var o1 = 1;
+        acre.cache.increment(id,1,0);
+        var o2 = acre.cache.get(id);
+        equal(o2,1,"at first, the object is not in cache, so it starts with 0 and 1 gets added");
+        acre.cache.increment(id,1,0);
+        var o2 = acre.cache.get(id);
+        equal(o2,2,"then it gets incremented to 2");
+        acre.cache.remove(id);
+        var o3 = acre.cache.get(id);
+        ok(o3 == null, "object was removed");
     });
 
     test('acre.cache put/get/remove works with objects', function() {
