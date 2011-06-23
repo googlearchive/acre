@@ -9,6 +9,8 @@ var augment;
         
         obj.store = {
             "begin" : begin,
+            "key" : key,
+            "explain_key" : explain_key,
             "get" : get,
             "put" : put,
             "update" : update,
@@ -19,24 +21,38 @@ var augment;
 
     };
 
+    var untyped = "untyped";
+    
     function begin() {
         return store.begin();
     }
-        
+
+    function key(id,type) {
+        if (!id) throw "Can't obtain an a key with a null or undefined id";
+        if (!type) type = untyped;
+        return store.key(id,type);
+    }
+
+    function explain_key(key) {
+        if (!key) throw "Can't explain a null or undefined key";
+        return store.explain_key(key);
+    }
+    
     function get(key, transaction) {
+        if (!key) throw "Can't obtain an object with a null or undefined key";
         return store.get(key, transaction);
     }
     
-    function put(obj, name, parent_key, transaction) {
+    function put(obj, id, parent_key, transaction) {
         // allow put() to be used both as (value,key) and (key,value)
         // this is useful to be able to say put(value) without specifying a key
-        if (typeof obj == 'string' && typeof name == 'object') {
+        if (typeof obj == 'string' && typeof id == 'object') {
             var temp = obj;
-            var obj = name;
-            var name = temp;
+            var obj = id;
+            var id = temp;
         }
-        var kind = obj.type || "untyped";
-        return store.put(kind, obj, name, parent_key, transaction);
+        var kind = obj.type || untyped;
+        return store.put(kind, obj, id, parent_key, transaction);
     }
     
     function update(key, obj, transaction) {
