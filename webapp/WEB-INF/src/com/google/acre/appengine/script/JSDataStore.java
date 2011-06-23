@@ -26,6 +26,7 @@ import com.google.acre.script.exceptions.JSConvertableException;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.PreparedQuery;
@@ -93,6 +94,8 @@ public class JSDataStore extends JSObject {
             Key key = stringToKey(obj_key);
             Entity e = (transaction instanceof JSDataStoreTransaction) ? _store.get(((JSDataStoreTransaction) transaction).getWrapped(), key) : _store.get(key);
             return extract(e, _scope);
+        } catch (EntityNotFoundException e) {
+            return null;
         } catch (IllegalArgumentException e) {
             throw new JSConvertableException("'" + obj_key + "' is not a valid key, have you called acre.store.key()?").newJSException(_scope);
         } catch (Exception e) {
