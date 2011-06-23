@@ -4,7 +4,7 @@
  *  "markup" is a representation of markup-under-construction.
  *  this incorporates two tricks i learned from the "Kid" template
  *  engine - i don't know where ryan tomayko learned them.
- * 
+ *
  *  the first trick is a generalization of the old method of building a
  *  long string as a list (with O(1) append time) and then joining
  *  the list into a string at the last minute, rather than
@@ -22,27 +22,27 @@
  *  strings that are produced by the template itself were written by the
  *  template author, so they are assumed to be safe HTML and are tagged
  *  by being wrapped in a javascript object.
- * 
- * 
+ *
+ *
  * - bare strings are valid in markup lists, though they will be escaped
  *   before converting to a markup string.
- * 
- * - to tag a string as safe markup, use: 
+ *
+ * - to tag a string as safe markup, use:
  *      mjt.bless("...some markup here...")
- * 
+ *
  * - to convert a markup list to a markup string, use mjt.flatten_markup()
- *      
+ *
  *      mjt.flatten_markup([mjt.bless("<div>"),
- *                          ["a > b", " && ", "b > c"], 
+ *                          ["a > b", " && ", "b > c"],
  *                          mjt.bless("</div>")])
  *       ->  "<div>a &gt; b &amp;&amp; b &gt; c</div>"
- * 
+ *
  * - to convert a TemplateCall (the result of invoking a template function
  *   from javascript) to a markup string, use:
  *      tcall.toMarkup()
  *      or mjt.flatten_markup(tcall)
  *      or acre.markup.stringify(tcall) under acre
- * 
+ *
  */
 
 
@@ -51,9 +51,9 @@
 
 /**
  * external entry point to create markup from a trusted string.
- * 
+ *
  * mjt.bless requires a string argument.
- * 
+ *
  */
 mjt.bless = function (html) {
     return new mjt.Markup(html);
@@ -174,10 +174,26 @@ mjt.Markup.prototype.toMarkup = function () {
  */
 mjt.make_attr_safe = function (v, is_url) {
     var markup = mjt.flatten_markup(v);
-    
+
     if (is_url) {
-      var m = /^.*:/.exec(markup);
-      if (m && !/^https?:/.test(m[0])) {
+      var url_path = markup.split("?", 1)[0];  // check everything up to (left of) the query string
+      var scheme = url_path.split(":", 1)[0];
+      if (scheme === "http" || scheme === "https") {
+        // http and https schemes are allowed
+      }
+      else if (/[&:]/.test(url_path)) {
+        //
+        // disallow '&' and ':' characters in the url path
+        // This will blacklist XSS strings such as:
+        //
+        // <a href="javascript:alert('XSS')">
+        //
+        // <a href="&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;&#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41">
+        //
+        // <a href="java\0script:alert(\"XSS\")">
+        //
+        // @see http://ha.ckers.org/xss.html for a full array of XSS attacks and it will blow your mind!
+        //
         mjt.warn("Only http and https protocols are allowed in dynamic substitutions of entire 'href' attribute values");
         markup = "";
       }
