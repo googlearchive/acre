@@ -49,12 +49,7 @@ if (acre.store) {
         var o2 = acre.store.get(key);
         are_same(o1,o2);
         acre.store.remove(key);
-        try {
-            acre.store.get(key);
-            ok(false,"exception wasn't triggered");
-        } catch (e) {
-            ok(true,"exception was triggered");
-        }
+        ok(acre.store.get(key) == null, "entity was not found");
     });
 
     test('acre.store put/get/remove works with provided id for untyped object', function() {
@@ -65,12 +60,7 @@ if (acre.store) {
         var o2 = acre.store.get(key);
         are_same(o1,o2);
         acre.store.remove(key);
-        try {
-            acre.store.get(key);
-            ok(false,"exception wasn't triggered");
-        } catch (e) {
-            ok(true,"exception was triggered");
-        }
+        ok(acre.store.get(key) == null, "entity was not found");
     });
 
     test('acre.store put/get/remove works with provided id for typed object', function() {
@@ -82,12 +72,7 @@ if (acre.store) {
         var o2 = acre.store.get(key);
         are_same(o1,o2);
         acre.store.remove(key);
-        try {
-            acre.store.get(key);
-            ok(false,"exception wasn't triggered");
-        } catch (e) {
-            ok(true,"exception was triggered");
-        }
+        ok(acre.store.get(key) == null, "entity was not found");
     });
 
     test('acre.store get without a key fails properly', function() {
@@ -110,12 +95,7 @@ if (acre.store) {
         var o2 = acre.store.get(key);
         are_same(o1,o2);
         acre.store.remove(key);
-        try {
-            acre.store.get(key);
-            ok(false,"exception wasn't triggered");
-        } catch (e) {
-            ok(true,"exception was triggered");
-        }
+        ok(acre.store.get(key) == null, "entity was not found");
     });
 
     test('acre.store stored objects have the right metadata', function() {
@@ -152,12 +132,7 @@ if (acre.store) {
         }
         o = acre.store.get(key);
         acre.store.remove(o);
-        try {
-            acre.store.get(key);
-            ok(false,"exception wasn't triggered");
-        } catch (e) {
-            ok(true,"exception was triggered");
-        }
+        ok(acre.store.get(key) == null, "entity was not found");
     });
 
     test('acre.store remove by array of keys works', function() {
@@ -166,18 +141,8 @@ if (acre.store) {
         var key1 = acre.store.put(o1);
         var key2 = acre.store.put(o2);
         acre.store.remove([key1,key2]);
-        try {
-            acre.store.get(key1);
-            ok(false,"exception wasn't triggered");
-        } catch (e) {
-            ok(true,"exception was triggered");
-        }
-        try {
-            acre.store.get(key2);
-            ok(false,"exception wasn't triggered");
-        } catch (e) {
-            ok(true,"exception was triggered");
-        }
+        ok(acre.store.get(key1) == null, "entity was not found");
+        ok(acre.store.get(key2) == null, "entity was not found");
     });
 
     test('acre.store remove by array of objects works', function() {
@@ -188,18 +153,8 @@ if (acre.store) {
         o1 = acre.store.get(key1);
         o2 = acre.store.get(key2);
         acre.store.remove([o1,o2]);
-        try {
-            acre.store.get(key1);
-            ok(false,"exception wasn't triggered");
-        } catch (e) {
-            ok(true,"exception was triggered");
-        }
-        try {
-            acre.store.get(key2);
-            ok(false,"exception wasn't triggered");
-        } catch (e) {
-            ok(true,"exception was triggered");
-        }
+        ok(acre.store.get(key1) == null, "entity was not found");
+        ok(acre.store.get(key2) == null, "entity was not found");
     });
 
     test('acre.store update by key works', function() {
