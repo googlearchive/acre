@@ -72,20 +72,38 @@ public class JSDataStore extends JSObject {
         }
     }
     
+    public String jsFunction_key(String id, String type) {
+        try {
+            return KeyFactory.createKeyString(type, id);
+        } catch (Exception e) {
+            throw new JSConvertableException("Failed to create key with type '" + type + " and id '" + id + "': " + e.getMessage()).newJSException(_scope);
+        }
+    }
+
+    public String jsFunction_explain_key(String key) {
+        try {
+            return stringToKey(key).toString();
+        } catch (Exception e) {
+            throw new JSConvertableException("Failed to explain key '" + key + ": " + e.getMessage()).newJSException(_scope);
+        }
+    }
+    
     public Object jsFunction_get(String obj_key, Scriptable transaction) {
         try {
             Key key = stringToKey(obj_key);
             Entity e = (transaction instanceof JSDataStoreTransaction) ? _store.get(((JSDataStoreTransaction) transaction).getWrapped(), key) : _store.get(key);
             return extract(e, _scope);
+        } catch (IllegalArgumentException e) {
+            throw new JSConvertableException("'" + obj_key + "' is not a valid key, have you called acre.store.key()?").newJSException(_scope);
         } catch (Exception e) {
-            throw new JSConvertableException("Failed to obtain object with id '" + obj_key + ": " + e.getMessage()).newJSException(_scope);
+            throw new JSConvertableException("Failed to obtain object with key '" + obj_key + ": " + e.getMessage()).newJSException(_scope);
         }
     }
 
-    public Object jsFunction_put(String kind, Scriptable obj, String name, String parent_key, Scriptable transaction) {
+    public Object jsFunction_put(String kind, Scriptable obj, String id, String parent_key, Scriptable transaction) {
         try {
             Entity entity = null;
-            if (name == null || "null".equals(name) || "undefined".equals(name) ) {
+            if (id == null || "null".equals(id) || "undefined".equals(id) ) {
                 if (parent_key == null || "null".equals(parent_key) || "undefined".equals(parent_key)) {
                     entity = new Entity(kind);
                 } else {
@@ -93,9 +111,9 @@ public class JSDataStore extends JSObject {
                 }
             } else {
                 if (parent_key == null || "null".equals(parent_key) || "undefined".equals(parent_key)) {
-                    entity = new Entity(kind, name);
+                    entity = new Entity(kind, id);
                 } else {
-                    entity = new Entity(kind, name, stringToKey(parent_key));
+                    entity = new Entity(kind, id, stringToKey(parent_key));
                 }
             }
             embed(entity, obj, false);
