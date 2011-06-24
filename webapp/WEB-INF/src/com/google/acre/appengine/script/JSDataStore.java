@@ -97,7 +97,12 @@ public class JSDataStore extends JSObject {
         } catch (EntityNotFoundException e) {
             return null;
         } catch (IllegalArgumentException e) {
-            throw new JSConvertableException("'" + obj_key + "' is not a valid key, have you called acre.store.key()?").newJSException(_scope);
+            String message = e.getMessage();
+            if (message.indexOf("Invalid Key") > -1) {
+                throw new JSConvertableException("'" + obj_key + "' is not a valid key, have you called acre.store.key()?").newJSException(_scope);
+            } else {
+                throw new JSConvertableException("Failed to get entity: " + message).newJSException(_scope);
+            }
         } catch (Exception e) {
             throw new JSConvertableException("Failed to obtain object with key '" + obj_key + ": " + e.getMessage()).newJSException(_scope);
         }
