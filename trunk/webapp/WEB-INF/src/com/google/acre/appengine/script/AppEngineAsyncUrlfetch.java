@@ -169,6 +169,30 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         _requests.add(new AsyncRequest(requrl, futr, callback, start_time, system, log_to_user, response_encoding));
     }
 
+    //Return the charset encoding of an HTTPResponse.
+    private String getResponseEncoding(HTTPResponse res) { 
+
+        // Default to utf-8
+        String encoding = new String("utf-8");
+
+        // We are looking for this header: Content-Type: text/html; charset=utf-8
+        for (HTTPHeader header : res.getHeaders()) { 
+            if (header.getName().equalsIgnoreCase("content-type")) { 
+                for (String part : header.getValue().split(";")) { 
+
+                    String trimmed_part = part.trim();
+                    if (trimmed_part.startsWith("charset")) { 
+                        encoding = trimmed_part.substring(8);
+                    }
+
+                }
+            }
+        }
+
+        return encoding;
+    }
+
+
     private Scriptable callback_result(AsyncRequest req, HTTPResponse res) {    
 
         long waiting_time = System.currentTimeMillis() - req.start_time;
@@ -192,7 +216,13 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         Scriptable cookies = ctx.newObject(_scope);
 
         out.put("status", out, res.getResponseCode());
-        out.put("body", out, new String(res.getContent()));
+
+        try {
+            out.put("body", out, new String(res.getContent(), getResponseEncoding(res)));
+        } catch (java.io.UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+
         out.put("headers", out, headers);
         out.put("cookies", out, cookies);
 
