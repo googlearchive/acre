@@ -36,6 +36,7 @@ public class AcreContextFactory extends ContextFactory {
     
     private static boolean GENERATE_JS_DEBUG_INFO = Configuration.Values.GENERATE_JS_DEBUG_INFO.getBoolean();
     private static boolean LIMIT_EXECUTION_TIME = Configuration.Values.ACRE_LIMIT_EXECUTION_TIME.getBoolean();
+    private static int OPTIMIZATION_LEVEL = Configuration.Values.ACRE_COMPILER_OPTIMIZATION_LEVEL.getInteger();
     
     // Custom {@link Context} to store execution time.
     @SuppressWarnings("deprecation")
@@ -63,6 +64,9 @@ public class AcreContextFactory extends ContextFactory {
         cx.setClassShutter(new AcreClassShutter());
 
         cx.setGeneratingSource(true);
+        
+        cx.setOptimizationLevel(OPTIMIZATION_LEVEL);
+        _logger.info("compiler.optimization.level", Integer.toString(OPTIMIZATION_LEVEL));
 
         // provide JavaScript version 1.7
         cx.setLanguageVersion(Context.VERSION_1_7);
