@@ -1782,9 +1782,10 @@ var appfetch_cache = function(host) {
         throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
     }
 
-    syslog.debug({'key': ckey, 's': 'memcache', 'm': 'appfetch_cache'}, 'appfetch.cache.success');
+    var app = JSON.parse(res);
+    syslog.debug({'key': ckey, 's': 'memcache', 'm': app.source}, 'appfetch.cache.success');
 
-    return JSON.parse(res);  
+    return app;
 };
 
 var cache_get_content = function() {
@@ -1921,7 +1922,7 @@ delete mjt.acre.handler;
 // Initialize some mjt variables
 mjt.debug = 1;
 
-// expose a function for deprecating
+// expose a function for deprecating                                                                                
 mjt.deprecate = function () {
 }
 
