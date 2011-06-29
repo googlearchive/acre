@@ -105,7 +105,10 @@ public class Configuration implements ConfigurationMBean {
         //APIARY address and api key for acre API use
         ACRE_APIARY_ADDR,
         ACRE_APIARY_KEY,
-        
+
+        // Compilation mode (interepreted/compiled) flag
+        ACRE_COMPILER_OPTIMIZATION_LEVEL("0"),
+
         // values that are better without defaults because they could expose security-sensitive info
         ACRE_AUTH_SECRET, 
         ACRE_SQL,
