@@ -21,6 +21,10 @@ if (acre.cache) {
         var o3 = acre.cache.get(id);
         ok(o3 == null, "object was removed");
     };
+
+    test('acre.cache returns null for values that are not present', function() {
+        equal(acre.cache.get("blah"),null,"returns null as expected");
+    });
     
     test('acre.cache put/get/remove works with strings', function() {
         do_test("blah");
@@ -28,6 +32,17 @@ if (acre.cache) {
 
     test('acre.cache put/get/remove works with numbers', function() {
         do_test(1);
+    });
+
+    test('acre.cache put/get/remove works with objects', function() {
+        do_test({"blah":"blah"});
+    });
+
+    test('acre.cache put/get/remove works with arrays of objects', function() {
+        do_test([
+            {"foo":"foo"},
+            {"bar":"bar"}
+        ]);
     });
 
     test('acre.cache increment works', function() {
@@ -44,20 +59,16 @@ if (acre.cache) {
         var o3 = acre.cache.get(id);
         ok(o3 == null, "object was removed");
     });
-
-    test('acre.cache put/get/remove works with objects', function() {
-        do_test({"blah":"blah"});
-    });
-
-    test('acre.cache put/get/remove works with arrays of objects', function() {
-        do_test([
-            {"foo":"foo"},
-            {"bar":"bar"}
-        ]);
-    });
-
-    test('acre.cache returns null for values that are not present', function() {
-        equal(acre.cache.get("blah"),null,"returns null as expected");
+    
+    test('acre.cache set+increment work together', function() {
+        var id = "id";
+        acre.cache.remove(id);
+        acre.cache.put(id,1);
+        acre.cache.increment(id,1,0);
+        var i = acre.cache.get(id);
+        equal(i,2,"counter was incremented to 2");
+        acre.cache.remove(id);
+        ok(acre.cache.get(id) == null, "object was removed");
     });
         
 }
