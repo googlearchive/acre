@@ -62,6 +62,52 @@ if (acre.tasks) {
         }
     });
     
+    test('acre.tasks add works with countdown and GET method on a special queue', function() {
+        try {
+            acre.tasks.add({
+                "name" : "test-task-1-" + (new Date()).getTime(),
+                "countdown" : 1000,
+                "url" : "/acre/status",
+                "method" : "GET",
+                "headers" : {
+                   "x-something" : "somewhat",
+                   "foo" : "bar"
+                },
+                "params" : {
+                    "this" : "that",
+                    "foo" : "bar"
+                }
+            },"test");
+            ok(true,"task was added");
+        } catch (e) {
+            console.log(e);
+            ok(false,"exception was triggered");
+        }
+    });
+
+    test('acre.tasks add to an unknown queue throws', function() {
+        try {
+            acre.tasks.add({
+                "name" : "test-task-1-" + (new Date()).getTime(),
+                "countdown" : 1000,
+                "url" : "/acre/status",
+                "method" : "GET",
+                "headers" : {
+                   "x-something" : "somewhat",
+                   "foo" : "bar"
+                },
+                "params" : {
+                    "this" : "that",
+                    "foo" : "bar"
+                }
+            },"blah");
+            ok(false,"task was added");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+    });
+    
+    
 }
 
 acre.test.report();

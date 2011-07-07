@@ -14,6 +14,9 @@
 
 package com.google.acre.appengine.script;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
@@ -35,21 +38,35 @@ public class JSTaskQueue extends JSObject {
         return new JSTaskQueue(scope);
     }
     
-    private Queue _queue;
-    
+    private Map<String,Queue> _queueMap = new HashMap<String,Queue>();
+        
     // ------------------------------------------------------------------------------------------
 
     public JSTaskQueue() { }
     
     public JSTaskQueue(Scriptable scope) {
         _scope = scope;
-        _queue = QueueFactory.getDefaultQueue();
     }
     
     public String getClassName() {
         return "TaskQueue";
     }
     
+    private Queue getQueue(String name) {
+        if (_queueMap.containsKey(name)) {
+            return _queueMap.get(name);
+        } else {
+            try {
+                Queue queue = ("default".equals(name)) ? QueueFactory.getDefaultQueue() : QueueFactory.getQueue(name);
+                _queueMap.put(name,queue);
+                return queue;
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+                throw e;
+            }
+        }
+    }
+
     // ---------------------------------- public functions  ---------------------------------
     
     /**
@@ -75,7 +92,7 @@ public class JSTaskQueue extends JSObject {
      *  
      *  "eta" and "countdown" are mutually exclusive.
      */
-    public void jsFunction_add(Scriptable obj) {
+    public void jsFunction_add(Scriptable obj, String name) {
         try {
             TaskOptions task = Builder.withDefaults();
             String className = obj.getClassName();
@@ -168,7 +185,8 @@ public class JSTaskQueue extends JSObject {
                         throw new JSConvertableException("parameter '" + p + "' is not recognized").newJSException(_scope);
                     }
                 }
-                _queue.add(task);
+                
+                getQueue(name).add(task);
             } else {
                 throw new JSConvertableException("Task param must be an object").newJSException(_scope);
             }

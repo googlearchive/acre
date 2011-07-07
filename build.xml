@@ -285,6 +285,7 @@
         <delete file="${webapp.web-inf}/web.xml"/>
         <delete file="${webapp.web-inf}/cron.xml"/>
         <delete file="${webapp.web-inf}/datastore-indexes.xml"/>
+        <delete file="${webapp.web-inf}/queue.xml"/>
         <delete>
             <fileset dir="${webapp.dir}/META-INF">
                 <include name="*.conf"/>

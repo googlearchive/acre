@@ -13,13 +13,16 @@ var augment;
 
     };
     
-    function add(obj) {
+    function add(obj,name) {
         if (obj instanceof Array) {
             for each (var o in obj) {
-                add(o);
+                add(o,name);
             }
         } else {
-            queue.add(obj);
+            if (typeof name == "undefined" || name == null) {
+                name = "default";
+            }
+            queue.add(obj,name);
         }
     }
 
