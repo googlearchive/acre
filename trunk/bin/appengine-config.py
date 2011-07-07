@@ -86,7 +86,7 @@ def copy_configuration_files(options):
 
 
     #these files require a default
-    for source_target in [('appengine-web.%s.xml.in', 'appengine-web.xml.in'), ('web.%s.xml.in', 'web.xml.in'), ('cron.%s.xml.in', 'cron.xml.in'), ('datastore-indexes.%s.xml.in', 'datastore-indexes.xml.in')]:
+    for source_target in [('appengine-web.%s.xml.in', 'appengine-web.xml.in'), ('web.%s.xml.in', 'web.xml.in'), ('cron.%s.xml.in', 'cron.xml.in'), ('queue.%s.xml.in', 'queue.xml.in'), ('datastore-indexes.%s.xml.in', 'datastore-indexes.xml.in')]:
 
       target = 'webapp/WEB-INF/%s' % source_target[1]
       if os.path.exists(target):
@@ -106,7 +106,7 @@ def copy_configuration_files(options):
   #only do this for appengine-web.xml - no default ots (there is one already in the standard checkout)
   else:
 
-    for source_target in [('appengine-web.default.xml.in', 'appengine-web.xml.in'), ('web.default.xml.in', 'web.xml.in'), ('cron.default.xml.in', 'cron.xml.in')]:
+    for source_target in [('appengine-web.default.xml.in', 'appengine-web.xml.in'), ('web.default.xml.in', 'web.xml.in'), ('cron.default.xml.in', 'cron.xml.in'), ('queue.default.xml.in', 'queue.xml.in')]:
       target = 'webapp/WEB-INF/%s' % source_target[1]
       if os.path.exists(target):
         os.chmod(target, 0777)

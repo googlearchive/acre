@@ -11,6 +11,8 @@ webapp/WEB-INF/cron.xml
 webapp/WEB-INF/cron.xml.in
 webapp/WEB-INF/datastore-indexes.xml
 webapp/WEB-INF/datastore-indexes.xml.in
+webapp/WEB-INF/queue.xml
+webapp/WEB-INF/queue.xml.in
 webapp/WEB-INF/classes
 webapp/WEB-INF/appengine-generated
 webapp/WEB-INF/lib/mysql-connector-java-*.jar
