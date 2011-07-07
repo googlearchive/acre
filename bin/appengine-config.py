@@ -85,8 +85,8 @@ def copy_configuration_files(options):
         print 'Copied %s to %s' % (f, target)
 
 
-    #these two files require a default
-    for source_target in [('appengine-web.%s.xml.in', 'appengine-web.xml.in'), ('web.%s.xml.in', 'web.xml.in'), ('cron.%s.xml.in', 'cron.xml.in')]:
+    #these files require a default
+    for source_target in [('appengine-web.%s.xml.in', 'appengine-web.xml.in'), ('web.%s.xml.in', 'web.xml.in'), ('cron.%s.xml.in', 'cron.xml.in'), ('datastore-indexes.%s.xml.in', 'datastore-indexes.xml.in')]:
 
       target = 'webapp/WEB-INF/%s' % source_target[1]
       if os.path.exists(target):

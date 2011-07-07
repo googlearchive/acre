@@ -9,10 +9,12 @@ webapp/WEB-INF/appengine-web.xml
 webapp/WEB-INF/appengine-web.xml.in
 webapp/WEB-INF/cron.xml
 webapp/WEB-INF/cron.xml.in
+webapp/WEB-INF/datastore-indexes.xml
+webapp/WEB-INF/datastore-indexes.xml.in
 webapp/WEB-INF/classes
 webapp/WEB-INF/appengine-generated
 webapp/WEB-INF/lib/mysql-connector-java-*.jar
-webapp/WEB-INF/lib/appengine-api-*-sdk-*.jar
+webapp/WEB-INF/lib/appengine-*.jar
 webapp/META-INF/*.properties
 webapp/META-INF/*.conf
 webapp/META-INF/ots.other.conf.in
