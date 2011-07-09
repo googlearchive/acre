@@ -215,11 +215,38 @@ if (acre.store) {
             "a.a" : "A"
         };
         try {
-            acre.store.put(o);
+            var id = acre.store.put(o);
+            acre.store.remove(id);
             ok(false,"exception wasn't triggered");
         } catch (e) {
             ok(true,"exception was triggered");
         }
+        try {
+            acre.store.find(o);
+            ok(false,"exception wasn't triggered");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+        
+    });
+
+    test('acre.store must complain while saving objects that have "." in properties', function() {
+        var o = { 
+            "a.a" : "A"
+        };
+        try {
+            var id = acre.store.put(o);
+            acre.store.remove(id); // remove in case this goes thru, although it should not
+            ok(false,"exception wasn't triggered");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+    });
+
+    test('acre.store must complain while querying with queries that have "." in properties', function() {
+        var o = { 
+            "a.a" : "A"
+        };
         try {
             acre.store.find(o);
             ok(false,"exception wasn't triggered");
@@ -228,20 +255,61 @@ if (acre.store) {
         }
     });
 
-    test('acre.store handling objects with "_" property', function() {
+    test('acre.store saving objects with "_" property', function() {
         var o = { 
             "_" : "A"
         };
+        
         try {
             // store should ignore the "_" property when storing
-            acre.store.put(o);
+            var id = acre.store.put(o);
             ok(true,"exception wasn't triggered");
         } catch (e) {
             ok(false,"exception was triggered");
         }
+        
+        acre.store.remove(id);
+    });
+
+    test('acre.store querying with valid "_" filters works', function() {
         try {
-            // but complain if used in a query
-            acre.store.find(o);
+            var start = (new Date()).getTime();
+
+            acre.wait(10);
+
+            var o1 = { 
+                "foo" : "bar"
+            };
+            var key = acre.store.put(o1);
+            var o2 = acre.store.get(key);
+            
+            var query = {
+                "_" : {
+                    "creation_time>" : start 
+                }
+            };
+                        
+            var result = acre.store.find(query);
+            var o3 = result.first();
+            ok(typeof o3 != "undefined","result exists");
+            are_same(o2,o3);
+
+            acre.store.remove(key);
+        } catch (e) {
+            ok(false,"exception was triggered");
+        } finally {
+            if (key) acre.store.remove(key);
+        }
+    });
+
+    test('acre.store querying with invalid "_" filters throws', function() {
+        var query = { 
+            "_" : {
+                "whatever>=" : 0
+            }
+        };
+        try {
+            acre.store.find(query);
             ok(false,"exception wasn't triggered");
         } catch (e) {
             ok(true,"exception was triggered");
@@ -260,6 +328,24 @@ if (acre.store) {
         var o3 = acre.store.get(key);
         are_same(o2,o3);
         acre.store.remove(key);
+    });
+
+    test('acre.store find with undefined query throws', function() {
+        try {
+            acre.store.find(undefined);
+            ok(false,"exception wasn't triggered");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+    });
+
+    test('acre.store find with undefined query throws', function() {
+        try {
+            acre.store.find_keys(undefined);
+            ok(false,"exception wasn't triggered");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
     });
 
     test('acre.store find works and has all the pieces', function() {

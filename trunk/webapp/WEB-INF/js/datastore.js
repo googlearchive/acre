@@ -135,12 +135,14 @@ var augment;
     }
     
     function find(query,cursor) {
+        if (typeof query === 'undefined') throw "Sorry, can't find with an undefined query";
         var kind = query.type || "untyped";
         var result = store.find(kind, query, cursor);
         return new Result(result);
     }
 
     function find_keys(query,cursor) {
+        if (typeof query === 'undefined') throw "Sorry, can't find with an undefined query";
         var kind = query.type || "untyped";
         var result = store.find_keys(kind, query, cursor);
         return new Result(result);
