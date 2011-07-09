@@ -14,6 +14,8 @@
 
 package com.google.acre.appengine.script;
 
+import java.util.Date;
+
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
@@ -160,7 +162,7 @@ public class JSDataStore extends JSObject {
     public Scriptable jsFunction_find(String kind, Scriptable query, Object cursor) {
         try {
             Query aequery = new Query(kind);
-            compile_query("", query, aequery);
+            compile_query("", "", query, aequery);
             PreparedQuery pq = _store.prepare(aequery);
             JSDataStoreResults results = new JSDataStoreResults(pq,cursor,_scope);
             return results.makeJSInstance();
@@ -172,7 +174,7 @@ public class JSDataStore extends JSObject {
     public Scriptable jsFunction_find_keys(String kind, Scriptable query, Object cursor) {
         try {
             Query aequery = new Query(kind);
-            compile_query("", query, aequery.setKeysOnly());
+            compile_query("", "", query, aequery.setKeysOnly());
             PreparedQuery pq = _store.prepare(aequery);
             JSDataStoreResults results = new JSDataStoreResults(pq,cursor,_scope);
             return results.makeJSInstance();
@@ -187,6 +189,11 @@ public class JSDataStore extends JSObject {
     private final static String CREATION_TIME_PROPERTY = "@#@CREATION_TIME@#@";
     private final static String LAST_MODIFIED_TIME_PROPERTY = "@#@LAST_MODIFIED_TIME@#@";
     
+    private final static String METADATA = "_";
+    private final static String KEY = "key";
+    private final static String CREATION_TIME = "creation_time";
+    private final static String LAST_MODIFIED_TIME = "last_modified_time";
+    
     public static Object extract(Entity entity, Scriptable scope) throws JSONException {
         Object json = entity.getProperty(JSON_PROPERTY);
         if (json != null) {
@@ -194,10 +201,10 @@ public class JSDataStore extends JSObject {
             Object last_modified_time = entity.getProperty(LAST_MODIFIED_TIME_PROPERTY);
             Scriptable o = (Scriptable) JSON.parse(((Text) json).getValue(), scope, false);
             Scriptable metadata = Context.getCurrentContext().newObject(scope);
-            ScriptableObject.putProperty(metadata, "key", keyToString(entity.getKey()));
-            ScriptableObject.putProperty(metadata, "creation_time", creation_time);
-            ScriptableObject.putProperty(metadata, "last_modified_time", last_modified_time);
-            ScriptableObject.putProperty(o,"_",metadata);
+            ScriptableObject.putProperty(metadata, KEY, keyToString(entity.getKey()));
+            ScriptableObject.putProperty(metadata, CREATION_TIME, ((Date) creation_time).getTime());
+            ScriptableObject.putProperty(metadata, LAST_MODIFIED_TIME, ((Date) last_modified_time).getTime());
+            ScriptableObject.putProperty(o,METADATA,metadata);
             return o;
         } else {
             return keyToString(entity.getKey());
@@ -205,11 +212,11 @@ public class JSDataStore extends JSObject {
     }
     
     public void embed(Entity entity, Scriptable obj, boolean update) throws JSONException {
-        long now = System.currentTimeMillis();
+        Date now = new Date();
         entity.setUnindexedProperty(JSON_PROPERTY, new Text(JSON.stringify(obj)));
-        entity.setUnindexedProperty(LAST_MODIFIED_TIME_PROPERTY, now);
+        entity.setProperty(LAST_MODIFIED_TIME_PROPERTY, now);
         if (!update) {
-            entity.setUnindexedProperty(CREATION_TIME_PROPERTY, now);
+            entity.setProperty(CREATION_TIME_PROPERTY, now);
         }
         index_object("", obj, entity);
     }
@@ -249,9 +256,13 @@ public class JSDataStore extends JSObject {
                 }
     
                 // '_' is a reserved property that contains the object metadata. If it's passed to us we need to ignore it
-                if (prop.equals("_")) continue;
+                if (METADATA.equals(prop)) continue;
                 
                 Object value = obj.get(prop, obj);
+
+                if (value instanceof Number && (prop.endsWith("_date") || prop.endsWith("_time"))) {
+                    value = new Date(((Number) value).longValue());
+                }
                 
                 // NOTE(SM): for some reason, sometimes Rhino returns numbers that are integers and sometimes doubles
                 // since javascript only knows about doubles, let's stick to that because appengine sorting
@@ -267,7 +278,7 @@ public class JSDataStore extends JSObject {
                     if (((String) value).length() < STRING_SIZE_INDEXING_CUTOFF) {
                         entity.setProperty(p, value);
                     }
-                } else if (value instanceof Boolean || value instanceof Number) {
+                } else if (value instanceof Boolean || value instanceof Number || value instanceof Date) {
                     entity.setProperty(p, value);
                 } else if (value instanceof Scriptable) {
                     index_object(p + ".", (Scriptable) value, entity);
@@ -283,7 +294,7 @@ public class JSDataStore extends JSObject {
         }
     }
 
-    void compile_query(String path, Scriptable obj, Query query) {
+    void compile_query(String path, String context, Scriptable obj, Query query) {
         String className = obj.getClassName();
         if ("Object".equals(className)) {
             Object[] ids = obj.getIds();
@@ -297,10 +308,6 @@ public class JSDataStore extends JSObject {
                 
                 if (prop.indexOf('.') > -1) {
                     throw new JSConvertableException("Sorry, but properties are not allowed to contain the '.' character").newJSException(_scope);
-                }
-
-                if (prop.equals("_")) {
-                    throw new JSConvertableException("Sorry, but property '_' is reserved and your objects can't contain it").newJSException(_scope);
                 }
                 
                 FilterOperator filterOperator = Query.FilterOperator.EQUAL;
@@ -327,6 +334,10 @@ public class JSDataStore extends JSObject {
                 
                 Object value = obj.get(origProp, obj);
 
+                if (value instanceof Number && (prop.endsWith("_date") || prop.endsWith("_time"))) {
+                    value = new Date(((Number) value).longValue());
+                }
+                
                 // NOTE(SM): for some reason, sometimes Rhino returns numbers that are integers and sometimes doubles
                 // since javascript only knows about doubles, let's stick to that because appengine sorting
                 // is inconsistent if you use different types for the same property
@@ -335,9 +346,25 @@ public class JSDataStore extends JSObject {
                 }
                 
                 if (value instanceof String || value instanceof Boolean || value instanceof Number) {
-                    query.addFilter(path + prop, filterOperator, value);
+                    if (METADATA.equals(context)) {
+                        throw new JSConvertableException("Sorry, metadata field '" + prop + "' does not exist.").newJSException(_scope);
+                    } else {
+                        query.addFilter(path + prop, filterOperator, value);
+                    }
+                } else if (value instanceof Date) {
+                    if (METADATA.equals(context)) {
+                        if (prop.equals(CREATION_TIME)) {
+                            query.addFilter(CREATION_TIME_PROPERTY, filterOperator, value);
+                        } else if (prop.equals(LAST_MODIFIED_TIME)) {
+                            query.addFilter(LAST_MODIFIED_TIME_PROPERTY, filterOperator, value);
+                        } else {
+                            throw new JSConvertableException("Sorry, metadata field '" + prop + "' does not exist.").newJSException(_scope);
+                        }
+                    } else {
+                        query.addFilter(path + prop, filterOperator, value);
+                    }
                 } else if (value instanceof Scriptable) {
-                    compile_query(path + prop + ".",(Scriptable) value,query);
+                    compile_query(path + prop + ".", prop, (Scriptable) value, query);
                 } else {
                     throw new JSConvertableException("Sorry, you can't have null or undefined constrains").newJSException(_scope);
                     // NOTE(SM): I suspect this is going to be hard to digest for people used to MQL where 'null' basically means
@@ -351,7 +378,7 @@ public class JSDataStore extends JSObject {
             throw new JSConvertableException("Sorry, Array selection is not supported yet").newJSException(_scope);
         } else {
             // this should never happen but better safe than sorry
-            throw new JSConvertableException("Sorry, don't know how to index this class of object (" + className + ")").newJSException(_scope);
+            throw new JSConvertableException("Sorry, don't know how to query using this class of object (" + className + ")").newJSException(_scope);
         }
     }
     
