@@ -202,8 +202,8 @@ public class JSDataStore extends JSObject {
             Scriptable o = (Scriptable) JSON.parse(((Text) json).getValue(), scope, false);
             Scriptable metadata = Context.getCurrentContext().newObject(scope);
             ScriptableObject.putProperty(metadata, KEY, keyToString(entity.getKey()));
-            ScriptableObject.putProperty(metadata, CREATION_TIME, ((Date) creation_time).getTime());
-            ScriptableObject.putProperty(metadata, LAST_MODIFIED_TIME, ((Date) last_modified_time).getTime());
+            ScriptableObject.putProperty(metadata, CREATION_TIME, (creation_time instanceof Date) ? ((Date) creation_time).getTime() : creation_time);
+            ScriptableObject.putProperty(metadata, LAST_MODIFIED_TIME, (last_modified_time instanceof Date) ? ((Date) last_modified_time).getTime() : last_modified_time);
             ScriptableObject.putProperty(o,METADATA,metadata);
             return o;
         } else {
