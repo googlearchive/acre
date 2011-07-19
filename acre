@@ -248,6 +248,21 @@ appengine_rollback() {
     $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS rollback "$WAR"
 }
 
+appengine_update_indexes() {
+    check_appengine
+    $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update_indexes "$WAR"
+}
+
+appengine_update_cron() {
+    check_appengine
+    $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update_cron "$WAR"
+}
+
+appengine_update_queues() {
+    check_appengine
+    $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update_queues "$WAR"
+}
+
 # -------------------------------------------------------------------------------------
 
 # We called without arguments print the usage -------------
@@ -392,6 +407,18 @@ case "$ACTION" in
 
     appengine-rollback) 
         appengine_rollback;;
+
+    appengine-update-indexes) 
+        appengine_build_war
+        appengine_update_indexes;;
+
+    appengine-update-cron) 
+        appengine_build_war
+        appengine_update_cron;;
+
+    appengine-update-queues) 
+        appengine_build_war
+        appengine_update_queues;;
 
     appengine-internal-deploy) 
         APPENGINE_DEPLOY_PARAMS="-p cache.corp.google.com:3128 -s admin-console.prom.corp.google.com"
