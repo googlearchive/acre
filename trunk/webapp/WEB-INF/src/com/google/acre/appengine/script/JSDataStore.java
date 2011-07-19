@@ -305,6 +305,9 @@ public class JSDataStore extends JSObject {
                 
                 String prop = (String) i;
                 String origProp = prop;
+
+                // no need to add a filter for type since 'kind' is already restricting it
+                if ("type".equals(prop)) continue;
                 
                 if (prop.indexOf('.') > -1) {
                     throw new JSConvertableException("Sorry, but properties are not allowed to contain the '.' character").newJSException(_scope);
