@@ -513,7 +513,7 @@ public class JSON {
             consumeWhitespace(in);
             if(in.read() != ':') throw new JSONException(in.generateError("key missing value"));
             if (want_java == false) {
-                if (((String)keyValue).matches("^(-)?[1-9]\\d+$")) {
+                if (((String)keyValue).matches("^(-)?\\d+$")) {
                     int intKey = new Integer((String)keyValue).intValue();
                     ((Scriptable)jsObject).put(intKey, (Scriptable)jsObject,
                                                decodeReader(in, scope, want_java));
