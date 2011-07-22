@@ -420,16 +420,6 @@ case "$ACTION" in
         appengine_build_war
         appengine_update_queues;;
 
-    appengine-internal-deploy) 
-        APPENGINE_DEPLOY_PARAMS="-p cache.corp.google.com:3128 -s admin-console.prom.corp.google.com"
-        APPENGINE_BASE_HOST="prom.corp.google.com"
-        appengine_deploy;;
-
-    appengine-internal-rollback)
-        APPENGINE_DEPLOY_PARAMS="-p cache.corp.google.com:3128 -s admin-console.prom.corp.google.com"
-        APPENGINE_BASE_HOST="prom.corp.google.com"
-        appengine_rollback;;
-
     *) 
         SCRIPT="$ACTION" 
         invoke $*;;
