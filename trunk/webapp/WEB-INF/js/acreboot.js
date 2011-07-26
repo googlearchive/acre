@@ -304,7 +304,7 @@ function get_csrf_secret(that) {
 
 var _syslog = function(level, mesg, event_name) {
     if (typeof event_name == 'undefined') event_name = null;
-    if (typeof mesg == 'undefined') mesg = "undefined";
+    if (typeof mesg == 'undefined' || mesg === null) mesg = "undefined";
     _hostenv.syslog(level, event_name, mesg);
 };
 
@@ -1559,7 +1559,10 @@ var _load_handler = function(scope, handler_name, handler_path) {
     handler_name = handler_name || "passthrough";
 
     if (handler_path) {
-        handler_path = scope.acre.resolve(handler_path);
+        var resolved_handler_path = scope.acre.resolve(handler_path);
+        if (!resolved_handler_path) {
+          throw make_appfetch_error("Could not find handler: " + handler_path, APPFETCH_ERROR_APP);
+        }
         var sobj = proto_require(handler_path);
         handler = sobj.to_module().handler();
         handler.content_hash = sobj.content_hash;
