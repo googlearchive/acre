@@ -2048,7 +2048,7 @@ for (var k in _mjt.freebase) {
 
 var freebase_scope = {};
 freebase_scope.syslog = syslog;
-var fb_script = (_request.apiary_service_url !== "") ? "apiary.js" : "freebase.js";
+var fb_script = (_request.googleapis_freebase !== "") ? "googleapis_freebase.js" : "freebase.js";
 _hostenv.load_system_script(fb_script, freebase_scope);
 
 // decorate acreboot objects with just what we need... a lot
@@ -2091,7 +2091,7 @@ oauth_scope.syslog = syslog;
 oauth_scope.parseUri = u.parseUri;
 oauth_scope.system_urlfetch = _system_urlfetch;
 _hostenv.load_system_script('oauth.js',      oauth_scope);
-var oauth_script = (_request.apiary_service_url !== "") ? "apiary_oauth.js" : "acre_oauth.js";
+var oauth_script = (_request.googleapis_freebase !== "") ? "googleapis_oauth.js" : "acre_oauth.js";
 _hostenv.load_system_script(oauth_script, oauth_scope);
 oauth_scope.augment(acre);
 

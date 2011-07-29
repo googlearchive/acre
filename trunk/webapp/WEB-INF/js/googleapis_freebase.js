@@ -1,7 +1,7 @@
 var _system_freebase;
 var URL_SIZE_LIMIT = 2047;
 
-var APIARY_KEY = null;
+var GOOGLEAPIS_KEY = null;
 /**
  * Attach the functions defined in this script to the given API object
  * to make them available to the user scope
@@ -16,8 +16,8 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
     freebase.service_url = request.freebase_service_url;
     freebase.site_host = request.freebase_site_host;
 
-    freebase.apiary_url = request.apiary_service_url;   // XXX - for transition only... will remove later
-    APIARY_KEY = request.apiary_key;
+    freebase.googleapis_url = request.googleapis_host + request.googleapis_freebase;   // XXX - for transition only... will remove later
+    GOOGLEAPIS_KEY = request.googleapis_key;
   
     // XXX FreebaseError is getting built twice because this is called for
     // user and system
@@ -97,24 +97,24 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
     }
 
     /**
-     * lookup the per app freebase apiary api key in the datastore and return it if present. 
+     * lookup the per app freebase googleapis.com api key in the datastore and return it if present. 
      * throw an exception if not found
      */
-    function get_app_freebase_api_key() {
+    function get_app_googleapis_server_side_api_key() {
         try { 
-          return acre.keystore.get('freebase_api')[0];
+          return acre.keystore.get('googleapis_server_side')[0];
         } catch (e) {
           throw new Error('Failed to get Freebase API Key from keystore for this app, try /acre/keystore_console on this host to see available keys.');
         }
     }
 
     //per app client-side (/image) api key
-    function get_app_freebase_image_api_key() {
+    function get_app_googleapis_client_side_api_key() {
         try { 
-          return acre.keystore.get('freebase_image_api')[0];
+          return acre.keystore.get('googleapis_client_side')[0];
         } catch (e) { 
-          syslog.warn({}, "freebase_api_key.exposed", "You have not set up a freebase_image_api key in your keystore - using your freebase_api key instead - warning this might be exposed to users");
-          return get_app_freebase_api_key();
+          syslog.warn({}, "googleapis_server_side_key.exposed", "You have not set up a googleapis_client_side key in your keystore - using your googleapis_server_side key instead - warning this might be exposed to users");
+          return get_app_googleapis_server_side_api_key();
         }
     }
 
@@ -129,7 +129,7 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
 
         //we were either passed the key in the request (acre itself probably)
         //or we get the per app key from the keystore
-        var api_key = opts.key || get_app_freebase_api_key();
+        var api_key = opts.key || get_app_googleapis_server_side_api_key();
 
         if ((!opts.method || opts.method === "GET") && url.length + opts.content.length < URL_SIZE_LIMIT) {
             opts.method = "GET";
@@ -266,7 +266,7 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
      */
     function mqlread(q,e,o,composer) {
         var [api_opts, fetch_opts] = decant_options(o);
-        var url = freebase.apiary_url + "/mqlread";
+        var url = freebase.googleapis_url + "/mqlread";
         fetch_opts.content = composer(q,e,api_opts);
 
         //TODO: move apiVersion to config
@@ -335,7 +335,7 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
      */
      freebase.get_user_info = function(options) {
          var [api_opts, fetch_opts] = decant_options(options);
-         var base_url = freebase.apiary_url + "/user/info";
+         var base_url = freebase.googleapis_url + "/user/info";
          var url = acre.form.build_url(base_url, api_opts);
          fetch_opts.sign = true;
          fetch_opts.check_results = "json";
@@ -396,7 +396,7 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
      */
     freebase.mqlwrite = function(query,envelope,options) {
         var [api_opts, fetch_opts] = decant_options(options);
-        var url = freebase.apiary_url + "/mqlwrite";
+        var url = freebase.googleapis_url + "/mqlwrite";
         fetch_opts.method = "POST";
         fetch_opts.content = prepareContent(query,envelope,api_opts);
         if (typeof fetch_opts.sign === 'undefined') fetch_opts.sign = true;
@@ -453,8 +453,8 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
         var [api_opts, fetch_opts] = decant_options(options);
 
         mode = mode || "plain";
-        var base_url = freebase.apiary_url + "/text" + id;
-        api_opts.key = get_app_freebase_api_key();
+        var base_url = freebase.googleapis_url + "/text" + id;
+        api_opts.key = get_app_googleapis_server_side_api_key();
         switch (mode) {
           case "escaped": 
           case "unsafe":
@@ -607,14 +607,14 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
         qargs.errorid = errorid;
       }
 
-      var qstr = 'key=' + get_app_freebase_image_api_key();
+      var qstr = 'key=' + get_app_googleapis_client_side_api_key();
       for (var a in qargs) {
         if (!qargs[a]) continue;
         if (qstr !== '') qstr += '&';
         qstr += a+'='+encodeURIComponent(qargs[a]);
       }
 
-      return freebase.apiary_url + '/image' + cid + "?" + qstr;
+      return freebase.googleapis_url + '/image' + cid + "?" + qstr;
   };
 }
 
@@ -852,7 +852,7 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
          }
 
          try {
-             var res = _system_freebase.mqlread(q, envelope, {'key' : APIARY_KEY }).result;
+             var res = _system_freebase.mqlread(q, envelope, {'key' : GOOGLEAPIS_KEY }).result;
          } catch (e) {
              syslog.error(e, "appfetch.graph.mqlread.error");
              throw make_appfetch_error("Mqlread Error", APPFETCH_ERROR_METHOD, e);
@@ -957,9 +957,9 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
 
      var graph_get_content = function() {
          if (this.handler === 'binary') {
-             return _system_freebase.get_blob(this.content_id, 'raw', {'key' : APIARY_KEY });
+             return _system_freebase.get_blob(this.content_id, 'raw', {'key' : GOOGLEAPIS_KEY });
          } else {
-             return _system_freebase.get_blob(this.content_id, 'unsafe', { 'key' : APIARY_KEY });
+             return _system_freebase.get_blob(this.content_id, 'unsafe', { 'key' : GOOGLEAPIS_KEY });
          }
      };
 
