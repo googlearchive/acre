@@ -107,8 +107,9 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     private static String ACRE_FREEBASE_SITE_ADDR = Configuration.Values.ACRE_FREEBASE_SITE_ADDR.getValue();
     private static int ACRE_FREEBASE_SITE_ADDR_PORT = Configuration.Values.ACRE_FREEBASE_SITE_ADDR_PORT.getInteger();
     
-    private static String ACRE_APIARY_ADDR = Configuration.Values.ACRE_APIARY_ADDR.getValue();
-    private static String ACRE_APIARY_KEY = Configuration.Values.ACRE_APIARY_KEY.getValue();
+    private static String ACRE_GOOGLEAPIS_HOST = Configuration.Values.ACRE_GOOGLEAPIS_HOST.getValue();
+    private static String ACRE_GOOGLEAPIS_FREEBASE = Configuration.Values.ACRE_GOOGLEAPIS_FREEBASE.getValue();
+    private static String ACRE_GOOGLEAPIS_KEY = Configuration.Values.ACRE_GOOGLEAPIS_KEY.getValue();
 
 
     private static String ACRE_HOST_BASE = Configuration.Values.ACRE_HOST_BASE.getValue();
@@ -472,8 +473,9 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         if (ACRE_METAWEB_API_ADDR_PORT != 80) req.freebase_service_url += ":" + ACRE_METAWEB_API_ADDR_PORT;
         req.freebase_site_host = "http://" + ACRE_FREEBASE_SITE_ADDR;
         if (ACRE_FREEBASE_SITE_ADDR_PORT != 80) req.freebase_site_host += ":" + ACRE_FREEBASE_SITE_ADDR_PORT;
-        req.apiary_service_url = ACRE_APIARY_ADDR;
-        req.apiary_key = ACRE_APIARY_KEY;
+        req.googleapis_host = ACRE_GOOGLEAPIS_HOST;
+        req.googleapis_freebase = ACRE_GOOGLEAPIS_FREEBASE;
+        req.googleapis_key = ACRE_GOOGLEAPIS_KEY;
 
         _scope.put("PROTECTED_HOSTENV", _scope, this);
 

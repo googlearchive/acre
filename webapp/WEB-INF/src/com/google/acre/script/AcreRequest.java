@@ -70,8 +70,12 @@ public class AcreRequest extends JsConvertable {
     public String freebase_service_url;
     public String freebase_site_host;
 
-    public String apiary_service_url;
-    public String apiary_key;
+    //The hostname of googleapis - usually https://www.googleapis.com
+    public String googleapis_host;
+    //The Freebase API path - relative to googleapis_host above.
+    public String googleapis_freebase;
+    //The private api key that acre uses to do internal googleapis calls.
+    public String googleapis_key;
 
     // if non-empty, this overrides the script_path computed from the url
     public String handler_script_path;
