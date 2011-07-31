@@ -443,7 +443,7 @@ acre.request = {
     base_path : _request.request_path_info.replace(new RegExp(u.escape_re(_request.path_info)+"$"), ""),    
 
     // these can be re-set by acre.route
-    body : _request.body,
+    body : _request.request_body,
     path_info : _request.path_info,
     query_string : _request.query_string,
     
