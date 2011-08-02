@@ -2223,7 +2223,7 @@ Script.prototype.set_scope = function(scope) {
         scope.acre.request.script = script.script_data;
 
         if (script.app.csrf_protection) {
-            _request.csrf_protection = true;
+            _request.csrf_protection = script.app.csrf_protection;
         }
 
         if (script.app.error_page) {
