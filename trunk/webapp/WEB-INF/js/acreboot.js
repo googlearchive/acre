@@ -1242,7 +1242,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     if (_request.csrf_protection) {
         if (!(method === "GET" || method == "HEAD") && !bless) {
             var reject = true;
-            var token = acre.request.body_params["ACRE_CSRF_TOKEN"];
+            var token = acre.request.body_params["ACRE_CSRF_TOKEN"] || acre.request.params["ACRE_CSRF_TOKEN"];
             if (acre.request.method === "GET" || acre.request.method === "HEAD") {
                 // reject
             } else if (token && acre.form.validate_csrf_token(token)) {
