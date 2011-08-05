@@ -179,7 +179,7 @@ appengine_run() {
     if [ "$ACRE_PORT" != "" ]; then
         APPSERVER_PARAMS="-p $ACRE_PORT"
     fi
-    $APPENGINE_HOME/bin/dev_appserver.sh --disable_update_check $APPSERVER_PARAMS webapp || exit 1
+    $APPENGINE_HOME/bin/dev_appserver.sh --disable_update_check -a 0.0.0.0 $APPSERVER_PARAMS webapp || exit 1
 }
 
 appengine_hostbase() {
