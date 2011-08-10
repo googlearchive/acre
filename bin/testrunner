@@ -1,0 +1,166 @@
+#!/usr/bin/env python
+#
+import sys
+import os
+import json
+import urllib2
+import re
+import test_driver
+import logging
+logging.basicConfig()
+logger = logging.getLogger('tst')
+# assuming we're in the root of acre, find tests in www
+base_path = os.path.split(os.path.abspath(os.path.join(__file__,'..')))[0]
+www_path = base_path + '/' + \
+  'webapp/WEB-INF/scripts/googlecode/freebase-site/svn/trunk/www'
+
+acre_host = os.environ["ACRE_HOST_BASE"]
+devel_host = os.environ["ACRE_FREEBASE_SITE_ADDR"]
+acre_port = os.environ["ACRE_PORT"]
+host_delimiter_path = os.environ["ACRE_HOST_DELIMITER_PATH"]
+
+def testng_manifest(apps):
+  # fetch urls for the manifest based on a list of app names
+  manifest = {}
+  if not apps:
+    apps = ['qa']
+  for app in apps:
+    manifest[app] = []
+    host = app + "." + host_delimiter_path + "." + acre_host + ":" + acre_port
+    url = "http://" + host + "/acre/test?mode=discover&output=json"
+    try:
+      f = urllib2.urlopen(url)
+    except:
+      sys.stderr.write("error fetching: %s\n" % url)
+      raise
+    results = json.loads(f.read())
+    for t in results['testfiles']:
+      manifest[app].append(t['run_url'] + "?output=flatjson")
+  return manifest
+
+def testfs_manifest(nomock, whitelist, test_type=False):
+  params = '?output=flatjson'
+  if nomock:
+    params += '&mock=0'
+  else:
+    params += '&mock=1'
+  url = "http://%s:%s/_fs_routing"\
+  % (devel_host, acre_port)
+  try:
+    response = urllib2.urlopen(url)
+  except:
+    sys.stderr.write("error fetching: %s\n" % url)
+    sys.stderr.write("perhaps you need to add %s to /etc/hosts?\n\n" % \
+             acre_host)
+    raise
+  data = json.loads(response.read())
+
+  apps = {}
+  for p in data['prefix']:
+    appurl = p.get('app')
+    prefix = p.get('prefix')
+    if appurl:
+      m = re.match('//([^\.]+)\.www[^\/]+(/.*$|$)', appurl)
+      if not m: continue
+      app = m.groups()[0]
+      path = app + m.groups()[1]
+      #
+      # Some routing rules have a script, need to key off of both
+      #
+      extra = ('/'+p.get('script')) if 'script' in p else ''
+      apps[path+extra] = prefix
+
+  test_paths = {}
+  os.chdir(www_path)
+  if test_type == 'qunit':
+    params = ''
+    fls = os.popen("find . -name qunit*.template").read().split('\n')
+  else:
+    fls = os.popen("find . -name test_*sjs").read().split('\n')
+  manifest = {}
+  for f in fls:
+    if not f: break
+    tfile = f[2:].split('/')
+    tapp = tfile[0]
+    if whitelist and tapp not in whitelist: continue
+    if not manifest.get(tapp):
+      manifest[tapp] = []
+    tpath = tfile[:len(tfile)-1]
+    fl = tfile[len(tfile)-1:][0]
+    i = len(tpath)
+    found = False
+    # start with an exact match then try the parent
+    while i > 0:
+      path = '/'.join(tpath[:i])
+      remainder = '/'
+      if len(tpath) > i:
+        remainder = '/' + '/'.join(tpath[i:]) + '/'
+
+      i = i - 1
+      if apps.get(path):
+        #print tpath, path
+        found = True
+        manifest[tapp].append("http://" + devel_host + ":" +\
+          acre_port + apps[path] + remainder + fl + params)
+        break
+    if not found: sys.stderr.write("WARN: did not find a route for: %s\n" % f)
+  logger.debug('retrieved test manifest:\n%s' % manifest)
+  return manifest
+
+def run_tests(manifest, opts):
+  os.chdir(base_path)
+  cmd = 'curl -s -S http://%s:%s/status > /dev/null' % (devel_host, acre_port)
+  sys.stdout.write('CHECK: acre status...')
+  if os.system(cmd) != 0:
+    print "FAILED"
+    sys.exit(1)
+  sys.stdout.write('PASSED\n')
+
+  sys.stdout.write('CHECK: freebase endpoint...')
+  cmd = 'bin/freebase_check > /dev/null'
+  if os.system(cmd) != 0:
+    print "FAILED"
+    sys.exit(1)
+  sys.stdout.write('PASSED\n')
+
+  return test_driver.drive_apps(manifest, opts)
+
+
+from optparse import OptionParser
+def main(argv=None):
+  if argv is None:
+    argv = sys.argv
+
+  usage = 'usage: testrunner [--help] optional args are apps to be tested'
+  parser = OptionParser(usage=usage)
+  parser.add_option('-j',  dest='jsn', action="store_true", help='enable test driver output json')
+  parser.add_option('-v',  dest='verbose', action="store_true",
+                    help='enable test driver debug logging')
+  parser.add_option('-n',  dest='nocolor', action="store_true", help='disable test driver sans terminal colors')
+  parser.add_option('-r',  dest='selenium_rh',
+                    help='selenium remote e.g. "http://localhost:4444/wd/hub"'
+                    )
+  parser.add_option('-b',  dest='browser',
+                    help='browser if running selenium tests',
+                    default='firefox')
+  parser.add_option('-t',  dest='test_type',
+                    help='tests to discover and run',
+                    default='testng')
+  parser.add_option('-m',  dest='nomock', action="store_true", help='disable the default backend mockmode')
+  (opts, args) = parser.parse_args(argv)
+  if opts.verbose:
+    logger.setLevel(logging.DEBUG)
+  if opts.test_type == 'testng':
+    manifest = testng_manifest(args[1:])
+  elif opts.test_type == 'testfs':
+    manifest = testfs_manifest(opts.nomock, args[1:])
+  elif opts.test_type == 'qunit':
+    manifest = testfs_manifest(opts.nomock, args[1:], test_type='qunit')
+  else:
+    print '%s is not a valid test_type' % test_type
+    sys.exit(1)
+  sys.exit(run_tests(manifest, opts))
+
+
+if __name__ == '__main__':
+  sys.exit(main())
