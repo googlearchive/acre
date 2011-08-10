@@ -50,16 +50,7 @@ else
     $ECHO "PASSED"
 fi
 
-bin/freebase_check
-if [ $? -ne 0 ]; then
-    exit 1
-fi
-
 $ECHO
 ARGS=$*
-if [ -z "$ARGS" ]; then
-    ARGS="qa"
-fi
-python bin/test_driver.py $ARGS
-
+python bin/testrunner -t testng $ARGS
 exit $?

@@ -14,7 +14,7 @@ python -V &> /dev/null
 RET=$?
 if [ $RET == 127 ]; then
     $ECHO "FAILED"
-    $ECHO "FATAL: These tests require 'python' to be in your path"
+    $ECHO "FATAL: These tests require 'python' and selenium"
     exit 1
 else
     $ECHO "PASSED"
@@ -52,5 +52,5 @@ fi
 
 $ECHO
 ARGS=$*
-python bin/testrunner -t testfs $ARGS
+python bin/testrunner -t qunit $ARGS
 exit $?
