@@ -34,8 +34,8 @@ acre_port = os.environ["ACRE_PORT"]
 
 def drive_apps(manifest, opts):
   browser = opts.browser
-  if browser: print 'browser: %s' % browser
   test_type = opts.test_type
+  if test_type == 'qunit': print 'browser: %s' % browser
   jsn = False
   color = True
   if opts.nocolor: color = False
