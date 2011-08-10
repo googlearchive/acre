@@ -172,7 +172,7 @@ def parse_json(pack, module, data):
 
 class QunitFetcher:
 
-  def __init__(self, browser='firefox', selenium_rh=None):
+  def __init__(self, browser='chrome', selenium_rh=None):
     self.drivers = []
     logger.debug('selenium remote: %s' % selenium_rh)
     if browser == 'firefox':

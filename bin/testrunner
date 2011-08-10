@@ -142,7 +142,7 @@ def main(argv=None):
                     )
   parser.add_option('-b',  dest='browser',
                     help='browser if running selenium tests',
-                    default='firefox')
+                    default='chrome')
   parser.add_option('-t',  dest='test_type',
                     help='tests to discover and run',
                     default='testng')
