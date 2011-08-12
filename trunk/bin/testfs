@@ -31,20 +31,10 @@ else
 fi
 
 $ECHO -n "CHECK: your local DNS configurations... "
-RESP=`curl -s -S -m 5  http://qa.dev.${ACRE_HOST_BASE}:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
+RESP=`curl -s -S -m 5  http://${ACRE_FREEBASE_SITE_ADDR}:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
 if [ -z "$RESP" ]; then
     $ECHO "FAILED"
-    $ECHO "FATAL: make sure 'qa.dev.${ACRE_HOST_BASE}' points to 127.0.0.1 in your DNS or /etc/hosts"
-    exit 1
-else
-    $ECHO "PASSED"
-fi
-
-$ECHO -n "CHECK: local tests are present... "
-RESP=`curl -s -S -m 5  http://qa.dev.${ACRE_HOST_BASE}:$ACRE_PORT/write 2> /dev/null | grep "ok"`
-if [ -z "$RESP" ]; then
-    $ECHO "FAILED"
-    $ECHO "FATAL: the required local tests don't seem to be available"
+    $ECHO "FATAL: make sure '${ACRE_FREEBASE_SITE_ADDR}' points to 127.0.0.1 in your DNS or /etc/hosts"
     exit 1
 else
     $ECHO "PASSED"
