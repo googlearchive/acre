@@ -35,7 +35,6 @@ acre_port = os.environ["ACRE_PORT"]
 def drive_apps(manifest, opts):
   browser = opts.browser
   test_type = opts.test_type
-  if test_type == 'qunit': print 'browser: %s' % browser
   jsn = False
   color = True
   if opts.nocolor: color = False
@@ -192,6 +191,9 @@ class QunitFetcher:
     else:
       print 'we dont currently support that browser name:', browser
       sys.exit(1)
+    print 'browser: %s %s' % (\
+    self.driver.desired_capabilities.get('browserName'),
+    self.driver.desired_capabilities.get('version'))
 
   def quit(self):
     self.driver.quit()
