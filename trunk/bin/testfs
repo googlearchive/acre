@@ -31,10 +31,11 @@ else
 fi
 
 $ECHO -n "CHECK: your local DNS configurations... "
-RESP=`curl -s -S -m 5  http://${ACRE_FREEBASE_SITE_ADDR}:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
+URL="http://${ACRE_FREEBASE_SITE_ADDR}:${ACRE_FREEBASE_SITE_ADDR_PORT}/status"
+RESP=`curl -s -S -m 5 $URL 2> /dev/null | grep "status: 200 OK"`
 if [ -z "$RESP" ]; then
     $ECHO "FAILED"
-    $ECHO "FATAL: make sure '${ACRE_FREEBASE_SITE_ADDR}' points to 127.0.0.1 in your DNS or /etc/hosts"
+    $ECHO "FATAL: $URL failed"
     exit 1
 else
     $ECHO "PASSED"

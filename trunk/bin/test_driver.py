@@ -29,8 +29,9 @@ class colors:
 #-----------------------------------------------------------------------#
 
 acre_host = os.environ["ACRE_HOST_BASE"]
-devel_host = os.environ["ACRE_FREEBASE_SITE_ADDR"]
 acre_port = os.environ["ACRE_PORT"]
+devel_host = os.environ["ACRE_FREEBASE_SITE_ADDR"]
+devel_port = os.environ["ACRE_FREEBASE_SITE_ADDR_PORT"]
 
 def drive_apps(manifest, opts):
   browser = opts.browser
@@ -265,7 +266,7 @@ class AcreFetcher:
     respobj = urllib2.urlopen(request)
     respdata = respobj.read()
     cookies = self.cookiejar.make_cookies(respobj, request)
-    url = "http://%s:%s/account/signin" % (devel_host, acre_port)
+    url = "http://%s:%s/account/signin" % (devel_host, devel_port)
     self.fetch(url)
 
   def logout(self):
