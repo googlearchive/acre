@@ -326,6 +326,8 @@ done
 if [ "$CONF" != "" ]; then
     if [ "$CONF_DIR" != "" ] && [ -f "$CONF_DIR/project.$CONF.conf" ]; then
         load "$CONF_DIR/project.$CONF.conf"
+    elif [ "$CONF_DIR" != "" ] && [ -f "$CONF_DIR/$CONF/project.conf" ]; then
+        load "$CONF_DIR/$CONF/project.conf"
     elif [ -f $CONF ]; then
         load $CONF
     elif [ -f "config/project.$CONF.conf" ]; then
@@ -334,8 +336,10 @@ if [ "$CONF" != "" ]; then
         error "configuration file config/project.$CONF.conf not found";
     fi
 
-    if [ "$CONF_DIR" != "" ] && [ -f "$CONF_DIR/private.$CONF.conf.in" ]; then
-        load "$CONF_DIR/private.$CONF.conf.in"
+    if [ "$CONF_DIR" != "" ] && [ -f "$CONF_DIR/private.$CONF.conf" ]; then
+        load "$CONF_DIR/private.$CONF.conf"
+    elif [ "$CONF_DIR" != "" ] && [ -f "$CONF_DIR/$CONF/private.conf" ]; then
+        load "$CONF_DIR/$CONF/private.conf"
     fi
 fi
 

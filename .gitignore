@@ -24,6 +24,7 @@ webapp/META-INF/ots.freebase.conf.in
 config/project.local.conf
 server/classes
 library/classes
+webapp/WEB-INF/scripts/googlecode
 *~
 \#*\#
 .#*

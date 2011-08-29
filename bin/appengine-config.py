@@ -5,17 +5,17 @@ from optparse import OptionParser
 
 IN_SUFFIX = '.in'
 
+# ----------------------------------------------------------------------#
+
 class ConfigParser:
   '''
   Implements <config_file>.in --> <config_file> conversion.
   Given a .in file, it will substitute all @VAR@ strings with the
   corresponding environment variable
-
   '''
 
-  #list of acre config parameters that are irrelevant to App Engine Acre
+  # list of acre config parameters that are irrelevant to App Engine Acre
   IGNORED_PARAMS = ['ACRE_LOGDIR', 'ACRE_DATADIR', 'ACRE_JSLOGS', 'ACRE_SERVICE_ADDR', 'HTTP_PROXY_HOST', 'HTTP_PROXY_PORT', 'ACRE_ACCESSLOGS']
-
 
   def __init__(self, directory, filename):
     self.full_path = os.path.join(directory, filename)
@@ -40,7 +40,8 @@ class ConfigParser:
     return ""
 
   def convert(self):
-    '''read the file given in the constructor and 
+    '''
+    read the file given in the constructor and 
     substitute any occurance of the pattern @<PARAM_NAME>@ 
     Finally, spit-out the same filename without the suffix .in
     '''
@@ -62,65 +63,71 @@ class ConfigParser:
 
     print 'Processed file %s' % self.full_path
 
+# ----------------------------------------------------------------------#
 
+def copy_configuration_file(source,target):
+    if os.path.exists(target):
+      os.chmod(target, 0777)
+    shutil.copy(source, target)
+    print 'Copied %s to %s' % (source, target)
+
+# copy necessary configuration files from the alternate config directory 
+# or from defaults if no private configurations are given
 def copy_configuration_files(options):
 
-  #copy necessary configuration files from the alternate config directory
-  #this is used for private configuration 
+  conf_files = [
+    ('appengine-web.%s.xml.in', 'appengine-web.xml.in'), 
+    ('web.%s.xml.in', 'web.xml.in'), 
+    ('cron.%s.xml.in', 'cron.xml.in'), 
+    ('queue.%s.xml.in', 'queue.xml.in'), 
+    ('datastore-indexes.%s.xml.in', 'datastore-indexes.xml.in')
+  ]
 
-  #if a directory and target where specified in the command line, use them
+  # if a directory and target where specified in the command line, use them
   if options.config and options.directory:
     if not os.path.isdir(options.directory):
         print 'ERROR: specified directory %s does not exist' % options.directory
         exit(-1)
 
-
-    for source_target in [('ots.%s.conf.in', 'ots.other.conf.in'), ('private.%s.conf.in', 'private.conf.in')]:
+    for source_target in [('ots.%s.conf.in', 'ots.conf.in', 'ots.other.conf.in')]:
       f = os.path.join(options.directory, source_target[0] % options.config)
       if os.path.exists(f):
-        target = 'webapp/META-INF/%s' % source_target[1]
-        if os.path.exists(target):
-          os.chmod(target, 0777)
-        shutil.copy(f, target)
-        print 'Copied %s to %s' % (f, target)
-
-
-    #these files require a default
-    for source_target in [('appengine-web.%s.xml.in', 'appengine-web.xml.in'), ('web.%s.xml.in', 'web.xml.in'), ('cron.%s.xml.in', 'cron.xml.in'), ('queue.%s.xml.in', 'queue.xml.in'), ('datastore-indexes.%s.xml.in', 'datastore-indexes.xml.in')]:
-
-      target = 'webapp/WEB-INF/%s' % source_target[1]
-      if os.path.exists(target):
-        os.chmod(target, 0777)
-
-      f = os.path.join(options.directory, source_target[0] % options.config)
-      if os.path.exists(f):
-        shutil.copy(f, target)
-        print 'Copied %s to %s' % (f, target)
+        copy_configuration_file(f,'webapp/META-INF/%s' % source_target[2])
       else:
-        f = 'webapp/WEB-INF/%s' % (source_target[0] % 'default')
-        shutil.copy(f, target)
-        print 'Copied %s to %s' % (f, target)
-      
+        f = os.path.join(options.directory,options.config,source_target[1])
+        if os.path.exists(f):
+          copy_configuration_file(f,'webapp/META-INF/%s' % source_target[2])
 
-  #no directory and target specified, use the default 
-  #only do this for appengine-web.xml - no default ots (there is one already in the standard checkout)
+    # these files require a default
+    for source_target in conf_files:
+
+      f = os.path.join(options.directory, source_target[0] % options.config)
+      if os.path.exists(f):
+        copy_configuration_file(f,'webapp/WEB-INF/%s' % source_target[1])
+      else:
+        f = os.path.join(options.directory,options.config,source_target[1])
+        if os.path.exists(f):
+          copy_configuration_file(f,'webapp/WEB-INF/%s' % source_target[1])
+        else:
+            f = os.path.join(options.directory,source_target[1])
+            if os.path.exists(f):
+              copy_configuration_file(f,'webapp/WEB-INF/%s' % source_target[1])
+            else:
+              f = 'webapp/WEB-INF/%s' % (source_target[0] % 'default')
+              copy_configuration_file(f,'webapp/WEB-INF/%s' % source_target[1])
+
+  # no directory and target specified, use the default 
   else:
 
-    for source_target in [('appengine-web.default.xml.in', 'appengine-web.xml.in'), ('web.default.xml.in', 'web.xml.in'), ('cron.default.xml.in', 'cron.xml.in'), ('queue.default.xml.in', 'queue.xml.in')]:
-      target = 'webapp/WEB-INF/%s' % source_target[1]
-      if os.path.exists(target):
-        os.chmod(target, 0777)
-
-      f = 'webapp/WEB-INF/%s' % source_target[0]
-      shutil.copy(f, target)
-      print 'Copied %s to %s' % (f, target)
+    for source_target in conf_files:
+      f = 'webapp/WEB-INF/%s' % (source_target[0] % 'default')
+      if os.path.exists(f):
+        copy_configuration_file(f,source_target[1])
 
     for ots_file in ['ots.other.conf.in', 'ots.other.conf']:
       f = 'webapp/META-INF/%s' % ots_file
       if os.path.exists(f):
-        os.chmod(f, 0777)
         os.remove(f)
-
 
   return True
 
@@ -151,37 +158,41 @@ def modify_config_params():
 
 def create_configuration_files(dir):
 
-  #for every .in file, produce the equivalent .conf file without the .in
+  # for every .in file, produce the equivalent .conf file without the .in
   for filename in [x for x in os.listdir(dir) if x.endswith(IN_SUFFIX) and not x.endswith(".default.xml" + IN_SUFFIX)]:
     parser = ConfigParser(dir, filename)
     parser.convert()
 
   return True
 
-#parse -c and -d command line options
+# ----------------------------------------------------------------------#
 
-parser = OptionParser()
-parser.add_option('-c', '--config', dest='config', default=None,
-                    help='the configuration group you want - e.g. acre')
-parser.add_option('-d', '--dir', dest='directory', default=None,
-                    help='the directory where configuration files are located')
+def main():
+    
+    parser = OptionParser()
+    parser.add_option('-c', '--config', dest='config', default=None,
+                        help='the configuration group you want - e.g. acre')
+    parser.add_option('-d', '--dir', dest='directory', default=None,
+                        help='the directory where configuration files are located')
 
-(options, args) = parser.parse_args()
+    (options, args) = parser.parse_args()
 
+    # ---- Step 1: copy any configuration files from private directories into the acre tree
+    copy_configuration_files(options)
 
-######### 3 steps ########
+    # ---- Step 2: evaluate any configuration values that need to be calculated at build time
+    modify_config_params()
 
-#Step 1: copy any configuration files from private directories into the acre tree
-copy_configuration_files(options)
+    # ---- Step 3: Create configuration files from their source .in files
+    create_configuration_files("webapp/META-INF")
+    create_configuration_files("webapp/WEB-INF")
 
-#Step 2: evaluate any configuration values that need to be calculated at build time
-modify_config_params()
+# ----------------------------------------------------------------------#
 
-#Step 3: Create configuration files from their source .in files
-create_configuration_files("webapp/META-INF")
-create_configuration_files("webapp/WEB-INF")
+if __name__ == "__main__":
+    main()
 
-
+#---------------------------- End of File ------------------------------#
 
 
 
