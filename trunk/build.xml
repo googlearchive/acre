@@ -281,11 +281,19 @@
         <delete dir="${server.classes.dir}" />
         <delete dir="${webapp.classes.dir}" />
         <delete dir="${appengine.classes.dir}" />
+
         <delete file="${webapp.web-inf}/appengine-web.xml"/>
         <delete file="${webapp.web-inf}/web.xml"/>
         <delete file="${webapp.web-inf}/cron.xml"/>
         <delete file="${webapp.web-inf}/datastore-indexes.xml"/>
         <delete file="${webapp.web-inf}/queue.xml"/>
+
+        <delete file="${webapp.web-inf}/appengine-web.xml.in"/>
+        <delete file="${webapp.web-inf}/web.xml.in"/>
+        <delete file="${webapp.web-inf}/cron.xml.in"/>
+        <delete file="${webapp.web-inf}/datastore-indexes.xml.in"/>
+        <delete file="${webapp.web-inf}/queue.xml.in"/>
+
         <delete>
             <fileset dir="${webapp.dir}/META-INF">
                 <include name="*.conf"/>
@@ -296,6 +304,7 @@
                 <include name="appengine-api-*-sdk-*.jar" />
             </fileset>
         </delete>
+
         <delete dir="${war.dir}" />
         <delete dir="${build.dir}" />
     </target>
