@@ -43,8 +43,6 @@ import org.mozilla.javascript.Undefined;
  */
 public class JSON {
 
-    private static final long serialVersionUID = 8762880254093633049L;
-
     public JSON() { }
     
     private enum TokenType { object, array, stringValue, numberValue, booleanValue, nullValue }
