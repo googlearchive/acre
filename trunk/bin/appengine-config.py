@@ -122,7 +122,7 @@ def copy_configuration_files(options):
     for source_target in conf_files:
       f = 'webapp/WEB-INF/%s' % (source_target[0] % 'default')
       if os.path.exists(f):
-        copy_configuration_file(f,source_target[1])
+        copy_configuration_file(f,'webapp/WEB-INF/%s' % source_target[1])          
 
     for ots_file in ['ots.other.conf.in', 'ots.other.conf']:
       f = 'webapp/META-INF/%s' % ots_file
