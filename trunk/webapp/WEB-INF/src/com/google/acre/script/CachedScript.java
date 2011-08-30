@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.script;
 
 import org.mozilla.javascript.Script;
@@ -32,7 +31,7 @@ public class CachedScript {
 
     public static String toClassName(String name) {
         // strip leading slashes
-        while (name.charAt(0) == '/') {
+        while (name.length() > 0 && name.charAt(0) == '/') {
             name = name.substring(1);
         }
         // classnames cannot start with a number or contain other illegal characters
