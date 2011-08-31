@@ -22,9 +22,10 @@ public class LocalAppEngine {
     private static LocalAppEngine _instance;
     
     private boolean initialized = false;
-    private boolean destroyed = false;
     
     private RemoteApiInstaller installer;
+    
+    private RemoteApiOptions options;
     
     private LocalAppEngine() { }
     
@@ -35,27 +36,45 @@ public class LocalAppEngine {
         return _instance;
     }
     
-    public synchronized void init() throws IOException {
+    public void init() throws IOException {
         if (APPENGINE_REMOTING && !initialized) {
             
-            RemoteApiOptions options = new RemoteApiOptions()
+            this.options = new RemoteApiOptions()
                 .server(APPENGINE_REMOTE_APP_HOST, APPENGINE_REMOTE_APP_PORT)
                 .credentials(APPENGINE_REMOTE_USERNAME, APPENGINE_REMOTE_PASSWORD)
                 .remoteApiPath(APPENGINE_REMOTE_APP_PATH);
 
             installer = new RemoteApiInstaller();
-            installer.install(options);
             installer.logMethodCalls();
+            installer.install(options);
+            // Update the options with reusable credentials so we can skip authentication on subsequent calls.
+            options.reuseCredentials(APPENGINE_REMOTE_USERNAME, installer.serializeCredentials());
             initialized = true;
-            _logger.info("appengine.remote_api", "Initialized RemoteAPI connector against '" + APPENGINE_REMOTE_APP_HOST + ":" + APPENGINE_REMOTE_APP_PORT + APPENGINE_REMOTE_APP_PATH + "'");
+            
+            _logger.info("appengine.remote_api", "Initialized RemoteAPI connector on thread '" + Thread.currentThread().getName() + "' against '" + APPENGINE_REMOTE_APP_HOST + ":" + APPENGINE_REMOTE_APP_PORT + APPENGINE_REMOTE_APP_PATH + "'");
         }
     }
     
-    public synchronized void destroy() throws IOException {
-        if (APPENGINE_REMOTING && !destroyed) {
+    public void destroy() throws IOException {
+        if (APPENGINE_REMOTING && initialized) {
             installer.uninstall();
-            destroyed = true;
+            initialized = false;
         }
     }
     
+    public void enableRemoting() throws IOException {
+        if (APPENGINE_REMOTING && initialized) {
+            RemoteApiInstaller installer = new RemoteApiInstaller();
+            installer.install(options);
+            _logger.info("appengine.remote_api", "Remoting enabled on thread: " + Thread.currentThread().getName());
+        }
+    }
+    
+    public void disableRemoting() throws IOException {
+        if (APPENGINE_REMOTING && initialized) {
+            RemoteApiInstaller installer = new RemoteApiInstaller();
+            installer.uninstall();
+            _logger.info("appengine.remote_api", "Remoting disabled on thread: " + Thread.currentThread().getName());
+        }
+    }
 }
