@@ -65,6 +65,11 @@ public class Configuration implements ConfigurationMBean {
         ACRE_SQL_TABLE("acre_keystore"),
         STATIC_SCRIPT_PATH("scripts/"),
 
+        APPENGINE_REMOTE_APP_HOST,
+        APPENGINE_REMOTE_APP_PATH("/remote_api"),
+        APPENGINE_REMOTE_USERNAME,
+        APPENGINE_REMOTE_PASSWORD,
+        
         // booleans
         ACRE_SUICIDE("false"), 
         ENABLE_CLASS_SHUTTER("true"), 
@@ -75,7 +80,8 @@ public class Configuration implements ConfigurationMBean {
         ACRE_APP_THRESHOLDING("false"),
         ACRE_DEVELOPER_MODE("false"),
         ACRE_TRUSTED_MODE("false"),
-
+        APPENGINE_REMOTING("false"),
+        
         // numbers
         ACRE_PORT(DEFAULT_PORT), 
         ACRE_MAX_CACHED_SCRIPT_CLASSES("1000"), 
@@ -102,13 +108,16 @@ public class Configuration implements ConfigurationMBean {
         ACRE_URLFETCH_TIMEOUT("30000"), // in ms, used only if ACRE_LIMIT_EXECUTION_TIME is false
         ACRE_MAX_ASYNC_CONNECTIONS("10"),
 
-        //googleapis
+        // googleapis
         ACRE_GOOGLEAPIS_HOST,
         ACRE_GOOGLEAPIS_FREEBASE,
         ACRE_GOOGLEAPIS_KEY,
 
         // Compilation mode (interepreted/compiled) flag
         ACRE_COMPILER_OPTIMIZATION_LEVEL("0"),
+
+        // port to use when connecting to a remote appengine
+        APPENGINE_REMOTE_APP_PORT("443"),
 
         // values that are better without defaults because they could expose security-sensitive info
         ACRE_AUTH_SECRET, 

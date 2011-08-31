@@ -19,5 +19,6 @@
 	<classpathentry kind="lib" path="WEB-INF/lib/httpcore-nio-4.1-beta2.jar" sourcepath="WEB-INF/lib-src/httpcore-nio-4.1-beta2-sources.jar"/>
 	<classpathentry kind="con" path="com.google.appengine.eclipse.core.GAE_CONTAINER"/>
 	<classpathentry kind="lib" path="WEB-INF/lib/slf4j-api-1.6.1.jar" sourcepath="WEB-INF/lib-src/slf4j-api-1.6.1-sources.jar"/>
+	<classpathentry kind="lib" path="WEB-INF/lib/appengine-remote-api.jar"/>
 	<classpathentry kind="output" path="WEB-INF/classes"/>
 </classpath>
