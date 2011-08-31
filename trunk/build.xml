@@ -88,6 +88,9 @@
         <fileset dir="${sdk.dir}/lib/user">
             <include name="**/*.jar" />
         </fileset>
+        <fileset dir="${sdk.dir}/lib">
+            <include name="**/appengine-remote-api.jar" />
+        </fileset>
         <pathelement location="${webapp.classes.dir}"/>
     </path>
     
@@ -147,6 +150,9 @@
         <copy todir="${webapp.lib.dir}" flatten="true">
           <fileset dir="${sdk.dir}/lib/user">
             <include name="appengine-api-*-sdk-*.jar" />
+          </fileset>
+          <fileset dir="${sdk.dir}/lib">
+            <include name="appengine-remote-api.jar" />
           </fileset>
         </copy>
     </target>

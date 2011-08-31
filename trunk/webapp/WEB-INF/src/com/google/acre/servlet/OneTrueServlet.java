@@ -14,8 +14,8 @@
 
 package com.google.acre.servlet;
 
-
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -88,6 +88,15 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         initializeLogging();
         this.servletContext = config.getServletContext();
         server = this.servletContext.getServerInfo().toLowerCase();
+
+        if (isLocalAppEngine()) {
+            try {
+                callLocalAppEngine("init");
+            } catch (Exception e) {
+                throw new ServletException(e);
+            }
+        }
+
         Supervisor s = (Supervisor) this.servletContext.getAttribute(SUPERVISOR);
         if (s == null) {
             Supervisor news = (LIMIT_EXECUTION_TIME ? new Supervisor() : null);
@@ -101,6 +110,26 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         if (s != null) {
             s.cancel();
         }
+        
+        if (isLocalAppEngine()) {
+            try {
+                callLocalAppEngine("destroy");
+            } catch (Exception e) {
+                _logger.error("destroy", "Error during destroy", e);
+            }
+        }
+    }
+
+    private boolean isLocalAppEngine() {
+        return (server.indexOf("app engine development") > -1);
+    }
+    
+    private void callLocalAppEngine(String method) throws Exception {
+        Class<?> c = Class.forName("com.google.acre.appengine.LocalAppEngine");
+        Method getInstance = c.getMethod("getInstance");
+        Object singleton = getInstance.invoke(null);                
+        Method init = c.getMethod(method);
+        init.invoke(singleton);
     }
 
     @Override
