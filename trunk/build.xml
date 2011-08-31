@@ -307,7 +307,7 @@
                 <include name="ots.other.conf.in"/>
             </fileset>
             <fileset dir="${webapp.lib.dir}">
-                <include name="appengine-api-*-sdk-*.jar" />
+                <include name="appengine-*.jar" />
             </fileset>
         </delete>
 
