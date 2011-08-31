@@ -20,6 +20,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Filter;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -31,6 +32,7 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -44,7 +46,7 @@ import com.google.acre.logging.SimpleFormatter;
 import com.google.acre.util.Supervisor;
 import com.google.acre.util.TIDGenerator;
 
-public class OneTrueServlet extends javax.servlet.http.HttpServlet implements javax.servlet.Servlet, java.util.logging.Filter {
+public class OneTrueServlet extends HttpServlet implements Filter {
     
     private final static Log _logger = new Log(OneTrueServlet.class);
 
@@ -53,10 +55,14 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
     public static final String SUPERVISOR = "com.google.acre.supervisor";
      
     private static boolean LIMIT_EXECUTION_TIME = Configuration.Values.ACRE_LIMIT_EXECUTION_TIME.getBoolean();
+    
+    private final static String LOCAL_APPENGINE_CLASS = "com.google.acre.appengine.LocalAppEngine";
    
     protected static final List<String[]> urlmap;
 
     private static String server;
+    
+    private static boolean isLocalAppEngine = false;
     
     private int log_level;
     
@@ -88,13 +94,12 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         initializeLogging();
         this.servletContext = config.getServletContext();
         server = this.servletContext.getServerInfo().toLowerCase();
+        isLocalAppEngine = (server.indexOf("app engine development") > -1);
 
-        if (isLocalAppEngine()) {
-            try {
-                callLocalAppEngine("init");
-            } catch (Exception e) {
-                throw new ServletException(e);
-            }
+        try {
+            callLocalAppEngine("init");
+        } catch (Exception e) {
+            throw new ServletException(e);
         }
 
         Supervisor s = (Supervisor) this.servletContext.getAttribute(SUPERVISOR);
@@ -110,28 +115,24 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
         if (s != null) {
             s.cancel();
         }
-        
-        if (isLocalAppEngine()) {
-            try {
-                callLocalAppEngine("destroy");
-            } catch (Exception e) {
-                _logger.error("destroy", "Error during destroy", e);
-            }
+                
+        try {
+            callLocalAppEngine("destroy");
+        } catch (Exception e) {
+            _logger.error("destroy", "Error during local appengine destroy", e);
         }
     }
 
-    private boolean isLocalAppEngine() {
-        return (server.indexOf("app engine development") > -1);
+    public static void callLocalAppEngine(String method) throws Exception {
+        if (isLocalAppEngine) {
+            Class<?> c = Class.forName(LOCAL_APPENGINE_CLASS);
+            Method getInstance = c.getMethod("getInstance");
+            Object singleton = getInstance.invoke(null);                
+            Method init = c.getMethod(method);
+            init.invoke(singleton);
+        }
     }
     
-    private void callLocalAppEngine(String method) throws Exception {
-        Class<?> c = Class.forName("com.google.acre.appengine.LocalAppEngine");
-        Method getInstance = c.getMethod("getInstance");
-        Object singleton = getInstance.invoke(null);                
-        Method init = c.getMethod(method);
-        init.invoke(singleton);
-    }
-
     @Override
     public boolean isLoggable(LogRecord r) {
         return (r.getLevel().intValue() >= this.log_level); 
@@ -188,6 +189,13 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
 
     private void dispatch(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
+        // disabled because it throws a StackOverflowException
+        //try {
+        //    callLocalAppEngine("enableRemoting");
+        //} catch (Exception e) {
+        //    _logger.error("Error when enabling remoting", e);
+        //}
+        
         long start = System.currentTimeMillis();
         String tid = request.getHeader("X-Metaweb-TID");
         String sname = Configuration.Values.SERVICE_NAME.getValue();
@@ -309,6 +317,11 @@ public class OneTrueServlet extends javax.servlet.http.HttpServlet implements ja
             }
 
         } finally {
+            //try {
+            //    callLocalAppEngine("disableRemoting");
+            //} catch (Exception e) {
+            //    _logger.error("Error when disabling remoting", e);
+            //}
             Statistics.instance().collectRequestTime(start, System.currentTimeMillis());
         }
     }
