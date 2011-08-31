@@ -1,7 +1,8 @@
 package com.google.acre.javascript.DOM;
 
 import java.lang.reflect.Constructor;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -33,7 +34,7 @@ public class JSNode extends JSObject {
 
     protected Object _wrapped;
 
-    private static HashMap<Integer, Class<?>[]> nodemap;
+    private static List<Class<?>[]> nodemap;
 
     private static String[] _staticConstants = { "ELEMENT_NODE", "ATTRIBUTE_NODE",
         "TEXT_NODE", "CDATA_SECTION_NODE", "ENTITY_REFERENCE_NODE", "ENTITY_NODE",
@@ -41,19 +42,20 @@ public class JSNode extends JSObject {
         "DOCUMENT_TYPE_NODE", "DOCUMENT_FRAGMENT_NODE", "NOTATION_NODE" };
 
     static {
-        nodemap = new HashMap<Integer, Class<?>[]>();
-        nodemap.put(1, new Class[] {JSElement.class, Element.class});
-        nodemap.put(2, new Class[] {JSAttr.class, Attr.class});
-        nodemap.put(3, new Class[] {JSText.class, Text.class});
-        nodemap.put(4, new Class[] {JSCDATASection.class, CDATASection.class});
-        nodemap.put(5, new Class[] {JSEntityReference.class, EntityReference.class});
-        nodemap.put(6, new Class[] {JSEntity.class, Entity.class});
-        nodemap.put(7, new Class[] {JSProcessingInstruction.class, ProcessingInstruction.class});
-        nodemap.put(8, new Class[] {JSComment.class, Comment.class});
-        nodemap.put(9, new Class[] {JSDocument.class, Document.class});
-        nodemap.put(10, new Class[] {JSDocumentType.class, DocumentType.class});
-        nodemap.put(11, new Class[] {JSDocumentFragment.class, DocumentFragment.class});
-        nodemap.put(12, new Class[] {JSNotation.class, Notation.class});
+        nodemap = new ArrayList<Class<?>[]>();
+        nodemap.add(null); // there is no zero node type
+        nodemap.add(new Class[] {JSElement.class, Element.class});
+        nodemap.add(new Class[] {JSAttr.class, Attr.class});
+        nodemap.add(new Class[] {JSText.class, Text.class});
+        nodemap.add(new Class[] {JSCDATASection.class, CDATASection.class});
+        nodemap.add(new Class[] {JSEntityReference.class, EntityReference.class});
+        nodemap.add(new Class[] {JSEntity.class, Entity.class});
+        nodemap.add(new Class[] {JSProcessingInstruction.class, ProcessingInstruction.class});
+        nodemap.add(new Class[] {JSComment.class, Comment.class});
+        nodemap.add(new Class[] {JSDocument.class, Document.class});
+        nodemap.add(new Class[] {JSDocumentType.class, DocumentType.class});
+        nodemap.add(new Class[] {JSDocumentFragment.class, DocumentFragment.class});
+        nodemap.add(new Class[] {JSNotation.class, Notation.class});
     }
 
     public JSNode() { }
@@ -68,11 +70,12 @@ public class JSNode extends JSObject {
         return new JSNode(((JSNode)args[0]).getWrapped(), scope);
     }
 
+    @SuppressWarnings("boxing")
     public static void finishInit(Scriptable scope, FunctionObject ctor, Scriptable proto) {
         int i = 1;
         for (String cnst : _staticConstants) {
             FunctionObject.defineProperty(ctor, cnst, i++, ScriptableObject.READONLY | ScriptableObject.DONTENUM);
-        };
+        }
     }
 
     public static Scriptable makeByNodeType(org.w3c.dom.Node node, Scriptable scope) {

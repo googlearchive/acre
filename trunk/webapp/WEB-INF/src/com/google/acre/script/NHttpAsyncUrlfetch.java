@@ -73,7 +73,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
         _nhttp = new NHttpClient(Configuration.Values.ACRE_MAX_ASYNC_CONNECTIONS.getInteger());
 
         String proxy_host = Configuration.Values.HTTP_PROXY_HOST.getValue();
-        Integer proxy_port = null;
+        int proxy_port = 0;
         if (!(proxy_host.length() == 0)) {
             proxy_port = Configuration.Values.HTTP_PROXY_PORT.getInteger();
             NHttpClient.NHttpProxyHost proxy = 
@@ -165,9 +165,10 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
                 }
             }
             // XXX should it be possible to not include content-length?
-            headers.put("content-length", Integer.toString(rbody.length));
-            request_header_log.append("content-length: " +
-                                      Integer.toString(rbody.length)+"\r\n");
+            if (rbody != null && headers != null) {
+                headers.put("content-length", Integer.toString(rbody.length));
+                request_header_log.append("content-length: " + rbody.length + "\r\n");
+            }
         }
         
         String httpreqhdr = request_header_log.toString();
@@ -326,7 +327,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
                     ((JSBinary)body).set_data(data);
 
                     try {
-                        res_stream.close();
+                        if (res_stream != null) res_stream.close();
                     } catch (IOException e) {
                         // ignore
                     }

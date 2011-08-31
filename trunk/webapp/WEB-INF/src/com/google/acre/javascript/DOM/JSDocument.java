@@ -120,7 +120,7 @@ public class JSDocument extends JSNode {
         }
     }
 
-    public Scriptable jsFunction_importNode(JSNode importedNode, Boolean deep) {
+    public Scriptable jsFunction_importNode(JSNode importedNode, boolean deep) {
         try {
             return JSNode.makeByNodeType(((Document)_wrapped).importNode(importedNode.getWrapped(), deep), _scope);
         } catch (DOMException e) {

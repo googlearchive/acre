@@ -38,7 +38,7 @@ public class JSCache extends JSObject {
     }
 
     public String jsFunction_get(String key) {
-        return (String) _cache.get(key);
+        return _cache.get(key);
     }
 
     public void jsFunction_put(String key, String value, Double expires) {
@@ -50,7 +50,7 @@ public class JSCache extends JSObject {
     }
 
     public String jsFunction_delete(String key) {
-        return (String) _cache.delete(key);
+        return _cache.delete(key);
     }
 
 }

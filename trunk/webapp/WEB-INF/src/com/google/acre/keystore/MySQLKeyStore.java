@@ -81,6 +81,7 @@ public class MySQLKeyStore implements KeyStore {
         _table_name = Configuration.Values.ACRE_SQL_TABLE.getValue();
     }
 
+    @SuppressWarnings("unused")
     private void setupDriver(String connectURI, String username, String password)
         throws SQLException, ClassNotFoundException {
 
@@ -113,8 +114,7 @@ public class MySQLKeyStore implements KeyStore {
     public void delete_key(String keyname, String appid) {
         if (!active) throw new RuntimeException(ERROR_MSG);
 
-        String q = "DELETE FROM " + _table_name +
-          " WHERE key_id = ? AND app_id = ?;";
+        String q = "DELETE FROM " + _table_name + " WHERE key_id = ? AND app_id = ?;";
 
         Connection conn = null;
         PreparedStatement stat = null;
@@ -130,8 +130,12 @@ public class MySQLKeyStore implements KeyStore {
         } catch (SQLException e) {
           throw new RuntimeException(e);
         } finally {
-          try { stat.close(); } catch(Exception e) { }
-          try { conn.close(); } catch(Exception e) { }
+          try { 
+              if (stat != null) stat.close();
+          } catch(Exception e) { }
+          try { 
+              if (conn != null) conn.close();
+          } catch(Exception e) { }
         }
     }
 
@@ -140,8 +144,7 @@ public class MySQLKeyStore implements KeyStore {
         String[] res = null;
         if (!active) return res;
 
-        String q = "SELECT token, secret FROM " + _table_name +
-            " WHERE key_id = ? AND app_id = ?;";
+        String q = "SELECT token, secret FROM " + _table_name + " WHERE key_id = ? AND app_id = ?;";
 
         Connection conn = null;
         PreparedStatement stat = null;
@@ -162,9 +165,15 @@ public class MySQLKeyStore implements KeyStore {
         } catch(SQLException e) {
             throw new RuntimeException(e);
         } finally {
-            try { rs.close(); } catch(Exception e) { }
-            try { stat.close(); } catch(Exception e) { }
-            try { conn.close(); } catch(Exception e) { }
+            try { 
+                if (rs != null) rs.close();
+            } catch(Exception e) { }
+            try { 
+                if (stat != null) stat.close();
+            } catch(Exception e) { }
+            try { 
+                if (conn != null) conn.close();
+            } catch(Exception e) { }
         }
         
         return res;
@@ -175,8 +184,7 @@ public class MySQLKeyStore implements KeyStore {
         ArrayList<Map<String,String>> list = new ArrayList<Map<String,String>>();
         if (!active) return list;
 
-        String q = "SELECT key_id, token, secret FROM " + _table_name + 
-            " WHERE app_id = ?;";
+        String q = "SELECT key_id, token, secret FROM " + _table_name + " WHERE app_id = ?;";
                 
         Connection conn = null;
         PreparedStatement stat = null;
@@ -201,9 +209,15 @@ public class MySQLKeyStore implements KeyStore {
         } catch(SQLException e) {
             throw new RuntimeException(e);
         } finally {
-            try { rs.close(); } catch(Exception e) { }
-            try { stat.close(); } catch(Exception e) { }
-            try { conn.close(); } catch(Exception e) { }
+            try { 
+                if (rs != null) rs.close();
+            } catch(Exception e) { }
+            try { 
+                if (stat != null) stat.close();
+            } catch(Exception e) { }
+            try { 
+                if (conn != null) conn.close();
+            } catch(Exception e) { }
         }
         
         return list;
@@ -234,9 +248,15 @@ public class MySQLKeyStore implements KeyStore {
         } catch(SQLException e) {
             throw new RuntimeException(e);
         } finally {
-            try { rs.close(); } catch(Exception e) { }
-            try { stat.close(); } catch(Exception e) { }
-            try { conn.close(); } catch(Exception e) { }
+            try { 
+                if (rs != null) rs.close();
+            } catch(Exception e) { }
+            try { 
+                if (stat != null) stat.close();
+            } catch(Exception e) { }
+            try { 
+                if (conn != null) conn.close();
+            } catch(Exception e) { }
         }
         
         return list;
@@ -285,6 +305,10 @@ public class MySQLKeyStore implements KeyStore {
             }
         } catch (SQLException e) {
             try {
+                if (conn == null) {
+                    throw new RuntimeException("Failed to update key correctly: connection is null");
+                }
+
                 update_stat = conn.prepareStatement("UPDATE "+ _table_name +
                                                     " SET token=?, secret=? "+
                                                     "WHERE key_id=? AND app_id=?;"
@@ -304,11 +328,15 @@ public class MySQLKeyStore implements KeyStore {
                 throw new RuntimeException(e);
             }
         } finally {
-            try { insert_stat.close(); } catch(Exception e) { }
+            try { 
+                if (insert_stat != null) insert_stat.close(); 
+            } catch(Exception e) { }
             try {
                 if (update_stat != null) update_stat.close(); 
             } catch(Exception e) { }
-            try { conn.close(); } catch(Exception e) { }
+            try { 
+                if (conn != null) conn.close(); 
+            } catch(Exception e) { }
         }
     }
 }

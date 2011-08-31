@@ -223,19 +223,18 @@ public class NHttpClient {
         private NHttpClientCallback _callback;
         private HttpResponse _response;
         private boolean _done;
-        private Long _start_time;
-        private Long _timeout;
+        private long _start_time;
+        private long _timeout;
         private SessionRequest _sreq;
         private List<Exception> _exceptions;
 
-        public NHttpClientClosure(URL url, HttpRequest request,
-                                  NHttpClientCallback callback) {
+        public NHttpClientClosure(URL url, HttpRequest request, NHttpClientCallback callback) {
             _url = url;
             _request = request; 
             _callback = callback;
             _done = false;
             _start_time = System.currentTimeMillis();
-            _timeout = null;
+            _timeout = 0;
             _sreq = null;
             _exceptions = new ArrayList<Exception>();
         }
@@ -280,19 +279,19 @@ public class NHttpClient {
             _done = done;
         }
 
-        public Long start_time() {
+        public long start_time() {
             return _start_time;
         }
 
-        public void start_time(Long start_time) {
+        public void start_time(long start_time) {
             _start_time = start_time;
         }
 
-        public Long timeout() {
+        public long timeout() {
             return _timeout;
         }
 
-        public void timeout(Long timeout) {
+        public void timeout(long timeout) {
             _timeout = timeout;
         }
 
@@ -320,11 +319,11 @@ public class NHttpClient {
             
             if (proxy == null || !proxy.use_proxy(this.url().toString())) {
                 sreq = reactor.connect(new InetSocketAddress(host, port),
-                                       null, (Object)this, null); 
+                                       null, this, null); 
             } else {
                 sreq = reactor.connect(new InetSocketAddress(proxy.host(),
                                                              proxy.port()),
-                                       null, (Object)this, null); 
+                                       null, this, null); 
             }
 
             return sreq;
@@ -599,7 +598,7 @@ public class NHttpClient {
                 }
                 _requests.remove(i);
                 continue;
-            } else if (closure.timeout() != null &&
+            } else if (closure.timeout() != 0 &&
                        (closure.start_time() + closure.timeout())
                        <= System.currentTimeMillis()) {
                 // We pass a null response to the callback to let it know

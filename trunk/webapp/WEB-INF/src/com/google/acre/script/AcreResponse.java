@@ -363,11 +363,11 @@ public class AcreResponse extends JsConvertable {
     }
 
     public AcreResponse collect(String bin, int cost) {
-        return collect(bin, ((float) cost) / 1000.0f);
+        return collect(bin, cost / 1000.0f);
     }
 
     public AcreResponse collect(String bin, long cost) {
-        return collect(bin, ((float) cost) / 1000.0f);
+        return collect(bin, cost / 1000.0f);
     }
     
     public AcreResponse collect(String bin, float cost) {

@@ -78,8 +78,7 @@ public class JSON {
      * @return the decoded Rhino native object
      * @throws IOException
      */
-    public static Object parse(String s, Scriptable scope,
-                               Boolean want_java) throws JSONException {
+    public static Object parse(String s, Scriptable scope, boolean want_java) throws JSONException {
         Object res;
         Input in = new Input(s);
         consumeWhitespace(in);
@@ -140,7 +139,7 @@ public class JSON {
                 encode(key, so.getDefaultValue(null), sb, gap, indent, scope);
             }
         } else {
-            encodeString((String) o.toString(), sb); // XXX: do we ever get here?
+            encodeString(o.toString(), sb); // XXX: do we ever get here?
         }
     }
 
@@ -315,7 +314,7 @@ public class JSON {
     
     ////////////////////////// Decoder Methods //////////////////////////////
 
-    private static Object decodeReader(Input in, Scriptable scope, Boolean want_java) throws JSONException {
+    private static Object decodeReader(Input in, Scriptable scope, boolean want_java) throws JSONException {
         consumeWhitespace(in);
         int i = in.peek();
         TokenType type = getTokenType((char)i);
@@ -417,7 +416,11 @@ public class JSON {
             }
         }
         
-        return (integer) ? Long.valueOf(number.toString()) : Double.valueOf(number.toString());
+        if (integer) {
+            return new Long(number.toString());
+        } else {
+            return new Double(number.toString());
+        }
     }
 
     private static String decodeString(Input in) throws JSONException {
@@ -478,7 +481,7 @@ public class JSON {
     }
 
     @SuppressWarnings("unchecked")
-	private static Object decodeObject(Input in, Scriptable scope, Boolean want_java) throws JSONException {
+	private static Object decodeObject(Input in, Scriptable scope, boolean want_java) throws JSONException {
         int start = in.read();
         if(start != '{') throw new JSONException(in.generateError("invalid object"));
         Object jsObject = null;
@@ -533,7 +536,7 @@ public class JSON {
         return jsObject;
     }
 
-    private static Object decodeArray(Input in, Scriptable scope, Boolean want_java) throws JSONException {
+    private static Object decodeArray(Input in, Scriptable scope, boolean want_java) throws JSONException {
         int start = in.read();
         if(start != '[') throw new JSONException(in.generateError("invalid array"));
 

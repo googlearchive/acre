@@ -136,6 +136,7 @@ public class AcreFetch extends JsConvertable {
     // note that the pattern in UrlUtil.java is incorrect.
     private static Pattern contentTypeCharsetPattern = Pattern.compile("^([^;]+); charset=['\"]?([^;'\"]+)['\"]?");
 
+    @SuppressWarnings("boxing")
     public void fetch(boolean system, String response_encoding, boolean log_to_user) {
         
         if (request_url.length() > 2047) {
@@ -167,7 +168,7 @@ public class AcreFetch extends JsConvertable {
             }
             */
             String proxy_host = Configuration.Values.HTTP_PROXY_HOST.getValue();
-            Integer proxy_port = null;
+            int proxy_port = -1;
             if (!(proxy_host.length() == 0)) {
                 proxy_port = Configuration.Values.HTTP_PROXY_PORT.getInteger();
                 HttpHost proxy = new HttpHost(proxy_host, proxy_port, "http");
@@ -181,8 +182,8 @@ public class AcreFetch extends JsConvertable {
 
         long timeout = _deadline - System.currentTimeMillis();
         if (timeout < 0) timeout = 0;
-        client.getParams().setParameter(AllClientPNames.CONNECTION_TIMEOUT,(int)timeout);
-        client.getParams().setParameter(AllClientPNames.SO_TIMEOUT,(int)timeout);
+        client.getParams().setParameter(AllClientPNames.CONNECTION_TIMEOUT,(int) timeout);
+        client.getParams().setParameter(AllClientPNames.SO_TIMEOUT,(int) timeout);
 
         // we're not streaming the request so this should be a win.
         client.getParams().setParameter(AllClientPNames.TCP_NODELAY, true);
@@ -385,7 +386,9 @@ public class AcreFetch extends JsConvertable {
                     ((JSBinary)body).set_data(data);
 
                     try {
-                        res_stream.close();
+                        if (res_stream != null) {
+                            res_stream.close();
+                        }
                     } catch (IOException e) {
                         // ignore
                     }
