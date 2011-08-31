@@ -21,6 +21,7 @@ import javax.management.ObjectName;
 
 public class Main {
 
+    @SuppressWarnings("unused")
     public static void main(String[] args) throws Exception  {
 
         // register the JMX beans that Acre exposes

@@ -61,14 +61,14 @@ public class JSDataStoreResults extends JSObject {
     
     public QueryResultIterator<?> getIterator() {
         if (_iterator == null) {
-            _iterator = ((PreparedQuery) _result).asQueryResultIterator(getFetchOptions());
+            _iterator = _result.asQueryResultIterator(getFetchOptions());
         }
         return _iterator;
     }
         
     public int getCount() {
         if (_count == -1) {
-            _count = ((PreparedQuery) _result).countEntities(getFetchOptions());
+            _count = _result.countEntities(getFetchOptions());
         }
         return _count;
     }

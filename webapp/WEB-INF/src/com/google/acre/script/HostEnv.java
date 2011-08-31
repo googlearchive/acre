@@ -220,7 +220,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         allocationLimit = Configuration.Values.ACRE_MAX_OBJECT_COUNT_PER_SCRIPT.getInteger();
 
-        JSUtil.populateScriptable(this, (AnnotatedForJS) this);
+        JSUtil.populateScriptable(this, this);
         
         syslog(INFO, "hostenv.init", "");
     }
@@ -1021,7 +1021,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         } else {
             throw new JSConvertableException("Log levels can only be strings").newJSException(this);
         }
-
+        
         if (event_name == null) event_name = "system";
 
         if (msgarg instanceof Scriptable) {
@@ -1036,7 +1036,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 } else if (value == null) {
                     msg.put(key, null);
                 } else {
-                    msg.put(key, (String) value.toString());
+                    msg.put(key, value.toString());
                 }
             }
             _logger.log(event_name.toString(), lvl, msg);

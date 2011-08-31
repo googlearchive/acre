@@ -33,21 +33,21 @@ public class JSFile extends JSObject {
     private static final long serialVersionUID = -2872833828641940514L;
     
     private String _filename;
-    private Boolean _is_binary;
+    private boolean _is_binary;
 
     public JSFile() { }
 
     public JSFile(Scriptable scope, String filename, Boolean is_binary) {
         _scope = scope;
         _filename = filename;
-        _is_binary = is_binary;
+        _is_binary = is_binary.booleanValue();
     }
 
     public static Scriptable jsConstructor(Context cx, Object[] args,
                                            Function ctorObj, boolean inNewExpr) {
         Scriptable scope = ScriptableObject.getTopLevelScope(ctorObj);
         try {
-            return new JSFile(scope, (String)args[0], (Boolean)args[1]);
+            return new JSFile(scope, (String) args[0], (Boolean) args[1]);
         } catch (Exception e) {
              return null;
         }
@@ -76,13 +76,10 @@ public class JSFile extends JSObject {
                 _matcher = matcher;
             }
 
-            public boolean accept (File dir, String fn) {
+            public boolean accept(File dir, String fn) {
                 if (_matcher instanceof Function) {
                     Object[] fnargs = new Object[] { fn };
-
-                    return (Boolean) ((Function)_matcher).call(_cx, _scope, 
-                                                               _this,
-                                                              fnargs);
+                    return (Boolean) ((Function)_matcher).call(_cx, _scope, _this, fnargs);
                 } else if (_matcher instanceof String) {
                     return fn.matches((String)_matcher);
                 } else {
@@ -109,7 +106,7 @@ public class JSFile extends JSObject {
         } else {
             ArrayList<Object> files_list = new ArrayList<Object>();
             for (String f : files) {
-                files_list.add((Object)f);
+                files_list.add(f);
             }
 
             Scriptable res = cx.newArray(scope, files_list.toArray());
@@ -117,7 +114,7 @@ public class JSFile extends JSObject {
         }
     }
 
-    public static Boolean jsStaticFunction_exists(String filename) {
+    public static boolean jsStaticFunction_exists(String filename) {
         return new File(filename).exists();
     }
 

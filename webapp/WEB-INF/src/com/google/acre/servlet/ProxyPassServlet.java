@@ -182,7 +182,7 @@ public class ProxyPassServlet extends HttpServlet {
                                         CookiePolicy.BROWSER_COMPATIBILITY);
 
         String proxy_host = Configuration.Values.HTTP_PROXY_HOST.getValue();
-        Integer proxy_port = null;
+        int proxy_port = -1;
         if (!(proxy_host.length() == 0)) {
             proxy_port = Configuration.Values.HTTP_PROXY_PORT.getInteger();
             HttpHost proxy = new HttpHost(proxy_host, proxy_port, "http");

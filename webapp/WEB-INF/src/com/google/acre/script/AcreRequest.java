@@ -176,13 +176,13 @@ public class AcreRequest extends JsConvertable {
             query_string = "";
         }
 
-        Object[] sinfo_tuple = splitHostAndPort(server_name);
-        Object[] osinfo_tuple = splitHostAndPort(request_server_name);
+        Server sinfo = splitHostAndPort(server_name);
+        Server osinfo = splitHostAndPort(request_server_name);
 
-        server_name = (String) sinfo_tuple[0];
-        server_port = (Integer) sinfo_tuple[1];
-        request_server_name = (String) osinfo_tuple[0];
-        request_server_port = (Integer) osinfo_tuple[1];
+        server_name = sinfo.name;
+        server_port = sinfo.port;
+        request_server_name = osinfo.name;
+        request_server_port = osinfo.port;
 
         path_info = request.getPathInfo();
         request_path_info = request.getRequestPathInfo();
@@ -298,16 +298,15 @@ public class AcreRequest extends JsConvertable {
         return level;
     }
     
-    private Object[] splitHostAndPort(String sname) {
-        Object[] res;
+    private Server splitHostAndPort(String sname) {
+        Server s;
         int colonpos = sname.indexOf(":");
         if (colonpos > 0) {
-            String full_sname = sname;
-            res = new Object[] {full_sname.substring(0, colonpos), Integer.parseInt(sname.substring(colonpos+1)) };
+            s = new Server(sname.substring(0, colonpos), Integer.parseInt(sname.substring(colonpos+1)));
         } else {
-            res = new Object[] {sname, 80};
+            s = new Server(sname, 80);
         }
-        return res;
+        return s;
     }
 
     private Map<String,String> parseQuotas(String quotas_str) {
@@ -320,5 +319,14 @@ public class AcreRequest extends JsConvertable {
             }
         }
         return quotas;
+    }
+    
+    private class Server {
+        String name;
+        int port;
+        Server(String name, int port) {
+            this.name = name;
+            this.port = port;
+        }
     }
 }

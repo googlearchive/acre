@@ -286,15 +286,15 @@ public class OneTrueConfig {
                 throw new OneTrueConfigException("Not a valid route_as "+route_as);
             }
             
-            for (String pth : (List<String>)to_pathes) {
-                String route_path = (String)route_rule.get("path");
+            for (String pth : to_pathes) {
+                String route_path = route_rule.get("path");
                 /*
                 if (route_as.equals("static") && !(pth.equals("/"))) {
                     String pth_only = pth.substring(pth.indexOf(":")+1).split("\\?")[0];
                     route_path = pth_only+route_path;
                     }*/
-                res.add(new String[] { pth, (String)route_rule.get("servlet"), 
-                                       (String)route_rule.get("host"),
+                res.add(new String[] { pth, route_rule.get("servlet"), 
+                                       route_rule.get("host"),
                                        route_path });
             }
 

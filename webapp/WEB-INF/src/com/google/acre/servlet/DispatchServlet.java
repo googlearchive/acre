@@ -47,7 +47,7 @@ public class DispatchServlet extends HttpServlet {
             ResourceSource resources = new ServletResourceSource(getServletContext());
             req = new AcreRequest((AcreHttpServletRequest) request);
             res = new AcreResponse((AcreHttpServletResponse) response, req._logtype,req.getLogLevel());
-            String tid = (String) MDC.get("TID");
+            String tid = MDC.get("TID");
             req.setTID(tid);
             res.setTID(tid);
             Supervisor supervisor = (Supervisor) getServletContext().getAttribute(OneTrueServlet.SUPERVISOR);

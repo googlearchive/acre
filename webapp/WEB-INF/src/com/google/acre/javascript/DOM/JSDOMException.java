@@ -33,11 +33,12 @@ public class JSDOMException extends JSObject {
         return new JSDOMException(((JSDOMException)args[0]).code, scope);
     }
 
+    @SuppressWarnings("boxing")
     public static void finishInit(Scriptable scope, FunctionObject ctor, Scriptable proto) {
         int i = 1;
         for (String cnst : _staticConstants) {
             FunctionObject.defineProperty(ctor, cnst, i++, ScriptableObject.READONLY | ScriptableObject.DONTENUM);
-        };
+        }
     }
 
     public String getClassName() {
