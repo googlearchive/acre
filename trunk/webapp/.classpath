@@ -2,6 +2,8 @@
 <classpath>
 	<classpathentry kind="src" path="WEB-INF/src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="com.google.appengine.eclipse.core.GAE_CONTAINER"/>
+	<classpathentry kind="lib" path="/opt/appengine/lib/appengine-remote-api.jar"/>
 	<classpathentry kind="lib" path="/Acre Server/lib/servlet-api-2.5-6.1.11.jar" sourcepath="/Acre Server/lib-src/servlet-api-2.5-6.1.11-sources.jar"/>
 	<classpathentry kind="lib" path="/Acre Library/classes" sourcepath="/Acre Library/src"/>
 	<classpathentry kind="lib" path="WEB-INF/lib/commons-fileupload-1.2.1.jar" sourcepath="WEB-INF/lib-src/commons-fileupload-1.2.1-sources.jar"/>
@@ -17,8 +19,6 @@
 	<classpathentry kind="lib" path="WEB-INF/lib/httpclient-4.0.3.jar" sourcepath="WEB-INF/lib-src/httpclient-4.0.3-sources.jar"/>
 	<classpathentry kind="lib" path="WEB-INF/lib/httpcore-4.1-beta2.jar" sourcepath="WEB-INF/lib-src/httpcore-4.1-beta2-sources.jar"/>
 	<classpathentry kind="lib" path="WEB-INF/lib/httpcore-nio-4.1-beta2.jar" sourcepath="WEB-INF/lib-src/httpcore-nio-4.1-beta2-sources.jar"/>
-	<classpathentry kind="con" path="com.google.appengine.eclipse.core.GAE_CONTAINER"/>
 	<classpathentry kind="lib" path="WEB-INF/lib/slf4j-api-1.6.1.jar" sourcepath="WEB-INF/lib-src/slf4j-api-1.6.1-sources.jar"/>
-	<classpathentry kind="lib" path="WEB-INF/lib/appengine-remote-api.jar"/>
 	<classpathentry kind="output" path="WEB-INF/classes"/>
 </classpath>
