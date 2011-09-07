@@ -756,7 +756,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     @JS_Function
     public Scriptable urlOpen(String urlStr, String method,
                               Object content, Scriptable headers,
-                              boolean system, boolean log_to_user,
+                              boolean system, boolean log_to_user, boolean no_redirect,
                               Object response_encoding) {
 
         AcreFetch fetch = prepareFetch(urlStr, method, content, headers,
@@ -766,7 +766,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             if (response_encoding == null) {
                 response_encoding = "ISO-8859-1";
             }
-            fetch.fetch(system, (String)response_encoding, log_to_user);
+            fetch.fetch(system, (String) response_encoding, log_to_user, no_redirect);
             return fetch.toJsObject(_scope);
         } catch (AcreURLFetchException e) {
             throw new JSURLError(e.getMessage()).newJSException(this);

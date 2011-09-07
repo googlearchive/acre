@@ -1001,11 +1001,14 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     if (typeof url != 'string' || !url.length) {
         throw new acre.errors.URLError("'url' argument (1st) to acre.urlfetch() must be a string");
     }
+    
     var method;
     var response_encoding = null;
     var callback;
     var errback;
     var timeout;
+    var no_redirect;
+    
     if (options_or_method && typeof options_or_method === 'object') {
         if (typeof headers !== 'undefined' || typeof content !== 'undefined' || typeof sign !== 'undefined') {
             throw new acre.errors.URLError("'options' argument (2nd) to acre.urlfetch() must not be followed by extra arguments");
@@ -1019,6 +1022,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
         callback = options_or_method.callback || function (res) { };
         errback = options_or_method.errback || function (res) { throw res; };
         timeout = options_or_method.timeout;
+        no_redirect = options_or_method.no_redirect;
     } else if (options_or_method) {
         method = options_or_method;
     }
@@ -1031,6 +1035,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     if (typeof headers != 'object') headers = {};
     if (typeof content != 'string' && !(content instanceof Binary)) content = '';
     if (typeof response_encoding != 'string') response_encoding = 'utf-8';
+    if (typeof no_redirect != 'boolean') no_redirect = false;
 
     // lowercase all the header names so we don't have to worry about
     // case sensitivity
@@ -1165,7 +1170,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
             _cookie_jar_best_match = res.cookies.mwLastWriteTime.domain;
         }
 
-        if (res.status < 199 || res.status > 300) {
+        if (res.status >= 400) {
             var e = new acre.errors.URLError('urlfetch failed: ' + res.status);
             e.response = res;
 
@@ -1194,11 +1199,11 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     if (_urlopener == _hostenv.urlOpen) {
 //    public Scriptable urlOpen(String urlStr, String method,
 //                              Object content, Scriptable headers,
-//                              boolean system, boolean log_to_user,
+//                              boolean system, boolean log_to_user, boolean no_redirect
 //                              Object response_encoding) {
 
         response = _hostenv.urlOpen(url, method, content, headers, system,
-                                  log_to_user, response_encoding);
+                                  log_to_user, no_redirect, response_encoding);
         response = response_processor(url, response);
 
         if (response instanceof acre.errors.URLError)

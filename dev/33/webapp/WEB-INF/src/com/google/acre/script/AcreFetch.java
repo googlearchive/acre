@@ -138,8 +138,8 @@ public class AcreFetch extends JsConvertable {
     // note that the pattern in UrlUtil.java is incorrect.
     private static Pattern contentTypeCharsetPattern = Pattern.compile("^([^;]+); charset=['\"]?([^;'\"]+)['\"]?");
 
-    public void fetch(boolean system, String response_encoding,
-                      boolean log_to_user) {
+    public void fetch(boolean system, String response_encoding, boolean log_to_user, boolean no_redirect) {
+        
         if (request_url.length() > 2047) {
             throw new AcreURLFetchException("fetching URL failed - url is too long\n"
                                    + request_url.substring(0, 40) + " ..." );
@@ -212,6 +212,9 @@ public class AcreFetch extends JsConvertable {
         logmsg.put("Http.req.method", request_method);
         logmsg.put("Http.url", request_url);
 
+        client.getParams().setParameter(AllClientPNames.HANDLE_REDIRECTS, !no_redirect);
+        logmsg.put("Redirect", Boolean.toString(!no_redirect));
+        
         try {
             if (request_method.equals("GET")) {
                 method = new HttpGet(request_url);
