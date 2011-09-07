@@ -20,6 +20,7 @@ logger = logging.getLogger('tst')
 
 #-----------------------------------------------------------------------#
 
+TEST_TIMEOUT = 120
 devel_host = os.environ["ACRE_FREEBASE_SITE_ADDR"]
 devel_port = os.environ["ACRE_FREEBASE_SITE_ADDR_PORT"]
 
@@ -58,13 +59,12 @@ class QunitFetcher:
     driver = self.driver
     try:
       driver.get(test_url)
-      # poll for the existence of an element
-      driver.implicitly_wait(30)
-      container=driver.find_element_by_id('qunit-testresult')
-      # tests are done, all should be there
-      driver.implicitly_wait(1)
-      # test results are in an <ol>
+      # this should show up right away
       container=driver.find_element_by_id('qunit-tests')
+      # this signifies all tests are done
+      driver.implicitly_wait(TEST_TIMEOUT)
+      container=driver.find_element_by_id('qunit-testresult')
+      driver.implicitly_wait(1)
     except common.exceptions.NoSuchElementException:
       body = driver.page_source
       # what a server unavailable looks like in various browsers
@@ -77,6 +77,7 @@ class QunitFetcher:
       msg = '%s %s' % (test_url, msg)
       return [1, 1, 0, {tid:['ERROR', msg]}]
     # pretty sure some qunit tests ran, so get output
+    container=driver.find_element_by_id('qunit-tests')
     testresults=container.find_elements_by_xpath('li')
     tests = 0
     failures = 0
