@@ -84,48 +84,6 @@ class test_class(TestController):
         except Exception, e:
             self.assert_(False, "test threw unexpected error. %s" % e);
 
-    @tag(login=True)
-    def test_urlfetch_returns_error_305_307(self):
-        try:
-            #self.login();
-            r = range(305,307)
-            for code in r:
-                #self.touch(); 
-                url = "%s/return_status?status=%s" % (self.host, code);
-                print "target url: %s" % url;
-                self.set_acre_script("urlfetch_error", { "url": url })
-
-                expected_message = "urlfetch failed: %s" % code;
-                msg_pattern = re.compile(expected_message);
-
-                expected_body = "status is: %s" % code;
-                body_pattern = re.compile(expected_body);
-
-                self.get();
-                response = self.response.read();
-                response = simplejson.loads(response);
-                print "Got response %s" % response;
-
-                message = response['message'];
-                print "Got message: %s" % message;
-
-                self.assert_( msg_pattern.search(message), "urlfetch returned an unexpected message.  Expected:\n%s\nGot:\n%s\n" %(expected_message, message));
-
-                body = response['response']['body'];
-                print "Got body: %s" % body;
-
-                self.assert_( body_pattern.search(body), "urlfetch returned an unexpected body.  Expected:\n%s\nGot:\n%s\n" % (expected_body, body));
-        
-        except urllib2.HTTPError, e:
-            # print(self.log);
-            self.assert_(False, "Got unexpected http error. %s" % e);
- 
-        except Exception, e:
-            self.assert_(False, "test threw unexpected error. %s" % e);
-
-    #@tag(bug=True, oldbugs=["ACRE-205", "ACRE-1157"], bugid="ACRE-1494", slow=True)
-    #def test_urlfetch_returns_error_400_500(self):
-
     @tag(bug=False, bugid="ACRE-1114")
     def test_urlfetch_error_no_protocol(self):
         self.set_acre_script( "urlfetch_error" );

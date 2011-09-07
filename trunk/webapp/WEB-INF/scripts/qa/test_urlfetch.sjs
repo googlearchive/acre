@@ -27,6 +27,16 @@ test('acre.urlfetch fails with recursive re-entry',function() {
     }
 });
 
+test('acre.urlfetch redirection', function() {
+    var url = "http://google.com/";
+    var result1 = acre.urlfetch(url);
+    equal(result1.status,200);
+    var result2 = acre.urlfetch(url,{
+        no_redirect : true
+    });
+    equal(result2.status,301);
+});
+
 // --------------------- async urlfetch ---------------------------------
 
 test('parallel acre.async.urlfetch works',function() {
@@ -91,6 +101,7 @@ test('acre.async.urlfetch fails with recursive re-entry',function() {
 });
 
 // ------------------------- sub-request security -----------------------------
+
 var subreq_url = acre.request.base_url + "subrequest_urlfetch";
 
 test('acre.urlfetch safe subrequest',function() {
@@ -137,7 +148,6 @@ test('unsafe subrequest using POST & X-Requested-With header', {"bug": "can't ru
     });
     equal(response.body, "success");
 });
-
 
 // --------------------------- mixed ----------------------------------------
 

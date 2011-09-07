@@ -48,6 +48,7 @@ import com.google.acre.script.AsyncUrlfetch;
 import com.google.acre.script.JSBinary;
 import com.google.acre.script.JSURLError;
 import com.google.acre.script.exceptions.JSURLTimeoutError;
+import com.google.appengine.api.urlfetch.FetchOptions;
 import com.google.appengine.api.urlfetch.HTTPHeader;
 import com.google.appengine.api.urlfetch.HTTPMethod;
 import com.google.appengine.api.urlfetch.HTTPRequest;
@@ -60,7 +61,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
     private final static Log _logger = new Log(AppEngineAsyncUrlfetch.class);    
     
     class AsyncRequest {
-        public AsyncRequest(URL url, Future<HTTPResponse> request, Function callback, long start_time, boolean system, boolean log_to_user, String response_encoding) {
+        public AsyncRequest(URL url, Future<HTTPResponse> request, Function callback, long start_time, boolean system, boolean log_to_user, String response_encoding, boolean no_redirect) {
             this.url = url;
             this.request = request;
             this.callback = callback;
@@ -68,6 +69,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
             this.system = system;
             this.log_to_user = log_to_user;
             this.response_encoding = response_encoding;
+            this.no_redirect = no_redirect;
         }
 
         Future<HTTPResponse> request;
@@ -77,6 +79,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         boolean system;
         boolean log_to_user;
         String response_encoding;
+        boolean no_redirect;
     }
 
     private AcreResponse _response;
@@ -124,6 +127,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                              boolean system,
                              boolean log_to_user,
                              String response_encoding,
+                             boolean no_redirect,
                              Function callback) {
         URL requrl;
         try {
@@ -134,9 +138,13 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
 
         Double dbl_deadline = (new Long(timeline).doubleValue())/1000;
 
-        HTTPRequest req = new HTTPRequest(requrl, HTTPMethod.valueOf(method),
-                                          disallowTruncate()
-                                          .setDeadline(dbl_deadline));
+        FetchOptions fetchOptions = disallowTruncate().setDeadline(dbl_deadline);
+        
+        if (no_redirect) {
+            fetchOptions = fetchOptions.doNotFollowRedirects();
+        }
+        
+        HTTPRequest req = new HTTPRequest(requrl, HTTPMethod.valueOf(method), fetchOptions);
         StringBuffer request_header_log = new StringBuffer();
         for (Map.Entry<String,String> entry : headers.entrySet()) {
             req.addHeader(new HTTPHeader(entry.getKey(), entry.getValue()));
@@ -155,21 +163,23 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         _logger.syslog4j("INFO", "urlfetch.request.async",
                 "Method", method,
                 "URL", url,
-                "Headers", request_header_log);
+                "Headers", request_header_log,
+                "Follow Redirects", !no_redirect);
                 
         if (!system && log_to_user) {
             _response.userlog4j("INFO", "urlfetch.request.async",
                                 "Method", method,
                                 "URL", url,
-                                "Headers", request_header_log);
+                                "Headers", request_header_log,
+                                "Follow Redirects", !no_redirect);
         }
         
         final long start_time = System.currentTimeMillis();
         
-        _requests.add(new AsyncRequest(requrl, futr, callback, start_time, system, log_to_user, response_encoding));
+        _requests.add(new AsyncRequest(requrl, futr, callback, start_time, system, log_to_user, response_encoding, no_redirect));
     }
 
-    //Return the charset encoding of an HTTPResponse.
+    // Return the charset encoding of an HTTPResponse.
     private String getResponseEncoding(HTTPResponse res) { 
 
         // Default to utf-8

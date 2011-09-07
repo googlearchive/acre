@@ -124,6 +124,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
                              final boolean system,
                              final boolean log_to_user,
                              final String response_encoding,
+                             final boolean no_redirect,
                              final Function callback) {
 
         String content_charset = "UTF-8";
@@ -188,7 +189,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
         // time it was actually dispatched
         final long start_time = System.currentTimeMillis();
         try {
-            _nhttp.fetch(url, method, headers, rbody, timeout,
+            _nhttp.fetch(url, method, headers, rbody, timeout, no_redirect,
                          new NHttpClient.NHttpClientCallback() {
                              public void finished(final URL url, 
                                                   final HttpResponse res) {

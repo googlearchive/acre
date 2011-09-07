@@ -55,6 +55,7 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpParams;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
@@ -137,13 +138,15 @@ public class AcreFetch extends JsConvertable {
     private static Pattern contentTypeCharsetPattern = Pattern.compile("^([^;]+); charset=['\"]?([^;'\"]+)['\"]?");
 
     @SuppressWarnings("boxing")
-    public void fetch(boolean system, String response_encoding, boolean log_to_user) {
+    public void fetch(boolean system, String response_encoding, boolean log_to_user, boolean no_redirect) {
         
         if (request_url.length() > 2047) {
             throw new AcreURLFetchException("fetching URL failed - url is too long");
         }
 
         DefaultHttpClient client = new DefaultHttpClient(_connectionManager, null);
+        
+        HttpParams params = client.getParams();
         
         // pass the deadline down to the invoked service.
         // this will be ignored unless we are fetching from another
@@ -172,24 +175,24 @@ public class AcreFetch extends JsConvertable {
             if (!(proxy_host.length() == 0)) {
                 proxy_port = Configuration.Values.HTTP_PROXY_PORT.getInteger();
                 HttpHost proxy = new HttpHost(proxy_host, proxy_port, "http");
-                client.getParams().setParameter(AllClientPNames.DEFAULT_PROXY,proxy);
+                params.setParameter(AllClientPNames.DEFAULT_PROXY,proxy);
             }
         }
 
-        client.getParams().setParameter(AllClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
+        params.setParameter(AllClientPNames.COOKIE_POLICY, CookiePolicy.BROWSER_COMPATIBILITY);
 
         // in msec
 
         long timeout = _deadline - System.currentTimeMillis();
         if (timeout < 0) timeout = 0;
-        client.getParams().setParameter(AllClientPNames.CONNECTION_TIMEOUT,(int) timeout);
-        client.getParams().setParameter(AllClientPNames.SO_TIMEOUT,(int) timeout);
+        params.setParameter(AllClientPNames.CONNECTION_TIMEOUT,(int) timeout);
+        params.setParameter(AllClientPNames.SO_TIMEOUT,(int) timeout);
 
         // we're not streaming the request so this should be a win.
-        client.getParams().setParameter(AllClientPNames.TCP_NODELAY, true);
+        params.setParameter(AllClientPNames.TCP_NODELAY, true);
 
         // set the encoding of our POST payloads to UTF-8
-        client.getParams().setParameter(AllClientPNames.HTTP_CONTENT_CHARSET,"UTF-8");
+        params.setParameter(AllClientPNames.HTTP_CONTENT_CHARSET,"UTF-8");
 
         BasicCookieStore cstore = new BasicCookieStore();
         for (AcreCookie cookie : request_cookies.values()) {
@@ -203,6 +206,9 @@ public class AcreFetch extends JsConvertable {
         logmsg.put("Method", request_method);
         logmsg.put("URL", request_url);
 
+        params.setParameter(AllClientPNames.HANDLE_REDIRECTS, !no_redirect);
+        logmsg.put("Redirect", Boolean.toString(!no_redirect));
+        
         try {
             if (request_method.equals("GET")) {
                 method = new HttpGet(request_url);
@@ -251,7 +257,7 @@ public class AcreFetch extends JsConvertable {
                 msg.add("User-supplied content-length header is ignored");
                 _acre_response.log("warn", msg);
             } else if ("user-agent".equalsIgnoreCase(key)) {
-                client.getParams().setParameter(AllClientPNames.USER_AGENT, value);
+                params.setParameter(AllClientPNames.USER_AGENT, value);
             } else {
                 method.addHeader(key, value);
             }
