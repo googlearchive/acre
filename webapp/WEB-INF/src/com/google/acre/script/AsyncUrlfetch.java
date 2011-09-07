@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 
-
 public interface AsyncUrlfetch {
     //    public AsyncUrlfetch();
     //    public AsyncUrlfetch(AcreResponse response, Scriptable scope);
@@ -36,6 +35,7 @@ public interface AsyncUrlfetch {
                              boolean system,
                              boolean log_to_user,
                              String response_encoding,
+                             boolean no_redirect,
                              Function callback);
     public void wait_on_result();
     public void wait_on_result(long time, TimeUnit tunit);

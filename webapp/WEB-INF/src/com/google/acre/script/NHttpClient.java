@@ -480,7 +480,7 @@ public class NHttpClient {
     }
 
     public void fetch(String url, String method, Map<String, String> headers,
-                      byte[] body, long timeout, NHttpClientCallback callback) throws NHttpException {
+                      byte[] body, long timeout, boolean no_redirect, NHttpClientCallback callback) throws NHttpException {
         URL u;
         String path;
         HttpRequest req;
@@ -523,13 +523,17 @@ public class NHttpClient {
         }
 
         if (req instanceof HttpEntityEnclosingRequest) req.removeHeaders("Content-Length");
-        fetch(u, req, timeout, callback);
+        fetch(u, req, timeout, no_redirect, callback);
     }
                       
 
-    public void fetch(URL url, HttpRequest req, long timeout, NHttpClientCallback callback)
+    public void fetch(URL url, HttpRequest req, long timeout, boolean no_redirect, NHttpClientCallback callback)
         throws NHttpException {
 
+        // WARNING: no_redirect is not used!
+        
+        //FIXME(SM): how can we use 'no_redirect' signal here if the client is already established?!
+        
         //if (!(url.getProtocol().equalsIgnoreCase("http")))
         //    throw new NHttpException("Unsupported protocol: "+url.getProtocol());
 

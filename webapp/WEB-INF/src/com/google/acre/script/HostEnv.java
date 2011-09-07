@@ -787,7 +787,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                               Scriptable headers,
                               boolean system, 
                               boolean log_to_user,
-                              String response_encoding) {
+                              String response_encoding,
+                              boolean no_redirect) {
 
         //System.out.println((system ? "[system] " : "") + "sync: " + url.split("\\?")[0] + " [reentries: " + req._reentries + "]");
 
@@ -843,7 +844,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         
         try {
             if (response_encoding == null) response_encoding = "ISO-8859-1";
-            fetch.fetch(system, response_encoding, log_to_user);
+            fetch.fetch(system, response_encoding, log_to_user, no_redirect);
             return fetch.toJsObject(_scope);
         } catch (AcreURLFetchException e) {
             throw new JSURLError(e.getMessage()).newJSException(this);
@@ -859,6 +860,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                              boolean system,
                              boolean log_to_user,
                              String response_encoding,
+                             boolean no_redirect,
                              Function callback) {
 
         //System.out.println((system ? "[system] " : "") + "async: " + url.split("\\?")[0] + " [reentries: " + req._reentries + "]");
@@ -927,7 +929,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         header_map.put(HostEnv.ACRE_QUOTAS_HEADER, "td=" + sub_deadline + ",r=" + reentrances);
 
         try {
-            _async_fetch.make_request(url, method, timeout, header_map, content, system, log_to_user, response_encoding, callback);
+            _async_fetch.make_request(url, method, timeout, header_map, content, system, log_to_user, response_encoding, no_redirect, callback);
         } catch (Exception e) {
             throw new JSConvertableException(e.getMessage()).newJSException(this);
         }
