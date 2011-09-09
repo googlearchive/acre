@@ -19,11 +19,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -53,11 +57,11 @@ public class AcreRequest extends JsConvertable {
     public String path_info;
     public String request_path_info;
     public String query_string;
-    public HashMap<String, Object> headers;
+    public Map<String, Object> headers;
 
     // well-known request headers are pre-parsed
     public Object request_body;
-    public HashMap<String, AcreCookie> cookies;
+    public Map<String, AcreCookie> cookies;
 
     // information from a previous error
     public AcreExceptionInfo error_info;
@@ -236,16 +240,38 @@ public class AcreRequest extends JsConvertable {
                 } else { 
                     String encoding = request.getCharacterEncoding();
                     if (encoding == null) encoding = "ISO_8859_1";
-                    BufferedReader reader =
-                        new BufferedReader(new InputStreamReader(is, encoding));
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(is, encoding));
                     StringBuffer buf = new StringBuffer();
                     String line;
                     while ((line = reader.readLine()) != null) {
                         buf.append(line);
                         buf.append("\n");
                     }
-                    request_body = buf.toString();
+                    String body = buf.toString();
                     reader.close();
+                    
+                    // this following code is because of this bug in local AppEngine
+                    //  http://code.google.com/p/googleappengine/issues/detail?id=5396
+                    // which fails to provide a readable getInputStream() on a regular 
+                    // urlencoded POST, so we re-encode it ourselves. It's a waste
+                    // but it should only occur during develoment.
+                    if (body.length() == 0) {
+                        Map<String,String[]> params = request.getParameterMap();
+                        Set<Entry<String,String[]>> entries = params.entrySet();
+                        Iterator<Entry<String,String[]>> iterator = entries.iterator();
+                        while (iterator.hasNext()) {
+                            Entry<String, String[]> e = iterator.next();
+                            buf.append(URLEncoder.encode(e.getKey(),encoding));
+                            buf.append('=');
+                            buf.append(URLEncoder.encode(e.getValue()[0],encoding));
+                            if (iterator.hasNext()) {
+                                buf.append('&');
+                            }
+                        }
+                        body = buf.toString();
+                    }
+                    
+                    request_body = body;
                 }
         }
 
