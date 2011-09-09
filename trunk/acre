@@ -175,6 +175,9 @@ appengine_run() {
     echo " Trusted Mode: $ACRE_TRUSTED_MODE"
     echo " Limit Execution Time: $ACRE_LIMIT_EXECUTION_TIME"
     echo " Log level: $ACRE_LOG_LEVEL"
+    if [ "$APPENGINE_REMOTING" != "" ]; then
+        echo " Remoting: $APPENGINE_REMOTING"
+    fi
     echo ""
     if [ "$ACRE_PORT" != "" ]; then
         APPSERVER_PARAMS="-p $ACRE_PORT"
