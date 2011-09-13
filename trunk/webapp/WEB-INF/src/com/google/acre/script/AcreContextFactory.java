@@ -36,6 +36,7 @@ public class AcreContextFactory extends ContextFactory {
     
     private static boolean GENERATE_JS_DEBUG_INFO = Configuration.Values.GENERATE_JS_DEBUG_INFO.getBoolean();
     private static boolean LIMIT_EXECUTION_TIME = Configuration.Values.ACRE_LIMIT_EXECUTION_TIME.getBoolean();
+    private static boolean TRUSTED_MODE = Configuration.Values.ACRE_TRUSTED_MODE.getBoolean();
     private static int OPTIMIZATION_LEVEL = Configuration.Values.ACRE_COMPILER_OPTIMIZATION_LEVEL.getInteger();
     
     // Custom {@link Context} to store execution time.
@@ -94,6 +95,9 @@ public class AcreContextFactory extends ContextFactory {
     public boolean hasFeature(Context cx, int featureIndex) {
         if (featureIndex == Context.FEATURE_E4X) {
             return false;
+        }
+        if (featureIndex == Context.FEATURE_ENHANCED_JAVA_ACCESS) {
+            return TRUSTED_MODE;
         }
         return super.hasFeature(cx, featureIndex);
     }
