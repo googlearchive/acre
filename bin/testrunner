@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#
+
 import sys
 import os
 import json
@@ -7,18 +7,21 @@ import urllib2
 import re
 import test_driver
 import logging
+
+from optparse import OptionParser
+
 logging.basicConfig()
 logger = logging.getLogger('tst')
-# assuming we're in the root of acre, find tests in www
+
 base_path = os.path.split(os.path.abspath(os.path.join(__file__,'..')))[0]
-www_path = base_path + '/' + \
-  'webapp/WEB-INF/scripts/googlecode/freebase-site/svn/trunk/www'
 
 acre_host = os.environ["ACRE_HOST_BASE"]
 acre_port = os.environ["ACRE_PORT"]
 devel_host = os.environ["ACRE_FREEBASE_SITE_ADDR"]
 devel_port = os.environ["ACRE_FREEBASE_SITE_ADDR_PORT"]
 host_delimiter_path = os.environ["ACRE_HOST_DELIMITER_PATH"]
+
+# ---------------------------------------------------------------------------------
 
 def testng_manifest(apps):
   # fetch urls for the manifest based on a list of app names
@@ -39,20 +42,20 @@ def testng_manifest(apps):
       manifest[app].append(t['run_url'] + "?output=flatjson")
   return manifest
 
+# ---------------------------------------------------------------------------------
+
 def testfs_manifest(nomock, whitelist, test_type=False):
   params = '?output=flatjson'
   if nomock:
     params += '&mock=0'
   else:
     params += '&mock=1'
-  url = "http://%s:%s/_fs_routing"\
-  % (devel_host, devel_port)
+  url = "http://%s:%s/_fs_routing" % (devel_host, devel_port)
   try:
     response = urllib2.urlopen(url)
   except:
     sys.stderr.write("error fetching: %s\n" % url)
-    sys.stderr.write("perhaps you need to add %s to /etc/hosts?\n\n" % \
-             devel_host)
+    sys.stderr.write("perhaps you need to add %s to /etc/hosts?\n\n" % devel_host)
     raise
   data = json.loads(response.read())
 
@@ -72,6 +75,7 @@ def testfs_manifest(nomock, whitelist, test_type=False):
       apps[path+extra] = prefix
 
   test_paths = {}
+  www_path = base_path + '/webapp/WEB-INF/scripts/googlecode/freebase-site/svn/trunk/www'
   os.chdir(www_path)
   if test_type == 'qunit':
     params = ''
@@ -101,26 +105,57 @@ def testfs_manifest(nomock, whitelist, test_type=False):
       if apps.get(path):
         #print tpath, path
         found = True
-        manifest[tapp].append("http://" + devel_host + ":" +\
-          devel_port + apps[path] + remainder + fl + params)
+        manifest[tapp].append("http://" + devel_host + ":" + devel_port + apps[path] + remainder + fl + params)
         break
     if not found: sys.stderr.write("WARN: did not find a route for: %s\n" % f)
   logger.debug('retrieved test manifest:\n%s' % manifest)
   return manifest
 
+# ---------------------------------------------------------------------------------
+
+def testrf_manifest(nomock, whitelist, test_type=False):
+    params = '?output=flatjson'
+    if nomock:
+      params += '&mock=0'
+    else:
+      params += '&mock=1'
+    url = "http://%s:%s/_fs_routing" % (acre_host, acre_port)
+    try:
+      response = urllib2.urlopen(url)
+    except:
+      sys.stderr.write("error fetching: %s\n" % url)
+      sys.stderr.write("perhaps you need to add %s to /etc/hosts?\n\n" % devel_host)
+      raise
+    data = json.loads(response.read())
+
+    tests = []
+    for p in data['prefix']:
+      appurl = p.get('app')
+      prefix = p.get('prefix')
+      if prefix:
+        m = re.match('/test/(.*)$', prefix)
+        if not m: continue
+        tests.append(m.groups()[0])
+
+        
+    test_urls = []
+    for t in tests:
+      test_urls.append("http://%s:%s/test/%s?output=flatjson" % (acre_host,acre_port,t))
+         
+    manifest = {
+        "refinery" : test_urls
+    }
+    
+    return manifest
+
+# ---------------------------------------------------------------------------------
+
 def run_tests(manifest, opts):
   os.chdir(base_path)
-  sys.stdout.write('CHECK: freebase endpoint...')
-  cmd = 'bin/freebase_check > /dev/null'
-  if os.system(cmd) != 0:
-    print "FAILED"
-    sys.exit(1)
-  sys.stdout.write('PASSED\n')
-
   return test_driver.drive_apps(manifest, opts)
 
+# ---------------------------------------------------------------------------------
 
-from optparse import OptionParser
 def main(argv=None):
   if argv is None:
     argv = sys.argv
@@ -128,18 +163,11 @@ def main(argv=None):
   usage = 'usage: testrunner [--help] optional args are apps to be tested'
   parser = OptionParser(usage=usage)
   parser.add_option('-j',  dest='jsn', action="store_true", help='enable test driver output json')
-  parser.add_option('-v',  dest='verbose', action="store_true",
-                    help='enable test driver debug logging')
+  parser.add_option('-v',  dest='verbose', action="store_true", help='enable test driver debug logging')
   parser.add_option('-n',  dest='nocolor', action="store_true", help='disable test driver sans terminal colors')
-  parser.add_option('-r',  dest='selenium_rh',
-                    help='selenium remote e.g. "http://localhost:4444/wd/hub"'
-                    )
-  parser.add_option('-b',  dest='browser',
-                    help='browser if running selenium tests',
-                    default='chrome')
-  parser.add_option('-t',  dest='test_type',
-                    help='tests to discover and run',
-                    default='testng')
+  parser.add_option('-r',  dest='selenium_rh', help='selenium remote e.g. "http://localhost:4444/wd/hub"')
+  parser.add_option('-b',  dest='browser', help='browser if running selenium tests', default='chrome')
+  parser.add_option('-t',  dest='test_type', help='tests to discover and run', default='testng')
   parser.add_option('-m',  dest='nomock', action="store_true", help='disable the default backend mockmode')
   (opts, args) = parser.parse_args(argv)
   if opts.verbose:
@@ -150,11 +178,16 @@ def main(argv=None):
     manifest = testfs_manifest(opts.nomock, args[1:])
   elif opts.test_type == 'qunit':
     manifest = testfs_manifest(opts.nomock, args[1:], test_type='qunit')
+  elif opts.test_type == 'testrf':
+    manifest = testrf_manifest(opts.nomock, args[1:])
   else:
-    print '%s is not a valid test_type' % test_type
+    print ('%s is not a valid test_type' % opts.test_type)
     sys.exit(1)
   sys.exit(run_tests(manifest, opts))
 
+# ---------------------------------------------------------------------------------
 
 if __name__ == '__main__':
   sys.exit(main())
+
+# ------------------------- end of file --------------------------------------------

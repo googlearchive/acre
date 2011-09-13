@@ -31,26 +31,47 @@ else
 fi
 
 $ECHO -n "CHECK: your local DNS configurations... "
-RESP=`curl -s -S -m 5  http://qa.dev.${ACRE_HOST_BASE}:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
+RESP=`curl -s -S -m 5  http://${ACRE_HOST_BASE}:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
 if [ -z "$RESP" ]; then
     $ECHO "FAILED"
-    $ECHO "FATAL: make sure 'qa.dev.${ACRE_HOST_BASE}' points to 127.0.0.1 in your DNS or /etc/hosts"
+    $ECHO "FATAL: make sure '${ACRE_HOST_BASE}' points to 127.0.0.1 in your DNS or /etc/hosts"
     exit 1
 else
     $ECHO "PASSED"
 fi
 
-$ECHO -n "CHECK: local tests are present... "
-RESP=`curl -s -S -m 5  http://qa.dev.${ACRE_HOST_BASE}:$ACRE_PORT/write 2> /dev/null | grep "ok"`
-if [ -z "$RESP" ]; then
-    $ECHO "FAILED"
-    $ECHO "FATAL: the required local tests don't seem to be available"
-    exit 1
-else
-    $ECHO "PASSED"
+TEST_TYPE=$1
+shift
+if [ -z "$TEST_TYPE" ]; then
+    TEST_TYPE="testng"
+
+    $ECHO -n "CHECK: your local DNS configurations for the tests... "
+    RESP=`curl -s -S -m 5  http://qa.dev.${ACRE_HOST_BASE}:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
+    if [ -z "$RESP" ]; then
+        $ECHO "FAILED"
+        $ECHO "FATAL: make sure 'qa.dev.${ACRE_HOST_BASE}' points to 127.0.0.1 in your DNS or /etc/hosts"
+        exit 1
+    else
+        $ECHO "PASSED"
+    fi
+    
+    $ECHO -n "CHECK: local tests are present... "
+    RESP=`curl -s -S -m 5  http://qa.dev.${ACRE_HOST_BASE}:$ACRE_PORT/write 2> /dev/null | grep "ok"`
+    if [ -z "$RESP" ]; then
+        $ECHO "FAILED"
+        $ECHO "FATAL: the required local tests don't seem to be available"
+        exit 1
+    else
+        $ECHO "PASSED"
+    fi
 fi
+
+bin/freebase_check
 
 $ECHO
+$ECHO "running tests of type '$TEST_TYPE'"
+$ECHO
+
 ARGS=$*
-python bin/testrunner -t testng $ARGS
+python bin/testrunner -t $TEST_TYPE $ARGS
 exit $?
