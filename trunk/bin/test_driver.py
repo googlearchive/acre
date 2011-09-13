@@ -37,7 +37,7 @@ def drive_apps(manifest, opts):
     tester = fetchers.QunitFetcher(browser=browser, selenium_rh=opts.selenium_rh)
   else:
     tester = fetchers.AcreFetcher()
-
+  
   for app, test_urls in manifest.iteritems():
     out.write(app + ":\n")
     for test_url in test_urls:
@@ -78,6 +78,7 @@ def drive_apps(manifest, opts):
       total_failures += failures
       total_errors += errors
       total_skips += skips
+      out.write(" ")
       out.write(module.ljust(60,'.'))
       if color:
         if failures > 0 or errors > 0:

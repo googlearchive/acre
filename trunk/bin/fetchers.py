@@ -101,7 +101,6 @@ class AcreFetcher:
     if not username: username = os.environ.get("FSTEST_USERNAME")
     if not password: password = os.environ.get("FSTEST_PASSWORD")
     if not api_url: api_url = os.environ.get("ACRE_METAWEB_BASE_ADDR")
-    print api_url
     self.username=username
     self.password=password
     self.api_url=api_url
