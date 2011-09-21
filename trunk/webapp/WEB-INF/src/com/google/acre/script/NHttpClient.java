@@ -61,6 +61,7 @@ import org.apache.http.protocol.RequestTargetHost;
 import org.apache.http.protocol.RequestUserAgent;
 
 import com.google.acre.Configuration;
+import com.google.acre.util.CostCollector;
 
 /*
  * Based on http://www.eamtd.com/IT/a/20090729/072912164110271541.html
@@ -86,7 +87,8 @@ public class NHttpClient {
     private int _max_connections;
 
     private NHttpClient.NHttpProxyHost _proxy;
-    
+    private CostCollector _costCollector;
+
     public static class NHttpException extends Exception {
         private static final long serialVersionUID = 3381900596614745150L;
         public NHttpException(String msg) {
@@ -361,6 +363,7 @@ public class NHttpClient {
 
     public NHttpClient(int max_connections) {
         _max_connections = max_connections;
+        _costCollector = CostCollector.getInstance();
 
         BasicHttpProcessor httpproc = new BasicHttpProcessor(); 
         httpproc.addInterceptor(new RequestContent()); 
@@ -625,7 +628,7 @@ public class NHttpClient {
                 // pass
             }
 
-            res.collect("auub", System.currentTimeMillis() - pass_start_time);
+            _costCollector.collect("auub", System.currentTimeMillis() - pass_start_time);
             i++;
         }
         

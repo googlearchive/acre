@@ -35,6 +35,7 @@ import com.google.acre.Configuration;
 import com.google.acre.javascript.JSON;
 import com.google.acre.javascript.JSONException;
 import com.google.acre.servlet.AcreHttpServletResponse;
+import com.google.acre.util.CostCollector;
 
 public class AcreResponse extends JsConvertable {
 
@@ -50,6 +51,7 @@ public class AcreResponse extends JsConvertable {
     private int _logtype;
     private String _log_level;
     public boolean _has_binary = false;
+    private CostCollector _costCollector;
 
     public int _response_status;
     public List<List<Object>> _logs;
@@ -64,6 +66,7 @@ public class AcreResponse extends JsConvertable {
             _log_level = log_level;
         }
         reset();
+        _costCollector = CostCollector.getInstance();
     }
     
     public void reset() {
@@ -313,8 +316,8 @@ public class AcreResponse extends JsConvertable {
             _response.setContentType("text/plain");
         }
         
-        collect("at", System.currentTimeMillis() - _creation_time);
-        setCostHeader();
+        _costCollector.collect("at", System.currentTimeMillis() - _creation_time);
+        _response.setHeader("x-metaweb-cost", _costCollector.getCosts());
     }
     
     public byte[] generate_json_response() throws UnsupportedEncodingException {
@@ -341,61 +344,4 @@ public class AcreResponse extends JsConvertable {
         return null;
     }
 
-    Map<String,Float> costs = new TreeMap<String,Float>();
-    
-    public void merge(String costs_header) {
-        String[] cost_frags = costs_header.split(", ");
-        for (String cost_frag : cost_frags) { 
-            String[] ff = cost_frag.split("=");
-            if (ff.length == 2) {
-                collect(ff[0],Float.parseFloat(ff[1]));
-            }
-        }
-    }
-    
-    public AcreResponse collect(String bin) {
-        float value = 1.0f;
-        if (costs.containsKey(bin)) {
-            value += costs.get(bin);
-        }
-        costs.put(bin, value);
-        return this;
-    }
-
-    public AcreResponse collect(String bin, int cost) {
-        return collect(bin, cost / 1000.0f);
-    }
-
-    public AcreResponse collect(String bin, long cost) {
-        return collect(bin, cost / 1000.0f);
-    }
-    
-    public AcreResponse collect(String bin, float cost) {
-        if (costs.containsKey(bin)) {
-            cost += costs.get(bin);
-        }
-        costs.put(bin, cost);
-        return this;
-    }
-    
-    private void setCostHeader() {
-        
-        StringBuffer b = new StringBuffer();
-        
-        Iterator<String> i = costs.keySet().iterator();
-        while (i.hasNext()) {
-            String key = i.next();
-            b.append(key);
-            b.append("=");
-            float v = costs.get(key);
-            boolean hasDecimals = (Math.floor(v) != v);
-            b.append(String.format((hasDecimals) ? "%.3f":"%.0f", v));
-            if (i.hasNext()) {
-                b.append(", ");
-            }
-        }
-        
-        _response.setHeader("x-metaweb-cost", b.toString());
-    }
-    
 }

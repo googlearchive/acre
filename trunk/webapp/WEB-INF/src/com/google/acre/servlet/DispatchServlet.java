@@ -27,6 +27,7 @@ import com.google.acre.script.AcreRequest;
 import com.google.acre.script.AcreResponse;
 import com.google.acre.script.HostEnv;
 import com.google.acre.util.Supervisor;
+import com.google.acre.util.CostCollector;
 import com.google.acre.util.resource.ResourceSource;
 import com.google.acre.util.resource.ServletResourceSource;
 
@@ -44,6 +45,9 @@ public class DispatchServlet extends HttpServlet {
         AcreResponse res;
         
         try {
+            // Create a new collector for this request.
+            CostCollector.createInstance();
+
             ResourceSource resources = new ServletResourceSource(getServletContext());
             req = new AcreRequest((AcreHttpServletRequest) request);
             res = new AcreResponse((AcreHttpServletResponse) response, req._logtype,req.getLogLevel());
