@@ -61,6 +61,7 @@ import com.google.acre.Configuration;
 import com.google.acre.Statistics;
 import com.google.acre.script.exceptions.AcreURLFetchException;
 import com.google.acre.util.http.HttpPropFind;
+import com.google.acre.util.CostCollector;
 
 /**
  *   This represents a URL fetch from Acre.
@@ -94,6 +95,7 @@ public class AcreFetch extends JsConvertable {
     private int _reentries;
     private boolean _internal;
     private ClientConnectionManager _connectionManager;
+    private CostCollector _costCollector;
     
     public AcreFetch(String url, String method, long deadline, int reentries, AcreResponse response, ClientConnectionManager connectionManager) {
         request_url = url;
@@ -103,6 +105,7 @@ public class AcreFetch extends JsConvertable {
         _internal = isInternal(url);
         _acre_response = response;
         _connectionManager = connectionManager;
+        _costCollector = CostCollector.getInstance();
 
         request_headers = new HashMap<String, String>();
         request_body = null;
@@ -318,7 +321,7 @@ public class AcreFetch extends JsConvertable {
 
                     // XXX don't set content_type_parameters, deprecated?
                 } else if (headername.equalsIgnoreCase("x-metaweb-cost")) {
-                    _acre_response.merge(rawheader.getValue());
+                    _costCollector.merge(rawheader.getValue());
                 } else if (headername.equalsIgnoreCase("x-metaweb-tid")) {
                     res_logmsg.put("ITID", rawheader.getValue());
                 }
@@ -427,7 +430,7 @@ public class AcreFetch extends JsConvertable {
 
                 Statistics.instance().collectUrlfetchTime(startTime, firstByteTime, endTime);
 
-                _acre_response.collect((system) ? "asuc":"auuc")
+                _costCollector.collect((system) ? "asuc":"auuc")
                     .collect((system) ? "asuw":"auuw", waitingTime)
                     .collect((system) ? "asub":"auub", waitingTime);
             }

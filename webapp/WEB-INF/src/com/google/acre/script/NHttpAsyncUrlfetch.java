@@ -51,6 +51,7 @@ import org.mozilla.javascript.Scriptable;
 
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
+import com.google.acre.util.CostCollector;
 import com.google.acre.script.exceptions.JSURLTimeoutError;
 
 public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
@@ -60,6 +61,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
     private AcreResponse _response;
     private Scriptable _scope;
     private NHttpClient _nhttp;
+    private CostCollector _costCollector;
 
     public NHttpAsyncUrlfetch(AcreResponse response, Scriptable scope) {
         this();
@@ -70,6 +72,9 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
     // Note It's easier to just call this with introspection
     // and then set the _scope and _response variables after instantiation
     public NHttpAsyncUrlfetch() {
+
+        _costCollector = CostCollector.getInstance();
+
         _nhttp = new NHttpClient(Configuration.Values.ACRE_MAX_ASYNC_CONNECTIONS.getInteger());
 
         String proxy_host = Configuration.Values.HTTP_PROXY_HOST.getValue();
@@ -382,7 +387,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
                                                           first_byte_time,
                                                           end_time);
 
-                _response.collect((system) ? "asuc":"auuc")
+                _costCollector.collect((system) ? "asuc":"auuc")
                     .collect((system) ? "asuw":"auuw", waiting_time);
                 
             }

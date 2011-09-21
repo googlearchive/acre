@@ -92,6 +92,7 @@ import com.google.acre.script.exceptions.JSConvertableException;
 import com.google.acre.thread.AllocationLimitedThread;
 import com.google.acre.util.Supervisor;
 import com.google.acre.util.resource.ResourceSource;
+import com.google.acre.util.CostCollector;
 
 public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
@@ -207,6 +208,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     boolean _is_open;
 
+    private CostCollector _costCollector;
+
     static {
         ContextFactory.initGlobal(_contextFactory);
     }
@@ -217,6 +220,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         res = response;
         _supervisor = supervisor;
         _supervised = false;
+        _costCollector = CostCollector.getInstance();
 
         allocationLimit = Configuration.Values.ACRE_MAX_OBJECT_COUNT_PER_SCRIPT.getInteger();
 
@@ -447,7 +451,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                     String msg = "script used " + pctused + "% of memory quota";
                     userlog("debug", msg);
                     syslog(DEBUG, "hostenv.script.memory", msg);
-                    res.collect("am", (float) memory_used);
+                    _costCollector.collect("am", (float) memory_used);
                     athread.setThreadAllocationLimit(0);
                 }
             }
@@ -1014,6 +1018,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     @JS_Function
     public void syslog(Object level, Object event_name, Object msgarg) {
 
+
         byte lvl = INFO;
         
         if (level instanceof String) {
@@ -1377,11 +1382,12 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         _scriptResults.put(className, scope);
         
         // increment 'file count' cost header
-        res.collect((system) ? "afsc" : "afuc");
+        _costCollector.collect((system) ? "afsc" : "afuc");
 
         Script compiledScript = script.getCompiledScript();
 
         if (compiledScript != null) {
+            final long exec_start_time = System.currentTimeMillis();
             compiledScript.exec(_context, scope);
         } else {
             throw new RuntimeException("cache contains invalid state for script " + script.getScriptName());

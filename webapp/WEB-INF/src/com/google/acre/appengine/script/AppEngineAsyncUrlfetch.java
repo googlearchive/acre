@@ -47,6 +47,7 @@ import com.google.acre.script.AcreResponse;
 import com.google.acre.script.AsyncUrlfetch;
 import com.google.acre.script.JSBinary;
 import com.google.acre.script.JSURLError;
+import com.google.acre.util.CostCollector;
 import com.google.acre.script.exceptions.JSURLTimeoutError;
 import com.google.appengine.api.urlfetch.FetchOptions;
 import com.google.appengine.api.urlfetch.HTTPHeader;
@@ -59,7 +60,8 @@ import com.google.appengine.api.urlfetch.URLFetchServiceFactory;
 public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
 
     private final static Log _logger = new Log(AppEngineAsyncUrlfetch.class);    
-    
+    private CostCollector _costCollector;
+
     class AsyncRequest {
         public AsyncRequest(URL url, Future<HTTPResponse> request, Function callback, long start_time, boolean system, boolean log_to_user, String response_encoding, boolean no_redirect) {
             this.url = url;
@@ -92,6 +94,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         _scope = scope;
         _urlfetch_service = URLFetchServiceFactory.getURLFetchService();
         _requests = new ArrayList<AsyncRequest>();
+        _costCollector = CostCollector.getInstance();
     }
 
     // Note It's easier to just call this with introspection
@@ -101,6 +104,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
     public AppEngineAsyncUrlfetch() {
         _urlfetch_service = URLFetchServiceFactory.getURLFetchService();
         _requests = new ArrayList<AsyncRequest>();
+        _costCollector = CostCollector.getInstance();
     }
 
     public AcreResponse response() {
@@ -273,7 +277,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                                 "Headers", response_header_log);
         }
         
-        _response.collect((system) ? "asuc":"auuc")
+        _costCollector.collect((system) ? "asuc":"auuc")
             .collect((system) ? "asuw":"auuw", waiting_time);
         
         return out;
@@ -346,7 +350,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                 continue;
             }
 
-            _response.collect("auub", System.currentTimeMillis() - pass_start_time);
+            _costCollector.collect("auub", System.currentTimeMillis() - pass_start_time);
             i++;
         }
     }
