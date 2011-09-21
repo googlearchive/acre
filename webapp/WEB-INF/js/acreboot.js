@@ -1599,9 +1599,9 @@ var _load_handler = function(scope, handler_name, handler_path) {
  *      HOST:{app.hosts[i]} with value METADATA:{app.guid}:{app.asof}
  */
 
- var appfetch_methods = [],
-     METADATA_CACHE = {},
-     GET_METADATA_CACHE = {};
+var appfetch_methods = [],
+    METADATA_CACHE = {},
+    GET_METADATA_CACHE = {};
 
 /*
 *  Helper functions for creating appfetch methods
