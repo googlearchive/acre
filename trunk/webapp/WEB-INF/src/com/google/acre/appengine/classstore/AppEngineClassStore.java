@@ -18,21 +18,33 @@ import com.google.acre.classstore.ClassStore;
 import com.google.acre.classstore.StoredClass;
 import com.google.appengine.api.memcache.MemcacheService;
 import com.google.appengine.api.memcache.MemcacheServiceFactory;
+import com.google.acre.util.CostCollector;
 
 public class AppEngineClassStore implements ClassStore {
 
     private MemcacheService _cache;
+    private CostCollector _costCollector;
 
     public AppEngineClassStore() {
         _cache = MemcacheServiceFactory.getMemcacheService("class_store");
+        _costCollector = CostCollector.getInstance();
     }
 
     public StoredClass get(String name) {
-        return (StoredClass) _cache.get(name);
+        _costCollector.collect("amrc");
+        final long start_time = System.currentTimeMillis();
+
+        StoredClass sc = (StoredClass) _cache.get(name);
+        _costCollector.collect("amrw", System.currentTimeMillis() - start_time);
+        return sc;
+        
     }
 
     public void set(String name, StoredClass klass) {
+        _costCollector.collect("amwc");
+        final long start_time = System.currentTimeMillis();
         _cache.put(name, klass);
+        _costCollector.collect("amww", System.currentTimeMillis() - start_time);
     }
 
     public StoredClass new_storedclass() {
