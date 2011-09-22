@@ -27,6 +27,7 @@ import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
 import com.google.acre.javascript.JSObject;
+import com.google.acre.util.CostCollector;
 
 public class JSFile extends JSObject {
 
@@ -34,6 +35,7 @@ public class JSFile extends JSObject {
     
     private String _filename;
     private boolean _is_binary;
+    private CostCollector _costCollector;
 
     public JSFile() { }
 
@@ -41,6 +43,7 @@ public class JSFile extends JSObject {
         _scope = scope;
         _filename = filename;
         _is_binary = is_binary.booleanValue();
+        _costCollector = CostCollector.getInstance();
     }
 
     public static Scriptable jsConstructor(Context cx, Object[] args,
@@ -88,6 +91,11 @@ public class JSFile extends JSObject {
             }
         }
 
+        // This is our own copy of the CostCollector.
+        CostCollector __costCollector = CostCollector.getInstance();
+        __costCollector.collect("aidc");
+        final long start_time = System.currentTimeMillis();
+
         if (args.length == 1) {
             File dir = new File((String)args[0]);
             files = dir.list();
@@ -100,6 +108,7 @@ public class JSFile extends JSObject {
         } else {
             return null;
         }
+        __costCollector.collect("aidw", System.currentTimeMillis() - start_time);
 
         if (files == null) {
             return null;
@@ -122,6 +131,9 @@ public class JSFile extends JSObject {
         FileInputStream r = null;
         Object res = null;
 
+        _costCollector.collect("aifc");
+        final long start_time = System.currentTimeMillis();
+
         try {
             File f = new File(_filename);
             r = new FileInputStream(f);
@@ -136,6 +148,7 @@ public class JSFile extends JSObject {
         } catch (java.io.IOException ioe) {
             return null;
         } finally {
+            _costCollector.collect("aifw", System.currentTimeMillis() - start_time);
             try {
                 if (r != null) r.close();
             } catch (Exception e) {

@@ -19,6 +19,7 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 
+import com.google.acre.util.CostCollector;
 import com.google.acre.javascript.JSObject;
 import com.google.acre.script.exceptions.JSConvertableException;
 import com.google.appengine.api.memcache.Expiration;
@@ -35,6 +36,7 @@ public class JSAppCache extends JSObject {
     }
 
     MemcacheService _cache;
+    CostCollector _costCollector;
     
     // ------------------------------------------------------------------------------------------
 
@@ -43,6 +45,7 @@ public class JSAppCache extends JSObject {
     public JSAppCache(Scriptable scope) {
         _scope = scope;
         _cache = MemcacheServiceFactory.getMemcacheService();
+        _costCollector = CostCollector.getInstance();
     }
     
     public String getClassName() {
@@ -53,7 +56,13 @@ public class JSAppCache extends JSObject {
     
     public Object jsFunction_get(String key) {
         try {
-            return _cache.get(key);
+            _costCollector.collect("amrc");
+            final long start_time = System.currentTimeMillis();
+
+            Object cache_response = _cache.get(key);
+            _costCollector.collect("amrw", System.currentTimeMillis() - start_time);
+            return cache_response;
+
         } catch (java.lang.Exception e) {
             throw new JSConvertableException("Failed to get object: " + e.getMessage()).newJSException(_scope);
         }
@@ -61,11 +70,16 @@ public class JSAppCache extends JSObject {
 
     public void jsFunction_put(String key, Object obj, Object expires) {
         try {
+            _costCollector.collect("amwc");
+            final long start_time = System.currentTimeMillis();
+
             if (expires instanceof Number) { 
                 _cache.put(key,obj,Expiration.byDeltaMillis(((Number) expires).intValue()));
             } else {
                 _cache.put(key,obj);
             }
+            _costCollector.collect("amww", System.currentTimeMillis() - start_time);
+
         } catch (java.lang.Exception e) {
             throw new JSConvertableException("Failed to put object: " + e.getMessage()).newJSException(_scope);
         }
