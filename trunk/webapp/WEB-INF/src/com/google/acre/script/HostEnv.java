@@ -657,7 +657,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     // ------------------------------- JavaScript Functions --------------------------------------
 
-    @JS_Function
+    @JSFunction
     public Scriptable load_system_script(String script, Scriptable scope) {
         int pathIndex = script.lastIndexOf('/');
         
@@ -678,7 +678,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         return newScope;
     }
 
-    @JS_Function
+    @JSFunction
     public Scriptable load_script_from_cache(String script_name,
                                              String content_id,
                                              Object scopearg,
@@ -723,7 +723,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         return execute(script, scope, system);
     }
 
-    @JS_Function
+    @JSFunction
     public Scriptable load_script_from_string(String js_text,
                                               String script_name,
                                               String content_id,
@@ -767,7 +767,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         return execute(script, scope, system);
     }
 
-    @JS_Function
+    @JSFunction
     public Scriptable urlOpen(String url, 
                               String method,
                               Object content, 
@@ -838,7 +838,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
     }
 
-    @JS_Function
+    @JSFunction
     public void urlOpenAsync(String url, 
                              String method,
                              Object content,
@@ -922,7 +922,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
     }
 
-    @JS_Function
+    @JSFunction
     public void async_wait(Double timeout_ms) {
         long timeout = (LIMIT_EXECUTION_TIME) ? req._deadline - System.currentTimeMillis() - NETWORK_DEADLINE_ADVANCE : ACRE_URLFETCH_TIMEOUT;
 
@@ -939,7 +939,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
      * NOTE: everything is ALWAYS buffered until the very end of the request 
      * handling.
      */
-    @JS_Function
+    @JSFunction
     public void write(Object data) throws IOException {
         if (data instanceof String) {
             res.write((String)data);
@@ -954,7 +954,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
      *  this is for user logging but from the java code
      */
     @SuppressWarnings("unchecked")
-	@JS_Function
+	@JSFunction
     public void userlog(String level, Object msg) {
         if (msg instanceof String) {
             String msg_str = (String) msg;
@@ -998,7 +998,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     /**
      *  this is for logging internal errors
      */
-    @JS_Function
+    @JSFunction
     public void syslog(Object level, Object event_name, Object msgarg) {
 
 
@@ -1035,7 +1035,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
     }
 
-    @JS_Function
+    @JSFunction
     public void start_response(int status, Scriptable headers, Scriptable cookies) {
         _is_open = true;
         res._response_status = status;
@@ -1063,7 +1063,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
     }
 
-    @JS_Function
+    @JSFunction
     public void do_wait(int millis) {
         synchronized (this) {
             try {
@@ -1378,7 +1378,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         return scope;
     }
 
-    @JS_Function
+    @JSFunction
     public String hmac(String algorithm, String key, String data, boolean to_hex) {
         try {
             SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(),
@@ -1402,7 +1402,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     // XXX to_hex should be like an enum or something, but since we only
     // care about two formats for now..
-    @JS_Function
+    @JSFunction
     public String hash(String algorithm, String str, boolean to_hex) {
         try {
             MessageDigest alg = MessageDigest.getInstance(algorithm);
@@ -1425,7 +1425,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
     // developer-only entrypoint for triggering error handlers
     @SuppressWarnings("null")
-    @JS_Function
+    @JSFunction
     public String dev_test_internal(String name) {
         // the js entry point shouldn't be visible to user scripts
         // unless developer mode is enabled, but double-check it

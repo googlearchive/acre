@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.script;
 
-public class AcreStackFrame extends JsConvertable {
+public class AcreStackFrame extends JSConvertable {
 
     public String classname;
     public String filename;

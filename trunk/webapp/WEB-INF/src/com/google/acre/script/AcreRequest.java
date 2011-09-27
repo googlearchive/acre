@@ -40,7 +40,7 @@ import com.google.acre.Configuration;
 import com.google.acre.servlet.AcreHttpServletRequest;
 import com.google.acre.servlet.OneTrueServlet;
 
-public class AcreRequest extends JsConvertable {
+public class AcreRequest extends JSConvertable {
 
     // parsed request headers
     public String request_method;

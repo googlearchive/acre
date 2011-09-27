@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.script;
 
 import java.lang.reflect.Field;
@@ -25,13 +24,14 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
 import com.google.acre.javascript.JSObject;
+
 /**
  *  Superclass for Java objects that can be converted to JS objects.
  *
  *  These are handy for generating statically typed structures in
  *  Java that must be turned into JS objects later on.
  */
-public class JsConvertable {
+public class JSConvertable {
 
     // XXX TODO:
     //   handle arrays as well as HashMaps
@@ -42,6 +42,7 @@ public class JsConvertable {
     public Scriptable toJsObject(Scriptable scope) {
         return toJsObject(scope, null);
     }
+    
     /*
     static public Object _convertDynamic(Scriptable scope, Object value) {
         // we have no static type info here, so conversion rules are a little
@@ -64,11 +65,11 @@ public class JsConvertable {
 
         if (String.class.isAssignableFrom(vclass) || vclass.isPrimitive()) {
             return value;
-        } else if (JsConvertable.class.isAssignableFrom(vclass)) {
+        } else if (JSConvertable.class.isAssignableFrom(vclass)) {
             if (value == null) {
                 return null;
             }
-            return ((JsConvertable)value).toJsObject(scope);
+            return ((JSConvertable) value).toJsObject(scope);
         } else if (value instanceof String) {
             return value;
         } else if (value instanceof JSObject) {
@@ -101,7 +102,7 @@ public class JsConvertable {
 
     public Scriptable toJsObject(Scriptable scope, Scriptable existing_obj) {
         Context cx = Context.getCurrentContext();
-        Class<? extends JsConvertable> clazz = getClass();
+        Class<? extends JSConvertable> clazz = getClass();
 
         Scriptable obj = existing_obj;
         if (obj == null) {
@@ -133,7 +134,6 @@ public class JsConvertable {
             } catch (IllegalAccessException e) {
                 throw new RuntimeException("JSConvert " + name + "  failed - IllegalAccessException");
             }
-
         }        
         
         return obj;

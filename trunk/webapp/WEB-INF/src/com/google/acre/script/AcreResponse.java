@@ -35,7 +35,7 @@ import com.google.acre.javascript.JSONException;
 import com.google.acre.servlet.AcreHttpServletResponse;
 import com.google.acre.util.CostCollector;
 
-public class AcreResponse extends JsConvertable {
+public class AcreResponse extends JSConvertable {
 
     private static final int MAX_LOG_SIZE = Configuration.Values.ACRE_MAX_LOGS_SIZE.getInteger();
     
