@@ -71,6 +71,20 @@ if (acre.cache) {
         acre.cache.remove(id);
         ok(acre.cache.get(id) == null, "cached object was removed properly");
     });
+
+    test('acre.cache increment a non-number throws', function() {
+        var id = "id";
+        acre.cache.remove(id);
+        try {
+            acre.cache.put(id,"1");
+            acre.cache.increment(id,1,0);
+            ok(false,"should have thrown");
+        } catch(e) {
+            ok(true,"threw");
+        }
+        acre.cache.remove(id);
+        ok(acre.cache.get(id) == null, "cached object was removed properly");
+    });
         
 }
 

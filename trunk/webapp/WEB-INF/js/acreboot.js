@@ -1701,7 +1701,7 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
                     if (ckey in METADATA_CACHE) {
                         return METADATA_CACHE[ckey];
                     } else {
-                        var r2 = _cache.get("system",ckey);
+                        var r2 = _cache.get(ckey);
                         if (r2 !== null) {
                             syslog.debug({'s' : 'memcache', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
                             return JSON.parse(r2);
@@ -1771,13 +1771,13 @@ var appfetch_cache = function(host) {
         throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
     }
 
-    var ckey = _cache.get("system","HOST:" + host);
+    var ckey = _cache.get("HOST:" + host);
     if (ckey == null) {
         syslog.debug({'host': host, 'key': "HOST:" + host}, 'appfetch.cache.host.not_found');
         throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
     }
 
-    var res = _cache.get("system",ckey);
+    var res = _cache.get(ckey);
     if (res === null) {
         syslog.debug({'host': host, 'key': ckey}, 'appfetch.cache.metadata.not_found');
         throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
@@ -2592,7 +2592,7 @@ var proto_require = function(req_path, req_opts) {
     if (method.cachable && (ttl !== 0)) {
         // cache the metadata in the long-term cache, the metadata is
         // cached permanently (or until overriden).
-        _cache.put("system",ckey, JSON.stringify(app_data));
+        _cache.put(ckey, JSON.stringify(app_data));
         
         // we want to build an index of ids to the metadata block
         // which we do with HOST keys in the metadata cache. These
@@ -2601,9 +2601,9 @@ var proto_require = function(req_path, req_opts) {
         // shift+refresh to refresh.
         u.each(app_data.hosts, function(i, host) {
             if (ttl < 0) {
-              _cache.put("system","HOST:" + host, ckey);
+              _cache.put("HOST:" + host, ckey);
             } else {
-              _cache.put("system","HOST:" + host, ckey, ttl);
+              _cache.put("HOST:" + host, ckey, ttl);
             }
             syslog.debug({key:"HOST:" + host, value: ckey, ttl: ttl }, 'appfetch.cache.write.host');
         });

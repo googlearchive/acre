@@ -74,20 +74,23 @@ public class JSCache extends JSObject {
     
     private static final long serialVersionUID = 7556102890015508964L;
     
-    public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) {
+    public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) throws Exception {
         Scriptable scope = ScriptableObject.getTopLevelScope(ctorObj);
         return new JSCache(scope);
     }
 
     CostCollector _costCollector;
     
+    Cache _cache;
+    
     // ------------------------------------------------------------------------------------------
 
     public JSCache() { }
     
-    public JSCache(Scriptable scope) {
+    public JSCache(Scriptable scope) throws Exception {
         _scope = scope;
         _costCollector = CostCollector.getInstance();
+        _cache = AcreFactory.getCache();
     }
     
     public String getClassName() {
@@ -96,13 +99,12 @@ public class JSCache extends JSObject {
     
     // ---------------------------------- public functions  ---------------------------------
     
-    public Object jsFunction_get(String namespace, String key) {
+    public Object jsFunction_get(String key) {
         try {
             _costCollector.collect("amrc");
             final long start_time = System.currentTimeMillis();
 
-            Cache cache = AcreFactory.getCache(namespace);
-            Object cache_response = cache.get(key);
+            Object cache_response = _cache.get(key);
             
             _costCollector.collect("amrw", System.currentTimeMillis() - start_time);
             
@@ -112,17 +114,15 @@ public class JSCache extends JSObject {
         }
     }
 
-    public void jsFunction_put(String namespace, String key, Object obj, Object expires) {
+    public void jsFunction_put(String key, Object obj, Object expires) {
         try {
             _costCollector.collect("amwc");
             final long start_time = System.currentTimeMillis();
             
-            Cache cache = AcreFactory.getCache(namespace);
-
             if (expires instanceof Number) {
-                cache.put(key,obj,((Number) expires).intValue());
+                _cache.put(key,obj,((Number) expires).intValue());
             } else {
-                cache.put(key,obj);
+                _cache.put(key,obj);
             }
             
             _costCollector.collect("amww", System.currentTimeMillis() - start_time);
@@ -132,23 +132,21 @@ public class JSCache extends JSObject {
         }
     }
 
-    public int jsFunction_increment(String namespace, String key, int delta, Object initValue) {
+    public int jsFunction_increment(String key, int delta, Object initValue) {
         try {
-            Cache cache = AcreFactory.getCache(namespace);
             if (initValue instanceof Number) { 
-                return cache.increment(key, delta, ((Number) initValue).intValue());
+                return _cache.increment(key, delta, ((Number) initValue).intValue());
             } else {
-                return cache.increment(key, delta, 0);
+                return _cache.increment(key, delta, 0);
             }
         } catch (java.lang.Exception e) {
             throw new JSConvertableException("Failed to increment object: " + e.getMessage()).newJSException(_scope);
         }
     }
     
-    public void jsFunction_remove(String namespace, String key) {
+    public void jsFunction_remove(String key) {
         try {
-            Cache cache = AcreFactory.getCache(namespace);
-            cache.delete(key);
+            _cache.delete(key);
         } catch (java.lang.Exception e) {
             throw new JSConvertableException("Failed to delete object: " + e.getMessage()).newJSException(_scope);
         }
