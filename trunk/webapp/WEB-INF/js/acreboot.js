@@ -26,9 +26,9 @@ var _hostenv = PROTECTED_HOSTENV;
 var _request = ACRE_REQUEST;
 var _domparser = new DOMParser();
 var _ks = new KeyStore();
-var _cache = new Cache();
 var _file = File;
 var _json = new JSON();
+var _cache = new Cache();
 
 // XXX there should be a java function to sanitize the global scope
 // with a whitelist instead of this blacklist.  most of the
@@ -61,12 +61,6 @@ if (typeof DataStore != 'undefined') {
 if (typeof TaskQueue != 'undefined') {
     var _taskqueue = new TaskQueue();
     delete TaskQueue;
-}
-
-// obtain appcache if present and remove from scope
-if (typeof AppCache != 'undefined') {
-    var _appcache = new AppCache();
-    delete AppCache;
 }
 
 // obtain mailer if present and remove from scope
@@ -113,8 +107,9 @@ function make_scope(start, style) {
 
     var copier = object;
 
-    if (style =='deep')
+    if (style =='deep') {
         copier = arguments.callee;
+    }
 
     start = start || _topscope;
 
@@ -1012,7 +1007,7 @@ acre.hash.b64_hmac_md5 = function (key, data) {
 
 // ------------------------------------------------------------------------
 
-// used by the keystore and the appcache to partition data based on the app_guid
+// used by the keystore and the cache to partition data based on the app_guid
 
 _request.app_project = null;
 
@@ -1045,14 +1040,24 @@ acre.keystore.remove = function (name) {
 };
 
 if (_request.trusted) { 
-  acre.keystore.put = function (name, token, secret) {
-    if (_request.app_project !== null) {
-      return _ks.put_key(name, _request.app_project, token, secret);
-    } else {
-      return null;
-    }
-  };
+    acre.keystore.put = function (name, token, secret) {
+        if (_request.app_project !== null) {
+            return _ks.put_key(name, _request.app_project, token, secret);
+        } else {
+            return null;
+        }
+    };
 }
+
+//------------------------ cache --------------------------
+
+var cache_scope = {};
+cache_scope.syslog = syslog;
+cache_scope.cache = _cache;
+cache_scope.acreboot = _topscope;
+cache_scope.request = _request;
+_hostenv.load_system_script('cache.js', cache_scope);
+cache_scope.augment(acre);
 
 //------------------------ datastore --------------------------
 
@@ -1072,18 +1077,6 @@ if (_request.trusted && _taskqueue) { // the _taskqueue object won't be availabl
     queue_scope.queue = _taskqueue;
     _hostenv.load_system_script('taskqueue.js', queue_scope);
     queue_scope.augment(acre);
-}
-
-//------------------------ cache --------------------------
-
-if (_request.trusted && _appcache) { // the _appcache object won't be available in all environments so we need to check first
-    var appcache_scope = {};
-    appcache_scope.syslog = syslog;
-    appcache_scope.cache = _appcache;
-    appcache_scope.acreboot = _topscope;
-    appcache_scope.request = _request;
-    _hostenv.load_system_script('appcache.js', appcache_scope);
-    appcache_scope.augment(acre);
 }
 
 //------------------------ mailer --------------------------
@@ -1708,7 +1701,7 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
                     if (ckey in METADATA_CACHE) {
                         return METADATA_CACHE[ckey];
                     } else {
-                        var r2 = _cache.get(ckey);
+                        var r2 = _cache.get("system",ckey);
                         if (r2 !== null) {
                             syslog.debug({'s' : 'memcache', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
                             return JSON.parse(r2);
@@ -1774,17 +1767,17 @@ var appfetch_cache = function(host) {
     }
 
     if (acre.request.skip_cache) {
-        syslog.debug({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.skip');
+        syslog.debug({'host': host, 'key': "HOST:" + host}, 'appfetch.cache.skip');
         throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
     }
 
-    var ckey = _cache.get("HOST:"+host);
+    var ckey = _cache.get("system","HOST:" + host);
     if (ckey == null) {
-        syslog.debug({'host': host, 'key': "HOST:"+host}, 'appfetch.cache.host.not_found');
+        syslog.debug({'host': host, 'key': "HOST:" + host}, 'appfetch.cache.host.not_found');
         throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
     }
 
-    var res = _cache.get(ckey);
+    var res = _cache.get("system",ckey);
     if (res === null) {
         syslog.debug({'host': host, 'key': ckey}, 'appfetch.cache.metadata.not_found');
         throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
@@ -2593,13 +2586,13 @@ var proto_require = function(req_path, req_opts) {
     }
     
     // now cache the app metadata
-    var ckey = "METADATA:"+app_data.guid+":"+app_data.as_of;
+    var ckey = "METADATA:" + app_data.guid + ":" + app_data.as_of;
     var ttl = (typeof app_data.ttl === "number") ? app_data.ttl : 0;
 
     if (method.cachable && (ttl !== 0)) {
         // cache the metadata in the long-term cache, the metadata is
         // cached permanently (or until overriden).
-        _cache.put(ckey, JSON.stringify(app_data));
+        _cache.put("system",ckey, JSON.stringify(app_data));
         
         // we want to build an index of ids to the metadata block
         // which we do with HOST keys in the metadata cache. These
@@ -2608,11 +2601,11 @@ var proto_require = function(req_path, req_opts) {
         // shift+refresh to refresh.
         u.each(app_data.hosts, function(i, host) {
             if (ttl < 0) {
-              _cache.put("HOST:"+host, ckey);
+              _cache.put("system","HOST:" + host, ckey);
             } else {
-              _cache.put("HOST:"+host, ckey, ttl);
+              _cache.put("system","HOST:" + host, ckey, ttl);
             }
-            syslog.debug({key:"HOST:"+host, value: ckey, ttl: ttl }, 'appfetch.cache.write.host');
+            syslog.debug({key:"HOST:" + host, value: ckey, ttl: ttl }, 'appfetch.cache.write.host');
         });
     }
 
@@ -2815,7 +2808,7 @@ var handle_request = function (req_path, req_body, skip_routes) {
 
     // before the script is actually run, we want to set the app guid aside
     // if we didn't already do so
-    // app_guid is primarily used for accessing the keystore and the appcache
+    // app_guid is primarily used for accessing the keystore and the cache
     if (_request.app_project === null) {
         _request.app_project = script.app.project;
     }
@@ -2955,4 +2948,5 @@ if (typeof _request.handler_script_path == 'string' && _request.handler_script_p
 }
 
 handle_request(_request_path, _request.request_body, _request.skip_routes);
+
 })();

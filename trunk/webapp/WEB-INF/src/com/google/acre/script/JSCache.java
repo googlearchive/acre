@@ -12,45 +12,145 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//
+//package com.google.acre.script;
+//
+//import com.google.acre.AcreFactory;
+//import com.google.acre.cache.Cache;
+//import com.google.acre.javascript.JSObject;
+//
+//public class JSCache extends JSObject {
+//    
+//    private static final long serialVersionUID = 7556102890015508964L;
+//
+//    private static Cache _cache;
+//
+//    static {
+//        try {
+//            _cache = AcreFactory.getCache();
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
+//
+//    public String getClassName() {
+//        return "Cache";
+//    }
+//
+//    public Object jsFunction_get(String key) {
+//        return _cache.get(key);
+//    }
+//
+//    public void jsFunction_put(String key, String value, Double expires) {
+//        if (!(expires.isNaN())) {
+//            _cache.put(key, value, expires.longValue());
+//        } else {
+//            _cache.put(key, value);
+//        }
+//    }
+//
+//    public void jsFunction_delete(String key) {
+//        _cache.delete(key);
+//    }
+//
+//}
+//
+//
 
 package com.google.acre.script;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Function;
+import org.mozilla.javascript.Scriptable;
+import org.mozilla.javascript.ScriptableObject;
 
 import com.google.acre.AcreFactory;
 import com.google.acre.cache.Cache;
 import com.google.acre.javascript.JSObject;
+import com.google.acre.script.exceptions.JSConvertableException;
+import com.google.acre.util.CostCollector;
 
 public class JSCache extends JSObject {
     
     private static final long serialVersionUID = 7556102890015508964L;
-
-    private static Cache _cache;
-
-    static {
-        try {
-            _cache = AcreFactory.getCache();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    
+    public static Scriptable jsConstructor(Context cx, Object[] args, Function ctorObj, boolean inNewExpr) {
+        Scriptable scope = ScriptableObject.getTopLevelScope(ctorObj);
+        return new JSCache(scope);
     }
 
+    CostCollector _costCollector;
+    
+    // ------------------------------------------------------------------------------------------
+
+    public JSCache() { }
+    
+    public JSCache(Scriptable scope) {
+        _scope = scope;
+        _costCollector = CostCollector.getInstance();
+    }
+    
     public String getClassName() {
         return "Cache";
     }
+    
+    // ---------------------------------- public functions  ---------------------------------
+    
+    public Object jsFunction_get(String namespace, String key) {
+        try {
+            _costCollector.collect("amrc");
+            final long start_time = System.currentTimeMillis();
 
-    public String jsFunction_get(String key) {
-        return _cache.get(key);
-    }
-
-    public void jsFunction_put(String key, String value, Double expires) {
-        if (!(expires.isNaN())) {
-            _cache.put(key, value, expires.longValue());
-        } else {
-            _cache.put(key, value);
+            Cache cache = AcreFactory.getCache(namespace);
+            Object cache_response = cache.get(key);
+            
+            _costCollector.collect("amrw", System.currentTimeMillis() - start_time);
+            
+            return cache_response;
+        } catch (java.lang.Exception e) {
+            throw new JSConvertableException("Failed to get object: " + e.getMessage()).newJSException(_scope);
         }
     }
 
-    public String jsFunction_delete(String key) {
-        return _cache.delete(key);
+    public void jsFunction_put(String namespace, String key, Object obj, Object expires) {
+        try {
+            _costCollector.collect("amwc");
+            final long start_time = System.currentTimeMillis();
+            
+            Cache cache = AcreFactory.getCache(namespace);
+
+            if (expires instanceof Number) {
+                cache.put(key,obj,((Number) expires).intValue());
+            } else {
+                cache.put(key,obj);
+            }
+            
+            _costCollector.collect("amww", System.currentTimeMillis() - start_time);
+
+        } catch (java.lang.Exception e) {
+            throw new JSConvertableException("Failed to put object: " + e.getMessage()).newJSException(_scope);
+        }
     }
 
+    public int jsFunction_increment(String namespace, String key, int delta, Object initValue) {
+        try {
+            Cache cache = AcreFactory.getCache(namespace);
+            if (initValue instanceof Number) { 
+                return cache.increment(key, delta, ((Number) initValue).intValue());
+            } else {
+                return cache.increment(key, delta, 0);
+            }
+        } catch (java.lang.Exception e) {
+            throw new JSConvertableException("Failed to increment object: " + e.getMessage()).newJSException(_scope);
+        }
+    }
+    
+    public void jsFunction_remove(String namespace, String key) {
+        try {
+            Cache cache = AcreFactory.getCache(namespace);
+            cache.delete(key);
+        } catch (java.lang.Exception e) {
+            throw new JSConvertableException("Failed to delete object: " + e.getMessage()).newJSException(_scope);
+        }
+    }
 }

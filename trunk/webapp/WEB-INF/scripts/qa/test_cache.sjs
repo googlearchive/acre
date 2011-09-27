@@ -8,6 +8,7 @@ if (acre.cache) {
         ok(typeof acre.cache.get == "function", "cache.get exists");
         ok(typeof acre.cache.put == "function", "cache.put exists");
         ok(typeof acre.cache.remove == "function", "cache.remove exists");
+        ok(typeof acre.cache.increment == "function", "cache.increment exists");
     });
 
     var do_test = function(obj) {
@@ -19,7 +20,7 @@ if (acre.cache) {
         deepEqual(o1,o2);
         acre.cache.remove(id);
         var o3 = acre.cache.get(id);
-        ok(o3 == null, "object was removed");
+        ok(o3 == null, "cached object was removed properly");
     };
 
     test('acre.cache returns null for values that are not present', function() {
@@ -57,7 +58,7 @@ if (acre.cache) {
         equal(o2,2,"then it gets incremented to 2");
         acre.cache.remove(id);
         var o3 = acre.cache.get(id);
-        ok(o3 == null, "object was removed");
+        ok(o3 == null, "cached object was removed properly");
     });
     
     test('acre.cache set+increment work together', function() {
@@ -68,7 +69,7 @@ if (acre.cache) {
         var i = acre.cache.get(id);
         equal(i,2,"counter was incremented to 2");
         acre.cache.remove(id);
-        ok(acre.cache.get(id) == null, "object was removed");
+        ok(acre.cache.get(id) == null, "cached object was removed properly");
     });
         
 }
