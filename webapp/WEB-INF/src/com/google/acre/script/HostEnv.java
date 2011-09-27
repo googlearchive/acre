@@ -90,9 +90,9 @@ import com.google.acre.script.exceptions.AcreThreadDeath;
 import com.google.acre.script.exceptions.AcreURLFetchException;
 import com.google.acre.script.exceptions.JSConvertableException;
 import com.google.acre.thread.AllocationLimitedThread;
+import com.google.acre.util.CostCollector;
 import com.google.acre.util.Supervisor;
 import com.google.acre.util.resource.ResourceSource;
-import com.google.acre.util.CostCollector;
 
 public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
@@ -288,7 +288,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         } catch (InvocationTargetException e) {
             syslog(ERROR, "hostenv.cache.init.failed", "Failed to load Cache object: " + e);
         }
-
+        
         try {
             ScriptableObject.defineClass(scope, JSAttr.class, false, true);
             ScriptableObject.defineClass(scope, JSCDATASection.class, false, true);
@@ -362,23 +362,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             }
         } catch (ClassNotFoundException e1) {
             syslog(DEBUG, "hostenv.taskqueue.init.failed", "TaskQueue provider not found and will not be available");
-        }
-
-        try {
-            @SuppressWarnings("unchecked")
-            Class<? extends Scriptable> jsAppCacheClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSAppCache");
-
-            try {
-                ScriptableObject.defineClass(scope, jsAppCacheClass, false, true);
-            } catch (IllegalAccessException e) {
-                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load AppCache object: " + e);
-            } catch (InstantiationException e) {
-                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load AppCache object: " + e);
-            } catch (InvocationTargetException e) {
-                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load AppCache object: " + e);
-            }
-        } catch (ClassNotFoundException e1) {
-            syslog(DEBUG, "hostenv.appcache.init.failed", "AppCache provider not found and will not be available");
         }
 
         try {
@@ -1387,7 +1370,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         Script compiledScript = script.getCompiledScript();
 
         if (compiledScript != null) {
-            final long exec_start_time = System.currentTimeMillis();
             compiledScript.exec(_context, scope);
         } else {
             throw new RuntimeException("cache contains invalid state for script " + script.getScriptName());

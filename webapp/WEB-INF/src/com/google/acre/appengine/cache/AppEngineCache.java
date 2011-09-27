@@ -14,64 +14,44 @@
 
 package com.google.acre.appengine.cache;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-
-import org.apache.commons.codec.binary.Hex;
-
 import com.google.acre.cache.Cache;
 import com.google.appengine.api.memcache.Expiration;
 import com.google.appengine.api.memcache.MemcacheService;
 import com.google.appengine.api.memcache.MemcacheServiceFactory;
 
 public class AppEngineCache implements Cache {
+    
     private MemcacheService _cache;
     private static Cache _singleton;
     
-    public static synchronized Cache getCache() {
+    public static synchronized Cache getCache(String namespace) {
         if (_singleton == null) {
-            _singleton = new AppEngineCache();
+            _singleton = new AppEngineCache(namespace);
         }
         return _singleton;
     }
 
-    public AppEngineCache() {
-        _cache = MemcacheServiceFactory.getMemcacheService();
+    public AppEngineCache(String namespace) {
+        _cache = MemcacheServiceFactory.getMemcacheService(namespace);
     }
 
     public String get(String key) {
-        String hkey = hash("MD5", key);
-        return (String) _cache.get(hkey);
+        return (String) _cache.get(key);
     }
 
-    public void put(String key, String value, long expires) {
-        Expiration exp = Expiration.byDeltaMillis((int)expires);
-        _cache.put(hash("MD5", key), value, exp);
+    public void put(String key, Object value, long expires) {
+        _cache.put(key, value, Expiration.byDeltaMillis((int) expires));
     }
 
-    public void put(String key, String value) {
-        _cache.put(hash("MD5", key), value);
+    public void put(String key, Object value) {
+        _cache.put(key, value);
     }
 
-    public String delete(String key) {
-        String hkey = hash("MD5", "key");
-        String res = (String)_cache.get(hkey);
-        _cache.delete(hkey);
-        return res;
+    public void delete(String key) {
+        _cache.delete(key);
     }
 
-    private String hash(String algorithm, String str) {
-        try {
-            MessageDigest alg = MessageDigest.getInstance(algorithm);
-            alg.reset();
-            alg.update(str.getBytes());
-
-            byte digest[] = alg.digest();
-
-            return new String(Hex.encodeHex(digest));
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+    public int increment(String key, int delta, int initValue) {
+        return _cache.increment(key, delta, (long) initValue).intValue();
     }
-
 }

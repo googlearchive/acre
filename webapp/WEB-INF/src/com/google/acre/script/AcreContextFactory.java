@@ -67,7 +67,7 @@ public class AcreContextFactory extends ContextFactory {
         cx.setGeneratingSource(true);
         
         cx.setOptimizationLevel(OPTIMIZATION_LEVEL);
-        _logger.info("compiler.optimization.level", Integer.toString(OPTIMIZATION_LEVEL));
+        _logger.debug("compiler.optimization.level", Integer.toString(OPTIMIZATION_LEVEL));
 
         // provide JavaScript version 1.7
         cx.setLanguageVersion(Context.VERSION_1_7);

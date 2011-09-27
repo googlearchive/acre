@@ -15,9 +15,11 @@
 package com.google.acre.cache;
 
 public interface Cache {
-    //    public Cache getCache();
-    public String get(String key);
-    public void put(String key, String value);
-    public void put(String key, String value, long expires);
-    public String delete(String key);
+    // public Cache getCache(String namespace);
+    
+    public Object get(String key);
+    public void put(String key, Object value);
+    public void put(String key, Object value, long expires);
+    public int increment(String key, int delta, int initValue);
+    public void delete(String key);
 }
