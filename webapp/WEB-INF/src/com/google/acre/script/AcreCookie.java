@@ -34,7 +34,8 @@ import org.mozilla.javascript.Scriptable;
  *
  *  mood: Pfeffernuesseschmerz (the sadness of reading cookie specifications)
  */
-public class AcreCookie extends JsConvertable {
+public class AcreCookie extends JSConvertable {
+    
     public String name;
     public String value;
     public String domain;

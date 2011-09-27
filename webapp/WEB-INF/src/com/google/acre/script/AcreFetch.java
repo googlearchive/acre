@@ -68,7 +68,7 @@ import com.google.acre.util.CostCollector;
  *   It has some similarities to AcreRequest but is different enough
  *   for a separate class.
  */
-public class AcreFetch extends JsConvertable {
+public class AcreFetch extends JSConvertable {
 
     private final static Log _logger = new Log(AcreFetch.class);    
     

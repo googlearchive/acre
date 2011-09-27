@@ -25,7 +25,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ScriptableObject;
 
 import com.google.acre.script.AnnotatedForJS;
-import com.google.acre.script.JS_Function;
+import com.google.acre.script.JSFunction;
 import com.google.acre.script.exceptions.AcreInternalError;
 
 public class JSUtil {
@@ -47,7 +47,7 @@ public class JSUtil {
                 Method[] methods = clazz.getDeclaredMethods();
                 Collection<String> names = new ArrayList<String>();
                 for (Method m : methods) {
-                    JS_Function jsf = m.getAnnotation(JS_Function.class);
+                    JSFunction jsf = m.getAnnotation(JSFunction.class);
                     if (jsf != null) {
                         names.add(m.getName());
                     }

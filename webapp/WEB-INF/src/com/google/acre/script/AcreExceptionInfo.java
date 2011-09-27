@@ -29,7 +29,7 @@ import com.google.acre.javascript.JSON;
 import com.google.acre.javascript.JSONException;
 import com.google.acre.script.exceptions.AcreThreadDeath;
 
-public class AcreExceptionInfo extends JsConvertable {
+public class AcreExceptionInfo extends JSConvertable {
     
     private boolean HIDE_INTERNAL_JS_STACK = Configuration.Values.HIDE_ACREBOOT_STACK.getBoolean();
 

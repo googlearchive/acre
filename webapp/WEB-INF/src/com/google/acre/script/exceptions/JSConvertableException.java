@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-
 package com.google.acre.script.exceptions;
 
 import org.mozilla.javascript.Context;
@@ -21,8 +19,7 @@ import org.mozilla.javascript.JavaScriptException;
 import org.mozilla.javascript.Scriptable;
 
 import com.google.acre.script.HostEnv;
-import com.google.acre.script.JsConvertable;
-
+import com.google.acre.script.JSConvertable;
 
 //
 //
@@ -33,7 +30,8 @@ import com.google.acre.script.JsConvertable;
 //
 //
 
-public class JSConvertableException extends JsConvertable {
+public class JSConvertableException extends JSConvertable {
+    
     public String message;
     final protected static String error_constructor = "Error";
 

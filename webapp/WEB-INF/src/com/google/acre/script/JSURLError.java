@@ -18,6 +18,7 @@ package com.google.acre.script;
 import com.google.acre.script.exceptions.JSConvertableException;
 
 public class JSURLError extends JSConvertableException {
+    
     protected static String error_constructor = "URLError";
 
     public JSURLError(String message) {
