@@ -15,15 +15,16 @@
 package com.google.acre.cache;
 
 import com.whirlycott.cache.Cache;
+import com.whirlycott.cache.CacheException;
 import com.whirlycott.cache.CacheManager;
 
 public class WhirlyCache implements com.google.acre.cache.Cache {
 
     private static com.google.acre.cache.Cache _singleton;
 
-    public static synchronized com.google.acre.cache.Cache getCache(String namespace) {
+    public static synchronized com.google.acre.cache.Cache getCache() throws CacheException {
         if (_singleton == null) {
-            _singleton = new WhirlyCache(namespace);
+            _singleton = new WhirlyCache();
         }
         return _singleton;
     }
@@ -32,8 +33,8 @@ public class WhirlyCache implements com.google.acre.cache.Cache {
     
     private Cache _cache;
     
-    private WhirlyCache(String namespace) {
-        _cache = CacheManager.getInstance().getCache(namespace);
+    private WhirlyCache() throws CacheException {
+        _cache = CacheManager.getInstance().getCache();
     }
 
     public Object get(String key) {

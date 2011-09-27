@@ -15,7 +15,7 @@
 package com.google.acre.cache;
 
 public interface Cache {
-    // public Cache getCache(String namespace);
+    // public Cache getCache();
     
     public Object get(String key);
     public void put(String key, Object value);

@@ -24,19 +24,19 @@ public class AppEngineCache implements Cache {
     private MemcacheService _cache;
     private static Cache _singleton;
     
-    public static synchronized Cache getCache(String namespace) {
+    public static synchronized Cache getCache() {
         if (_singleton == null) {
-            _singleton = new AppEngineCache(namespace);
+            _singleton = new AppEngineCache();
         }
         return _singleton;
     }
 
-    public AppEngineCache(String namespace) {
-        _cache = MemcacheServiceFactory.getMemcacheService(namespace);
+    public AppEngineCache() {
+        _cache = MemcacheServiceFactory.getMemcacheService();
     }
 
-    public String get(String key) {
-        return (String) _cache.get(key);
+    public Object get(String key) {
+        return _cache.get(key);
     }
 
     public void put(String key, Object value, long expires) {
