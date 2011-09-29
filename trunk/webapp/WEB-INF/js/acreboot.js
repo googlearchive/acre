@@ -1202,11 +1202,11 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
         method = options_or_method.method;
         headers = options_or_method.headers;
         content = options_or_method.content;
-        sign = options_or_method.sign;
+        sign = !!options_or_method.sign;
         response_encoding = options_or_method.response_encoding;
         callback = options_or_method.callback || function (res) { };
         errback = options_or_method.errback || function (res) { throw res; };
-        timeout = options_or_method.timeout;
+        timeout = parseInt(options_or_method.timeout, 10) || undefined;
         bless = !!options_or_method.bless;
         no_redirect = options_or_method.no_redirect;
     } else if (options_or_method) {
