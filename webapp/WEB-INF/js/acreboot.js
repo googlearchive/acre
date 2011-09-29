@@ -1206,7 +1206,8 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
         response_encoding = options_or_method.response_encoding;
         callback = options_or_method.callback || function (res) { };
         errback = options_or_method.errback || function (res) { throw res; };
-        timeout = parseInt(options_or_method.timeout, 10) || undefined;
+        var i =  parseInt(options_or_method.timeout, 10) ;
+        timeout = (i > 0) ? i : undefined;
         bless = !!options_or_method.bless;
         no_redirect = options_or_method.no_redirect;
     } else if (options_or_method) {
