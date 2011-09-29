@@ -14,7 +14,7 @@ try:
 except ImportError:
   pass
 # global socket timeout, seemed to help with a weird connection reset issue in appengine
-socket.setdefaulttimeout(60)
+socket.setdefaulttimeout(140)
 
 logger = logging.getLogger('tst')
 
