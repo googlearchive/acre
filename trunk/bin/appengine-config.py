@@ -80,7 +80,8 @@ def copy_configuration_files(options):
     ('web.%s.xml.in', 'web.xml.in'), 
     ('cron.%s.xml.in', 'cron.xml.in'), 
     ('queue.%s.xml.in', 'queue.xml.in'), 
-    ('datastore-indexes.%s.xml.in', 'datastore-indexes.xml.in')
+    ('datastore-indexes.%s.xml.in', 'datastore-indexes.xml.in'),
+    ('backends.%s.xml.in', 'backends.xml.in')
   ]
 
   # if a directory and target where specified in the command line, use them
