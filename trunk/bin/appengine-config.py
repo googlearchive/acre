@@ -97,7 +97,11 @@ def copy_configuration_files(options):
         f = os.path.join(options.directory,options.config,source_target[1])
         if os.path.exists(f):
           copy_configuration_file(f,'webapp/META-INF/%s' % source_target[2])
-
+        else:
+          f = os.path.join(options.directory,source_target[1])
+          if os.path.exists(f):
+            copy_configuration_file(f,'webapp/META-INF/%s' % source_target[2])
+            
     # these files require a default
     for source_target in conf_files:
 
