@@ -14,13 +14,13 @@ try:
 except ImportError:
   pass
 # global socket timeout, seemed to help with a weird connection reset issue in appengine
-socket.setdefaulttimeout(140)
+socket.setdefaulttimeout(300)
 
 logger = logging.getLogger('tst')
 
 #-----------------------------------------------------------------------#
 
-TEST_TIMEOUT = 120
+TEST_TIMEOUT = 240
 devel_host = os.environ["ACRE_FREEBASE_SITE_ADDR"]
 devel_port = os.environ["ACRE_FREEBASE_SITE_ADDR_PORT"]
 
