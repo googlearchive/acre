@@ -1,0 +1,124 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<title>Domain detail</title>
+<script type="text/javascript" src="../../mjt.js"></script>
+<script type="text/javascript" src="./util.js"></script>
+<link type="text/css" rel="stylesheet" href="chrome.css" />
+</head>
+
+<body onload="l = mjt.load_from_iframe('lib'); mjt.run('top');">
+<iframe id="lib" style="display:none;" src="lib.html"></iframe>
+
+<div id="top" style="display:none;">
+    <div mjt.task="q">
+       mjt.freebase.MqlRead({     
+        "id":mjt.urlquery.id,
+        "name":null,
+        "/type/namespace/keys":[{
+          "value": null,
+          "optional":true,
+          "namespace": {
+          "type": '/type/type',
+          "name":null,
+          "sort":"name",
+          "id":null,
+          "properties":[],
+          "/type/reflect/any_reverse":{
+            link: { master_property: '/freebase/type_hints/hinted_type' },
+            "mediator":null,
+            "optional":true,
+            "type":"/freebase/type_hints",
+            "limit":1
+          },
+          "/freebase/type_profile/instance_count":null,
+          "/freebase/type_profile/work_needed":[{
+            "optional":true,
+            "type_project":{
+              "name":null,
+              "id":null
+             },
+            "detail":null
+          }]
+          }
+        }],
+        "/type/domain/owners":[{
+          "optional":true,
+          "name":null,
+          "id":null,
+          "member":[{
+            "optional":true,
+            "name":null,
+             "sort":"name",
+            "id":null,
+            "a:type":"/freebase/user_profile"
+          }]
+        }]
+      })     
+    </div>
+
+    ${l.header()}
+    <a href="${l.app_url('index.html')}">[view all domains]</a><br></br>
+
+   <div mjt.if="q.state=='ready'">
+    <h3>Domain: $q.result.name ($q.result.id)</h3>
+    <div mjt.choose="q.result['/type/domain/owners']">
+      <div mjt.when="">No administrators for this domain!</div>
+      <div mjt.otherwise="">
+        <table mjt.for="group in q.result['/type/domain/owners']">
+          <tr> <td> <b><span mjt.content='group.name + ": "'></span></b></td>
+            <td>
+              <span mjt.for="i,member in group.member"><span mjt.if="i &gt; 0">,</span><a href="$mjt.service_url/view$member.id">
+                  $member.name</a></span></td>
+          </tr>          
+       </table>
+     </div>
+   </div>
+    <div mjt.script="">
+      function compareCounts(a,b) {
+        if (a.properties.length &lt; b.properties.length) return 1;
+        if (a.properties.length &gt; b.properties.length) return -1;
+        return 0;
+      }
+      var types = [];
+      for (var i = 0; i &lt; q.result['/type/namespace/keys'].length; i++)
+          types.push(q.result['/type/namespace/keys'][i].namespace);
+      types.sort(compareCounts);
+    </div>
+    <table cellpadding="2">
+       <tr>
+         <th></th><th></th>
+         <th align="right">instances</th>
+         <th align="right">properties</th>
+         <th align="left">mediator</th>
+         <th align="left">&nbsp;projects</th>
+       </tr>
+       <tr mjt.for="t in types">
+         <td width="20"></td>
+         <td align="left"><a href="${l.app_url('type.html?id=' + mjt.formquote(t.id))}">$t.name</a></td>
+         <td align="right" mjt.content="commaFormatInteger(t['/freebase/type_profile/instance_count'])"></td>
+         <td align="right">$t.properties.length</td>
+         <td align="center">
+           <span mjt.if="t['/type/reflect/any_reverse']">
+             <span mjt.if="t['/type/reflect/any_reverse'].mediator">[m]</span>
+           </span>
+         </td>
+         <td valign="top" align="left">
+           <span mjt.for="work in t['/freebase/type_profile/work_needed']">
+             &nbsp;<a href="$mjt.service_url/view$work.type_project.id">
+             $work.type_project.name</a> ($work.detail),
+           </span>
+         </td>         
+       </tr>
+    </table>
+   </div>
+
+${l.task_state(q)}
+
+${l.footer()}
+</div>
+
+</body>
+</html>

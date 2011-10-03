@@ -1,0 +1,218 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+
+<script type="text/javascript" src="/js/firebuglite/firebug/firebug.js"></script>
+
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+<script type="text/javascript" src="../src/header.js"></script>
+<script type="text/javascript" src="../src/json2.js"></script>
+<script type="text/javascript" src="../src/util.js"></script>
+<script type="text/javascript" src="../src/task.js"></script>
+<script type="text/javascript" src="../src/pager.js"></script>
+<script type="text/javascript" src="../src/browserio.js"></script>
+<script type="text/javascript" src="../src/crc32.js"></script>
+<script type="text/javascript" src="../src/jsonp.js"></script>
+<script type="text/javascript" src="../src/freebase/api.js"></script>
+<script type="text/javascript" src="../src/freebase/isodate.js"></script>
+<script type="text/javascript" src="../src/freebase/misc.js"></script>
+<script type="text/javascript" src="../src/freebase/mqlkey.js"></script>
+<script type="text/javascript" src="../src/freebase/mqlschema.js"></script>
+<script type="text/javascript" src="../src/freebase/mqlquery.js"></script>
+<script type="text/javascript" src="../src/freebase/mqlinspect.js"></script>
+<script type="text/javascript" src="../src/xhr.js"></script>
+<script type="text/javascript" src="../src/freebase/freebasexhr.js"></script>
+<script type="text/javascript" src="../examples/yahoo/yahooapi.js"></script>
+<script type="text/javascript" src="../rison.js"></script>
+<script type="text/javascript" src="./tsetse.js"></script>
+
+<script type="text/javascript" src="./ttask.js"></script>
+
+<title>tsetse test driver</title>
+
+
+<script type="text/javascript">//<![CDATA[
+
+mjt.label_package('mjt');
+mjt.label_package('mjt.freebase');
+mjt.label_package('mjt.yahooapi');
+mjt.label_package('rison');
+
+
+function init() {
+    var qd = {};
+    var qstr = window.location.search;
+    if (typeof(qstr) == 'string' && qstr.length > 0 && qstr.charAt(0) == '?')
+        qd = mjt.formdecode(qstr.substr(1));
+
+//    mjt.freebase = new mjt.services.FreebaseService('http://sandbox.freebase.com');
+
+    if (mjt.freebase.freebase_user) {
+       document.getElementById('signin_note').innerHTML =
+         'signed in as <b>' + mjt.freebase.freebase_user.id
+         + ' to <span class="service_url">' + window.location.host + '</span>';
+    } else {
+       document.getElementById('signin_note').innerHTML =
+         'not signed in to <span class="service_url">'
+         + window.location.host + '</span>.  '
+         + 'you must be signed in for the POST tests to work.';
+    }
+
+    var setdict = null;
+    var urlsets = qd['tsetse.tests'];
+    if (urlsets) {
+        document.title = 'tsetse tests: ' + urlsets;
+        var sets = qd['tsetse.tests'].split(',');
+        setdict = {};
+        for (var seti = 0; seti < sets.length; seti++)
+            setdict[sets[seti]] = true;
+    } else {
+        document.title = 'tsetse tests: all';
+    }
+    var shorts = document.getElementById('summary');
+    var messages = document.getElementById('messages');
+
+    mjt.Task.debug=1;
+
+    for (var i = 0; i < tsetse.all_testsets.length; i++) {
+        var testset = tsetse.all_testsets[i];
+
+        if (setdict && !setdict[testset.testset_id])
+            continue;
+
+        var shortx = document.createElement('tr');
+        shorts.appendChild(shortx);
+
+        // XXX xss
+        shortx.innerHTML = '<td class="testset_id_short">'
+            + testset.testset_id + '</td>';
+
+        var msg = document.createElement('div');
+        // XXX xss
+        msg.innerHTML = '<h3 class="testset_id_messages">'
+            + testset.testset_id + '</h3>';
+        messages.appendChild(msg);
+
+        testset.run_all(shortx, msg);
+//        setTimeout(function () { testset.cleanup(); }, 20000);
+    }
+
+    setTimeout(function () { 
+        // warn about any remaining pending tasks
+        for (var k in mjt.Task.pending) {
+            var task = mjt.Task.pending[k];
+            mjt.warn('task still pending', k, task);
+        }
+
+        for (var i = 0; i < tsetse.all_testsets.length; i++) {
+            var testset = tsetse.all_testsets[i];
+            testset.cleanup();
+
+
+        }
+    }, 20000);
+
+}
+
+//]]></script>
+
+<style type="text/css">
+
+.service_url {
+  font-weight: bold;
+}
+
+body {
+  font-family: Helvetica, sans-serif;
+}
+
+.message>span {
+  margin: 1em;
+}
+
+
+#messages>div {
+  padding-left: 2em;
+}
+
+#messages h3 {
+  position: relative;
+  left: -1em;
+  margin: 2px;
+}
+
+h4 {
+  margin: 2px;
+}
+
+.log {
+}
+.warn {
+}
+.error {
+  color: red;
+}
+.test_log {
+  border: 1px solid black;
+}
+
+
+
+.short_indicators>span {
+  border: 1px solid #ccc;
+}
+
+.test_init {
+  background-color: #ffc;
+}
+.test_ok {
+  background-color: #cfc;
+}
+.test_fail {
+  background-color: #fcc;
+}
+
+#summaryframe {
+  margin-left: 10em;
+  margin-right: 10em;
+  border: 1px solid #ccc;
+}
+
+#summary {
+  padding:1em;
+}
+
+#summary>tr>td {
+  padding: 2px;
+}
+
+td.testset_id_short {
+  padding: 1em;
+}
+
+</style>
+</head>
+<body onload="init()">
+
+<p>basic tsetse tests for mjt task framework.</p>
+
+<p id="signin_note"></p>
+
+<div id="summaryframe">
+<center><a href="./tsetse.js">tsetse</a> test summary
+<table id="summary">
+<tr><th></th></tr>
+</table>
+</center>
+</div>
+
+<div>
+<b>details:</b>
+<div id="messages">
+</div>
+</div>
+
+
+</body></html>

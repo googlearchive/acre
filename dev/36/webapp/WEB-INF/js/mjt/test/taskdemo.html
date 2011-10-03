@@ -1,0 +1,167 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<link rel="stylesheet" href="../style.css" type="text/css"></link>
+<title>mjt task test</title>
+<script type="text/javascript" src="../mjt.js"></script>
+<script type="text/javascript" src="../rison/rison.js"></script>
+<style type="text/css">
+</style> 
+
+</head>
+
+<body onload="mjt.run();" style="display:none;">
+
+<div>
+this page gives you a look into the behavior of templates
+containing multiple tasks.  it keeps a history of template
+redraws.
+</div>
+
+<div mjt.def="task_state_history(tcall)">
+  <pre mjt.script="">
+    if (typeof tcall.state_history == 'undefined') {
+        tcall.state_history = [];
+        tcall.t0 = new Date();
+    }
+    var st = {};
+    var tasknames = [];
+    for (var tk in tcall.tasks) {
+        var tsk = tcall.tasks[tk];
+        st[tk] = tsk.state;
+        tasknames.push(tk);
+    }
+    st._timestamp = (new Date() - tcall.t0);
+    tcall.state_history.push(st);
+  </pre>
+
+  <div>
+   <h3>task state history</h3>
+   each line is a redraw of <code>$tcall.signature</code>
+   based on an event arrival:
+
+   <table cellpadding="5">
+    <tr>
+      <td style="text-align:center">time<br/>(msec)</td>
+      <td mjt.for="tk in tasknames" mjt.if="tk!='_timestamp'"
+          style="text-align:center">
+        $tk
+      </td>
+    </tr>
+    <tr mjt.for="sti,st in tcall.state_history">
+      <td style="text-align:right">$st._timestamp</td>
+      <td mjt.for="tk in tasknames">
+        ${st[tk]}
+      </td>
+    </tr>
+   </table>
+  </div>
+</div>
+
+
+<div mjt.def="showname(id)">
+  <h2>mjt.def= variables.</h2>
+
+<p>This demonstrates (or tests) some of the variables that
+are accessible inside template functions.</p>
+
+<p>This template is named <code>showname(id)</code> and contains one task named Q.
+</p>
+
+  <pre>
+    &lt;div mjt.def="showname(id)">
+      ...
+      &lt;pre mjt.task="Q">
+        mjt.freebase.MqlRead({ id: id, name: null })
+      &lt;/pre>
+      ...
+    &lt;/div>
+  </pre>
+
+
+  <pre mjt.def="myinnerdef(arg1, arg2)">
+    ...
+  </pre>
+
+  <pre mjt.task="Q">
+    mjt.freebase.MqlRead({ id: id, name: null })
+  </pre>
+
+  <dl>
+    <dt>this.subst_id</dt>
+    <dd>${this.subst_id}</dd>
+
+    <dt>this.signature</dt>
+    <dd>${this.signature}</dd>
+
+    <dt>this.targs</dt>
+    <dd>
+<ul>
+      <li mjt.for="t in this.targs">$t</li>
+    </ul></dd>
+
+    <!-- toplevel defs only ?
+    <dt>this.defs</dt>
+    <dd><ul>
+      <li mjt.for="t in this.defs">$t</li>
+    </ul></dd>
+    -->
+
+    <dt>this.tasks</dt>
+    <dd><ul>
+      <li mjt.for="tk,t in this.tasks">$tk</li>
+    </ul></dd>
+
+    <!--
+    <dt>this.stackframe</dt>
+    <dd>${this.stackframe}</dd>
+    -->
+
+    <dt>this instanceof showname</dt>
+    <dd>${this instanceof showname}</dd>
+
+    <dt>this instanceof mjt.TemplateCall</dt>
+    <dd>${this instanceof mjt.TemplateCall}</dd>
+
+  </dl>
+
+  ${task_state_history(this)}
+</div>
+
+
+<div mjt.def="twotasks(id)">
+  <h2>two tasks in one mjt.def</h2>
+
+  this templatecall contains two tasks.
+
+  <pre mjt.task="Q1">
+    mjt.freebase.MqlRead({ id: id, name: null })
+  </pre>
+
+  <pre mjt.task="Q2">
+    mjt.freebase.MqlRead({ id: id, key: [] })
+  </pre>
+
+  <dl>
+    <dt>this.signature</dt>
+    <dd>${this.signature}</dd>
+
+    <dt>id</dt>
+    <dd>$id</dd>
+
+    <dt>this.subst_id</dt>
+    <dd>${this.subst_id}</dd>
+  </dl>
+
+  ${task_state_history(this)}
+</div>
+
+${showname('/common/document')}
+${twotasks('/common/document')}
+
+</body>
+</html>
+
+
