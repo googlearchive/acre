@@ -170,7 +170,7 @@ def main(argv=None):
   parser.add_option('-t',  dest='test_type', help='tests to discover and run', default='testng')
   parser.add_option('-m',  dest='nomock', action="store_true", help='disable the default backend mockmode')
   (opts, args) = parser.parse_args(argv)
-  logger.setLevel(logging.INFO)
+  logger.setLevel(logging.WARNING)
   if opts.verbose:
     logger.setLevel(logging.DEBUG)
   if opts.test_type == 'testng':
