@@ -163,7 +163,7 @@ class AcreFetcher:
     pass
 
   # we've had intermittent 104 socket errors with appengine, no clue
-  @retry(socket.error, tries=2)
+  @retry(socket.error)
   # for test error that are identifiably due to flakey backends
   @retry(FlakeyBackendError)
   def fetchtest(self, pack, module, test_url, last_retry=False):
