@@ -1,12 +1,13 @@
+import cookielib
+import json
+import logging
 import os
+import re
+import socket
 import sys
 import time
-import logging
 import urllib
 import urllib2
-import cookielib
-import json as simplejson
-import socket
 try:
   # I'll complain later if you really need this
   from selenium import webdriver
@@ -14,7 +15,7 @@ try:
 except ImportError:
   pass
 # global socket timeout, seemed to help with a weird connection reset issue in appengine
-socket.setdefaulttimeout(300)
+socket.setdefaulttimeout(260)
 
 logger = logging.getLogger('tst')
 
@@ -23,6 +24,34 @@ logger = logging.getLogger('tst')
 TEST_TIMEOUT = 240
 devel_host = os.environ["ACRE_FREEBASE_SITE_ADDR"]
 devel_port = os.environ["ACRE_FREEBASE_SITE_ADDR_PORT"]
+
+flakey_pattern = '(Time limit exceeded|Timeout while fetching)'
+class FlakeyBackendError(Exception):
+  pass
+
+def retry(ExceptionToCheck, tries=5, delay=2, backoff=2):
+  def deco_retry(f):
+    def f_retry(*args, **kwargs):
+      mtries, mdelay = tries, delay
+      try_one_last_time = True
+      while mtries > 1:
+        try:
+          return f(*args, **kwargs)
+          try_one_last_time = False
+          break
+        except ExceptionToCheck, e:
+          logger.debug('%s, Retrying in %d seconds...' % (str(e), mdelay))
+          time.sleep(mdelay)
+          mtries -= 1
+          mdelay *= backoff
+      if try_one_last_time:
+        logger.debug('Retrying last time...')
+        # let's the function know so it can choose not to raise, if desired
+        kwargs['last_retry'] = True
+        return f(*args, **kwargs)
+      return
+    return f_retry # true decorator
+  return deco_retry
 
 class QunitFetcher:
 
@@ -55,6 +84,7 @@ class QunitFetcher:
 
   def cleanup(self):
     self.quit()
+ 
   def fetchtest(self, pack, module, test_url):
     driver = self.driver
     try:
@@ -132,19 +162,17 @@ class AcreFetcher:
   def cleanup(self):
     pass
 
-  def fetchtest(self, pack, module, test_url):
-    i = 0
-    max_retry = 5
-    while i <= max_retry:
-      i+=1
-      try:
-        data = simplejson.loads(self.fetch(test_url))
-        return parse_json(pack, module, data)
-      except socket.error:
-        print "WARN: error fetching (%s) %s" % (i, module)
-        if i > max_retry: raise
-        time.sleep(10)
-
+  # we've had intermittent 104 socket errors with appengine, no clue
+  @retry(socket.error, tries=2)
+  # for test error that are identifiably due to flakey backends
+  @retry(FlakeyBackendError)
+  def fetchtest(self, pack, module, test_url, last_retry=False):
+    data = self.fetch(test_url)
+    results = parse_json(pack, module, json.loads(data))
+    if results[1] > 0:
+      if re.search(flakey_pattern, data) and last_retry is False:
+        raise FlakeyBackendError
+    return results
 
   def fetch(self, url):
     request = urllib2.Request(url)
