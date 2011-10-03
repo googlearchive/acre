@@ -40,12 +40,12 @@ def retry(ExceptionToCheck, tries=5, delay=2, backoff=2):
           try_one_last_time = False
           break
         except ExceptionToCheck, e:
-          logger.info('%s, Retrying in %d seconds...' % (str(e), mdelay))
+          logger.warning('%s, Retrying in %d seconds...' % (str(e), mdelay))
           time.sleep(mdelay)
           mtries -= 1
           mdelay *= backoff
       if try_one_last_time:
-        logger.info('Last retry (%s)...' % tries)
+        logger.warning('Last retry (%s)...' % tries)
         # let's the function know so it can choose not to raise, if desired
         kwargs['last_retry'] = True
         return f(*args, **kwargs)
