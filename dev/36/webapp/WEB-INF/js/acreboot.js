@@ -2437,7 +2437,7 @@ Script.prototype.to_http_response = function(scope) {
  */
 var proto_require = function(req_path, req_opts) {
     req_opts = req_opts || {};
-    syslog.info(req_path, "proto_require.path");
+    syslog.debug(req_path, "proto_require.path");
 
     // splice additional metadata on to an app
     function set_app_metadata(app, md) {
