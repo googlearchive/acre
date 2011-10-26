@@ -69,6 +69,11 @@ if (typeof MailService != 'undefined') {
     delete MailService;
 }
 
+// obtain appidservice if present and remove from scope
+if (typeof AppIdService != 'undefined') {
+    var _appidservice = new AppIdService();
+    delete AppIdService();
+}
 
 //----------------------------- globals ---------------------------------------
 
@@ -1058,6 +1063,16 @@ cache_scope.acreboot = _topscope;
 cache_scope.request = _request;
 _hostenv.load_system_script('cache.js', cache_scope);
 cache_scope.augment(acre);
+
+//------------------------ appid --------------------------
+
+if (_appidservice) { // the _appidservice object won't be available in all environments so we need to check first
+    var appidservice_scope = {};
+    appidservice_scope.syslog = syslog;
+    appidservice_scope.appidservice = _appidservice;
+    _hostenv.load_system_script('appidservice.js', appidservice_scope);
+    appidservice_scope.augment(acre);
+}
 
 //------------------------ datastore --------------------------
 
