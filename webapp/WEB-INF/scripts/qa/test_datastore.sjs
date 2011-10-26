@@ -1,6 +1,6 @@
 acre.require('/test/lib').enable(this);
 
-// not all acre instances might have a store present so check to make sure
+// not all acre instances might have this API present so check to make sure
 if (acre.store) {
 
     // evaluate if two objects are the same except for their store metadata
