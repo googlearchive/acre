@@ -397,6 +397,23 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         } catch (ClassNotFoundException e1) {
             syslog(DEBUG, "hostenv.appid.init.failed", "AppIdService provider not found and will not be available");
         }
+
+        try {
+            @SuppressWarnings("unchecked")
+            Class<? extends Scriptable> jsAppEngineOAuthService = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSAppEngineOAuthService");
+
+            try {
+                ScriptableObject.defineClass(scope, jsAppEngineOAuthService, false, true);
+            } catch (IllegalAccessException e) {
+                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load AppEngineOAuthService object: " + e);
+            } catch (InstantiationException e) {
+                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load AppEngineOAuthService object: " + e);
+            } catch (InvocationTargetException e) {
+                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load AppEngineOAuthService object: " + e);
+            }
+        } catch (ClassNotFoundException e1) {
+            syslog(DEBUG, "hostenv.appengineoauth.init.failed", "AppEngineOAuthService provider not found and will not be available");
+        }
         
         return scope;
     }

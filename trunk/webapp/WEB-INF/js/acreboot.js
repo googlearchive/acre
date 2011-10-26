@@ -75,6 +75,12 @@ if (typeof AppIdService != 'undefined') {
     delete AppIdService();
 }
 
+// obtain appidservice if present and remove from scope
+if (typeof AppEngineOAuthService != 'undefined') {
+    var _appengine_oauthservice = new AppEngineOAuthService();
+    delete AppEngineOAuthService();
+}
+
 //----------------------------- globals ---------------------------------------
 
 // set these aside to avoid deprecation warnings when used later
@@ -1072,6 +1078,16 @@ if (_appidservice) { // the _appidservice object won't be available in all envir
     appidservice_scope.appidservice = _appidservice;
     _hostenv.load_system_script('appidservice.js', appidservice_scope);
     appidservice_scope.augment(acre);
+}
+
+//------------------------ appengine --------------------------
+
+if (_appengine_oauthservice) { // the _appengine_oauthservice object won't be available in all environments so we need to check first
+    var appengine_scope = {};
+    appengine_scope.syslog = syslog;
+    appengine_scope.oauthservice = _appengine_oauthservice;
+    _hostenv.load_system_script('appengine.js', appengine_scope);
+    appengine_scope.augment(acre);
 }
 
 //------------------------ datastore --------------------------
