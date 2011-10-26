@@ -1,6 +1,6 @@
 acre.require('/test/lib').enable(this);
 
-// not all acre instances might have a task queue present so check to make sure
+// not all acre instances might have this API present so check to make sure
 if (acre.tasks) {
 
     test('acre.tasks exists and has all the pieces', function() {
