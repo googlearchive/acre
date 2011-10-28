@@ -514,7 +514,9 @@ public class JSON {
             consumeWhitespace(in);
             if(in.read() != ':') throw new JSONException(in.generateError("key missing value"));
             if (want_java == false) {
-                if (((String)keyValue).matches("^(-)?\\d+$")) {
+                // NOTE(stefanom): we do this weird parsing because Rhino has issues with
+                // object properties that are string representations of numbers.. but not if the numbers start with zero
+                if (((String)keyValue).matches("^(-)?[1-9]\\d*$")) { // "^(-)?\\d+$"
                     int intKey = new Integer((String)keyValue).intValue();
                     ((Scriptable)jsObject).put(intKey, (Scriptable)jsObject,
                                                decodeReader(in, scope, want_java));
