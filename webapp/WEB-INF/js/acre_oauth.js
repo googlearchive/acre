@@ -20,13 +20,20 @@ var augment;
             };
         }
 
-        // augment the given object (normally the 'acre' object)
-        obj.oauth = {};
-        obj.oauth.providers = providers;
-        obj.oauth.get_authorization = get_authorization;
-        obj.oauth.remove_credentials = remove_credentials;
-        obj.oauth.has_credentials = has_credentials;
+        var oauth = {};
+        oauth.providers = providers;
+        oauth.get_authorization = get_authorization;
+        oauth.remove_credentials = remove_credentials;
+        oauth.has_credentials = has_credentials;
+        
+        if (typeof oauthservice != "undefined") {
+            oauth.get_oauth_user = get_oauth_user;
+            oauth.create_host_access_token = create_host_access_token;
+            oauth.get_host_identity = get_host_identity;
+        }
 
+        // augment the given object (normally the 'acre' object)
+        obj.oauth = oauth;
     };
 
     // ------------------------- public ------------------------------------------
@@ -348,6 +355,34 @@ var augment;
         return (typeof access_token !== "undefined");
     };
 
+    /*
+     * Get an object that describes the user that is using the current service
+     * relayed thru another application.
+     *
+     * WARNING: this method works if the acre app is acting as service provider
+     * and if it's running inside AppEngine.
+     */
+    var get_oauth_user = function(scope) {
+        return oauthservice.getCurrentUser(scope);
+    }
+
+    /*
+     * Obtain an access token that can be used to identify this app against
+     * external APIs (this is what's normally called 2-legged oauth)
+     *
+     * WARNING: this currently works only against Google APIs
+     */
+    var create_host_access_token = function(scope) {
+        if (!scope) throw "You must specify an API scope";
+        return oauthservice.getAccessToken(scope);
+    }
+
+    /*
+     * Obtain the identity used to in the "create_host_access_token" to identify this host
+     */
+    var get_host_identity = function() {
+        return oauthservice.getServiceAccountName();
+    }
 
     // -------------------------- needed by acreboot -----------------------------------
 

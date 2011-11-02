@@ -70,12 +70,6 @@ if (typeof MailService != 'undefined') {
 }
 
 // obtain appidservice if present and remove from scope
-if (typeof AppIdService != 'undefined') {
-    var _appidservice = new AppIdService();
-    delete AppIdService();
-}
-
-// obtain appidservice if present and remove from scope
 if (typeof AppEngineOAuthService != 'undefined') {
     var _appengine_oauthservice = new AppEngineOAuthService();
     delete AppEngineOAuthService();
@@ -1069,26 +1063,6 @@ cache_scope.acreboot = _topscope;
 cache_scope.request = _request;
 _hostenv.load_system_script('cache.js', cache_scope);
 cache_scope.augment(acre);
-
-//------------------------ appid --------------------------
-
-if (_appidservice) { // the _appidservice object won't be available in all environments so we need to check first
-    var appidservice_scope = {};
-    appidservice_scope.syslog = syslog;
-    appidservice_scope.appidservice = _appidservice;
-    _hostenv.load_system_script('appidservice.js', appidservice_scope);
-    appidservice_scope.augment(acre);
-}
-
-//------------------------ appengine --------------------------
-
-if (_appengine_oauthservice) { // the _appengine_oauthservice object won't be available in all environments so we need to check first
-    var appengine_scope = {};
-    appengine_scope.syslog = syslog;
-    appengine_scope.oauthservice = _appengine_oauthservice;
-    _hostenv.load_system_script('appengine.js', appengine_scope);
-    appengine_scope.augment(acre);
-}
 
 //------------------------ datastore --------------------------
 
@@ -2120,7 +2094,8 @@ oauth_scope.Hash = acre.hash;
 oauth_scope.syslog = syslog;
 oauth_scope.parseUri = u.parseUri;
 oauth_scope.system_urlfetch = _system_urlfetch;
-_hostenv.load_system_script('oauth.js',      oauth_scope);
+oauth_scope.oauthservice = _appengine_oauthservice;
+_hostenv.load_system_script('oauth.js', oauth_scope);
 var oauth_script = (_request.googleapis_freebase !== "") ? "googleapis_oauth.js" : "acre_oauth.js";
 _hostenv.load_system_script(oauth_script, oauth_scope);
 oauth_scope.augment(acre);

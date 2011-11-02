@@ -14,6 +14,9 @@
 
 package com.google.acre.appengine.script;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
@@ -22,6 +25,9 @@ import org.mozilla.javascript.Undefined;
 
 import com.google.acre.javascript.JSObject;
 import com.google.acre.script.exceptions.JSConvertableException;
+import com.google.appengine.api.appidentity.AppIdentityService;
+import com.google.appengine.api.appidentity.AppIdentityServiceFactory;
+import com.google.appengine.api.appidentity.AppIdentityService.GetAccessTokenResult;
 import com.google.appengine.api.oauth.OAuthService;
 import com.google.appengine.api.oauth.OAuthServiceFactory;
 import com.google.appengine.api.users.User;
@@ -36,6 +42,7 @@ public class JSAppEngineOAuthService extends JSObject {
     }
     
     private OAuthService _oauthService;
+    private AppIdentityService _appIdentityService;
     
     // ------------------------------------------------------------------------------------------
 
@@ -44,6 +51,7 @@ public class JSAppEngineOAuthService extends JSObject {
     public JSAppEngineOAuthService(Scriptable scope) {
         _scope = scope;
         _oauthService = OAuthServiceFactory.getOAuthService();
+        _appIdentityService = AppIdentityServiceFactory.getAppIdentityService();
     }
     
     public String getClassName() {
@@ -51,6 +59,30 @@ public class JSAppEngineOAuthService extends JSObject {
     }
     
     // ---------------------------------- public functions  ---------------------------------
+    
+    public String jsFunction_getServiceAccountName() {
+        try {
+            return _appIdentityService.getServiceAccountName();
+        } catch (java.lang.Exception e) {
+            throw new JSConvertableException("Failed to obtain service account name: " + e.getMessage()).newJSException(_scope);
+        }
+    }
+    
+    public Scriptable jsFunction_getAccessToken(String scope) {
+        try {
+            return jsonize(_appIdentityService.getAccessToken(iterable(scope)));
+        } catch (java.lang.Exception e) {
+            throw new JSConvertableException("Failed to obtain access token: " + e.getMessage()).newJSException(_scope);
+        }
+    }
+    
+    public Scriptable jsFunction_getAccessTokenUncached(String scope) {
+        try {
+            return jsonize(_appIdentityService.getAccessTokenUncached(iterable(scope)));
+        } catch (java.lang.Exception e) {
+            throw new JSConvertableException("Failed to obtain access token: " + e.getMessage()).newJSException(_scope);
+        }
+    }
     
     public Scriptable jsFunction_getCurrentUser(Object scope) {
         try {
@@ -64,12 +96,21 @@ public class JSAppEngineOAuthService extends JSObject {
         }
     }
     
-    public boolean jsFunction_isUserAdmin() {
-        try {
-            return _oauthService.isUserAdmin();
-        } catch (java.lang.Exception e) {
-            throw new JSConvertableException("Failed to know if the user is admin: " + e.getMessage()).newJSException(_scope);
-        }
+    // ---------------------------------- public functions  ---------------------------------
+    
+    private Iterable<String> iterable(String str) {
+        List<String> iterable = new ArrayList<String>();
+        iterable.add(str);
+        return iterable;
+    }
+    
+    private Scriptable jsonize(GetAccessTokenResult token) {
+        String accessToken = token.getAccessToken();
+        long expirationTime = token.getExpirationTime().getTime();
+        Scriptable o = Context.getCurrentContext().newObject(_scope);
+        o.put("access_token", o, accessToken);
+        o.put("expiration_time", o, expirationTime);
+        return o;
     }
     
     private Scriptable jsonize(User user) {
@@ -78,7 +119,6 @@ public class JSAppEngineOAuthService extends JSObject {
         o.put("nickname", o, user.getNickname());
         o.put("email", o, user.getEmail());
         o.put("auth_domain", o, user.getAuthDomain());
-        //o.put("federated_identity", o, user.getFederatedIdentity()); // don't need this for now
         return o;
     }
 }
