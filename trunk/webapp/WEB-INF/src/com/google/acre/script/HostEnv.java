@@ -383,23 +383,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         try {
             @SuppressWarnings("unchecked")
-            Class<? extends Scriptable> jsAppIdServiceClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSAppIdentityService");
-
-            try {
-                ScriptableObject.defineClass(scope, jsAppIdServiceClass, false, true);
-            } catch (IllegalAccessException e) {
-                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load AppIdService object: " + e);
-            } catch (InstantiationException e) {
-                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load AppIdService object: " + e);
-            } catch (InvocationTargetException e) {
-                syslog(ERROR, "hostenv.appcache.init.failed", "Failed to load AppIdService object: " + e);
-            }
-        } catch (ClassNotFoundException e1) {
-            syslog(DEBUG, "hostenv.appid.init.failed", "AppIdService provider not found and will not be available");
-        }
-
-        try {
-            @SuppressWarnings("unchecked")
             Class<? extends Scriptable> jsAppEngineOAuthService = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSAppEngineOAuthService");
 
             try {
