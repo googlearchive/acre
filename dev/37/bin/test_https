@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# Normalize the current directory
+cd `dirname $0`/..
+
+# Generate any derived settings
+. bin/fixup-settings
+
+# Make configuration files
+. bin/make-configs
+
+classpath="bin/src"
+for i in `ls server/lib/*.jar` ; do 
+    classpath=$classpath:$i
+done
+for i in `ls webapp/WEB-INF/lib/*.jar` ; do 
+    classpath=$classpath:$i
+done
+
+CLASS="TestHTTPS"
+
+$JAVA_HOME/bin/javac -cp $classpath -d bin/src bin/src/$CLASS.java || exit 1
+$JAVA -cp $classpath $CLASS $*
