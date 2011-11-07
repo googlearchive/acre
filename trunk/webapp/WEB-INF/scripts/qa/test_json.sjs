@@ -15,4 +15,9 @@ test('JSON roundtrippig map with numbers with leading zeros',function() {
   equal(a["01"],1);
 });
 
+test('JSON roundtrippig map with zero as key',function() {
+  var a = JSON.parse('{ "0" : 1 }');
+  equal(a["0"],1);
+});
+
 acre.test.report();
