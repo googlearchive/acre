@@ -516,7 +516,7 @@ public class JSON {
             if (want_java == false) {
                 // NOTE(stefanom): we do this weird parsing because Rhino has issues with
                 // object properties that are string representations of numbers.. but not if the numbers start with zero
-                if (((String)keyValue).matches("^(-)?[1-9]\\d*$")) { // "^(-)?\\d+$"
+                if (("0".equals(keyValue) || ((String)keyValue).matches("^(-)?[1-9]\\d*$"))) {
                     int intKey = new Integer((String)keyValue).intValue();
                     ((Scriptable)jsObject).put(intKey, (Scriptable)jsObject,
                                                decodeReader(in, scope, want_java));
