@@ -33,7 +33,7 @@ mjt.freebase.mqlkey_quote = function (s) {
 
     x = s.replace(MQLKEY_CHAR_MUSTQUOTE, convert);
 
-    if (x.charAt(0) == '-' || x.charAt(0) == '_') {
+    if (x.charAt(0) == '-') {
         x = convert(x,x.charAt(0)) + x.substr(1);
     }
 
