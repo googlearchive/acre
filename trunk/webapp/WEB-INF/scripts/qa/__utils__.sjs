@@ -12,7 +12,7 @@ function script_under_test() {
  * This is not bad because we're testing acre's urlfetching machinery, not the availability of these websites
  */
 function has_correct_domain(res,cookie_name,domain) {
-    ok(((res.status == 200 && res.cookies[cookie_name].domain.indexOf(domain) > -1) || response.status != 200),  domain);
+    ok(((res.status == 200 && res.cookies[cookie_name].domain.indexOf(domain) > -1) || res.status != 200),  domain);
 }
 
 /*
@@ -21,7 +21,7 @@ function has_correct_domain(res,cookie_name,domain) {
  * This is not bad because we're testing acre's urlfetching machinery, not the availability of these websites
  */
 function has_content(res,fragment) {
-    ok(((res.status == 200 && res.body.indexOf(fragment) > -1) || response.status != 200),  fragment);
+    ok(((res.status == 200 && res.body.indexOf(fragment) > -1) || res.status != 200),  fragment);
 }
 
 /*
