@@ -2,14 +2,14 @@
 
 <!--+
     |
-    |  Acre Build File    
-    |                
+    |  Acre Build File
+    |
     +-->
 
 <project name="acre" default="compile" basedir=".">
 
     <property environment="env"/>
-	
+
     <condition property="version" value="trunk">
         <not><isset property="version"/></not>
     </condition>
@@ -22,14 +22,14 @@
         <not><isset property="config.file"/></not>
     </condition>
 
-	<property name="name" value="acre" />
+    <property name="name" value="acre" />
     <property name="fullname" value="${name}-${version}-${revision}" />
 
     <property name="build.dir" value="_build" />
     <property name="dist.dir" value="_dist" />
     <property name="data.dir" value="_data" />
     <property name="logs.dir" value="_logs" />
-    
+
     <property name="config.dir" value="${basedir}/config" />
     <property name="tests.dir" value="${basedir}/tests" />
 
@@ -93,16 +93,16 @@
         </fileset>
         <pathelement location="${webapp.classes.dir}"/>
     </path>
-    
+
     <!-- ======================================================================== -->
-    
+
     <target name="compile-library" description="Compile the library">
         <mkdir dir="${library.classes.dir}" />
         <javac srcdir="${library.src.dir}" destdir="${library.classes.dir}" includeantruntime="false" debug="true">
             <classpath refid="server.class.path" />
         </javac>
     </target>
-    
+
     <target name="compile-server" description="Compile the server">
         <mkdir dir="${server.classes.dir}" />
         <javac srcdir="${server.src.dir}" destdir="${server.classes.dir}" includeantruntime="false" debug="true">
@@ -140,13 +140,13 @@
             <include name="slf4j-*.jar"/>
           </fileset>
         </copy>
-        
+
         <copy todir="${webapp.classes.dir}">
           <fileset dir="${library.classes.dir}">
             <include name="**/*.class"/>
           </fileset>
         </copy>
-        
+
         <copy todir="${webapp.lib.dir}" flatten="true">
           <fileset dir="${sdk.dir}/lib/user">
             <include name="appengine-api-*-sdk-*.jar" />
@@ -158,9 +158,9 @@
     </target>
 
     <!-- ======================================================================== -->
-    
+
     <target name="war" depends="compile-library, compile-webapp" description="Build a webapp">
-    
+
       <mkdir dir="${war.dir}" />
       <mkdir dir="${war.config.dir}" />
       <mkdir dir="${war.lib.dir}" />
@@ -221,7 +221,7 @@
         </fileset>
       </copy>
     </target>
-            
+
     <target name="appengine-war" depends="compile-appengine, war">
       <delete>
         <fileset dir="${war.lib.dir}" includes="**/mysql*"/>
@@ -243,13 +243,13 @@
     </target>
 
     <!-- ======================================================================== -->
-            
-	<target name="dist" description="Build the acre distribution" depends="compile">
+
+    <target name="dist" description="Build the acre distribution" depends="compile">
         <mkdir dir="${build.dir}" />
 
         <delete file="${build.dir}/${name}-${version}/${config.dir}/project.local.conf" />
 
-		<copy todir="${build.dir}/${name}-${version}">
+        <copy todir="${build.dir}/${name}-${version}">
             <fileset dir=".">
                 <include name="**/*"/>
                 <exclude name="${data.dir}/**"/>
@@ -264,24 +264,24 @@
         </copy>
 
         <delete dir="${build.dir}/${name}-${version}/${webapp.web-inf}/static" />
-        
-		<echo file="${build.dir}/${name}-${version}/${config.dir}/project.local.conf" append="true">ACRE_VERSION=${version}</echo>
-		
+
+        <echo file="${build.dir}/${name}-${version}/${config.dir}/project.local.conf" append="true">ACRE_VERSION=${version}</echo>
+
         <tar longfile="gnu" compression="gzip" destfile="${dist.dir}/${fullname}.tar.gz">
            <tarfileset dir="${build.dir}" filemode="755">
                <include name="${name}-${version}/${name}"/>
                <include name="${name}-${version}/bin/**"/>
-           </tarfileset>        
+           </tarfileset>
            <tarfileset dir="${build.dir}">
                <include name="${name}-${version}/**"/>
                <exclude name="${name}-${version}/${name}"/>
                <exclude name="${name}-${version}/bin/**"/>
-           </tarfileset>        
+           </tarfileset>
         </tar>
-	</target>
-    
+    </target>
+
     <!-- ======================================================================== -->
-    
+
     <target name="clean" description="Remove all compiled classes">
         <delete dir="${library.classes.dir}" />
         <delete dir="${server.classes.dir}" />
