@@ -228,6 +228,12 @@
         <fileset dir="${war.classes.dir}" includes="**/MySQL*"/>
       </delete>
 
+      <jar destfile="${war.lib.dir}/acre-appengine.jar">
+          <fileset dir="${war.classes.dir}"/>
+      </jar>
+
+      <delete dir="${war.classes.dir}"/>
+
       <copy todir="${war.config.dir}" overwrite="true">
         <fileset dir="${webapp.config.dir}">
           <include name="**/*.properties"/>
