@@ -18,7 +18,7 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
 
     freebase.googleapis_url = request.googleapis_host + request.googleapis_freebase;   // XXX - for transition only... will remove later
     GOOGLEAPIS_KEY = request.googleapis_key;
-  
+
     // XXX FreebaseError is getting built twice because this is called for
     // user and system
 
@@ -80,6 +80,12 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
                 api_opts[k] = options[k];
             }
         }
+
+        // Make sure all fetch requests have a key option
+        if (!api_opts.key) {
+            var api_key = get_app_googleapis_server_side_api_key();
+            if (api_key) api_opts.key = api_key;
+        }
         return [api_opts, fetch_opts];
     }
 
@@ -104,7 +110,8 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
         try { 
           return acre.keystore.get('googleapis_server_side')[0];
         } catch (e) {
-          throw new Error('Failed to get Freebase API Key from keystore for this app, try /acre/keystore_console on this host to see available keys.');
+           console.warn("Couldn't retrieve server-side key for freebase API calls");
+           return null;
         }
     }
 
@@ -113,8 +120,8 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
         try { 
           return acre.keystore.get('googleapis_client_side')[0];
         } catch (e) { 
-          syslog.warn({}, "googleapis_server_side_key.exposed", "You have not set up a googleapis_client_side key in your keystore - using your googleapis_server_side key instead - warning this might be exposed to users");
-          return get_app_googleapis_server_side_api_key();
+          console.warn("Couldn't retrieve client-side key for freebase image URLs");
+          return null;
         }
     }
 
@@ -127,20 +134,16 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
             opts.content = "";
         }
 
-        //we were either passed the key in the request (acre itself probably)
-        //or we get the per app key from the keystore
-        var api_key = opts.key || get_app_googleapis_server_side_api_key();
-
         if ((!opts.method || opts.method === "GET") && url.length + opts.content.length < URL_SIZE_LIMIT) {
             opts.method = "GET";
-            url += "?key=" + api_key + "&" + opts.content;
+            url += "?" + opts.content;
             delete opts.content;
         } else {
-          opts.method = "POST";
-          opts.bless = true;  // because this helper only used for safe requests (mqlread, search)
-          opts.content += "&key=" + api_key;
+            opts.method = "POST";
+            opts.headers = opts.headers || {};
+            opts.headers["content-type"] = "application/x-www-form-urlencoded";
+            opts.bless = true;  // because this helper only used for safe requests (mqlread, search)
         }
-        console.log(opts.method + url);
         return [url, opts];
     }
 
@@ -154,10 +157,6 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
 
         if (opts.method === "POST") {
             if (!opts.headers) opts.headers = {};
-            //if (typeof opts.headers['Content-Type'] == 'undefined') {
-                //opts.headers['Content-Type'] = "application/x-www-form-urlencoded";
-                //opts.headers['Content-Type'] = "application/json";
-            //}
             opts.headers['X-HTTP-Method-Override'] = 'GET';
             opts.headers['X-Requested-With'] = '1';
         }
@@ -242,8 +241,6 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
         return form_encode(params);
     }
 
-
-
     /**
      * Prepare the content payload of the POST request with multiple queries
      */
@@ -321,6 +318,10 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
      * Call the 'touch' api to reset the caches
      */
     freebase.touch = function(options) {
+        // TODO - this needs to be written as a 
+        // "get current dateline" API
+        return null;
+        
         var [api_opts, fetch_opts] = decant_options(options);
         //acre.response.vary_cookies['mwLastWriteTime'] = 1;
         var url = freebase.service_url + "/api/service/touch";
@@ -338,7 +339,7 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
          var base_url = freebase.googleapis_url + "/user/info";
          var url = acre.form.build_url(base_url, api_opts);
          fetch_opts.sign = true;
-         fetch_opts.check_results = "json";
+         fetch_opts.check_results = "freebase";
 
          function handle_get_user_info_success(res) {
              // this sets vary_cookies on the oauth cookies for us
@@ -348,7 +349,9 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
 
          function handle_get_user_info_error(e) {
              // remove the oauth cookies if the user credentials are no longer valid
-             acre.oauth.remove_credentials();
+             if (acre.oauth.has_credentials()) {
+                 acre.oauth.remove_credentials();
+             }
              return null;
          }
 
@@ -398,6 +401,8 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
         var [api_opts, fetch_opts] = decant_options(options);
         var url = freebase.googleapis_url + "/mqlwrite";
         fetch_opts.method = "POST";
+        fetch_opts.headers = fetch_opts.headers || {};
+        fetch_opts.headers["content-type"] = "application/x-www-form-urlencoded";
         fetch_opts.content = prepareContent(query,envelope,api_opts);
         if (typeof fetch_opts.sign === 'undefined') fetch_opts.sign = true;
         return fetch(url, fetch_opts);
@@ -454,7 +459,6 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
 
         mode = mode || "plain";
         var base_url = freebase.googleapis_url + "/text" + id;
-        api_opts.key = get_app_googleapis_server_side_api_key();
         switch (mode) {
           case "escaped": 
           case "unsafe":
@@ -607,7 +611,11 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
         qargs.errorid = errorid;
       }
 
-      var qstr = 'key=' + get_app_googleapis_client_side_api_key();
+      var qstr = "";
+      var key = get_app_googleapis_client_side_api_key();
+      if (key) {
+          qstr += "key=" + key;
+      }
       for (var a in qargs) {
         if (!qargs[a]) continue;
         if (qstr !== '') qstr += '&';
