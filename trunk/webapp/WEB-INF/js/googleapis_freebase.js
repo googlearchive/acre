@@ -832,7 +832,7 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
                             "handler_key" : null,
                             "optional" : true
                         },
-                        "/freebase/apps/acre_doc/handler" : null,
+                        "/freebase/apps/acre_doc/handler_key" : null,
                         "doc:type" : "/freebase/apps/acre_doc",
                         "guid" : null,
                         "id" : null,
