@@ -53,8 +53,8 @@ public class AcreResponse extends JSConvertable {
 
     public int _response_status;
     public List<List<Object>> _logs;
-    public HashMap<String, String> _response_headers;
-    public HashMap<String, AcreCookie> _response_cookies;
+    public HashMap<String, String> _response_headers = new HashMap<String, String>();
+    public HashMap<String, AcreCookie> _response_cookies = new HashMap<String, AcreCookie>();
 
     public AcreResponse(AcreHttpServletResponse response, int logtype, String log_level) {
         _response = response;
@@ -63,7 +63,6 @@ public class AcreResponse extends JSConvertable {
             _logtype = logtype;
             _log_level = log_level;
         }
-        reset();
         _costCollector = CostCollector.getInstance();
     }
     
