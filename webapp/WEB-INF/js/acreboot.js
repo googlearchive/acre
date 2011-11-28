@@ -471,18 +471,13 @@ if ('cache-control' in acre.request.headers && !('x-acre-cache-control' in acre.
 // Close to avoid leaking variables into the scope
 _request.mwlt_mode = false;
 (function () {
-    var _MWAUTH_HOSTS = _hostenv.ACRE_ALLOW_MWAUTH_HOST_SUFFIX.split(' ');
-     var ok = false;
-     var host = acre.request.server_name;
-     for (var a in _MWAUTH_HOSTS) {
-         var h = _MWAUTH_HOSTS[a];
-         if (host.match(h+'$')){ // && !(host.match('\.acrenet\.metaweb\.com$'))) {
-             ok = true;
-             break;
-         }
-     }
-     if (ok)
-         _request.mwlt_mode = true;
+    var host = acre.request.server_name;
+    u.each(_hostenv.ACRE_ALLOW_MWAUTH_HOST_SUFFIX.split(' '), function(i, h) {
+        if (h && host.match(h+'$')){
+            _request.mwlt_mode = true;
+            return false;
+        }
+    });
 
     for (var name in _request.cookies) {
         if (name == 'metaweb-user-info') {
@@ -500,7 +495,7 @@ _request.mwlt_mode = false;
                name : get_part('u')
             };
         } else if (name == 'metaweb-user') {
-            if (!ok) {
+            if (!_request.mwlt_mode) {
                 syslog.debug("deleting metaweb-user cookie");
                 delete _request.cookies['metaweb-user'];
             } else {
