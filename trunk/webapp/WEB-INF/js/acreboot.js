@@ -549,6 +549,7 @@ var AcreResponse_max_age = 0;
 var AcreResponse_vary_cookies = {};
 var AcreResponse_session = acre.request.cookies['ACRE_SESSION'];
 var AcreResponse_set_session_cookie = false;
+var AcreResponse_callbacks = [];
 
 var AcreResponse_validate_header = function(name, value) {
     // according to http://www.w3.org/Protocols/rfc2616/rfc2616-sec2.html#sec2
@@ -713,19 +714,19 @@ var AcreResponse_generate_date = function (d) {
     return dayname+', '+day+' '+monthname+' '+year+' '+hour+':'+ minutes +':'+ seconds+' UTC';
 };
 
-var AcreResponse_set_expires = function (that) {
+var AcreResponse_set_expires = function (res) {
     var expires = new Date(acre.request.start_time.getTime()+(AcreResponse_max_age*1000));
     var d = AcreResponse_generate_date(expires);
 
-    that.set_header_default('Expires', d);
+    res.set_header_default('Expires', d);
 };
 
-var AcreResponse_set_last_modified = function (that) {
+var AcreResponse_set_last_modified = function (res) {
     var d = AcreResponse_generate_date(acre.request.start_time);
-    that.set_header_default('Last-Modified', d);
+    res.set_header_default('Last-Modified', d);
 };
 
-var AcreResponse_set_cache_control = function (that) {
+var AcreResponse_set_cache_control = function (res) {
     var cc = '';
 
     if (AcreResponse_availability == true) {
@@ -741,12 +742,12 @@ var AcreResponse_set_cache_control = function (that) {
         cc += 'private, no-cache, max-age=0';
     }
 
-    that.set_header_default('cache-control', cc);
+    res.set_header_default('cache-control', cc);
 };
 
-var AcreResponse_set_vary = function (that) {
-    if (acre.response.headers.vary){
-        var vary = acre.response.headers.vary.split(", ");
+var AcreResponse_set_vary = function (res) {
+    if (res.headers.vary){
+        var vary = res.headers.vary.split(", ");
     } else {
         var vary = [];
     }
@@ -757,22 +758,22 @@ var AcreResponse_set_vary = function (that) {
     }
 
     if (vary.length > 0) {
-        acre.response.set_header('Vary', vary.join(', '));
+        res.set_header('Vary', vary.join(', '));
     }
 };
 
-var AcreResponse_set_metaweb_vary = function (that) {
+var AcreResponse_set_metaweb_vary = function (res) {
     var vary = [];
     for (var c in AcreResponse_vary_cookies.__count__) {
         vary.push('Cookie['+c+']');
     }
 
     if (vary.length > 0) {
-        acre.response.set_header_default('x-metaweb-vary', vary.join(', '));
+        res.set_header_default('x-metaweb-vary', vary.join(', '));
     }
 };
 
-var AcreResponse_get_session = function(that) {
+var AcreResponse_get_session = function(res) {
     if (typeof AcreResponse_session === 'undefined') {
         AcreResponse_session = get_random();
         AcreResponse_set_session_cookie = true;
@@ -780,11 +781,18 @@ var AcreResponse_get_session = function(that) {
     return AcreResponse_session;
 };
 
-var AcreResponse_set_session = function(that) {
-    if (AcreResponse_set_session_cookie) {
-        that.set_cookie("ACRE_SESSION", AcreResponse_session);
+var AcreResponse_set_session = function(res) {
+    if (_request.csrf_protection && AcreResponse_set_session_cookie) {
+        res.set_cookie("ACRE_SESSION", AcreResponse_session);
     }
 };
+
+AcreResponse_callbacks.push(AcreResponse_set_cache_control);
+AcreResponse_callbacks.push(AcreResponse_set_vary);
+AcreResponse_callbacks.push(AcreResponse_set_metaweb_vary);
+AcreResponse_callbacks.push(AcreResponse_set_last_modified);
+AcreResponse_callbacks.push(AcreResponse_set_expires);
+AcreResponse_callbacks.push(AcreResponse_set_session);
 
 acre.response = null;
 
@@ -1383,9 +1391,9 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
                     'update_hostname':res.cookies.mwLastWriteTime.domain,
                     'update_cookie':JSON.stringify(res.cookies.mwLastWriteTime)
                 }, 'urlfetch.received.mwlwt');
-            _cookie_jar[res.cookies.mwLastWriteTime.domain] =
+            _request.cookie_jar[res.cookies.mwLastWriteTime.domain] =
                 res.cookies.mwLastWriteTime.value;
-            _cookie_jar_best_match = res.cookies.mwLastWriteTime.domain;
+            _request.cookie_jar_best_match = res.cookies.mwLastWriteTime.domain;
         }
 
         if (res.status >= 400) {
@@ -1478,11 +1486,11 @@ function cookiejar_domain_match(url) {
     var url_parts = u.parseUri(url);
     var hostname = url_parts.host;
     
-    for (var a in _cookie_jar) {
+    for (var a in _request.cookie_jar) {
         if (a == hostname) {
-            return [a, _cookie_jar[a]];
+            return [a, _request.cookie_jar[a]];
         } else if (a.match(/^\./) && hostname.match(a+'$')) {
-            return [a, _cookie_jar[a]];
+            return [a, _request.cookie_jar[a]];
         }
     }
     return [null, null];
@@ -1492,21 +1500,45 @@ if (_request.mwlt_mode === false) {
     var cj_val = ('acre_cookiejar' in acre.request.cookies) ?
         acre.request.cookies.acre_cookiejar : '';
 
-    var _cookie_jar_best_match = null;
-    var _cookie_jar = parse_cookiejar(cj_val);
-    syslog.debug({'jar':JSON.stringify(_cookie_jar),
+    _request.cookie_jar_best_match = null;
+    _request.cookie_jar = parse_cookiejar(cj_val);
+    syslog.debug({'jar':JSON.stringify(_request.cookie_jar),
                   'raw_value':cj_val}, 'acreboot.cookie_jar');
+
+    AcreResponse_callbacks.push(function(res) {
+        if (_request.cookie_jar_best_match !== null) {
+            res.set_cookie('acre_cookiejar', serialize_cookiejar(_request.cookie_jar), {
+                path:'/',
+                max_age: 86400
+            });
+        }
+    });
 } else {
     var mwlt_val = ('mwLastWriteTime' in acre.request.cookies) ?
         acre.request.cookies.mwLastWriteTime : null;
 
-    var _cookie_jar_best_match = null;
-    var _cookie_jar = {};
+    _request.cookie_jar_best_match = null;
+    _request.cookie_jar = {};
     if (mwlt_val !== null) {
-        _cookie_jar[_hostenv.ACRE_MWLT_MODE_COOKIE_SCOPE] = mwlt_val;
+        _request.cookie_jar[_hostenv.ACRE_MWLT_MODE_COOKIE_SCOPE] = mwlt_val;
     }
-    syslog.debug({'jar':JSON.stringify(_cookie_jar),
+    syslog.debug({'jar':JSON.stringify(_request.cookie_jar),
                   'raw_value':mwlt_val}, 'acreboot.cookie_jar.mwlt_mode');
+
+    AcreResponse_callbacks.push(function(res) {
+      if (_request.cookie_jar_best_match !== null) {
+          if (_request.cookie_jar_best_match in _request.cookie_jar) {
+              res.set_cookie('mwLastWriteTime', _request.cookie_jar[_request.cookie_jar_best_match], {
+                  domain: _request.cookie_jar_best_match,
+                  path: '/',
+                  max_age: 86400
+              });
+          } else {
+              syslog.warn({'key':_request.cookie_jar_best_match, 'jar':_request.cookie_jar},
+                          'cookie_jar.key.missing');
+          }
+      }
+  });
 }
 
 
@@ -2882,39 +2914,9 @@ _hostenv.finish_response = function () {
     delete acre.response.headers['connection'];
     delete acre.response.headers['server'];
 
-    // for the special case of mwLastWriteTime, we propagate mwLastWriteTime from
-    // the acre cookie jar up to the browser
-    if (_cookie_jar_best_match !== null) {
-        if (_request.mwlt_mode === false) {
-            acre.response.set_cookie('acre_cookiejar', serialize_cookiejar(_cookie_jar),
-                                     {
-                                         path:'/',
-                                         max_age: 86400
-                                     });
-        } else {
-            if (_cookie_jar_best_match in _cookie_jar) {
-                acre.response.set_cookie('mwLastWriteTime', _cookie_jar[_cookie_jar_best_match],
-                                         {
-                                             'domain':_cookie_jar_best_match,
-                                             'path':'/',
-                                             max_age: 86400
-                                         });
-
-            } else {
-                syslog.warn({'key':_cookie_jar_best_match, 'jar':_cookie_jar},
-                            'cookie_jar.key.missing');
-            }
-        }
-    }
-    
-    AcreResponse_set_cache_control(acre.response);
-    AcreResponse_set_vary(acre.response);
-    AcreResponse_set_metaweb_vary(acre.response);
-    AcreResponse_set_last_modified(acre.response);
-    AcreResponse_set_expires(acre.response);
-    if (_request.csrf_protection) {
-        AcreResponse_set_session(acre.response);
-    }
+    AcreResponse_callbacks.forEach(function(callback) {
+      callback.call(null, acre.response);
+    });
 
     _hostenv.start_response(parseInt(acre.response.status, 10),
                             acre.response.headers, acre.response.cookies);
