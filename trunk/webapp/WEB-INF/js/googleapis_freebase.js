@@ -81,11 +81,18 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
             }
         }
 
+        // Add dateline to request if we have one in the cookie jar
+        var dateline = request.cookie_jar[request.googleapis_freebase];
+        if (dateline) {
+            api_opts.dateline = dateline;
+        }
+
         // Make sure all fetch requests have a key option
         if (!api_opts.key) {
             var api_key = get_app_googleapis_server_side_api_key();
             if (api_key) api_opts.key = api_key;
         }
+
         return [api_opts, fetch_opts];
     }
 
@@ -178,7 +185,7 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
             // run synchronously
             try {
               var result = urlfetch(url, opts);
-              return check_results(result, opts.check_results);              
+              return check_results(result, opts.check_results);
             } catch(e if e.response) {
               return check_results(e.response, opts.check_results);
             }
@@ -205,6 +212,14 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
                 response = result;
                 result = JSON.parse(result.body);
 
+                // Add dateline to cookie jar if there was one in the response
+                if (result.dateline) {
+                    // better service identifier than host for googleapis
+                    var domain = request.googleapis_freebase;
+                    request.cookie_jar_best_match = domain;
+                    request.cookie_jar[domain] = result.dateline;
+                }
+
                 if (result.error) {
                     var error = result.error;
                     var exception = new freebase.Error(error.message);
@@ -228,6 +243,10 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
         acre.freebase.extend_query(params, envelope);
         params.html_escape = "false";
         params.query = query;
+        // work-around for backward-incompatibility in new API
+        if (params.cursor === true || params.cursor === null) {
+          params.cursor = "";
+        }
         return form_encode(params);
     }
 
@@ -265,14 +284,6 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
         var [api_opts, fetch_opts] = decant_options(o);
         var url = freebase.googleapis_url + "/mqlread";
         fetch_opts.content = composer(q,e,api_opts);
-
-        //TODO: move apiVersion to config
-        //TODO: move this functionality to prepareContent
-        //fetch_opts.rpc_method_name = "mql.read";
-        //rpc_opts = { 'method' : 'mql.read', 'apiVersion' : 'v1-sandbox', 'params' : {'query' : JSON.stringify(q)  } };
-        //acre.freebase.extend_query(rpc_opts['params'], e);
-        //acre.freebase.extend_query(rpc_opts['params'], o);
-
         return fetch.apply(this, compose_get_or_post(url, fetch_opts));
     }
 
