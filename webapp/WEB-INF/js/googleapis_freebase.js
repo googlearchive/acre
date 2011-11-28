@@ -360,7 +360,7 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
 
          function handle_get_user_info_error(e) {
              // remove the oauth cookies if the user credentials are no longer valid
-             if (acre.oauth.has_credentials()) {
+             if ((e.code >= 400) && (e.code <= 499) && acre.oauth.has_credentials()) {
                  acre.oauth.remove_credentials();
              }
              return null;
