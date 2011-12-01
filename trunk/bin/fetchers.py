@@ -162,6 +162,7 @@ class AcreFetcher:
   def cleanup(self):
     pass
 
+  @retry(urllib2.URLError)
   # we've had intermittent 104 socket errors with appengine, no clue
   @retry(socket.error)
   # for test error that are identifiably due to flakey backends
