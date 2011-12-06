@@ -30,6 +30,20 @@ var _file = File;
 var _json = new JSON();
 var _cache = new Cache();
 
+// keep track of things we're willing 
+// to pass to acreboot libraries.
+// null values will be filled in when those 
+// objects are initialized.
+var _env = {
+    _u: null,
+    _request: _request,
+    _response_callbacks: null,
+    _system_urlfetch: null,
+    _system_async_urlfetch: null,
+    _file: _file,
+    _cache: _cache
+};
+
 // XXX there should be a java function to sanitize the global scope
 // with a whitelist instead of this blacklist.  most of the
 // global properties aren't enumerable so it's impossible to
@@ -102,9 +116,9 @@ var _DEFAULT_APP = "main." + _DELIMITER_PATH;
  * Plus a few more:
  *   u.escape_re, u.parseUri
  */
-var util_scope = {};
+var util_scope = make_scope(_env);
 _hostenv.load_system_script("util.js", util_scope);
-var u = util_scope.exports;
+var u = _env._u = util_scope.exports;
 
 // helpers for common activities in acreboot
 function make_scope(start, style) {
@@ -544,7 +558,7 @@ var AcreResponse_max_age = 0;
 var AcreResponse_vary_cookies = {};
 var AcreResponse_session = acre.request.cookies['ACRE_SESSION'];
 var AcreResponse_set_session_cookie = false;
-var AcreResponse_callbacks = [];
+var AcreResponse_callbacks = _env._response_callbacks = [];
 
 var AcreResponse_validate_header = function(name, value) {
     // according to http://www.w3.org/Protocols/rfc2616/rfc2616-sec2.html#sec2
@@ -1047,7 +1061,7 @@ acre.keystore.remove = function (name) {
     }
 };
 
-if (_request.trusted) { 
+if (_request.trusted) {
     acre.keystore.put = function (name, token, secret) {
         if (_request.app_project !== null) {
             return _ks.put_key(name, _request.app_project, token, secret);
@@ -1059,7 +1073,7 @@ if (_request.trusted) {
 
 //------------------------ cache --------------------------
 
-var cache_scope = {};
+var cache_scope = make_scope(_env);
 cache_scope.syslog = syslog;
 cache_scope.cache = _cache;
 cache_scope.acreboot = _topscope;
@@ -1070,7 +1084,7 @@ cache_scope.augment(acre);
 //------------------------ datastore --------------------------
 
 if (_request.trusted && _datastore) { // the _datastore object won't be available in all environments so we need to check first
-    var store_scope = {};
+    var store_scope = make_scope(_env);
     store_scope.syslog = syslog;
     store_scope.store = _datastore;
     _hostenv.load_system_script('datastore.js', store_scope);
@@ -1080,7 +1094,7 @@ if (_request.trusted && _datastore) { // the _datastore object won't be availabl
 //------------------------ taskqueue --------------------------
 
 if (_request.trusted && _taskqueue) { // the _taskqueue object won't be available in all environments so we need to check first
-    var queue_scope = {};
+    var queue_scope = make_scope(_env);
     queue_scope.syslog = syslog;
     queue_scope.queue = _taskqueue;
     _hostenv.load_system_script('taskqueue.js', queue_scope);
@@ -1090,7 +1104,7 @@ if (_request.trusted && _taskqueue) { // the _taskqueue object won't be availabl
 //------------------------ mailer --------------------------
 
 if (_request.trusted && _mailer) { // the _mailer object won't be available in all environments so we need to check first
-    var mailer_scope = {};
+    var mailer_scope = make_scope(_env);
     mailer_scope.syslog = syslog;
     mailer_scope.mailer = _mailer;
     _hostenv.load_system_script('mailservice.js', mailer_scope);
@@ -1126,10 +1140,10 @@ if (_request.trusted && _mailer) { // the _mailer object won't be available in a
  *
  */
 
-var _system_urlfetch = function(url,method,headers,content,sign) {
+var _system_urlfetch = _env._system_urlfetch = function(url,method,headers,content,sign) {
     return _urlfetch(true,url,method,headers,content,sign);
 };
-var _system_async_urlfetch = function(url,method,headers,content,sign) {
+var _system_async_urlfetch = _env._system_async_urlfetch = function(url,method,headers,content,sign) {
     return _urlfetch(true,url,method,headers,content,sign, _hostenv.urlOpenAsync);
 };
 
@@ -1193,7 +1207,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     if (typeof url != 'string' || !url.length) {
         throw new acre.errors.URLError("'url' argument (1st) to acre.urlfetch() must be a string");
     }
-    
+
     var method;
     var response_encoding = null;
     var callback;
@@ -1201,7 +1215,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     var timeout;
     var bless;
     var no_redirect;
-    
+
     if (options_or_method && typeof options_or_method === 'object') {
         if (typeof headers !== 'undefined' || typeof content !== 'undefined' || typeof sign !== 'undefined') {
             throw new acre.errors.URLError("'options' argument (2nd) to acre.urlfetch() must not be followed by extra arguments");
@@ -1329,19 +1343,19 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
                 var signed = {};
             }
         } else {
+            // if not, use the regular oauth signature
             try {
-                // if not, use the regular oauth signature
-                if (typeof sign === 'boolean') {
-                    // NOTE: the oauth credentials will be inferred from the URL and extracted
-                    // automatically from the keystore
+                if (sign === true) {
+                    // NOTE: the oauth credentials will be inferred from the URL and 
+                    // extracted automatically from the keystore and cookies
                     var signed = oauth_sign(url, method, headers, content);
+                } else if (sign === false) {
+                    // XXX - hack for backward-compatibility of writeuser
+                    var signed = oauth_sign(url, method, headers, content, null, "keystore");
                 } else {
+                    // sign arugment was the consumer key & secret
                     var signed = oauth_sign(url, method, headers, content, sign);
                 }
-            } catch (e if _hostenv.write_user != null) {
-                // If there's a write user, we can still proceed
-                syslog.debug("Using writeuser instead of signing", "sign.writeuser");
-                var signed = {};
             } catch (e if typeof errback !== 'undefined') {
                 errback(e);
                 return null;
@@ -1912,7 +1926,7 @@ var custom_methods = [
 ];
 
 for (var i=0; i < custom_methods.length; i++) {
-    var method_scope = {};
+    var method_scope = make_scope(_env);
     _hostenv.load_system_script(custom_methods[i], method_scope);
     method_scope.appfetcher(register_appfetch_method, make_appfetch_error, _system_urlfetch);
 }
@@ -1920,7 +1934,7 @@ for (var i=0; i < custom_methods.length; i++) {
 
 //-------------------------------- console - part 1 --------------------------------------
 
-var console_scope = {};
+var console_scope = make_scope(_env);
 console_scope.userlog = function(level,arr) { return _hostenv.userlog(level,arr); };
 _hostenv.load_system_script('console.js', console_scope);
 console_scope.augment_topscope(_topscope);
@@ -1929,7 +1943,7 @@ console_scope.augment_acre(acre);
 
 // ------------------------------ deprecation ------------------------------------------
 
-var deprecate_scope = {};
+var deprecate_scope = make_scope(_env);
 deprecate_scope.syslog = syslog;
 _hostenv.load_system_script('acre_deprecate.js', deprecate_scope);
 var deprecate = deprecate_scope.deprecate;
@@ -2077,7 +2091,7 @@ for (var k in _mjt.freebase) {
     }
 }
 
-var freebase_scope = {};
+var freebase_scope = make_scope(_env);
 freebase_scope.syslog = syslog;
 var fb_script = (_request.googleapis_freebase !== "") ? "googleapis_freebase.js" : "freebase.js";
 _hostenv.load_system_script(fb_script, freebase_scope);
@@ -2116,7 +2130,7 @@ delete freebase_scope;
 
 //--------------------------------- oauth -----------------------------------
 
-var oauth_scope = {};
+var oauth_scope = make_scope(_env);
 oauth_scope.Hash = acre.hash;
 oauth_scope.syslog = syslog;
 oauth_scope.parseUri = u.parseUri;
@@ -2254,6 +2268,13 @@ Script.prototype.set_scope = function(scope) {
     if (scope == _request_scope && script.name.indexOf("not_found.") !== 0) {
         scope.acre.request.script = script.script_data;
 
+        // app_project is primarily used for accessing the keystore and the cache
+        // don't set it if it's already been set (by /acre/ OTS rule)
+        if (_request.app_project === null) {
+            _request.app_project = script.app.project;
+        }
+        syslog("Using keystore: " + _request.app_project, "request.keystore");
+
         if (script.app.csrf_protection) {
             _request.csrf_protection = script.app.csrf_protection;
         }
@@ -2262,17 +2283,16 @@ Script.prototype.set_scope = function(scope) {
             _hostenv.error_handler_path = script.normalize_path(script.app.error_page);
         }
 
-        // XXX - freebase appfetch method-specific hacks
-        if (script.app.freebase && script.app.freebase.write_user) {
-            _hostenv.write_user = script.app.freebase.write_user;
+        if (script.app.oauth_providers) {
+            u.extend(true, acre.oauth.providers, script.app.oauth_providers);
         }
 
+        // XXX - freebase appfetch method-specific hacks
         if (script.app.freebase &&
             script.app.freebase.service_url &&
             /^http(s?):\/\//.test(script.app.freebase.service_url)) {
-            acre.freebase.set_service_url(script.app.freebase.service_url);    
+            acre.freebase.set_service_url(script.app.freebase.service_url);
         }
-
 
         // Setup deprecated values and decorate with warning messages
         set_environ();
@@ -2780,6 +2800,7 @@ var handle_request = function (req_path, req_body, skip_routes) {
           if (source_app !== null) {
               source_path = compose_req_path(h, p);
               _request.app_project = source_app.project;
+              u.extend(true, acre.oauth.providers, source_app.oauth_providers);
           }
         } catch(e) {
           syslog.warn("Unresolvable host used with a /acre/ URL.", "handle_request.host");
@@ -2831,23 +2852,15 @@ var handle_request = function (req_path, req_body, skip_routes) {
         acre.write('No valid acre script found at ' + path + ' (or defaults)\n');
         acre.exit();
     }
-    
+
     // This information is needed by the error page
     _hostenv.script_name = script.name;
     _hostenv.script_path = script.path;
     _hostenv.script_host_path = compose_req_path(script.app.host);
     if ('error' in acre && 'script_path' in acre.error) {
-        source_path = acre.error.script_path;       
+        source_path = acre.error.script_path;
     }
 
-    // before the script is actually run, we want to set the app guid aside
-    // if we didn't already do so
-    // app_guid is primarily used for accessing the keystore and the cache
-    if (_request.app_project === null) {
-        _request.app_project = script.app.project;
-    }
-    syslog("Using keystore: " + _request.app_project, "request.keystore");
-    
     // View Source link
     acre.response.set_header('x-acre-source-url',
                             freebase_site_host + 
