@@ -9,6 +9,7 @@ test('acre.oauth exists and has all the default pieces', function() {
 });
 
 // TODO(SM) port the real oauth tests from python to here
+// TODO(JD) need to figure out how to do the interactive user tests
 
 if (acre.oauth && acre.oauth.get_oauth_user) {
     test('acre.oauth exists and has the optional pieces', function() {
