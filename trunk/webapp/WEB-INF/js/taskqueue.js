@@ -22,7 +22,7 @@ var augment;
             if (typeof name == "undefined" || name == null) {
                 name = "default";
             }
-            queue.add(obj,name);
+            _taskqueue.add(obj,name);
         }
     }
 

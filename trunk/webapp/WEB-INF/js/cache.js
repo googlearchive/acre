@@ -17,7 +17,7 @@ var augment;
         
     function get(k) {
         if (typeof k == "undefined") throw Error("Can't retrieve with an undefined key");
-        var value = cache.get(key(k));
+        var value = _cache.get(key(k));
         return JSON.parse(value);
     }
     
@@ -25,25 +25,25 @@ var augment;
         if (typeof k == "undefined") throw Error("Can't save with an undefined key");
         if (typeof obj == "undefined") throw Error("Can't save an undefined object in cache");
         if (typeof expires != "undefined" && typeof expires != "number") throw Error("Expiration must be a number");
-        cache.put(key(k),JSON.stringify(obj),expires);
+        _cache.put(key(k),JSON.stringify(obj),expires);
     }
 
     function increment(k,delta,init_value) {
         if (typeof k == "undefined") throw Error("Can't increment an undefined key");
         if (typeof delta != "number") throw Error("Can't increment by a delta that is not numeric");
         if ((typeof init_value != "undefined") && (typeof init_value != "number")) throw Error("Can't have an init value that is not a number");
-        cache.increment(key(k),delta,init_value);
+        _cache.increment(key(k),delta,init_value);
     }
     
     function remove(k) {
         if (typeof k == "undefined") throw Error("Can't delete with an undefined key");
-        cache.remove(key(k));
+        _cache.remove(key(k));
     }
     
     // -----------------------------------------------------
     
     function key(k) {
-        var appid = request.app_project;
+        var appid = _request.app_project;
         if (!appid) throw Error("appid can't be null or undefined");
         return appid + ":" + k;
     }

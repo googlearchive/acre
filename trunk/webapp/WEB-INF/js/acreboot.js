@@ -30,20 +30,6 @@ var _file = File;
 var _json = new JSON();
 var _cache = new Cache();
 
-// keep track of things we're willing 
-// to pass to acreboot libraries.
-// null values will be filled in when those 
-// objects are initialized.
-var _env = {
-    _u: null,
-    _request: _request,
-    _response_callbacks: null,
-    _system_urlfetch: null,
-    _system_async_urlfetch: null,
-    _file: _file,
-    _cache: _cache
-};
-
 // XXX there should be a java function to sanitize the global scope
 // with a whitelist instead of this blacklist.  most of the
 // global properties aren't enumerable so it's impossible to
@@ -116,9 +102,9 @@ var _DEFAULT_APP = "main." + _DELIMITER_PATH;
  * Plus a few more:
  *   u.escape_re, u.parseUri
  */
-var util_scope = make_scope(_env);
+var util_scope = {};
 _hostenv.load_system_script("util.js", util_scope);
-var u = _env._u = util_scope.exports;
+var u = util_scope.exports;
 
 // helpers for common activities in acreboot
 function make_scope(start, style) {
@@ -466,9 +452,16 @@ acre.request = {
     body_params: {},
     
     start_time : _request.request_start_time,
-    cookies : {},
-    skip_cache : false
+    skip_cache : false,
+    cookies : (function() {
+        var c = {};
+        for (var name in _request.cookies) {
+            c[name] = _request.cookies[name].value;
+        }
+        return c;
+    })()
 };
+
 
 // if we get 'cache-control: no-cache' in the request headers (i.e., shift-reload),
 // then set a flag that appfetchers can key off of.
@@ -480,47 +473,6 @@ if ('cache-control' in acre.request.headers && !('x-acre-cache-control' in acre.
         acre.request.skip_cache = true;
     }
 }
-
-// Deal with old metaweb cookie weirdness (TODO - destroy this asap)
-// Close to avoid leaking variables into the scope
-_request.mwlt_mode = false;
-(function () {
-    var host = acre.request.server_name;
-    u.each(_hostenv.ACRE_ALLOW_MWAUTH_HOST_SUFFIX.split(' '), function(i, h) {
-        if (h && host.match(h+'$')){
-            _request.mwlt_mode = true;
-            return false;
-        }
-    });
-
-    for (var name in _request.cookies) {
-        if (name == 'metaweb-user-info') {
-            var user_cookie = _request.cookies['metaweb-user-info'].value;
-
-            function get_part(key) {
-                var cookie_part = new RegExp('\\|('+key+')_(.*?)\\|');
-                var match = cookie_part.exec(user_cookie);
-                return decodeURIComponent(match[2]);
-            }
-
-            acre.request.user_info = {
-               guid : get_part('g'),
-               id : get_part('p'),
-               name : get_part('u')
-            };
-        } else if (name == 'metaweb-user') {
-            if (!_request.mwlt_mode) {
-                syslog.debug("deleting metaweb-user cookie");
-                delete _request.cookies['metaweb-user'];
-            } else {
-                acre.request.cookies[name] = _request.cookies[name].value;
-            }
-        } else {
-            acre.request.cookies[name] = _request.cookies[name].value;
-        }
-    }
-
-})();
 
 /**
  * reset acre.request.query_string & body
@@ -558,7 +510,7 @@ var AcreResponse_max_age = 0;
 var AcreResponse_vary_cookies = {};
 var AcreResponse_session = acre.request.cookies['ACRE_SESSION'];
 var AcreResponse_set_session_cookie = false;
-var AcreResponse_callbacks = _env._response_callbacks = [];
+var AcreResponse_callbacks = [];
 
 var AcreResponse_validate_header = function(name, value) {
     // according to http://www.w3.org/Protocols/rfc2616/rfc2616-sec2.html#sec2
@@ -771,17 +723,6 @@ var AcreResponse_set_vary = function (res) {
     }
 };
 
-var AcreResponse_set_metaweb_vary = function (res) {
-    var vary = [];
-    for (var c in AcreResponse_vary_cookies.__count__) {
-        vary.push('Cookie['+c+']');
-    }
-
-    if (vary.length > 0) {
-        res.set_header_default('x-metaweb-vary', vary.join(', '));
-    }
-};
-
 var AcreResponse_get_session = function(res) {
     if (typeof AcreResponse_session === 'undefined') {
         AcreResponse_session = get_random();
@@ -798,7 +739,6 @@ var AcreResponse_set_session = function(res) {
 
 AcreResponse_callbacks.push(AcreResponse_set_cache_control);
 AcreResponse_callbacks.push(AcreResponse_set_vary);
-AcreResponse_callbacks.push(AcreResponse_set_metaweb_vary);
 AcreResponse_callbacks.push(AcreResponse_set_last_modified);
 AcreResponse_callbacks.push(AcreResponse_set_expires);
 AcreResponse_callbacks.push(AcreResponse_set_session);
@@ -1039,77 +979,46 @@ if (typeof acre.keystore == 'undefined') {
     acre.keystore = {};
 }
 
-acre.keystore.get = function (name) {
-    if (_request.app_project !== null) {
-        return _ks.get_key(name, _request.app_project);
-    } else {
-        return null;
-    }
-};
-
-acre.keystore.keys = function () {
-    if (_request.app_project !== null) {
-        return _ks.get_keys(_request.app_project);
-    } else {
-        return null;
-    }
-};
-
-acre.keystore.remove = function (name) {
-    if (_request.app_project !== null) {
-        _ks.delete_key(name, _request.app_project);
-    }
-};
-
-if (_request.trusted) {
-    acre.keystore.put = function (name, token, secret) {
+var _keystore = {
+    
+    get: function (name) {
+        if (_request.app_project !== null) {
+            return _ks.get_key(name, _request.app_project);
+        } else {
+            return null;
+        }
+    },
+    
+    put: function (name, token, secret) {
         if (_request.app_project !== null) {
             return _ks.put_key(name, _request.app_project, token, secret);
         } else {
             return null;
         }
-    };
+    },
+    
+    keys: function () {
+        if (_request.app_project !== null) {
+            return _ks.get_keys(_request.app_project);
+        } else {
+            return null;
+        }
+    },
+    
+    remove: function (name) {
+        if (_request.app_project !== null) {
+            _ks.delete_key(name, _request.app_project);
+        }
+    }
+};
+
+acre.keystore.get     = _keystore.get;
+acre.keystore.keys    = _keystore.keys;
+acre.keystore.remove  = _keystore.remove;
+if (_request.trusted) {
+    acre.keystore.put = _keystore.put;
 }
 
-//------------------------ cache --------------------------
-
-var cache_scope = make_scope(_env);
-cache_scope.syslog = syslog;
-cache_scope.cache = _cache;
-cache_scope.acreboot = _topscope;
-cache_scope.request = _request;
-_hostenv.load_system_script('cache.js', cache_scope);
-cache_scope.augment(acre);
-
-//------------------------ datastore --------------------------
-
-if (_request.trusted && _datastore) { // the _datastore object won't be available in all environments so we need to check first
-    var store_scope = make_scope(_env);
-    store_scope.syslog = syslog;
-    store_scope.store = _datastore;
-    _hostenv.load_system_script('datastore.js', store_scope);
-    store_scope.augment(acre);
-}
-
-//------------------------ taskqueue --------------------------
-
-if (_request.trusted && _taskqueue) { // the _taskqueue object won't be available in all environments so we need to check first
-    var queue_scope = make_scope(_env);
-    queue_scope.syslog = syslog;
-    queue_scope.queue = _taskqueue;
-    _hostenv.load_system_script('taskqueue.js', queue_scope);
-    queue_scope.augment(acre);
-}
-
-//------------------------ mailer --------------------------
-
-if (_request.trusted && _mailer) { // the _mailer object won't be available in all environments so we need to check first
-    var mailer_scope = make_scope(_env);
-    mailer_scope.syslog = syslog;
-    mailer_scope.mailer = _mailer;
-    _hostenv.load_system_script('mailservice.js', mailer_scope);
-    mailer_scope.augment(acre);
-}
 
 // ------------------------------ urlfetch -----------------------------------
 
@@ -1140,10 +1049,10 @@ if (_request.trusted && _mailer) { // the _mailer object won't be available in a
  *
  */
 
-var _system_urlfetch = _env._system_urlfetch = function(url,method,headers,content,sign) {
+var _system_urlfetch = function(url,method,headers,content,sign) {
     return _urlfetch(true,url,method,headers,content,sign);
 };
-var _system_async_urlfetch = _env._system_async_urlfetch = function(url,method,headers,content,sign) {
+var _system_async_urlfetch = function(url,method,headers,content,sign) {
     return _urlfetch(true,url,method,headers,content,sign, _hostenv.urlOpenAsync);
 };
 
@@ -1300,76 +1209,20 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     var cookiestr = ("cookie" in headers) ? headers.cookie : '';
     var cookies = ("cookie" in headers) ? [headers.cookie] : [];
 
-    // sign the request, either with metaweb cookies (if available in the request) or with oauth
+    // If necessary, sign the request with OAuth
     // this may add an Authorization: header
     if (sign) {
-        if ("metaweb-user" in acre.request.cookies) {
-            // if the request headers contained the 'metaweb-user' cookie
-            // pass it along and use the information contained in there to
-            // simulate a 2-legged oauth
-
-            var user_cookie_parts = acre.request.cookies['metaweb-user'].split('|');
-            
-            // if the metaweb-user cookie is not already set, copy it over.
-            // NOTE: we have to re-urlencode the underscore in the usernames or they won't be able to log in!
-            if (cookiestr.indexOf("metaweb-user=") < 0) {
-                var encoded_parts = [];
-                for each (var part in user_cookie_parts) {
-                    if (part.charAt(1) == '_') {
-                        encoded_parts.push(part.charAt(0) + "_" + part.substring(2).replace('_',"%5F"));
-                    } else {
-                        encoded_parts.push(part);
-                    }
-                }
-                cookies.push("metaweb-user=" + encoded_parts.join('|'));
-            }
-
-            var token = user_cookie_parts[4];
-            var consumer = {
-                consumerKey    : user_cookie_parts[3].split('#')[1],
-                consumerSecret : token
-            };
-            
-            // XXX sometimes this fails, in that case we want to ignore it since
-            // we have an auth method (the metaweb-user cookie);
-            try {
-                var signed = oauth_sign(url, method, headers, content, consumer, token);
-            } catch (e) {
-                syslog.warn({'exception':e.message});
-                var signed = {};
-            }
-        } else {
-            // if not, use the regular oauth signature
-            try {
-                if (sign === true) {
-                    // NOTE: the oauth credentials will be inferred from the URL and 
-                    // extracted automatically from the keystore and cookies
-                    var signed = oauth_sign(url, method, headers, content);
-                } else if (sign === false) {
-                    // XXX - hack for backward-compatibility of writeuser
-                    var signed = oauth_sign(url, method, headers, content, null, "keystore");
-                } else {
-                    // sign arugment was the consumer key & secret
-                    var signed = oauth_sign(url, method, headers, content, sign);
-                }
-            } catch (e if typeof errback !== 'undefined') {
-                errback(e);
-                return null;
-            }
+        // if not, use the regular oauth signature
+        try {
+            var signed = oauth_sign(url, method, headers, content, sign);
+        } catch (e if typeof errback !== 'undefined') {
+            errback(e);
+            return null;
         }
 
         if (signed.url) url = signed.url;
         if (signed.headers) headers = signed.headers;
         if (signed.content) content = signed.content;
-    }
-
-    // this should implement a more general browser-like cookiejar?
-    // the unusual part of mwLastWriteTime handling is where we push it back to the browser
-    var [ckey, cval] = cookiejar_domain_match(url);
-    if (cval !== null) {
-        var c = 'mwLastWriteTime='+cval;
-        cookies.push(c);
-        syslog.debug({generated_mwlt:c}, "urlfetch.attached.generated_mwlt");
     }
 
     if (cookies.length > 0) {
@@ -1386,19 +1239,6 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
             }
 
             return e;
-        }
-
-        // this should implement a more general browser-like cookiejar?
-        // the unusual part of mwLastWriteTime handling is where we push it back to the browser
-        if (typeof res.cookies.mwLastWriteTime != 'undefined') {
-            syslog.debug(
-                {
-                    'update_hostname':res.cookies.mwLastWriteTime.domain,
-                    'update_cookie':JSON.stringify(res.cookies.mwLastWriteTime)
-                }, 'urlfetch.received.mwlwt');
-            _request.cookie_jar[res.cookies.mwLastWriteTime.domain] =
-                res.cookies.mwLastWriteTime.value;
-            _request.cookie_jar_best_match = res.cookies.mwLastWriteTime.domain;
         }
 
         if (res.status >= 400) {
@@ -1449,101 +1289,57 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
 };
 
 
-//----------------------------- cookie jar ------------------------------
+//=================== acreboot modules ====================
 
-// acre_cookiejar == "host:mwlt:host:mwlt"
-//   ie   "sandbox-freebase.com:xxx|xxxxgg_ttt|dddd:freebase.com:123|345|6666|qa"
-function parse_cookiejar(cj) {
-    if (!cj) return {};
-    var parts = cj.split(":");
-    if (!!(parts.length % 2)) {
-        // Invalid Cookie Jar, fail.
-        syslog.warn({jar:cj}, "acreboot.cookie_jar.invalid");
-        return {};
-    }
 
-    var out = {};
-    var key = null;
-    for (var a in parts) {
-        var part = parts[a];
-        if (key == null) {
-            key = part;
-        } else {
-            out[key] = part;
-            key = null;
-        }
-    }
+//------------------- module environment -------------------
 
-    return out;
+// The scope we initialize modules with:
+var module_env = {
+    _u: u,
+    _request: _request,
+    _system_urlfetch: _system_urlfetch,
+    _system_async_urlfetch: _system_async_urlfetch,
+    _keystore: _keystore
+};
+
+
+//------------------------ cache --------------------------
+
+if (_request.trusted && _cache) { // the _datastore object won't be available in all environments so we need to check first
+    var cache_scope = make_scope(module_env);
+    cache_scope._cache = _cache;
+    _hostenv.load_system_script('cache.js', cache_scope);
+    cache_scope.augment(acre);
 }
 
-function serialize_cookiejar(cjar) {
-    var out = [];
+//------------------------ datastore --------------------------
 
-    for (var a in cjar) {
-        out.push(a);
-        out.push(cjar[a]);
-    }
-    return out.join(':');
+if (_request.trusted && _datastore) { // the _datastore object won't be available in all environments so we need to check first
+    var store_scope = make_scope(module_env);
+    store_scope._datastore = _datastore;
+    _hostenv.load_system_script('datastore.js', store_scope);
+    store_scope.augment(acre);
 }
 
-function cookiejar_domain_match(url) {
-    var url_parts = u.parseUri(url);
-    var hostname = url_parts.host;
-    
-    for (var a in _request.cookie_jar) {
-        if (a == hostname) {
-            return [a, _request.cookie_jar[a]];
-        } else if (a.match(/^\./) && hostname.match(a+'$')) {
-            return [a, _request.cookie_jar[a]];
-        }
-    }
-    return [null, null];
+
+//------------------------ taskqueue --------------------------
+
+if (_request.trusted && _taskqueue) { // the _taskqueue object won't be available in all environments so we need to check first
+    var queue_scope = make_scope(module_env);
+    queue_scope._taskqueue = _taskqueue;
+    _hostenv.load_system_script('taskqueue.js', queue_scope);
+    queue_scope.augment(acre);
 }
 
-if (_request.mwlt_mode === false) {
-    var cj_val = ('acre_cookiejar' in acre.request.cookies) ?
-        acre.request.cookies.acre_cookiejar : '';
 
-    _request.cookie_jar_best_match = null;
-    _request.cookie_jar = parse_cookiejar(cj_val);
-    syslog.debug({'jar':JSON.stringify(_request.cookie_jar),
-                  'raw_value':cj_val}, 'acreboot.cookie_jar');
+//------------------------ mailer --------------------------
 
-    AcreResponse_callbacks.push(function(res) {
-        if (_request.cookie_jar_best_match !== null) {
-            res.set_cookie('acre_cookiejar', serialize_cookiejar(_request.cookie_jar), {
-                path:'/',
-                max_age: 86400
-            });
-        }
-    });
-} else {
-    var mwlt_val = ('mwLastWriteTime' in acre.request.cookies) ?
-        acre.request.cookies.mwLastWriteTime : null;
-
-    _request.cookie_jar_best_match = null;
-    _request.cookie_jar = {};
-    if (mwlt_val !== null) {
-        _request.cookie_jar[_hostenv.ACRE_MWLT_MODE_COOKIE_SCOPE] = mwlt_val;
-    }
-    syslog.debug({'jar':JSON.stringify(_request.cookie_jar),
-                  'raw_value':mwlt_val}, 'acreboot.cookie_jar.mwlt_mode');
-
-    AcreResponse_callbacks.push(function(res) {
-      if (_request.cookie_jar_best_match !== null) {
-          if (_request.cookie_jar_best_match in _request.cookie_jar) {
-              res.set_cookie('mwLastWriteTime', _request.cookie_jar[_request.cookie_jar_best_match], {
-                  domain: _request.cookie_jar_best_match,
-                  path: '/',
-                  max_age: 86400
-              });
-          } else {
-              syslog.warn({'key':_request.cookie_jar_best_match, 'jar':_request.cookie_jar},
-                          'cookie_jar.key.missing');
-          }
-      }
-  });
+if (_request.trusted && _mailer) { // the _mailer object won't be available in all environments so we need to check first
+    var mailer_scope = make_scope(module_env);
+    mailer_scope._mailer = _mailer;
+    _hostenv.load_system_script('mailservice.js', mailer_scope);
+    mailer_scope.augment(acre);
 }
 
 
@@ -1916,13 +1712,13 @@ register_appfetch_method("disk", disk_resolver, disk_inventory_path, disk_get_co
 
 // XXX - how can we make this dynamic?
 var custom_methods = [
-    "googlecode.js", 
-    "webdav.js"
+    "googlecode.js"
+    /* "webdav.js" // not currently in use */
     /* freebase graph method registered in freebase.js */
 ];
 
 for (var i=0; i < custom_methods.length; i++) {
-    var method_scope = make_scope(_env);
+    var method_scope = make_scope(module_env);
     _hostenv.load_system_script(custom_methods[i], method_scope);
     method_scope.appfetcher(register_appfetch_method, make_appfetch_error, _system_urlfetch);
 }
@@ -1930,7 +1726,7 @@ for (var i=0; i < custom_methods.length; i++) {
 
 //-------------------------------- console - part 1 --------------------------------------
 
-var console_scope = make_scope(_env);
+var console_scope = make_scope(module_env);
 console_scope.userlog = function(level,arr) { return _hostenv.userlog(level,arr); };
 _hostenv.load_system_script('console.js', console_scope);
 console_scope.augment_topscope(_topscope);
@@ -1939,8 +1735,7 @@ console_scope.augment_acre(acre);
 
 // ------------------------------ deprecation ------------------------------------------
 
-var deprecate_scope = make_scope(_env);
-deprecate_scope.syslog = syslog;
+var deprecate_scope = make_scope(module_env);
 _hostenv.load_system_script('acre_deprecate.js', deprecate_scope);
 var deprecate = deprecate_scope.deprecate;
 
@@ -2087,14 +1882,14 @@ for (var k in _mjt.freebase) {
     }
 }
 
-var freebase_scope = make_scope(_env);
-freebase_scope.syslog = syslog;
+var freebase_scope = make_scope(module_env);
+freebase_scope._response_callbacks = AcreResponse_callbacks;
 var fb_script = (_request.googleapis_freebase !== "") ? "googleapis_freebase.js" : "freebase.js";
 _hostenv.load_system_script(fb_script, freebase_scope);
 
 // decorate acreboot objects with just what we need... a lot
-freebase_scope.augment(acre.freebase, acre.urlfetch, acre.async.urlfetch, _request);
-freebase_scope.augment(_system_freebase, _system_urlfetch, _system_async_urlfetch, _request);
+freebase_scope.augment(acre.freebase, acre.urlfetch, acre.async.urlfetch);
+freebase_scope.augment(_system_freebase, _system_urlfetch, _system_async_urlfetch);
 freebase_scope.appfetcher(register_appfetch_method, make_appfetch_error);
 acre.handlers.mqlquery = freebase_scope.handler();
 
@@ -2126,13 +1921,8 @@ delete freebase_scope;
 
 //--------------------------------- oauth -----------------------------------
 
-var oauth_scope = make_scope(_env);
-oauth_scope.Hash = acre.hash;
-oauth_scope.syslog = syslog;
-oauth_scope.parseUri = u.parseUri;
-oauth_scope._keystore = _ks;
-oauth_scope.system_urlfetch = _system_urlfetch;
-oauth_scope.oauthservice = _appengine_oauthservice;
+var oauth_scope = make_scope(module_env);
+oauth_scope._appengine_oauthservice = _appengine_oauthservice;
 _hostenv.load_system_script('oauth.js', oauth_scope);
 var oauth_script = (_request.googleapis_freebase !== "") ? "googleapis_oauth.js" : "acre_oauth.js";
 _hostenv.load_system_script(oauth_script, oauth_scope);
@@ -2920,7 +2710,7 @@ _hostenv.finish_response = function () {
     delete acre.response.headers['server'];
 
     AcreResponse_callbacks.forEach(function(callback) {
-      callback.call(null, acre.response);
+        callback.call(null, acre.response);
     });
 
     _hostenv.start_response(parseInt(acre.response.status, 10),

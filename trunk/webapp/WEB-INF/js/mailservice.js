@@ -15,11 +15,11 @@ var augment;
     };
     
     function send(obj) {
-        mailer.send(obj);
+        _mailer.send(obj);
     }
 
     function send_admins(obj) {
-        mailer.send_admins(obj);
+        _mailer.send_admins(obj);
     }
     
 })();

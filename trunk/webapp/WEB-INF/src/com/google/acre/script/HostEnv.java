@@ -491,10 +491,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                  Configuration.Values.ACRE_HOST_DELIMITER_PATH.getValue());
         this.put("STATIC_SCRIPT_PATH", this,
                  Configuration.Values.STATIC_SCRIPT_PATH.getValue());
-        this.put("ACRE_ALLOW_MWAUTH_HOST_SUFFIX", this,
-                 Configuration.Values.ACRE_ALLOW_MWAUTH_HOST_SUFFIX.getValue());
-        this.put("ACRE_MWLT_MODE_COOKIE_SCOPE", this,
-                 Configuration.Values.ACRE_MWLT_MODE_COOKIE_SCOPE.getValue());
         this.put("ACRE_DEVELOPER_MODE", this, ACRE_DEVELOPER_MODE);
         this.put("DEFAULT_HOST_PATH", this, DEFAULT_HOST_PATH);
 
@@ -829,23 +825,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         String host = _url.getHost();
 
-        // special auth treatment for api.freebase.com
-        // NOTE(SM): should go away once we transition the APIs over to the google infra 
-        if (host.equals(ACRE_METAWEB_API_ADDR)) {
-            fetch.request_headers.put("X-Metaweb-TID", req._metaweb_tid);
-            syslog(DEBUG, "hostenv.urlopen.attached.tid", "Attaching X-Metaweb-TID of " + req._metaweb_tid);
-
-            if (has("write_user", this)) {
-                String write_user = (String) get("write_user", this);
-                if (write_user != null) {
-                    if (!fetch.request_headers.containsKey("Authorization")) {
-                        fetch.request_headers.put("X-Acre-Auth", signAcreAuth(write_user));
-                        syslog(DEBUG, "hostenv.urlopen.attached.acre_write_user", "Request will be signed as user " + write_user);
-                    }
-                }
-            }
-        }
-        
         try {
             if (response_encoding == null) response_encoding = "ISO-8859-1";
             fetch.fetch(system, response_encoding, log_to_user, no_redirect);
@@ -908,26 +887,9 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         } catch (MalformedURLException e) {
             throw new JSURLError("Malformed URL: " + url).newJSException(this);
         }
-        
-        String host = _url.getHost();
-        
-        // special auth treatment for api.freebase.com
-        // NOTE(SM): should go away once we transition the APIs over to the google infra 
-        if (host.equals(ACRE_METAWEB_API_ADDR)) {
-            header_map.put("X-Metaweb-TID", req._metaweb_tid);
-            syslog(DEBUG, "hostenv.urlopen.attached.tid", "Attaching X-Metaweb-TID of " + req._metaweb_tid);
 
-            if (has("write_user", this)) {
-                String write_user = (String) get("write_user", this);
-                if (write_user != null) {
-                    if (!header_map.containsKey("Authorization")) {
-                        header_map.put("X-Acre-Auth", signAcreAuth(write_user));
-                        syslog(DEBUG, "hostenv.urlopen.attached.acre_write_user", "Request will be signed as user " + write_user);
-                    }
-                }
-            }
-        }
-        
+        String host = _url.getHost();
+
         long sub_deadline = (LIMIT_EXECUTION_TIME) ? req._deadline - HostEnv.SUBREQUEST_DEADLINE_ADVANCE : ACRE_URLFETCH_TIMEOUT;
         int reentrances = req._reentries + 1;
         header_map.put(HostEnv.ACRE_QUOTAS_HEADER, "td=" + sub_deadline + ",r=" + reentrances);
@@ -1494,33 +1456,5 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         return "";
     }
-    
-    private String signAcreAuth(String write_user) {
-        String key = Configuration.Values.ACRE_AUTH_SECRET.getValue();
-        Mac mac;
-        try {
-            mac = Mac.getInstance("HmacSHA1");
-        } catch (java.security.NoSuchAlgorithmException e) {
-            // XXX log failure
-            return null;
-        }
 
-        try {
-            SecretKeySpec sk = new SecretKeySpec(key.getBytes(), "HmacSHA1");
-            mac.init(sk);
-        } catch (java.security.InvalidKeyException e) {
-            // XXX log failure
-            return null;
-        }
-
-        // XXX should pass through _app_id as well for additional security
-
-        byte[] hashbytes = mac.doFinal(write_user.getBytes());
-
-        Hex hex = new Hex();
-        String aauth = new String(hex.encode(hashbytes));
-
-        return write_user + "|" + aauth;
-    }    
-    
 }
