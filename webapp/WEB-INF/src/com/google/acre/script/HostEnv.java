@@ -780,6 +780,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         return execute(script, scope, system);
     }
 
+    @SuppressWarnings("unused")
     @JSFunction
     public Scriptable urlOpen(String url, 
                               String method,
@@ -800,9 +801,8 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             throw new RuntimeException("Cannot call urlfetch, the script ran out of time");
         }
 
-        URL _url;
         try {
-            _url = new URL(url);
+            new URL(url);
         } catch (MalformedURLException e) {
             throw new JSURLError("Malformed URL: " + url).newJSException(this);
         }
@@ -823,8 +823,6 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         fetch.request_body = content;
 
-        String host = _url.getHost();
-
         try {
             if (response_encoding == null) response_encoding = "ISO-8859-1";
             fetch.fetch(system, response_encoding, log_to_user, no_redirect);
@@ -834,6 +832,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
     }
 
+    @SuppressWarnings("unused")
     @JSFunction
     public void urlOpenAsync(String url, 
                              String method,
@@ -881,14 +880,11 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
             }
         }
 
-        URL _url;
         try {
-            _url = new URL(url);
+            new URL(url);
         } catch (MalformedURLException e) {
             throw new JSURLError("Malformed URL: " + url).newJSException(this);
         }
-
-        String host = _url.getHost();
 
         long sub_deadline = (LIMIT_EXECUTION_TIME) ? req._deadline - HostEnv.SUBREQUEST_DEADLINE_ADVANCE : ACRE_URLFETCH_TIMEOUT;
         int reentrances = req._reentries + 1;
@@ -1458,3 +1454,4 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     }
 
 }
+
