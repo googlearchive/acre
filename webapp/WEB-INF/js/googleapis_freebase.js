@@ -351,23 +351,27 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
          var url = acre.form.build_url(base_url, api_opts);
          fetch_opts.sign = true;
          fetch_opts.check_results = "freebase";
-         
+
+         // Enable specifying the provider so
+         // different auth configurations can be used
+         // i.e., writeuser
          var provider = api_opts.provider || "freebase";
          if (!acre.oauth.has_credentials(provider)) {
              return null;
          }
+         delete api_opts.provider;
 
          function handle_get_user_info_success(res) {
              // this sets vary_cookies on the oauth cookies for us
-             acre.oauth.has_credentials();
+             acre.oauth.has_credentials(provider);
              return res;
          }
 
          function handle_get_user_info_error(e) {
              // remove the oauth cookies if the user credentials are no longer valid
              if (((e.code == 401) || (e.code == 403)) && 
-                 acre.oauth.has_credentials()) {
-                 acre.oauth.remove_credentials();
+                 acre.oauth.has_credentials(provider)) {
+                 acre.oauth.remove_credentials(provider);
              } else {
                  console.error(e);
              }
@@ -376,15 +380,6 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
 
          var callback = fetch_opts.callback;
          var errback = fetch_opts.errback;
-
-         // NOTE: if credentials require a redirect
-         // to refresh and the top-level request is a
-         // POST, this will throw an error (and return null)
-         try {
-             acre.oauth.get_authorization(provider);
-         } catch (e if e instanceof acre.oauth.Error) {
-             return handle_get_user_info_error(e);
-         }
 
          if(callback) {
              fetch_opts.callback = function(res) {
