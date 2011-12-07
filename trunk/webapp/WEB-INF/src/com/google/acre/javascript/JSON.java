@@ -66,7 +66,7 @@ public class JSON {
      */
     public static String stringify(Object o, String indent, Scriptable scope) throws JSONException {
         if ("null".equals(indent)) indent = null;
-        StringBuffer sb = new StringBuffer(512);
+        StringBuilder sb = new StringBuilder(512);
         encode(null, o, sb, "", indent, scope);
         return sb.toString();
     }
@@ -102,7 +102,7 @@ public class JSON {
     ////////////////////////// Encoder Methods //////////////////////////////
 
     @SuppressWarnings("unchecked")
-    private static void encode(String key, Object o, StringBuffer sb, String gap, String indent, Scriptable scope) throws JSONException {
+    private static void encode(String key, Object o, StringBuilder sb, String gap, String indent, Scriptable scope) throws JSONException {
         if (o == null) {
             sb.append("null");
         } else if (o instanceof Undefined) {
@@ -143,7 +143,7 @@ public class JSON {
         }
     }
 
-    private static void encodeList(String key, List<Object> l, StringBuffer sb, String gap, String indent, Scriptable scope) throws JSONException {
+    private static void encodeList(String key, List<Object> l, StringBuilder sb, String gap, String indent, Scriptable scope) throws JSONException {
         sb.append('[');
         int size = l.size();
         if (indent != null && size > 0) sb.append("\n");
@@ -160,7 +160,7 @@ public class JSON {
         sb.append(']');
     }
 
-    private static void encodeArray(String key, NativeArray ar, StringBuffer sb, String gap, String indent, Scriptable scope) throws JSONException {
+    private static void encodeArray(String key, NativeArray ar, StringBuilder sb, String gap, String indent, Scriptable scope) throws JSONException {
         sb.append('[');
         long size = ar.getLength();
         if (indent != null && size > 0) sb.append("\n");
@@ -177,7 +177,7 @@ public class JSON {
         sb.append(']');
     }
 
-    private static void encodeMap(String key, Map<Object,Object> m, StringBuffer sb, String gap, String indent, Scriptable scope) throws JSONException  {
+    private static void encodeMap(String key, Map<Object,Object> m, StringBuilder sb, String gap, String indent, Scriptable scope) throws JSONException  {
         sb.append('{');
         int size = m.size();
         if (indent != null && size > 0) sb.append("\n");
@@ -202,7 +202,7 @@ public class JSON {
         sb.append('}');
     }
 
-    private static void encodeObject(String key, NativeObject o, StringBuffer sb, String gap, String indent, Scriptable scope) throws JSONException  {
+    private static void encodeObject(String key, NativeObject o, StringBuilder sb, String gap, String indent, Scriptable scope) throws JSONException  {
         sb.append('{');
         Object[] ids = o.getIds();
         if (indent != null && ids.length > 0) sb.append("\n");
@@ -246,7 +246,7 @@ public class JSON {
         sb.append('}');
     }
 
-    private static void encodeString(String s, StringBuffer sb) throws JSONException  {
+    private static void encodeString(String s, StringBuilder sb) throws JSONException  {
         sb.append('"');
         for(int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
@@ -264,7 +264,7 @@ public class JSON {
         sb.append('"');
     }
     
-    private static void encodeDate(Scriptable s, StringBuffer sb) throws JSONException  {
+    private static void encodeDate(Scriptable s, StringBuilder sb) throws JSONException  {
         sb.append('"');
         sb.append(getDateFragment(s,"getUTCFullYear"));
         sb.append('-');
@@ -281,7 +281,7 @@ public class JSON {
         sb.append('"');
     }
     
-    private static void encodeNumber(Number n, StringBuffer sb) {
+    private static void encodeNumber(Number n, StringBuilder sb) {
         double d = n.doubleValue();
         long l = n.longValue();
         if (d - l > 1e-8 || l - d > 1e-8) {
@@ -307,7 +307,7 @@ public class JSON {
         return out;
     }
     
-    private static void pad(int value, StringBuffer sb) {
+    private static void pad(int value, StringBuilder sb) {
         if (value < 10) sb.append('0');
         sb.append(value);
     }
@@ -367,7 +367,7 @@ public class JSON {
         boolean in_exponent = false;
         boolean isa_number = true;
 
-        StringBuffer number = new StringBuffer();
+        StringBuilder number = new StringBuilder();
         int i;
         while(inNumber) {
             i = in.peek();
@@ -427,7 +427,7 @@ public class JSON {
         int start = in.read();
         if(start != '\'' && start != '"') throw new JSONException(in.generateError("invalid string value"));
         boolean inString = true;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         while(inString) {
             int i = in.read();
             if (i < 0) throw new JSONException(in.generateError("invalid string value"));

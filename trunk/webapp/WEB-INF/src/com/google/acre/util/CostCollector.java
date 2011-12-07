@@ -19,16 +19,15 @@ import java.util.TreeMap;
 import java.lang.ThreadLocal;
 import java.util.Iterator;
 
+/**
+ * Provides counters for collecting statistics for an acre request.
+ * Implemented as a singleton - the expectation is that a new one will be 
+ * created at the beginning of each request. See servlet/DispatchServlet.
+ */
 public class CostCollector {
-    /*
-      Provides counters for collecting statistics for an acre request.
-      Implemented as a singleton - the expectation is that a new one will be 
-      created at the beginning of each request. See servlet/DispatchServlet.
-    */
 
     // Holds the collector singleton object.
     private static final ThreadLocal<CostCollector> _instance = new ThreadLocal<CostCollector>();
-
 
     // Creates a new collector object and returns it.
     public static CostCollector createInstance() { 
@@ -80,7 +79,7 @@ public class CostCollector {
     
     public String getCosts() {
         
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         
         Iterator<String> i = costs.keySet().iterator();
         while (i.hasNext()) {
@@ -96,11 +95,5 @@ public class CostCollector {
         }
 
         return b.toString();
-
     }
-
-
-
-
-
 }

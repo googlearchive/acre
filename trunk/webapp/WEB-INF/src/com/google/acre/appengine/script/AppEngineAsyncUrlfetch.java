@@ -149,7 +149,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         }
         
         HTTPRequest req = new HTTPRequest(requrl, HTTPMethod.valueOf(method), fetchOptions);
-        StringBuffer request_header_log = new StringBuffer();
+        StringBuilder request_header_log = new StringBuilder();
         for (Map.Entry<String,String> entry : headers.entrySet()) {
             req.addHeader(new HTTPHeader(entry.getKey(), entry.getValue()));
             request_header_log.append(entry.getKey() + ": " + entry.getValue() + ", ");
@@ -240,7 +240,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
         out.put("headers", out, headers);
         out.put("cookies", out, cookies);
 
-        StringBuffer response_header_log = new StringBuffer();
+        StringBuilder response_header_log = new StringBuilder();
         for (HTTPHeader h : res.getHeaders()) {
             if (h.getName().equalsIgnoreCase("set-cookie")) {
                 String set_cookie = h.getValue();

@@ -1320,7 +1320,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
                 AcreExceptionInfo einfo = new AcreExceptionInfo(script_path, message, t, _scriptManager, _scope);
 
                 // build the stacktrace
-                StringBuffer b = new StringBuffer();
+                StringBuilder b = new StringBuilder();
                 for (AcreStackFrame frame : einfo.stack) {
                     b.append("\n  ");
                     b.append(frame.filename);

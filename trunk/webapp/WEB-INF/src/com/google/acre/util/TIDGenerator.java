@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.util;
 
 import java.net.InetAddress;
@@ -55,7 +54,7 @@ public final class TIDGenerator {
      * @return the hostname
      */
     public static String getShortHostname() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         ArrayList<String> parts = new ArrayList<String>(Arrays.asList(HOST_NAME.split("\\."))); 
         if (parts.size() > 3) { // Oops! only domain name and tld
             sb.append(parts.get(0));
@@ -79,7 +78,7 @@ public final class TIDGenerator {
         synchronized (HOST_NAME) {
             _tidSeqNo = (++_tidSeqNo >= MAX_TID_VALUE) ? 0 : _tidSeqNo;
         }
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(service);
         sb.append(';');
         sb.append(HOST_NAME);

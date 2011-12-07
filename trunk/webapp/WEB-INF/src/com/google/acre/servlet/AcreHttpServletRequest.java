@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package com.google.acre.servlet;
 
 import java.io.ByteArrayInputStream;
@@ -29,7 +28,7 @@ public class AcreHttpServletRequest extends HttpServletRequestWrapper {
     
     private String _hostname;
     private String[] _remapping;
-    private StringBuffer _overloaded_body = new StringBuffer();
+    private StringBuilder _overloaded_body = new StringBuilder();
 
     public static class AcreServletInputStream extends ServletInputStream {
         InputStream _input;

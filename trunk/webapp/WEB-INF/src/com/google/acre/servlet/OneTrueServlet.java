@@ -384,7 +384,7 @@ public class OneTrueServlet extends HttpServlet implements Filter {
     
     private String access_log(HttpServletRequest req, HttpServletResponse res) {
     
-        StringBuffer buf = new StringBuffer(300);
+        StringBuilder buf = new StringBuilder(300);
         
         buf.append(req.getRemoteAddr());
         buf.append(" \"");

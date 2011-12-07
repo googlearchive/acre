@@ -188,7 +188,7 @@ public class AcreResponse extends JSConvertable {
                 int totalLength = log.length();
 
                 for (int i = 0; i < totalLength; i += maxLength) {
-                    StringBuffer value = new StringBuffer();
+                    StringBuilder value = new StringBuilder();
                     String header_name = keyPrefix + index++;    
                     if (i == 0) {
                         value.append(Integer.toString(totalLength));
@@ -221,7 +221,7 @@ public class AcreResponse extends JSConvertable {
         String header_name = keyPrefix + index;
         try {
             String jval = JSON.stringify(_logs.get(_logs.size() - 1));
-            StringBuffer value = new StringBuffer();
+            StringBuilder value = new StringBuilder();
             value.append(Integer.toString(jval.length()));
             value.append('|');
             value.append(jval);
