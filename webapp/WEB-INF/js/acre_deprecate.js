@@ -106,7 +106,7 @@ function deprecation_wrapper(obj,name,newname,info) {
             var warn_deprecation = function() {
                 if (!console.hide_deprecated) {
                     console.warn(msg);
-                    syslog.warn(msg);
+                    acre.syslog.warn(msg);
                 }
             };
 

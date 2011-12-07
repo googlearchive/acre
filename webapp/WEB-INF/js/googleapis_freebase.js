@@ -6,18 +6,18 @@ var GOOGLEAPIS_KEY = null;
  * Attach the functions defined in this script to the given API object
  * to make them available to the user scope
  */
-function augment(freebase, urlfetch, async_urlfetch, request) {
+function augment(freebase, urlfetch, async_urlfetch) {
     // tuck this away so we can use it in handler and appfetcher creation
 
     // XXX - relies on augment being called for system *after* user...
     // *and* before register_handler or register_appfetcher
     _system_freebase = freebase;
     
-    freebase.service_url = request.freebase_service_url;
-    freebase.site_host = request.freebase_site_host;
+    freebase.service_url = _request.freebase_service_url;
+    freebase.site_host = _request.freebase_site_host;
 
-    freebase.googleapis_url = request.googleapis_host + request.googleapis_freebase;   // XXX - for transition only... will remove later
-    GOOGLEAPIS_KEY = request.googleapis_key;
+    freebase.googleapis_url = _request.googleapis_host + _request.googleapis_freebase;   // XXX - for transition only... will remove later
+    GOOGLEAPIS_KEY = _request.googleapis_key;
 
     // XXX FreebaseError is getting built twice because this is called for
     // user and system
@@ -51,7 +51,6 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
         }
     };
 
-
     /**
      *  Separate out fetch options from api options;
      *  Also make sure we're not munging the original options object we were passed.
@@ -82,7 +81,7 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
         }
 
         // Add dateline to request if we have one in the cookie jar
-        var dateline = request.cookie_jar[request.googleapis_freebase];
+        var dateline = dateline_cj.get(_request.googleapis_freebase);
         if (dateline) {
             api_opts.dateline = dateline;
         }
@@ -215,9 +214,7 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
                 // Add dateline to cookie jar if there was one in the response
                 if (result.dateline) {
                     // better service identifier than host for googleapis
-                    var domain = request.googleapis_freebase;
-                    request.cookie_jar_best_match = domain;
-                    request.cookie_jar[domain] = result.dateline;
+                    dateline_cj.set(_request.googleapis_freebase, result.dateline);
                 }
 
                 if (result.error) {
@@ -362,15 +359,12 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
          delete api_opts.provider;
 
          function handle_get_user_info_success(res) {
-             // this sets vary_cookies on the oauth cookies for us
-             acre.oauth.has_credentials(provider);
              return res;
          }
 
          function handle_get_user_info_error(e) {
              // remove the oauth cookies if the user credentials are no longer valid
-             if (((e.code == 401) || (e.code == 403)) && 
-                 acre.oauth.has_credentials(provider)) {
+             if ((e.code == 401) || (e.code == 403)) {
                  acre.oauth.remove_credentials(provider);
              } else {
                  console.error(e);
@@ -996,3 +990,73 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
 
      register_appfetcher("freebase", graph_resolver, graph_inventory_path, graph_get_content);
  };
+
+//----------------------------- cookie jar ------------------------------
+
+/**
+*  We need a cookiejar for storing user's graph datelines
+*  so they get fresh results if they've been editing
+*
+*  dateline_cj == "host:dateline:host:dateline"
+*  ie   "sandbox-freebase.com:xxx:freebase.com:123"
+**/
+
+var cookiejar = function(name) {
+    var _name = name;
+    var _cookiejar = {};
+    var _best_match = null;
+
+    var val = acre.request.cookies[_name];
+    if (val) {
+        var parts = val.split(":");
+        if (parts.length % 2) {
+            var key = null;
+            for (var a in parts) {
+                var part = parts[a];
+                if (key == null) {
+                    key = part;
+                } else {
+                    _cookiejar[key] = part;
+                    key = null;
+                }
+            }
+        } else {
+            // Invalid Cookie Jar, fail.
+            syslog.warn({jar:val}, "freebase.cookie_jar.invalid");
+        }
+    }
+
+    return {
+
+        get: function(key) {
+            return _cookiejar[key];
+        },
+
+        set: function(key, value) {
+            _cookiejar[key] = value;
+            _best_match = key;
+        },
+
+        set_cookie: function(opts) {
+            if (_best_match !== null) {
+                var out = [];
+                for (var a in _cookiejar) {
+                    out.push(a);
+                    out.push(_cookiejar[a]);
+                }
+                var val = out.join(":");
+                acre.response.set_cookie(name, val, opts);
+            }
+        }
+
+    };
+};
+
+var dateline_cj = cookiejar("fb-dateline");
+
+_response_callbacks.push(function() {
+    dateline_cj.set_cookie({
+        path:'/',
+        max_age: 86400
+    });
+});

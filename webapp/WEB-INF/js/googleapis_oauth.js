@@ -55,7 +55,7 @@ var augment;
         oauth.has_credentials = has_credentials;
         oauth.Error = oauthError;
 
-        if (typeof oauthservice != "undefined") {
+        if (typeof _appengine_oauthservice != "undefined") {
             oauth.get_oauth_user = get_oauth_user;
             oauth.create_host_access_token = create_host_access_token;
             oauth.get_host_identity = get_host_identity;
@@ -228,7 +228,7 @@ var augment;
                 var token = obtainOauth2AccessToken(provider, consumer, acre.request.params.code);
                 if (!token) return null;
                 access_token = storeAccessToken(provider, token, consumer);
-                register_authorized_provider(provider, consumer, token);
+                register_authorized_provider(provider, consumer, access_token);
                 return access_token;
             }
 
@@ -299,7 +299,7 @@ var augment;
         provider = getProvider(provider);
         var access_token = retrieveToken(provider);
         if (!access_token) return false;
-        
+
         var valid = false;
         if (validateAccessToken(access_token)) {
             valid = true;
@@ -308,7 +308,7 @@ var augment;
             storeAccessToken(provider, access_token, consumer);
             valid = true;
         }
-        
+
         if (!valid) return false;
 
         register_authorized_provider(provider, consumer || getConsumer(provider), access_token);
@@ -323,7 +323,7 @@ var augment;
     *  and if it's running inside AppEngine.
     **/
     var get_oauth_user = function(scope) {
-        return oauthservice.getCurrentUser(scope);
+        return _appengine_oauthservice.getCurrentUser(scope);
     }
 
     /**
@@ -334,14 +334,14 @@ var augment;
     **/
     var create_host_access_token = function(scope) {
         if (!scope) throw new oauthError("You must specify an API scope");
-        return oauthservice.getAccessToken(scope);
+        return _appengine_oauthservice.getAccessToken(scope);
     }
 
     /**
     *  Obtain the identity used to in the "create_host_access_token" to identify this host
     **/
     var get_host_identity = function() {
-        return oauthservice.getServiceAccountName();
+        return _appengine_oauthservice.getServiceAccountName();
     }
 
 
@@ -385,7 +385,7 @@ var augment;
     **/
     function obtainRequestToken(consumer, provider) {
         var signed = sign(consumer, null, provider.request_token_URL, "GET", {}, "", provider.authorization_params);
-        var res = system_urlfetch(signed.url, signed.method, signed.headers, signed.content, false);
+        var res = _system_urlfetch(signed.url, signed.method, signed.headers, signed.content, false);
         return OAuth.getParameterMap(OAuth.decodeForm(res.body));
     }
 
@@ -394,7 +394,7 @@ var augment;
     **/
     function obtainAccessToken(consumer, provider, request_token) {
         var signed = sign(consumer, request_token, provider.access_token_URL, "GET", {}, "", provider.authorization_params);
-        var res = system_urlfetch(signed.url, signed.method, signed.headers, signed.content, false);
+        var res = _system_urlfetch(signed.url, signed.method, signed.headers, signed.content, false);
         return OAuth.getParameterMap(OAuth.decodeForm(res.body));
     }
     
@@ -531,7 +531,7 @@ var augment;
     *  Get a new access token given an authorization code
     **/
     var obtainOauth2AccessToken = function(provider, consumer, code) {
-        var res = system_urlfetch(provider.access_token_URL, {
+        var res = _system_urlfetch(provider.access_token_URL, {
             method: "POST",
             bless: true,
             headers: {
@@ -552,7 +552,7 @@ var augment;
     *  Get a new access token given a refresh token
     **/
     var refreshOauth2AccessToken = function(provider, consumer, access_token) {
-        var res = system_urlfetch(provider.refresh_token_URL, {
+        var res = _system_urlfetch(provider.refresh_token_URL, {
             method: "POST",
             bless: true,
             headers: {
@@ -769,7 +769,9 @@ var augment;
 
         // 'token' can also be a list of provider
         // token_storage kinds to accept
-        if (typeof token == "string") {
+        if (typeof token == "boolean") {
+            token = null;
+        } else if (typeof token == "string") {
             token = [ token ];
         }
         if (typeof token == "array") {
@@ -780,7 +782,7 @@ var augment;
             token = null;
         }
 
-        var parsed_url = parseUri(url);
+        var parsed_url = _u.parseUri(url);
         var host = parsed_url.host;
         var path = parsed_url.path;
         var domain_fragments = host.split('.');

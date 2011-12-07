@@ -24,23 +24,23 @@ var augment;
     var untyped = "untyped";
     
     function begin() {
-        return store.begin();
+        return _datastore.begin();
     }
 
     function key(id,type) {
         if (!id) throw "Can't obtain an a key with a null or undefined id";
         if (!type) type = untyped;
-        return store.key(id,type);
+        return _datastore.key(id,type);
     }
 
     function explain_key(key) {
         if (!key) throw "Can't explain a null or undefined key";
-        return store.explain_key(key);
+        return _datastore.explain_key(key);
     }
     
     function get(key, transaction) {
         if (!key) throw "Can't obtain an object with a null or undefined key";
-        return store.get(key, transaction);
+        return _datastore.get(key, transaction);
     }
     
     function put(obj, id, parent_key, transaction) {
@@ -52,7 +52,7 @@ var augment;
             var id = temp;
         }
         var kind = obj.type || untyped;
-        return store.put(kind, obj, id, parent_key, transaction);
+        return _datastore.put(kind, obj, id, parent_key, transaction);
     }
     
     function update(key, obj, transaction) {
@@ -60,7 +60,7 @@ var augment;
             obj = key;
             key = obj._.key;
         }
-        return store.update(key, obj, transaction);
+        return _datastore.update(key, obj, transaction);
     }
     
     function remove(key, transaction) {
@@ -72,9 +72,9 @@ var augment;
             }
         } else if (typeof key == "object") {
             if (typeof key._ == "undefined") throw "Can only remove objects retrieved from the store";
-            store.remove(key._.key, transaction);
+            _datastore.remove(key._.key, transaction);
         } else {
-            store.remove(key, transaction);
+            _datastore.remove(key, transaction);
         }
     }
 
@@ -137,14 +137,14 @@ var augment;
     function find(query,cursor) {
         if (typeof query === 'undefined') throw "Sorry, can't find with an undefined query";
         var kind = query.type || "untyped";
-        var result = store.find(kind, query, cursor);
+        var result = _datastore.find(kind, query, cursor);
         return new Result(result);
     }
 
     function find_keys(query,cursor) {
         if (typeof query === 'undefined') throw "Sorry, can't find with an undefined query";
         var kind = query.type || "untyped";
-        var result = store.find_keys(kind, query, cursor);
+        var result = _datastore.find_keys(kind, query, cursor);
         return new Result(result);
     }
     

@@ -47,12 +47,10 @@ public class Configuration implements ConfigurationMBean {
         ACRE_HOST_BASE(DEFAULT_HOSTNAME),
         ACRE_HOST_DELIMITER_HOST("host"),
         ACRE_HOST_DELIMITER_PATH("dev"),
-        ACRE_ALLOW_MWAUTH_HOST_SUFFIX(SANDBOX_SITE + " " + SANDBOX_API),
         ACRE_SERVICE_ADDR(DEFAULT_HOSTNAME + ":" + DEFAULT_PORT), 
         ACRE_METAWEB_API_ADDR(SANDBOX_API), 
         ACRE_FREEBASE_SITE_ADDR(SANDBOX_SITE),
         ACRE_APPEDITOR_HOST("acre.freebase.com"),
-        ACRE_MWLT_MODE_COOKIE_SCOPE(".freebase.com"),
         ACRE_METAWEB_API_PATH("USE_SERVLET_PATH"), 
         JS_LOGGER_NAME("acre.userlog"),
         ACCESS_LOG_LOGGER_NAME("acre.accesslog"),
@@ -120,7 +118,6 @@ public class Configuration implements ConfigurationMBean {
         APPENGINE_REMOTE_APP_PORT("443"),
 
         // values that are better without defaults because they could expose security-sensitive info
-        ACRE_AUTH_SECRET, 
         ACRE_SQL,
         ACRE_SQL_PASSWORD,
         HTTP_PROXY_HOST, 
