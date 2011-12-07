@@ -170,7 +170,7 @@ var augment;
     /**
     *  Create the exception that we'll throw if oauth returns an error
     **/
-    oauthError = function (message) {
+    var oauthError = function (message) {
         this.message = message;
     };
     oauthError.prototype = new Error();
@@ -207,22 +207,9 @@ var augment;
         }
 
         // Check whether there's already valid credentials
-        // If so, register them for use later when signing
-        var access_token = retrieveToken(provider);
-        if (access_token) {
-            var valid = false;
-            if (validateAccessToken(access_token)) {
-                valid = true;
-            } else if (access_token.refresh_token) {
-                access_token = refreshOauth2AccessToken(provider, consumer, access_token);
-                storeAccessToken(provider, access_token, consumer);
-                valid = true;
-            }
-            if (valid) {
-                register_authorized_provider(provider, consumer, access_token);
-                return access_token;
-            }
-        }
+        // This also registers them for use later when signing
+        var access_token = has_credentials(provider, consumer);
+        if (access_token) return access_token;
 
         // state we'll need to carry through the various authorization flows
         var state = acre.form.encode({
@@ -308,10 +295,24 @@ var augment;
     *  The only way to know for sure is to 'ping' an oauth-enabled URL to react on
     *  error messages from that call that relate to authorization.
     **/
-    var has_credentials = function(provider) {
+    var has_credentials = function(provider, consumer) {
         provider = getProvider(provider);
         var access_token = retrieveToken(provider);
-        return (access_token !== null);
+        if (!access_token) return false;
+        
+        var valid = false;
+        if (validateAccessToken(access_token)) {
+            valid = true;
+        } else if (access_token.refresh_token) {
+            access_token = refreshOauth2AccessToken(provider, consumer, access_token);
+            storeAccessToken(provider, access_token, consumer);
+            valid = true;
+        }
+        
+        if (!valid) return false;
+
+        register_authorized_provider(provider, consumer || getConsumer(provider), access_token);
+        return access_token;
     };
 
     /**
@@ -648,24 +649,30 @@ var augment;
 
         switch (provider.token_storage) {
             case "keystore":
-                // XXX - this will only work in trusted mode for now...
-                //
-                // for freebaseapps.com, I need to figure out how
-                // to allow these keys to be written to the keystore
-                // without also creating an opening for keystore abuse.
-                //
-                // My current thinking is something like:
-                //  - Allow automatic refreshing of tokens using 
-                //    direct keystore access on the request obj
-                //  - Require new tokens to be for users who are 
-                //    also an owner of the app... which will depend on 
-                //    the freebaseapps provisioning process we come up with
-                if (!("put" in acre.keystore)) {
-                    throw new oauthError("Storing credentials in the keystore not " +
-                                         "yet implemented outside of trusted mode.");
+                // Require the writeuser to be declared in metadata 
+                // of the app so people can't make themselves the 
+                // writeuser just by signing in as one.
+                if (!provider.writeuser) {
+                    throw new oauthError("Request app must specify the allowed writeuser in metadata.")
                 }
-                acre.keystore.remove(token_name);
-                acre.keystore.put(token_name, token_val, token.refresh_token);
+
+                // NOTE: this only works for Freebase right now as 
+                // it's the only one we know how to verify the 
+                // identity of the credentials for.
+                if (provider.name !== "freebase_writeuser") {
+                    throw new oauthError("Don't know how verify writeuser identity for provider '" + provider.name + "'");
+                }
+                register_authorized_provider(provider, getConsumer(provider), access_token);
+                var user = acre.freebase.get_user_info({provider: "freebase_writeuser"});
+                if (!user || (user.username !== provider.writeuser)) {
+                    delete AUTHORIZED_HOSTS[provider.domain][provider.name];
+                    throw new oauthError("Supplied credentials don't match the writeuser specified in metadata");
+                }
+
+                // write key to keystore using the private acreboot 
+                // method so it works in non-trusted mode as well
+                _keystore.delete_key(token_name, _request.app_project);
+                _keystore.put_key(token_name, _request.app_project, token_val, token.refresh_token);
                 break;
             case "cookie":
             default:
@@ -682,6 +689,16 @@ var augment;
 
     function retrieveToken(provider, kind) {
         var token = null;
+
+        // check cache
+        if (AUTHORIZED_HOSTS[provider.domain]) {
+            var credentials = AUTHORIZED_HOSTS[provider.domain][provider.name];
+            if (credentials) {
+                return credentials.token;
+            }
+        }
+
+        // otherwise, retrieve using provider token storage method
         var token_name = getCookieName(provider.name, kind || "access");
         switch (provider.token_storage) {
             case "keystore":
@@ -779,6 +796,7 @@ var augment;
                 var path_frags = path.split("/");
                 for (var p in authorized_providers) {
                     var provider = authorized_providers[p];
+                    if (storage && !storage[provider.token_storage]) continue;
                     var provider_path = provider.service_url_prefix || "/";
                     provider_path_frags = provider_path.split("/");
                     for (var i = 0; i < path_frags.length; i++) {

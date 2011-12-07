@@ -1224,7 +1224,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
         method = options_or_method.method;
         headers = options_or_method.headers;
         content = options_or_method.content;
-        sign = !!options_or_method.sign;
+        sign = options_or_method.sign;
         response_encoding = options_or_method.response_encoding;
         callback = options_or_method.callback || function (res) { };
         errback = options_or_method.errback || function (res) { throw res; };
@@ -1234,10 +1234,6 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
         no_redirect = options_or_method.no_redirect;
     } else if (options_or_method) {
         method = options_or_method;
-    }
-
-    if (typeof sign !== 'undefined' && typeof sign !== 'boolean' && typeof sign !== 'object') {
-        throw new acre.errors.URLError("'sign' argument (5th) or option to acre.urlfetch() must be a boolean or an object");
     }
 
     if (typeof method != 'string') method = 'GET';
@@ -2134,6 +2130,7 @@ var oauth_scope = make_scope(_env);
 oauth_scope.Hash = acre.hash;
 oauth_scope.syslog = syslog;
 oauth_scope.parseUri = u.parseUri;
+oauth_scope._keystore = _ks;
 oauth_scope.system_urlfetch = _system_urlfetch;
 oauth_scope.oauthservice = _appengine_oauthservice;
 _hostenv.load_system_script('oauth.js', oauth_scope);
