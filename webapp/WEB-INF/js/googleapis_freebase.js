@@ -945,7 +945,17 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
          app.ttl = (app.versions && app.versions.length) ? 600000 : 0;
 
          app.freebase = app.freebase || {};
-         app.freebase.write_user = (res['/type/domain/owners'] != null ? res['/type/domain/owners'].member.id.substr(6) : null);
+         
+         // set writeuser
+         if (res['/type/domain/owners'] != null) {
+             _u.extend(app, {
+                 "oauth_providers": {
+                     "freebase_writeuser" : {
+                         "writeuser": res['/type/domain/owners'].member.id.substr(6)
+                     }
+                 }
+             });
+         }
 
          for (var a=0; a < res['/type/namespace/keys'].length; a++) {
              var f = res['/type/namespace/keys'][a];
