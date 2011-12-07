@@ -235,7 +235,7 @@ public class AcreFetch extends JSConvertable {
             throw new AcreURLFetchException("Unable to fetch URL; possibly an illegal protocol?");
         }
 
-        StringBuffer request_header_log = new StringBuffer();
+        StringBuilder request_header_log = new StringBuilder();
         for (Map.Entry<String,String> header : request_headers.entrySet()) {
             String key = header.getKey();
             String value = header.getValue();
@@ -310,7 +310,7 @@ public class AcreFetch extends JSConvertable {
             Header content_type_header = null;
 
             // translate response headers
-            StringBuffer response_header_log = new StringBuffer();
+            StringBuilder response_header_log = new StringBuilder();
             Header[] rawheaders = hres.getAllHeaders();
             for (Header rawheader : rawheaders) {
                 String headername = rawheader.getName().toLowerCase();

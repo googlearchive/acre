@@ -29,7 +29,6 @@ import com.google.acre.Configuration;
 import com.google.acre.javascript.JSON;
 import com.google.acre.javascript.JSONException;
 
-
 public class Log {
 
     public static final byte ERROR = 0;
@@ -197,7 +196,7 @@ public class Log {
         if (obj instanceof String) {
             return (String) obj;
         } else if (obj instanceof Map) {
-            StringBuffer b = new StringBuffer();
+            StringBuilder b = new StringBuilder();
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) obj;
             Iterator<Map.Entry<String,Object>> i = map.entrySet().iterator();

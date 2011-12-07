@@ -134,7 +134,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
 
         String content_charset = "UTF-8";
 
-        StringBuffer request_header_log = new StringBuffer();
+        StringBuilder request_header_log = new StringBuilder();
         if (headers != null) {
             for (Map.Entry<String,String> header : headers.entrySet()) {
                 String key = header.getKey();
@@ -257,7 +257,7 @@ public class NHttpAsyncUrlfetch implements AsyncUrlfetch {
 
         Header content_type_header = null;
 
-        StringBuffer response_header_log = new StringBuffer();
+        StringBuilder response_header_log = new StringBuilder();
         for (Header h : res.getAllHeaders()) {
             if (h.getName().equalsIgnoreCase("set-cookie")) {
                 String set_cookie = h.getValue();

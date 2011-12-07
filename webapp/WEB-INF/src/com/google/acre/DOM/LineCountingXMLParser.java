@@ -75,7 +75,7 @@ public class LineCountingXMLParser extends DOMParser implements EntityResolver {
     
     public void startElement(QName element, XMLAttributes attrList, Augmentations augs) throws XNIException {
 //        if (logger.isTraceEnabled()) {
-//            StringBuffer b = new StringBuffer(" ");
+//            StringBuilder b = new StringBuilder(" ");
 //            for (int i = 0; i < attrList.getLength(); i++) {
 //                b.append(attrList.getQName(i));
 //                b.append("=\"");

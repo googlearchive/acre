@@ -160,7 +160,7 @@ public class AcreRequest extends JSConvertable {
         
         query_string = request.getQueryString();
 
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         b.append(server_protocol);
         b.append("://");
         b.append(request_server_name);
@@ -241,7 +241,7 @@ public class AcreRequest extends JSConvertable {
                     String encoding = request.getCharacterEncoding();
                     if (encoding == null) encoding = "ISO_8859_1";
                     BufferedReader reader = new BufferedReader(new InputStreamReader(is, encoding));
-                    StringBuffer buf = new StringBuffer();
+                    StringBuilder buf = new StringBuilder();
                     String line;
                     while ((line = reader.readLine()) != null) {
                         buf.append(line);
