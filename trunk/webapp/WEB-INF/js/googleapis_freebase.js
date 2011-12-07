@@ -944,8 +944,6 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
          app.guid = app.project = res.guid;
          app.ttl = (app.versions && app.versions.length) ? 600000 : 0;
 
-         app.freebase = app.freebase || {};
-         
          // set writeuser
          if (res['/type/domain/owners'] != null) {
              _u.extend(app, {
@@ -1016,10 +1014,11 @@ var cookiejar = function(name) {
     var _cookiejar = {};
     var _best_match = null;
 
-    var val = acre.request.cookies[_name];
+    var val = acre.request.cookies[name];
+    
     if (val) {
         var parts = val.split(":");
-        if (parts.length % 2) {
+        if (!(parts.length % 2)) {
             var key = null;
             for (var a in parts) {
                 var part = parts[a];

@@ -26,7 +26,7 @@ var augment;
         oauth.remove_credentials = remove_credentials;
         oauth.has_credentials = has_credentials;
         
-        if (typeof oauthservice != "undefined") {
+        if (typeof _appengine_oauthservice != "undefined") {
             oauth.get_oauth_user = get_oauth_user;
             oauth.create_host_access_token = create_host_access_token;
             oauth.get_host_identity = get_host_identity;
@@ -38,8 +38,8 @@ var augment;
 
     // ------------------------- public ------------------------------------------
 
-    var freebase_service = parseUri(acre.freebase.service_url).host;
-    var freebase_site = parseUri(acre.freebase.site_host).host;
+    var freebase_service = _u.parseUri(acre.freebase.service_url).host;
+    var freebase_site = _u.parseUri(acre.freebase.site_host).host;
     var freebase_service_frags = freebase_service.split('.');
     var freebase_domain = freebase_service_frags.slice(freebase_service_frags.length - 2, freebase_service_frags.length).join('.');
 
@@ -363,7 +363,7 @@ var augment;
      * and if it's running inside AppEngine.
      */
     var get_oauth_user = function(scope) {
-        return oauthservice.getCurrentUser(scope);
+        return _appengine_oauthservice.getCurrentUser(scope);
     }
 
     /*
@@ -374,14 +374,14 @@ var augment;
      */
     var create_host_access_token = function(scope) {
         if (!scope) throw "You must specify an API scope";
-        return oauthservice.getAccessToken(scope);
+        return _appengine_oauthservice.getAccessToken(scope);
     }
 
     /*
      * Obtain the identity used to in the "create_host_access_token" to identify this host
      */
     var get_host_identity = function() {
-        return oauthservice.getServiceAccountName();
+        return _appengine_oauthservice.getServiceAccountName();
     }
 
     // -------------------------- needed by acreboot -----------------------------------
@@ -422,7 +422,7 @@ var augment;
      * or nothing if the url is not part of an authorized domain.
      */
     function getCredentials(url) {
-        var parsed_url = parseUri(url);
+        var parsed_url = _u.parseUri(url);
         var host = parsed_url.host;
         var path = parsed_url.path;
         var domain_fragments = host.split('.');
@@ -613,7 +613,7 @@ var augment;
      */
     function obtainRequestToken(consumer, provider) {
         var signed = sign(consumer, null, provider.request_token_URL, "GET", {}, "", provider.authorization_params);
-        var res = system_urlfetch(signed.url, signed.method, signed.headers, signed.content, false);
+        var res = _system_urlfetch(signed.url, signed.method, signed.headers, signed.content, false);
         return OAuth.getParameterMap(OAuth.decodeForm(res.body));
     }
 
@@ -622,7 +622,7 @@ var augment;
      */
     function obtainAccessToken(consumer, provider, request_token) {
         var signed = sign(consumer, request_token, provider.access_token_URL, "GET", {}, "", provider.authorization_params);
-        var res = system_urlfetch(signed.url, signed.method, signed.headers, signed.content, false);
+        var res = _system_urlfetch(signed.url, signed.method, signed.headers, signed.content, false);
         return OAuth.getParameterMap(OAuth.decodeForm(res.body));
     }
 

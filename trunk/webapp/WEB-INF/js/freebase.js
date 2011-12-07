@@ -5,7 +5,7 @@ var URL_SIZE_LIMIT = 2047;
  * Attach the functions defined in this script to the given API object
  * to make them available to the user scope
  */
-function augment(freebase, urlfetch, async_urlfetch, request) {
+function augment(freebase, urlfetch, async_urlfetch) {
 
     // tuck this away so we can use it in handler and appfetcher creation
 
@@ -13,8 +13,8 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
     // *and* before register_handler or register_appfetcher
     _system_freebase = freebase;
     
-    freebase.service_url = request.freebase_service_url;
-    freebase.site_host = request.freebase_site_host;
+    freebase.service_url = _request.freebase_service_url;
+    freebase.site_host = _request.freebase_site_host;
 
     // XXX FreebaseError is getting built twice because this is called for
     // user and system
@@ -129,15 +129,15 @@ function augment(freebase, urlfetch, async_urlfetch, request) {
                 opts.headers['Content-Type'] = "application/x-www-form-urlencoded";
             }
             opts.headers['X-Requested-With'] = "1";
-            if (opts.content && request.mwlt_mode == true && opts.content !== ''
+            if (opts.content && _request.mwlt_mode == true && opts.content !== ''
                 && opts.headers['Content-Type'] === "application/x-www-form-urlencoded") {
                 opts.content += '&mw_cookie_scope=domain';
-            } else if (request.mwlt_mode == true
+            } else if (_request.mwlt_mode == true
                     && opts.headers['Content-Type'] === "application/x-www-form-urlencoded") {
                 opts.content = 'mw_cookie_scope=domain';
-            } else if (request.mwlt_mode === true && url.indexOf('?') > -1) {
+            } else if (_request.mwlt_mode === true && url.indexOf('?') > -1) {
                 opts.url += '&mw_cookie_scope=domain';
-            } else if (request.mwlt_mode === true) {
+            } else if (_request.mwlt_mode === true) {
                 opts.url += "?mw_cookie_scope=domain";
             }
         }
