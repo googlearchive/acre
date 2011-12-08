@@ -76,11 +76,11 @@ switch (acre.request.path_info) {
 }
 
 function get_redirect_url(url, use_referer, secure) {
-    if (use_referer) {
-        url = url || acre.request.headers.referer;
-    }
-    url = url || acre.request.app_url;
     if (provider.oauth_version === 2) {
+        if (use_referer) {
+            url = url || acre.request.headers.referer;
+        }
+        url = url || acre.request.app_url;
         url = url.replace(/^[^:]*/, (secure ? "https" : "http"));
     }
     return url;
@@ -89,6 +89,7 @@ function get_redirect_url(url, use_referer, secure) {
 function redirect(success) {
     if (typeof success == 'undefined') success = true;
     var url = success ? params.onsucceed : params.onfail;
+    url = url || "/";
     acre.response.status = 303;
     acre.response.set_header('Location', url);
 }
