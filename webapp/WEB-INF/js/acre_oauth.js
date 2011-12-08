@@ -392,7 +392,7 @@ var augment;
     OAuth.sign = function(url, method, headers, content, consumer, access_token) {
         var credentials = getCredentials(url);
         if (credentials) {
-            if (typeof consumer == "undefined" || consumer == null) {
+            if (typeof consumer == "undefined" || consumer == null || consumer === true) {
                 consumer = credentials.consumer;
             }
             if (typeof access_token == "undefined" || access_token == null) {
