@@ -492,7 +492,7 @@ OAuth.SignatureMethod.registerMethodClass(["HMAC-SHA1", "HMAC-SHA1-Accessor"],
     OAuth.SignatureMethod.makeSubclass(
         function getSignature(baseString) {
             b64pad = '=';
-            var signature = Hash.b64_hmac_sha1(this.key, baseString);
+            var signature = acre.hash.b64_hmac_sha1(this.key, baseString);
             return signature;
         }
     )
