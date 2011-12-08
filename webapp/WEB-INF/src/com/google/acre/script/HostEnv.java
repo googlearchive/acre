@@ -383,6 +383,27 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         try {
             @SuppressWarnings("unchecked")
+            Class<? extends Scriptable> jsUserServiceClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSUserService");
+
+            @SuppressWarnings("unchecked")
+            Class<? extends Scriptable> jsUserClass = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSUser");
+
+            try {
+                ScriptableObject.defineClass(scope, jsUserServiceClass, false, true);
+                ScriptableObject.defineClass(scope, jsUserClass, false, true);
+            } catch (IllegalAccessException e) {
+                syslog(ERROR, "hostenv.userservice.init.failed", "Failed to load UserService object: " + e);
+            } catch (InstantiationException e) {
+                syslog(ERROR, "hostenv.userservice.init.failed", "Failed to load UserService object: " + e);
+            } catch (InvocationTargetException e) {
+                syslog(ERROR, "hostenv.userservice.init.failed", "Failed to load UserService object: " + e);
+            }
+        } catch (ClassNotFoundException e1) {
+            syslog(DEBUG, "hostenv.userservice.init.failed", "UserService provider not found and will not be available");
+        }
+        
+        try {
+            @SuppressWarnings("unchecked")
             Class<? extends Scriptable> jsAppEngineOAuthService = (Class<? extends Scriptable>) Class.forName("com.google.acre.appengine.script.JSAppEngineOAuthService");
 
             try {

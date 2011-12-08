@@ -13,43 +13,51 @@ if (typeof acre == 'undefined') {
     acre = {};
 }
 
+if (typeof appengine == 'undefined' && ACRE_REQUEST.server_type == "appengine") {
+    appengine = {};
+}
+
 (function () {
 
 var startup_time = new Date();
 
-// make a private copy of the objects before
-//  they are wiped out from the global namespace.
-// accessible reference to it.
-
 var _topscope = this;
-var _hostenv = PROTECTED_HOSTENV;
-var _request = ACRE_REQUEST;
-var _domparser = new DOMParser();
-var _ks = new KeyStore();
-var _file = File;
-var _json = new JSON();
-var _cache = new Cache();
+
+// delete the LiveConnect and E4X entry points
+delete _topscope.Packages;
+delete _topscope.java;
+delete _topscope.netscape;
+delete _topscope.XML;
 
 // XXX there should be a java function to sanitize the global scope
 // with a whitelist instead of this blacklist.  most of the
 // global properties aren't enumerable so it's impossible to
 // whitelist them here within javascript
 
+
+// make a private copy of the embedded java objects 
+// and remove them from the global namespace for further protection.
+
+var _hostenv = PROTECTED_HOSTENV;
 delete PROTECTED_HOSTENV;
+
+var _request = ACRE_REQUEST;
 delete ACRE_REQUEST;
-delete KeyStore;
-delete Cache;
+
+var _file = File;
 delete File;
+
+var _domparser = new DOMParser();
+delete DOMParser;
+
+var _ks = new KeyStore();
+delete KeyStore;
+
+var _json = new JSON();
 delete JSON;
 
-delete _topscope.Packages;
-delete _topscope.java;
-delete _topscope.netscape;
-
-// delete E4X entrypoint if present
-if (typeof _topscope.XML != 'undefined') {
-    delete _topscope.XML;
-}
+var _cache = new Cache();
+delete Cache;
 
 // obtain datastore if present and remove from scope
 if (typeof DataStore != 'undefined') {
@@ -69,11 +77,18 @@ if (typeof MailService != 'undefined') {
     delete MailService;
 }
 
+// obtain userservice if present and remove from scope
+if (typeof UserService != 'undefined') {
+    var _userService = new UserService();
+    delete UserService;
+}
+
 // obtain appidservice if present and remove from scope
 if (typeof AppEngineOAuthService != 'undefined') {
     var _appengine_oauthservice = new AppEngineOAuthService();
     delete AppEngineOAuthService();
 }
+
 
 //----------------------------- globals ---------------------------------------
 
@@ -316,6 +331,7 @@ syslog.error = function (mesg, event_name) { return _syslog("ERROR",mesg,event_n
 
 acre.syslog = syslog;
 
+
 //--------------------------------- dev mode ------------------------------------------
 
 /**
@@ -332,6 +348,7 @@ _dev.syslog = syslog;
 if (_hostenv.ACRE_DEVELOPER_MODE) {
     acre._dev = _dev;
 }
+
 
 // ------------------------------- acre ----------------------------------------
 
@@ -410,22 +427,15 @@ acre.wait = function(millis) {
     _hostenv.do_wait(millis);
 }
 
-// ------------------------------- acre.host -----------------------------------------
 
-if (_request.server.indexOf("jetty") > -1) {
-    var server_type = "acre_server";
-} else if (_request.server.indexOf("app engine") > -1) {
-    var server_type = "appengine";
-} else {
-    var server_type = new String(_request.server);
-}
+// ------------------------------- acre.host -----------------------------------------
 
 acre.host = {
     protocol : _request.server_protocol,
     name : _request.server_host_base,
     dev_name : _request.server_host,
     port : _request.server_port,
-    server : server_type
+    server : _request.server_type
 };
 
 
@@ -1303,7 +1313,6 @@ var module_env = {
     _keystore: _keystore
 };
 
-
 //------------------------ cache --------------------------
 
 if (_request.trusted && _cache) { // the _datastore object won't be available in all environments so we need to check first
@@ -1319,7 +1328,8 @@ if (_request.trusted && _datastore) { // the _datastore object won't be availabl
     var store_scope = make_scope(module_env);
     store_scope._datastore = _datastore;
     _hostenv.load_system_script('datastore.js', store_scope);
-    store_scope.augment(acre);
+    if (appengine) store_scope.augment(appengine);
+    store_scope.augment(acre); // FIXME(SM): remove once refinery has transitioned
 }
 
 
@@ -1329,7 +1339,8 @@ if (_request.trusted && _taskqueue) { // the _taskqueue object won't be availabl
     var queue_scope = make_scope(module_env);
     queue_scope._taskqueue = _taskqueue;
     _hostenv.load_system_script('taskqueue.js', queue_scope);
-    queue_scope.augment(acre);
+    if (appengine) queue_scope.augment(appengine);
+    queue_scope.augment(acre); // FIXME(SM): remove once refinery has transitioned
 }
 
 
@@ -1339,9 +1350,18 @@ if (_request.trusted && _mailer) { // the _mailer object won't be available in a
     var mailer_scope = make_scope(module_env);
     mailer_scope._mailer = _mailer;
     _hostenv.load_system_script('mailservice.js', mailer_scope);
-    mailer_scope.augment(acre);
+    if (appengine) mailer_scope.augment(appengine);
+    mailer_scope.augment(acre); // FIXME(SM): remove once refinery has transitioned
 }
 
+//------------------------ user service --------------------------
+
+if (_request.trusted && _userService) { // the _userService object won't be available in all environments so we need to check first
+    var userService_scope = make_scope(module_env);
+    userService_scope._userService = _userService;
+    _hostenv.load_system_script('userservice.js', userService_scope);
+    userService_scope.augment(appengine);
+}
 
 // -------------------------------- file handlers -------------------------------------
 
