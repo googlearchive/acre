@@ -88,6 +88,7 @@ public class AcreRequest extends JSConvertable {
 
     public String version;
     public String server;
+    public String server_type;
     
     public boolean trusted;
 
@@ -119,6 +120,15 @@ public class AcreRequest extends JSConvertable {
         cookies = new HashMap<String, AcreCookie>();
         version = Configuration.Values.ACRE_VERSION.getValue();
         server = OneTrueServlet.getServer();
+        
+        if (server.indexOf("jetty") > -1) {
+            server_type = "acre_server";
+        } else if (server.indexOf("app engine") > -1) {
+            server_type = "appengine";
+        } else {
+            server_type = server;
+        }
+        
         trusted = Configuration.Values.ACRE_TRUSTED_MODE.getBoolean();
         skip_routes = false;
         _metaweb_tid = (String) request.getAttribute("X-Metaweb-TID");

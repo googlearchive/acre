@@ -1,17 +1,17 @@
 acre.require('/test/lib').enable(this);
 
 // not all acre instances might have this API present so check to make sure
-if (acre.mail) {
+if (typeof appengine != "undefined" && appengine.mail) {
 
-    test('acre.mail exists and has all the pieces', function() {
-        ok(typeof acre.mail != "undefined", "mail service exists");
-        ok(typeof acre.mail.send == "function", "mail.send exists");
-        ok(typeof acre.mail.send_admins == "function", "mail.send_admins exists");
+    test('appengine.mail exists and has all the pieces', function() {
+        ok(typeof appengine.mail != "undefined", "mail service exists");
+        ok(typeof appengine.mail.send == "function", "mail.send exists");
+        ok(typeof appengine.mail.send_admins == "function", "mail.send_admins exists");
     });
     
-    test('acre.mail.send works', function() {
+    test('appengine.mail.send works', function() {
         try {
-            acre.mail.send({
+            appengine.mail.send({
                 "sender" : "blah@blah.com",
                 "to" : [ "1@blah.com" , "2@blah.com" ],
                 "cc" : [ "1@blah.com" , "2@blah.com" ],
@@ -28,9 +28,9 @@ if (acre.mail) {
         }
     });
 
-    test('acre.mail.send_admins works', function() {
+    test('appengine.mail.send_admins works', function() {
         try {
-            acre.mail.send_admins({
+            appengine.mail.send_admins({
                 "sender" : "blah@blah.com",
                 "to" : [ "1@blah.com" , "2@blah.com" ],
                 "cc" : [ "1@blah.com" , "2@blah.com" ],

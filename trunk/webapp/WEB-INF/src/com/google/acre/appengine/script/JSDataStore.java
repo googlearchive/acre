@@ -101,7 +101,7 @@ public class JSDataStore extends JSObject {
         } catch (IllegalArgumentException e) {
             String message = e.getMessage();
             if (message.indexOf("Invalid Key") > -1) {
-                throw new JSConvertableException("'" + obj_key + "' is not a valid key, have you called acre.store.key()?").newJSException(_scope);
+                throw new JSConvertableException("'" + obj_key + "' is not a valid key, have you called appengine.store.key()?").newJSException(_scope);
             } else {
                 throw new JSConvertableException("Failed to get entity: " + message).newJSException(_scope);
             }
