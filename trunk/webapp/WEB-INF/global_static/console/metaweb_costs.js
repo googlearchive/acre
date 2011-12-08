@@ -78,7 +78,7 @@ var mw_costs = (function() {
   'sh'       : 'squid/hit',
   'st'       : 'squid/total time',
   'so'       : 'squid/origin server time'
-};
+  };
 
   function round(v) {
     v = v || 0;
