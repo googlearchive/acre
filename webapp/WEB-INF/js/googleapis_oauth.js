@@ -6,29 +6,34 @@ var augment;
 
         // augment the oauth providers with freebase configs
         // and pre-packaged google providers per scope
-
-        providers.freebase = {
+        var freebase = {
             oauth_version: 2,
-            domain: "www.googleapis.com",
+            domain: _u.parseUri(_request.googleapis_host).host,
             service_url_prefix: _request.googleapis_freebase,
-            access_token_URL: "https://sandbox.google.com/o/oauth2/token",
-            refresh_token_URL: "https://sandbox.google.com/o/oauth2/token",
-            user_authorization_URL: "https://sandbox.google.com/o/oauth2/auth",
-            scope: "https://www.googleapis.com/auth/freebase",
-            authorization_params: { access_type: "online", approval_prompt: "auto" }
+            keystore_name: "www.googleapis.com",
+            access_token_URL: "https://accounts.google.com/o/oauth2/token",
+            refresh_token_URL: "https://accounts.google.com/o/oauth2/token",
+            user_authorization_URL: "https://accounts.google.com/o/oauth2/auth",
+            scope: "https://www.googleapis.com/auth/freebase"
         };
 
-        providers.freebase_writeuser = {
-            oauth_version: 2,
-            domain: "www.googleapis.com",
-            service_url_prefix: _request.googleapis_freebase,
-            access_token_URL: "https://sandbox.google.com/o/oauth2/token",
-            refresh_token_URL: "https://sandbox.google.com/o/oauth2/token",
-            user_authorization_URL: "https://sandbox.google.com/o/oauth2/auth",
-            scope: "https://www.googleapis.com/auth/freebase",
-            authorization_params: { access_type: "offline", approval_prompt: "force" },
-            token_storage: "keystore"
-        };
+        // standard user login
+        providers.freebase = _u.extend({}, freebase, {
+            authorization_params: { 
+                access_type: "online", 
+                approval_prompt: "auto"
+            }
+        });
+
+        // writeuser (offline scripts)
+        providers.freebase_writeuser = _u.extend({}, freebase, {
+            token_storage: "keystore",
+            authorization_params: { 
+                access_type: "offline", 
+                approval_prompt: "force" 
+            },
+        });
+
 
         var google = providers.google;
 
@@ -278,7 +283,7 @@ var augment;
         provider = getProvider(provider);
         switch (provider.token_storage) {
             case "keystore":
-                acre.keystore.remove(provider.name);
+                _keystore.remove(provider.name);
                 break;
             case "cookie":
             default:
@@ -702,7 +707,7 @@ var augment;
         var token_name = getCookieName(provider.name, kind || "access");
         switch (provider.token_storage) {
             case "keystore":
-                var key = acre.keystore.get(token_name);
+                var key = _keystore.get(token_name);
                 if (key) {
                     token = OAuth.getParameterMap(OAuth.decodeForm(key[0]));
                     token.refresh_token = key[1];
@@ -742,8 +747,7 @@ var augment;
         var key = null;
         var keyname = provider.keystore_name || provider.domain;
         try {
-            key = acre.keystore.get(keyname);
-
+            key = _keystore.get(keyname);
             if (key) {
                 key = {
                     consumerKey    : key[0],
