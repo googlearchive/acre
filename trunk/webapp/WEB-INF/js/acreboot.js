@@ -2,12 +2,12 @@
 /*   acreboot.js - implementation of acre host environment using liveconnect and java */
 
 /**
- * The acre toplevel namespace.
- * This holds the Javascript functions used by acre scripts
- *
- * @name acre
- * @namespace
- */
+*   The acre toplevel namespace.
+*   This holds the Javascript functions used by acre scripts
+*
+*   @name acre
+*   @namespace
+**/
 
 if (typeof acre == 'undefined') {
     acre = {};
@@ -110,13 +110,13 @@ var _DEFAULT_APP = "main." + _DELIMITER_PATH;
 
 //------------------------------- Utils ---------------------------------------
 
-/*
- * A subset of jQuery utils loaded as 'u':
- *   u.each, u.extend, u.isArray
- * 
- * Plus a few more:
- *   u.escape_re, u.parseUri
- */
+/**
+*   A subset of jQuery utils loaded as 'u':
+*       u.each, u.extend, u.isArray
+*
+*   Plus a few more:
+*       u.escape_re, u.parseUri
+**/
 var util_scope = {};
 _hostenv.load_system_script("util.js", util_scope);
 var u = util_scope.exports;
@@ -167,18 +167,18 @@ function compose_req_path(host, path, query_string) {
 function decompose_req_path(req_path) {
     var path_re = /^([^\/]*:)?(?:\/\/([^\/\?]*))?(?:\/?([^\?]*))?(?:\?(.*))?$/;
     var [orig_req_path, protocol, host, path, query_string] = req_path.match(path_re);
-    
+
     if (!host) throw new Error("Path: " + orig_req_path + " is not fully-qualified");
-    
+
     // if it's a full URL we need to turn host into new require-style host
     if (protocol) {
         // remove port
         host = host.replace(/\:\d*$/,"");
-        
+
         // normalize host relative to current acre host
         var acre_host_re = new RegExp("^((.*)\.)?" + u.escape_re(_request.server_host_base) + "$");
         var foreign_host_re = new RegExp("^(.*\.)" + _DELIMITER_HOST + "$");
-        
+
         var m = host.match(acre_host_re);
         if (m) {
             if (m[2]) {
@@ -211,7 +211,7 @@ function file_in_path(filename, path) {
     var file_re = new RegExp(u.escape_re(filename) + "(\/.*)?$");
     var in_path = false;
     var path_info = "";
-    
+
     if (file_re.test(path)) {
         in_path = true;
         path_info = path.replace(new RegExp("^" + u.escape_re(filename)),"");
@@ -221,12 +221,12 @@ function file_in_path(filename, path) {
         // XXX - add leading slash for backward-compatibility
         path_info = "/" + path;
     }
-    
+
     // XXX - strip trailing slash for backward-compatibility
     if (path_info.length > 1 && path_info.substr(-1) === "/") {
         path_info = path_info.substr(0, path_info.length-1);
     }
-    
+
     return [path_info, in_path];
 }
 
@@ -243,7 +243,7 @@ function get_extension_metadata(name, extensions) {
       }
       exts.shift();
     }
-    
+
     return ext_data;
 };
 
@@ -253,7 +253,7 @@ function get_extension_metadata(name, extensions) {
 function namespace_to_host(namespace) {
     var host_re = new RegExp(u.escape_re('^' + _DEFAULT_HOSTS_PATH));
     var acre_host_re = new RegExp(u.escape_re('^' + _DEFAULT_ACRE_HOST_PATH));
-    
+
     if (host_re.test(namespace)) {
         namespace = namespace.replace(host_re, "");
         if (acre_host_re.test(namespace)) {
@@ -267,7 +267,7 @@ function namespace_to_host(namespace) {
 
 function host_to_namespace(host) {
     var path = null;
-    
+
     var host_parts = host.split(".");
     var trailing_host_part = host_parts.pop();
     if (trailing_host_part === _DELIMITER_PATH) {
@@ -278,7 +278,7 @@ function host_to_namespace(host) {
         host_parts.push(trailing_host_part);
         path = _DEFAULT_HOSTS_PATH + _DEFAULT_ACRE_HOST_PATH + "/" + host_parts.reverse().join("/");
     }
-    
+
     return path;
 }
 
@@ -335,8 +335,8 @@ acre.syslog = syslog;
 //--------------------------------- dev mode ------------------------------------------
 
 /**
- *  this should be enabled for development only!
- */
+*   this should be enabled for development only!
+**/
 var _dev = {};
 
 _dev.test_internal = function (ename) {
@@ -355,19 +355,19 @@ if (_hostenv.ACRE_DEVELOPER_MODE) {
 acre.version = new String(_request.version);
 
 /**
- *   begin the http response.
- *
- *   The Content-type header, if specified, is handled specially.
- *   If it is any text/* type, the charset specified in the header will
- *   be used to encode the response.  If no charset= parameter is given,
- *   the response will be encoded as UTF-8, and "; charset=utf-8" is added
- *   to the Content-type header before sending the response.
- *   <br/>
- *   For content types other than text/* the text is always encoded as UTF-8.
- *
- *   @param status is the response status (e.g. 200)
- *   @param headers is a javascript object
- */
+*   begin the http response.
+*
+*   The Content-type header, if specified, is handled specially.
+*   If it is any text/* type, the charset specified in the header will
+*   be used to encode the response.  If no charset= parameter is given,
+*   the response will be encoded as UTF-8, and "; charset=utf-8" is added
+*   to the Content-type header before sending the response.
+*   <br/>
+*   For content types other than text/* the text is always encoded as UTF-8.
+*
+*   @param status is the response status (e.g. 200)
+*   @param headers is a javascript object
+**/
 acre.start_response = function (status, headers) {
 
     if (typeof status == 'undefined') {
@@ -388,9 +388,9 @@ acre.start_response = function (status, headers) {
 };
 
 /**
- *   add output to the http response.  multiple arguments will be appended.
- *   @param str string or markup to append
- */
+*   add output to the http response.  multiple arguments will be appended.
+*   @param str string or markup to append
+**/
 acre.write = function () {
     u.each(arguments, function(i, arg) {
         // XXX - shouldn't have handler-specific code here
@@ -402,23 +402,23 @@ acre.write = function () {
         if (typeof arg != 'string' && !(arg instanceof Binary))
             arg = '' + arg;
 
-        _hostenv.write(arg);        
+        _hostenv.write(arg);
     });
 };
 
 /**
- * exit the current acre request.<br/><br/>
- *
- * this works by throwing an exception,
- * that exception propagates across acre.load* calls.<br/><br/>
- *
- * Currently, user code can catch that exception.
- * we may wish to change this behavior since most people expect
- * to catch errors rather than normal termination.<br/><br/>
- *
- * if an acre script exits before calling <b>acre.start_response()</b>,
- * an error response is generated.
- */
+*   exit the current acre request.<br/><br/>
+*
+*   this works by throwing an exception,
+*   that exception propagates across acre.load* calls.<br/><br/>
+*
+*   Currently, user code can catch that exception.
+*   we may wish to change this behavior since most people expect
+*   to catch errors rather than normal termination.<br/><br/>
+*
+*   if an acre script exits before calling <b>acre.start_response()</b>,
+*   an error response is generated.
+**/
 acre.exit = function () {
     throw new _hostenv.AcreExitException();
 };
@@ -485,16 +485,16 @@ if ('cache-control' in acre.request.headers && !('x-acre-cache-control' in acre.
 }
 
 /**
- * reset acre.request.query_string & body
- * 
- * Also parse params into objects for easy look-up:
- *   query_string --> acre.request.params
- *   body --> acre.request.body_params
- */
+*   reset acre.request.query_string & body
+*
+*   Also parse params into objects for easy look-up:
+*       query_string --> acre.request.params
+*       body --> acre.request.body_params
+**/
 function set_request_params() {
     var query_string = acre.request.query_string;
     var body = acre.request.body;
-    
+
     try {
         acre.request.params = (typeof query_string == 'string') ? acre.form.decode(query_string) : {};
         acre.request.body_params = (typeof body == 'string' && typeof acre.request.headers['content-type'] == 'string' && acre.request.headers['content-type'].match(/^application\/x-www-form-urlencoded/)) ? acre.form.decode(body) : {};
@@ -722,7 +722,7 @@ var AcreResponse_set_vary = function (res) {
     } else {
         var vary = [];
     }
-    
+
     for (key in AcreResponse_vary_cookies) {
         vary.push('Cookie');
         break;
@@ -758,9 +758,9 @@ acre.response = null;
 
 // --------------------------- acre.errors ---------------------------------
 
-/*
- * Setup the acre.error object in case the request is for an error page
- */
+/**
+*   Setup the acre.error object in case the request is for an error page
+**/
 if (_request.error_info) {
     acre.error = _request.error_info;
 
@@ -773,16 +773,16 @@ if (_request.error_info) {
 acre.errors = {};
 
 /**
- *  exception class to allow bailing out early, e.g.
- *   after responding quickly with an error code.
- *  this api is likely to change so this exception
- *  should be thrown by calling acre.exit(), not
- *  by thowing it directly.  it is documented here
- *  because developers might notice this exception
- *  getting caught in their javascript "catch" blocks.
- *  if this occurs, the best thing is probably to
- *  re-throw the exception.
- */
+*   exception class to allow bailing out early, e.g.
+*   after responding quickly with an error code.
+*   this api is likely to change so this exception
+*   should be thrown by calling acre.exit(), not
+*   by thowing it directly.  it is documented here
+*   because developers might notice this exception
+*   getting caught in their javascript "catch" blocks.
+*   if this occurs, the best thing is probably to
+*   re-throw the exception.
+**/
 acre.errors.AcreRouteException = function () {};
 acre.errors.AcreRouteException.prototype = new Error('acre.route');
 
@@ -827,7 +827,7 @@ function set_environ() {
         delete acre.environ.user_info;
         delete acre.environ;
     }
-    
+
     acre.environ = {
         version: _request.version,
         script_name: _request.script_name,
@@ -856,7 +856,7 @@ function set_environ() {
     };
     acre.environ.params = acre.request.params;
     acre.environ.body_params = acre.request.body_params;
-    
+
     if (acre.request.user_info) {
         acre.environ.user_info = acre.request.user_info;
     }
@@ -902,37 +902,37 @@ if (typeof acre.html == 'undefined') {
 }
 
 /**
- *  Parse a string containing XML into a DOM Document object. <br/><br/>
- *
- *  The returned Document object complies to the W3C EcmaScript bindings for
- *  the DOM.
- *
- *  @param xml_str the XML string to be parsed
- */
+*   Parse a string containing XML into a DOM Document object. <br/><br/>
+*
+*   The returned Document object complies to the W3C EcmaScript bindings for
+*   the DOM.
+*
+*   @param xml_str the XML string to be parsed
+**/
 acre.xml.parse = function(xml_str) {
     return _domparser.parse_string(xml_str, "xml");
 };
 
 /**
- *  Parse a string containing XML into a DOM Document object and support namespaces. <br/><br/>
- *
- *  The returned Document object complies to the W3C EcmaScript bindings for
- *  the DOM.
- *
- *  @param xml_str the XML string to be parsed
- */
+*   Parse a string containing XML into a DOM Document object and support namespaces. <br/><br/>
+*
+*   The returned Document object complies to the W3C EcmaScript bindings for
+*   the DOM.
+*
+*   @param xml_str the XML string to be parsed
+**/
 acre.xml.parseNS = function(xml_str) {
     return _domparser.parse_ns_string(xml_str, "xml");
 };
 
 /**
- *  Parse a string containing HTML into a DOM Document object. <br/><br/>
- *
- *  The returned Document object complies to the W3C EcmaScript bindings for
- *  the DOM.
- *
- *  @param html_str the HTML string to be parsed
- */
+*   Parse a string containing HTML into a DOM Document object. <br/><br/>
+*
+*   The returned Document object complies to the W3C EcmaScript bindings for
+*   the DOM.
+*
+*   @param html_str the HTML string to be parsed
+**/
 acre.html.parse = function(html_str) {
     return _domparser.parse_string(html_str, "html");
 };
@@ -990,7 +990,7 @@ if (typeof acre.keystore == 'undefined') {
 }
 
 var _keystore = {
-    
+
     get: function (name) {
         if (_request.app_project !== null) {
             return _ks.get_key(name, _request.app_project);
@@ -998,7 +998,7 @@ var _keystore = {
             return null;
         }
     },
-    
+
     put: function (name, token, secret) {
         if (_request.app_project !== null) {
             return _ks.put_key(name, _request.app_project, token, secret);
@@ -1006,7 +1006,7 @@ var _keystore = {
             return null;
         }
     },
-    
+
     keys: function () {
         if (_request.app_project !== null) {
             return _ks.get_keys(_request.app_project);
@@ -1014,7 +1014,7 @@ var _keystore = {
             return null;
         }
     },
-    
+
     remove: function (name) {
         if (_request.app_project !== null) {
             _ks.delete_key(name, _request.app_project);
@@ -1033,31 +1033,31 @@ if (_request.trusted) {
 // ------------------------------ urlfetch -----------------------------------
 
 /**
- *   allows an acre script to fetch data from an external url.<br/><br/>
- *
- *   this may not be part of the standard api, we will probably want to
- *   restrict which urls are available to prevent abuse.<br/><br/>
- *
- *   note that response.body is a javascript string, which means it
- *   has already been decoded.  there are bugs in this process,
- *   because we don't sniff for <meta http-equiv="content-type"...> here.<br/><br/>
- *
- *   <pre>
- *   returns a response object, e.g.:
- *     {
- *       status: 200,
- *       headers: {
- *          "content-length": "14",
- *          "content-type": "text/plain; charset=UTF-8",
- *       },
- *       content_type: "text/plain",
- *       body: "hocus.\npocus.\n"
- *    }
- *    </pre><br/><br/>
- *
- *  all header names are canonicalized to lowercase
- *
- */
+*   allows an acre script to fetch data from an external url.<br/><br/>
+*
+*   this may not be part of the standard api, we will probably want to
+*   restrict which urls are available to prevent abuse.<br/><br/>
+*
+*   note that response.body is a javascript string, which means it
+*   has already been decoded.  there are bugs in this process,
+*   because we don't sniff for <meta http-equiv="content-type"...> here.<br/><br/>
+*
+*   <pre>
+*   returns a response object, e.g.:
+*     {
+*       status: 200,
+*       headers: {
+*          "content-length": "14",
+*          "content-type": "text/plain; charset=UTF-8",
+*       },
+*       content_type: "text/plain",
+*       body: "hocus.\npocus.\n"
+*    }
+*    </pre><br/><br/>
+*
+*  all header names are canonicalized to lowercase
+*
+**/
 
 var _system_urlfetch = function(url,method,headers,content,sign) {
     return _urlfetch(true,url,method,headers,content,sign);
@@ -1096,29 +1096,30 @@ if (!acre.error) {
     };
 }
 
-/*
- * Fetches an HTTP URL.
- *
- * Parameters:
- *
- *  - system: whether or not this is a fetch made by acre directly or by the user script [required]
- *  - url: the URL to fetch [required]
- *  - method: the HTTP method to use to fetch it [optional, defaults to GET]
- *  - headers: the HTTP headers to pass along with the request [optional]
- *  - content: the HTTP payload of the request [optional]
- *  - sign: whether or not sign the request (using oauth) [optional]
- *
- * NOTE: sign can be either a boolean or an object. If a boolean
- * the oauth subsystem will look for the right key based on the domain
- * name of the request being made. If it's an object it must contain the key/secret
- * pair that identifies the application against the oauth provider and
- * must be in the form:
- *
- *     {
- *       "consumerKey" : key,
- *       "consumerSecret" : secret
- *     }
- */
+/**
+*   Fetches an HTTP URL.
+*
+*   Parameters:
+*
+*   - system: whether or not this is a fetch made by acre directly or by the user script [required]
+*   - url: the URL to fetch [required]
+*   - method: the HTTP method to use to fetch it [optional, defaults to GET]
+*   - headers: the HTTP headers to pass along with the request [optional]
+*   - content: the HTTP payload of the request [optional]
+*   - sign: whether or not sign the request (using oauth) [optional]
+*
+*   NOTE: sign can be either a boolean or an object. If a boolean
+*   the oauth subsystem will look for the right key based on the domain
+*   name of the request being made. If it's an object it must contain the key/secret
+*   pair that identifies the application against the oauth provider and
+*   must be in the form:
+*
+*       {
+*           "consumerKey" : key,
+*           "consumerSecret" : secret
+*       }
+*
+**/
 var _urlfetch = function (system, url, options_or_method, headers, content, sign, _urlopener) {
     _urlopener = _urlopener || _hostenv.urlOpen;
 
@@ -1160,7 +1161,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     if (typeof content != 'string' && !(content instanceof Binary)) content = '';
     if (typeof response_encoding != 'string') response_encoding = 'utf-8';
     if (typeof no_redirect != 'boolean') no_redirect = false;
-    
+
     // lowercase all the header names so we don't have to worry about
     // case sensitivity
     for (var hk in headers) {
@@ -1170,7 +1171,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
         delete headers[hk];
         headers[hkl] = hkv;
     }
-    
+
     // if the top-level request is not secure, prevent
     // state-changing sub-requests by default.
     // this behavior can be over-ridden with a 'bless': true option
@@ -1222,7 +1223,6 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     // If necessary, sign the request with OAuth
     // this may add an Authorization: header
     if (sign) {
-        // if not, use the regular oauth signature
         try {
             var signed = oauth_sign(url, method, headers, content, sign);
         } catch (e if typeof errback !== 'undefined') {
@@ -1276,7 +1276,6 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
 
     // XXX TODO _hostenv.urlOpen should interpret and strip any charset=
     //  in the response content-type - all we see is a javascript string.
-    
     var response = {};
     if (_urlopener == _hostenv.urlOpen) {
 
@@ -1411,7 +1410,7 @@ acre.handlers.binary = {
 // used by script.to_module() in proto_require
 var _load_handler = function(scope, handler_name, handler_path) {
     var handler;
-    
+
     // default to passthrough handler (safest)
     handler_name = handler_name || "passthrough";
 
@@ -1440,24 +1439,24 @@ var _load_handler = function(scope, handler_name, handler_path) {
 
 // ------------------------------------- appfetch methods ------------------------------------
 
-/* 
- * appfetch methods retrieve app metadata for a given host
- *
- *  - called from proto_require()
- *  - each registered appfetch method is called until one succeeds
- *  - successful results are added to cache with key: 
- *      METADATA:{app.guid}:{app.as_of}
- *  - app_data.hosts as pointers to results also cached:
- *      HOST:{app.hosts[i]} with value METADATA:{app.guid}:{app.asof}
- */
+/**
+*   appfetch methods retrieve app metadata for a given host
+*
+*   - called from proto_require()
+*   - each registered appfetch method is called until one succeeds
+*   - successful results are added to cache with key: 
+*       METADATA:{app.guid}:{app.as_of}
+*   - app_data.hosts as pointers to results also cached:
+*       HOST:{app.hosts[i]} with value METADATA:{app.guid}:{app.asof}
+*/
 
 var appfetch_methods = [],
     METADATA_CACHE = {},
     GET_METADATA_CACHE = {};
 
-/*
-*  Helper functions for creating appfetch methods
-*/
+/**
+*   Helper functions for creating appfetch methods
+**/
 var APPFETCH_ERROR_UNKNOWN = 1,
     APPFETCH_ERROR_METHOD = 2,
     APPFETCH_ERROR_APP = 3,
@@ -1484,11 +1483,11 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
     var appfetcher = function(host, app) {
         // avoid infinite recursion (e.g., symlink to self)
         var MAX_DIRECTORY_DEPTH = 2;
-        
+
         function _add_directory(app, resource, resource_obj, base_path, depth) {
             depth = depth || 0;
             base_path = base_path || "";
-            
+
             var dir = inventory_path(app, resource, resource_obj);
 
             // app is empty!
@@ -1506,7 +1505,7 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
                     file.name = fn;
                     file.source = name;
                     app.files[fn] = file;
-                    
+
                     // also build up a filename lookup dict
                     // so we can support legacy on-disk apps
                     // that expect stripped extensions
@@ -1613,13 +1612,13 @@ function get_appfetch_method(method_name) {
 };
 
 
-/*
- *  Cache appfetcher
- *
- *  Special appfetch method that checks cache 
- *  for previously fetched apps (any method)
- *
- */
+/**
+*   Cache appfetcher
+*
+*   Special appfetch method that checks cache 
+*   for previously fetched apps (any method)
+*
+**/
 var appfetch_cache = function(host) {
     if (host in METADATA_CACHE) {
         return METADATA_CACHE[host];
@@ -1665,11 +1664,11 @@ appfetch_methods.push({
 });
 
 
-/*
- *  Disk appfetcher
- *
- *  Built-in method that loads apps from disk
- */
+/**
+*   Disk appfetcher
+*
+*   Built-in method that loads apps from disk
+**/
 var disk_resolver = function(host) {
     return _hostenv.STATIC_SCRIPT_PATH + host_to_namespace(host);
 };
@@ -1700,7 +1699,7 @@ var disk_inventory_path = function(app, disk_path) {
             file_data.content_hash = disk_path+"/"+file+f.mtime;
             res.files[file] = file_data;
         }
-        delete f;        
+        delete f;
     });
     
     return res;
@@ -1726,9 +1725,9 @@ var disk_get_content = function() {
 register_appfetch_method("disk", disk_resolver, disk_inventory_path, disk_get_content);
 
 
-/*
- *  Load custom appfetch methods
- */
+/**
+*   Load custom appfetch methods
+*/
 
 // XXX - how can we make this dynamic?
 var custom_methods = [
@@ -1966,14 +1965,14 @@ for (var name in _topscope) {
 
 //-------------------------------- Script object -------------------------------
 
-/*
- * Acre's internal representation of a script that is
- * passed to handlers to create modules (e.g., acre.require)
- * or generate output (e.g., top-level http request)
- */
+/**
+*   Acre's internal representation of a script that is
+*   passed to handlers to create modules (e.g., acre.require)
+*   or generate output (e.g., top-level http request)
+**/
 function Script(app, name, path_info) {
     this.app = app;
-    
+
     // get backfill metadata
     // we need to do this post-overrides being applied
     var ext_md = get_extension_metadata(name, app.extensions);
@@ -2003,7 +2002,7 @@ function Script(app, name, path_info) {
         versions: app.versions,
         base_url : acre.host.protocol + "://" + 
                 (app.host.match(/\.$/) ? app.host.replace(/\.$/, "") : (app.host + "." + acre.host.name)) +
-                (acre.host.port !== 80 ? (":" + acre.host.port) : "")              
+                (acre.host.port !== 80 ? (":" + acre.host.port) : "")
     };  
     this.script_data = script_data;
 
@@ -2031,7 +2030,7 @@ Script.prototype.normalize_path = function(path, version, new_only) {
         namespace = namespace.join('/');
         path = compose_req_path(namespace_to_host(namespace), script);
         return path;
-    } 
+    }
 
     // Mode 3: relative require
     else {
@@ -2064,14 +2063,14 @@ Script.prototype.set_scope = function(scope) {
     var script = this,
         script_data = this.script_data,
         scope = scope || make_scope();
-        
+
     scope.acre.current_script = script.script_data;
 
-    /*
-     * _request_scope augmentation:
-     *   This is stuff we only do for 
-     *   the top-level requested script:
-     */
+    /**
+    *   _request_scope augmentation:
+    *   This is stuff we only do for 
+    *   the top-level requested script:
+    **/
     if (scope == _request_scope && script.name.indexOf("not_found.") !== 0) {
         scope.acre.request.script = script.script_data;
 
@@ -2181,16 +2180,16 @@ Script.prototype.set_scope = function(scope) {
     };
 
 
-    /*
-     * helper for the following functions (require, include, get_source)
-     *
-     * all take a path as the primary arugment, but
-     * optionally can take a metadata object in the second 
-     * position to be spliced on to the context of the app.
-     *
-     * ... or, for backward-compatibility, the metadata slot
-     *  can be a version string (path must be a freebase ID) 
-     */
+    /**
+    *   helper for the following functions (require, include, get_source)
+    *
+    *   all take a path as the primary arugment, but
+    *   optionally can take a metadata object in the second 
+    *   position to be spliced on to the context of the app.
+    *
+    *   ... or, for backward-compatibility, the metadata slot
+    *   can be a version string (path must be a freebase ID) 
+    **/
     function get_sobj(path, metadata) {
         var version,
             require_opts = {};
@@ -2203,7 +2202,7 @@ Script.prototype.set_scope = function(scope) {
 
         if (!path) {
             throw new Error("No URL provided");
-        }    
+        }
 
         path = script.normalize_path(path, version);
         var sobj = route_require(path, require_opts);
@@ -2213,7 +2212,7 @@ Script.prototype.set_scope = function(scope) {
         }
 
         if (compose_req_path(sobj.app.host, sobj.name) === script.path) {
-            throw new Error("A script can not require itself");                
+            throw new Error("A script can not require itself");
         }
 
         return sobj;
@@ -2288,13 +2287,13 @@ Script.prototype.to_http_response = function(scope) {
 
 // ------------------------------- require ------------------------------------
 
-/*
- * main require function:
- * - finds apps using appfetchers
- * - augments and caches app metadata
- * - finds the correct file within an app (or mount)
- * - returns a new Script object for found file
- */
+/**
+*   main require function:
+*   - finds apps using appfetchers
+*   - augments and caches app metadata
+*   - finds the correct file within an app (or mount)
+*   - returns a new Script object for found file
+*/
 var proto_require = function(req_path, req_opts) {
     req_opts = req_opts || {};
     syslog.debug(req_path, "proto_require.path");
@@ -2326,7 +2325,7 @@ var proto_require = function(req_path, req_opts) {
                                 md[key];
                 }
             }
-            
+
             // set project specified in metadata
             // as long as it's a step up from host
             function check_project(host, project) {
@@ -2361,20 +2360,20 @@ var proto_require = function(req_path, req_opts) {
         return app;
     };
 
-    /*
-     * utility for resolving filenames to files
-     * using the filenames lookup hash in app_data
-     * 
-     * we look for a match in several ways:
-     *  1. foo.ext --> foo.ext
-     *  2. foo.ext --> foo
-     *  3. foo --> foo.ext 
-     *
-     * with preferred values of ext for #3 (.sjs, .mjt).
-     */ 
+    /**
+    *   utility for resolving filenames to files
+    *   using the filenames lookup hash in app_data
+    * 
+    *   we look for a match in several ways:
+    *   1. foo.ext --> foo.ext
+    *   2. foo.ext --> foo
+    *   3. foo --> foo.ext 
+    *
+    *   with preferred values of ext for #3 (.sjs, .mjt).
+    **/
     function get_file(fn) {
         var filename, filenames;
-        
+
         // Early-on acre didn't support extensions, so it would resolve 
         // requests for filenames with extensions to the filename w/out an 
         // extension... now we get to support that forever!  :-P
@@ -2424,7 +2423,7 @@ var proto_require = function(req_path, req_opts) {
         } catch (e if e.__code__ == APPFETCH_ERROR_NOT_FOUND) {
             app_data = null;
             return true;
-        }        
+        }
     });
 
     if (app_data === null) {
@@ -2494,11 +2493,11 @@ var proto_require = function(req_path, req_opts) {
 
     if (path) {
         var path_segs = path.split("/");
-        
+
         while (path_segs.length) {
             var fn = path_segs.join("/");
             path_info = file_in_path(fn, path)[0];
-            
+
             if (app.mounts[fn]) {
                 return route_require(app.mounts[fn] + path_info, req_opts, {routes: true});
             }
@@ -2515,20 +2514,20 @@ var proto_require = function(req_path, req_opts) {
 
     // we don't have a script to run
     if (!filename) return null;
-    
+
     return new Script(app, filename, path_info);
 };
 
-/*
- * route_require is a wrapper around proto_require that
- * tries multiple paths until one is found based on
- * the following specified options (all default false)
- *  - routes: whether to try routes file first
- *  - fallbacks: whether to fail through to the defaults app
-                 for known files (e.g., error, robots.txt)
- *  - not_found: whether to return a not_found script 
- *               if no script is found
- */
+/**
+*   route_require is a wrapper around proto_require that
+*   tries multiple paths until one is found based on
+*   the following specified options (all default false)
+*   - routes: whether to try routes file first
+*   - fallbacks: whether to fail through to the defaults app
+*     for known files (e.g., error, robots.txt)
+*   - not_found: whether to return a not_found script 
+*     if no script is found
+*/
 var route_require = function(req_path, req_opts, opts) {
     opts = opts || {};
 
@@ -2576,19 +2575,19 @@ var route_require = function(req_path, req_opts, opts) {
         script = proto_require(fpath, req_opts);
         if (script !== null) return false;
     });
-    
+
     return script;
 }
 
 
 //----------------------------------- Main ---------------------------------
 
-/*
- * this is the main function where we:
- *  1. finish setting up acre.request
- *  2. run the top-level script
- *  3. repeat (if acre.route is called)
- */
+/**
+*   this is the main function where we:
+*   1. finish setting up acre.request
+*   2. run the top-level script
+*   3. repeat (if acre.route is called)
+**/
 var handle_request = function (req_path, req_body, skip_routes) {
     // reset the response
     acre.response = new AcreResponse();
@@ -2696,17 +2695,17 @@ var handle_request = function (req_path, req_body, skip_routes) {
 };
 
 
-/*
- * this is a callback that gets invoked after the script has finished.
- * ideally we could use try...catch to catch AcreException only and
- * run this, but rhino destroys the stack traces of all the other
- * exceptions then.
- * so the try...catch is in java, and the java code calls back in here
- * to finish the response.
- * note that this shouldn't be a security issue: this code is not called with
- * any special privileges, we aren't trying to enforce security requirements
- * on the headers.  so if an app trashes the js scope, that's its problem.
- */
+/**
+*   this is a callback that gets invoked after the script has finished.
+*   ideally we could use try...catch to catch AcreException only and
+*   run this, but rhino destroys the stack traces of all the other
+*   exceptions then.
+*   so the try...catch is in java, and the java code calls back in here
+*   to finish the response.
+*   note that this shouldn't be a security issue: this code is not called with
+*   any special privileges, we aren't trying to enforce security requirements
+*   on the headers.  so if an app trashes the js scope, that's its problem.
+**/
 _hostenv.finish_response = function () {
     // post process headers so everything is lower case, this sucks
     // but we need it so we can easily modify header values
