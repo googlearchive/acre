@@ -213,8 +213,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
 
                 // Add dateline to cookie jar if there was one in the response
                 if (result.dateline) {
-                    // better service identifier than host for googleapis
-                    dateline_cj.set(_request.googleapis_freebase, result.dateline);
+                    // service identifier is the last path segment for googleapis
+                    var backend = _request.googleapis_freebase.split("/").slice(-1)[0];
+                    dateline_cj.set(backend, result.dateline);
                 }
 
                 if (result.error) {
