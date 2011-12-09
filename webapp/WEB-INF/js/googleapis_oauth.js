@@ -310,6 +310,7 @@ var has_credentials = function(provider, consumer) {
     if (validateAccessToken(access_token)) {
         valid = true;
     } else if (access_token.refresh_token) {
+        consumer = consumer || getConsumer(provider);
         access_token = refreshOauth2AccessToken(provider, consumer, access_token);
         storeAccessToken(provider, access_token, consumer);
         valid = true;
@@ -682,8 +683,8 @@ var storeAccessToken = function(provider, token) {
 
         // write key to keystore using the private acreboot 
         // method so it works in non-trusted mode as well
-        _keystore.delete_key(token_name, _request.app_project);
-        _keystore.put_key(token_name, _request.app_project, token_val, token.refresh_token);
+        _keystore.remove(token_name);
+        _keystore.put(token_name, token_val, token.refresh_token);
         break;
         case "cookie":
         default:
