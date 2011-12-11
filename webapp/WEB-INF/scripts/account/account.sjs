@@ -27,110 +27,73 @@ if (!provider) {
     throw "Unregistered provider '" + params.provider + "'";
 }
 
-if (provider.oauth_version == 2) {
-    switch (acre.request.path_info) {
+switch (acre.request.path_info) {
 
-        case '/signin' :
-            params.onsucceed = get_redirect_url(params.onsucceed, true, true);
-            params.onfail = get_redirect_url(params.onfail, true, true);
-            var success = acre.oauth.get_authorization(provider.name, params.onsucceed, params.onfail);
-            new_redirect(success);
-            break;
-
-        case '/inline_signin' :
-            acre.oauth.get_authorization(provider.name);
-            acre.response.status = 200;
-            acre.response.set_header("content-type","text/html");
-            acre.write('<html><body></body><script type="text/javascript">' +
-            'if (top.opener && top.opener.onauthorization) {' +
-            '   top.opener.onauthorization(window);' +
-            '}' +
-            'self.close();' +
-            '</script></html>');
-            break;
-
-        case '/redirect':
-            params.onsucceed = get_redirect_url(params.onsucceed, false, true);
-            params.onfail = get_redirect_url(params.onfail, false, true);
-            var success = acre.oauth.get_authorization(provider.name);
-            new_redirect(success);
-            break;
-
-        case '/signout':
-            params.onsucceed = get_redirect_url(params.onsucceed, true, false);
-            params.onfail = get_redirect_url(params.onfail, true, false);
-            acre.oauth.remove_credentials(provider.name);
-            new_redirect(true);
-            break;
-
-        case '/user_info':
-            var user_info = acre.freebase.get_user_info({provider:provider.name});
-            acre.response.status = 200;
-            acre.response.set_header("content-type","application/json");
-            acre.write(JSON.stringify(user_info,null,2));
-            break;
-
-        default: 
-            acre.write('ERROR:\n\n' + usage); 
-            break;
-
-    }
-} else {
-    switch (acre.request.path_info) {
-
-      case '/signin' :
-        acre.freebase.get_user_info();
-        acre.oauth.get_authorization();  
-        redirect(); 
+    case '/signin' :
+        params.onsucceed = get_redirect_url(params.onsucceed, true, true);
+        params.onfail = get_redirect_url(params.onfail, true, true);
+        // fake out oauth1 providers to use same redirect URL-based flow as oauth2
+        if (provider.oauth_version !== 2) {
+          var redirect_url = acre.request.url.replace(/\/signin(\?.*)?$/,"/redirect");
+          params.onsucceed = acre.form.build_url(redirect_url, {
+            onsucceed: params.onsucceed,
+            onfail: params.onfail
+          });
+        }
+        var success = acre.oauth.get_authorization(provider, params.onsucceed, params.onfail);
+        redirect(success);
         break;
 
-      case '/inline_signin' :
-        acre.oauth.get_authorization();
+    case '/inline_signin' :
+        acre.oauth.get_authorization(provider);
         acre.response.status = 200;
         acre.response.set_header("content-type","text/html");
         acre.write('<html><body></body><script type="text/javascript">' +
-            'if (top.opener && top.opener.onauthorization) {' +
-            '   top.opener.onauthorization(window);' +
-            '}' +
-            'self.close();' +
+        'if (top.opener && top.opener.onauthorization) {' +
+        '   top.opener.onauthorization(window);' +
+        '}' +
+        'self.close();' +
         '</script></html>');
         break;
 
-      case '/signout': 
-        acre.oauth.remove_credentials(); 
-        redirect(); 
+    case '/redirect':
+        params.onsucceed = get_redirect_url(params.onsucceed, false, true);
+        params.onfail = get_redirect_url(params.onfail, false, true);
+        var success = acre.oauth.get_authorization(provider);
+        redirect(success);
         break;
 
-      case '/user_info':
-        var user_info = acre.freebase.get_user_info();
+    case '/signout':
+        params.onsucceed = get_redirect_url(params.onsucceed, true, false);
+        params.onfail = get_redirect_url(params.onfail, true, false);
+        acre.oauth.remove_credentials(provider);
+        redirect(true);
+        break;
+
+    case '/user_info':
+        var user_info = acre.freebase.get_user_info({provider:provider.name});
         acre.response.status = 200;
         acre.response.set_header("content-type","application/json");
         acre.write(JSON.stringify(user_info,null,2));
         break;
 
-      default: 
+    default: 
         acre.write('ERROR:\n\n' + usage); 
         break;
 
-    }
 }
+
 
 function get_redirect_url(url, use_referer, secure) {
     if (use_referer) {
         url = url || acre.request.headers.referer;
     }
     url = url || acre.request.app_url;
-    url = url.replace(/^[^:]*/, (secure ? "https" : "http"));
+    url = url.replace(/^https?:/, (secure ? "https:" : "http:"));
     return url;
 };
 
-function redirect() {
-  acre.response.status = 303;
-  acre.response.set_header('Location', acre.request.params.onsucceed || '/' );
-}
-
-
-function new_redirect(success) {
+function redirect(success) {
     if (typeof success == 'undefined') success = true;
     var url = success ? params.onsucceed : params.onfail;
     acre.response.status = 303;

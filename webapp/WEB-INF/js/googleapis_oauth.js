@@ -19,8 +19,8 @@ augment = function (obj) {
 
     // standard user login
     providers.freebase = _u.extend({}, freebase, {
-        authorization_params: { 
-            access_type: "online", 
+        authorization_params: {
+            access_type: "online",
             approval_prompt: "auto"
         }
     });
@@ -28,9 +28,9 @@ augment = function (obj) {
     // writeuser (offline scripts)
     providers.freebase_writeuser = _u.extend({}, freebase, {
         token_storage: "keystore",
-        authorization_params: { 
-            access_type: "offline", 
-            approval_prompt: "force" 
+        authorization_params: {
+            access_type: "offline",
+            approval_prompt: "force"
         },
     });
 
@@ -282,15 +282,15 @@ var get_authorization = function(provider, successURL, failureURL, consumer) {
 **/
 var remove_credentials = function(provider) {
     provider = getProvider(provider);
+    var access_cookie = getCookieName(provider.name, "access");
     switch (provider.token_storage) {
         case "keystore":
-        _keystore.remove(provider.name);
-        break;
+          _keystore.remove(access_cookie);
+          break;
         case "cookie":
         default:
-        var access_cookie = getCookieName(provider.name, "access");
-        acre.response.clear_cookie(access_cookie, extendCookieOpts(provider.cookie));
-        delete acre.request.cookies[access_cookie];
+          acre.response.clear_cookie(access_cookie, extendCookieOpts(provider.cookie));
+          delete acre.request.cookies[access_cookie];
     }
 };
 
@@ -667,15 +667,10 @@ var storeAccessToken = function(provider, token) {
             throw new oauthError("Request app must specify the allowed writeuser in metadata.")
         }
 
-        // NOTE: this only works for Freebase right now as 
-        // it's the only one we know how to verify the 
-        // identity of the credentials for.
-        if (provider.name !== "freebase_writeuser") {
-            throw new oauthError("Don't know how verify writeuser identity " + 
-                                 "for provider '" + provider.name + "'");
-        }
+        // NOTE: this only works for Freebase providers right now as 
+        // they're the  ones we know how to verify the user identity for
         register_authorized_provider(provider, getConsumer(provider), access_token);
-        var user = acre.freebase.get_user_info({provider: "freebase_writeuser"});
+        var user = acre.freebase.get_user_info({provider: provider});
         if (!user || (user.username !== provider.writeuser)) {
             delete AUTHORIZED_HOSTS[provider.domain][provider.name];
             throw new oauthError("Supplied credentials don't match the writeuser specified in metadata");
