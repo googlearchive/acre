@@ -328,16 +328,14 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Call the 'touch' api to reset the caches
     **/
     freebase.touch = function(options) {
-        // TODO - this needs to be written as a 
-        // "get current dateline" API
-        return null;
-
         var [api_opts, fetch_opts] = decant_options(options);
-        //acre.response.vary_cookies['mwLastWriteTime'] = 1;
-        var url = freebase.service_url + "/api/service/touch";
-        fetch_opts.method = "POST";
-        fetch_opts.bless = true;  // safe request, even though it's POST
-        return fetch(url, fetch_opts);
+
+        // TODO (JD) - We're missing a real dateline API
+        if (fetch_opts.callback) {
+          return fetch_opts.callback(null);
+        } else {
+          return null;
+        }
     };
 
     /**
