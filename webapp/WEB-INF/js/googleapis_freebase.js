@@ -82,7 +82,8 @@ function augment(freebase, urlfetch, async_urlfetch) {
         }
 
         // Add dateline to request if we have one in the cookie jar
-        var dateline = dateline_cj.get(_request.googleapis_freebase);
+        var backend = _request.googleapis_freebase.split("/").pop();
+        var dateline = dateline_cj.get(backend);
         if (dateline) {
             api_opts.dateline = dateline;
         }
