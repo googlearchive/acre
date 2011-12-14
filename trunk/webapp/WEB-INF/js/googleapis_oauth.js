@@ -282,16 +282,7 @@ var get_authorization = function(provider, successURL, failureURL, consumer) {
 **/
 var remove_credentials = function(provider) {
     provider = getProvider(provider);
-    var access_cookie = getCookieName(provider.name, "access");
-    switch (provider.token_storage) {
-        case "keystore":
-          _keystore.remove(access_cookie);
-          break;
-        case "cookie":
-        default:
-          acre.response.clear_cookie(access_cookie, extendCookieOpts(provider.cookie));
-          delete acre.request.cookies[access_cookie];
-    }
+    deleteToken(provider);
 };
 
 /**
@@ -660,36 +651,36 @@ var storeAccessToken = function(provider, token) {
 
     switch (provider.token_storage) {
         case "keystore":
-        // Require the writeuser to be declared in metadata 
-        // of the app so people can't make themselves the 
-        // writeuser just by signing in as one.
-        if (!provider.writeuser) {
-            throw new oauthError("Request app must specify the allowed writeuser in metadata.")
-        }
+          // Require the writeuser to be declared in metadata 
+          // of the app so people can't make themselves the 
+          // writeuser just by signing in as one.
+          if (!provider.writeuser) {
+              throw new oauthError("Request app must specify the allowed writeuser in metadata.")
+          }
 
-        // NOTE: this only works for Freebase providers right now as 
-        // they're the  ones we know how to verify the user identity for
-        register_authorized_provider(provider, getConsumer(provider), access_token);
-        var user = acre.freebase.get_user_info({provider: provider});
-        if (!user || (user.username !== provider.writeuser)) {
-            delete AUTHORIZED_HOSTS[provider.domain][provider.name];
-            throw new oauthError("Supplied credentials don't match the writeuser specified in metadata");
-        }
+          // NOTE: this only works for Freebase providers right now as 
+          // they're the  ones we know how to verify the user identity for
+          register_authorized_provider(provider, getConsumer(provider), access_token);
+          var user = acre.freebase.get_user_info({provider: provider});
+          if (!user || (user.username !== provider.writeuser)) {
+              delete AUTHORIZED_HOSTS[provider.domain][provider.name];
+              throw new oauthError("Supplied credentials don't match the writeuser specified in metadata");
+          }
 
-        // write key to keystore using the private acreboot 
-        // method so it works in non-trusted mode as well
-        _keystore.remove(token_name);
-        _keystore.put(token_name, token_val, token.refresh_token);
-        break;
+          // write key to keystore using the private acreboot 
+          // method so it works in non-trusted mode as well
+          _keystore.remove(token_name);
+          _keystore.put(token_name, token_val, token.refresh_token);
+          break;
         case "cookie":
         default:
-        var cookieopts = extendCookieOpts(provider.cookie);
-        cookieopts.max_age = cookieopts.max_age || (30 * 24 * 3600);
-        cookieopts.httponly = true;
-        if (provider.oauth_version == 2) {
-            cookieopts.secure = true;
-        }
-        set_cookie(token_name, token_val, cookieopts);
+          var cookieopts = extendCookieOpts(provider.cookie);
+          cookieopts.max_age = cookieopts.max_age || (30 * 24 * 3600);
+          cookieopts.httponly = true;
+          if (provider.oauth_version == 2) {
+              cookieopts.secure = true;
+          }
+          set_cookie(token_name, token_val, cookieopts);
     }
     return access_token;
 };
@@ -709,25 +700,43 @@ function retrieveToken(provider, kind) {
     var token_name = getCookieName(provider.name, kind || "access");
     switch (provider.token_storage) {
         case "keystore":
-        var key = _keystore.get(token_name);
-        if (key) {
-            token = OAuth.getParameterMap(OAuth.decodeForm(key[0]));
-            token.refresh_token = key[1];
-        }
-        break;
+          var key = _keystore.get(token_name);
+          if (key) {
+              token = OAuth.getParameterMap(OAuth.decodeForm(key[0]));
+              token.refresh_token = key[1];
+          }
+          break;
         case "cookie":
         default:
-        var variations = [ token_name , '"' + token_name + '"' ];
-        for each (var name in variations) {
-            if (typeof acre.request.cookies[name] != 'undefined') {
-                var value = decodeURIComponent(acre.request.cookies[name]);
-                token = OAuth.getParameterMap(OAuth.decodeForm(value));
-            }
-            break;
-        }
+          var variations = [ token_name , '"' + token_name + '"' ];
+          for each (var name in variations) {
+              if (typeof acre.request.cookies[name] != 'undefined') {
+                  var value = decodeURIComponent(acre.request.cookies[name]);
+                  token = OAuth.getParameterMap(OAuth.decodeForm(value));
+              }
+              break;
+          }
     }
     return token;
 }
+
+function deleteToken(provider) {
+  // remove from cache
+  if (AUTHORIZED_HOSTS[provider.domain]) {
+    delete AUTHORIZED_HOSTS[provider.domain][provider.name];
+  }
+
+  var access_cookie = getCookieName(provider.name, "access");
+  switch (provider.token_storage) {
+      case "keystore":
+        _keystore.remove(access_cookie);
+        break;
+      case "cookie":
+      default:
+        acre.response.clear_cookie(access_cookie, extendCookieOpts(provider.cookie));
+        delete acre.request.cookies[access_cookie];
+  }
+};
 
 /**
 *   Check whether access token has expired
