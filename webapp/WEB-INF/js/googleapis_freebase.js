@@ -63,7 +63,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
         };
 
         if (options) {
-            if (!(typeof options == 'object' && !(options instanceof Array))) throw new Error('Options must be an object');
+            if (!(typeof options == 'object' && !(options instanceof Array))) {
+                throw new freebase.Error('Options must be an object');
+            }
         } else {
             options = {};
         }
@@ -149,6 +151,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
         } else {
             opts.method = "POST";
             opts.headers = opts.headers || {};
+            opts.headers['X-HTTP-Method-Override'] = 'GET';
             opts.headers["content-type"] = "application/x-www-form-urlencoded";
             opts.bless = true;  // because this helper only used for safe requests (mqlread, search)
         }
@@ -165,7 +168,6 @@ function augment(freebase, urlfetch, async_urlfetch) {
 
         if (opts.method === "POST") {
             if (!opts.headers) opts.headers = {};
-            opts.headers['X-HTTP-Method-Override'] = 'GET';
             opts.headers['X-Requested-With'] = '1';
         }
 
@@ -228,6 +230,11 @@ function augment(freebase, urlfetch, async_urlfetch) {
                     exception.response = result;
                     throw exception;
                 }
+
+                // Preserve backward-compatibility
+                if (!("result" in result)) {
+                  result.result = _u.extend(true, {}, result);
+                }
         }
 
         return result;
@@ -237,7 +244,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Prepare the content payload of the POST request
     **/
     function prepareContent(query, envelope, params) {
-        if (!query) throw new Error("You must provide a query");
+        if (!query) throw new freebase.Error("You must provide a query");
         if (!envelope) envelope = {};
         if (!params) params = {};
         acre.freebase.extend_query(params, envelope);
@@ -248,50 +255,6 @@ function augment(freebase, urlfetch, async_urlfetch) {
             params.cursor = "";
         }
         return form_encode(params);
-    }
-
-    function legacy_prepareContent(query, envelope, params) {
-        if (!query) throw new Error("You must provide a query");
-        if (!envelope) envelope = {};
-        envelope.query = query;
-        envelope.escape = false;
-        if (!params) params = {};
-        params.query = envelope;
-        return form_encode(params);
-    }
-
-    /**
-    *   Prepare the content payload of the POST request with multiple queries
-    **/
-    function prepareMultipleContent(queries, envelopes, params) {
-        if (!queries) throw new Error("You must provide an object with queries");
-        if (!envelopes) envelopes = {};
-        if (!params) params = {};
-        for (var query in queries) {
-            var envelope = (query in envelopes) ? envelopes[query] : {};
-            envelope.query = queries[query];
-            envelope.escape = false;
-            queries[query] = envelope;
-        }
-        params.queries = queries;
-        return form_encode(params);
-    }
-
-    /**
-    *   Perform the mqlread (composer
-    **/
-    function mqlread(q,e,o,composer) {
-        var [api_opts, fetch_opts] = decant_options(o);
-        var url = freebase.googleapis_url + "/mqlread";
-        fetch_opts.content = composer(q,e,api_opts);
-        return fetch.apply(this, compose_get_or_post(url, fetch_opts));
-    }
-
-    function legacy_mqlread(q,e,o,composer) {
-        var [api_opts, fetch_opts] = decant_options(o);
-        var url = freebase.service_url + "/api/service/mqlread";
-        fetch_opts.content = composer(q,e,api_opts);
-        return fetch.apply(this, compose_get_or_post(url, fetch_opts));
     }
 
     /**
@@ -308,7 +271,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
                 base_url += mode;
                 break;
             default:
-                throw new Error("Invalid mode; must be 'basic' or 'standard'");
+                throw new freebase.Error("Invalid mode; must be 'basic' or 'standard'");
         }
         options.id = (id instanceof Array) ? id.join(',') : id;
         var [api_opts, fetch_opts] = decant_options(options);
@@ -354,10 +317,17 @@ function augment(freebase, urlfetch, async_urlfetch) {
         // different auth configurations can be used
         // i.e., writeuser
         var provider = api_opts.provider || "freebase";
-        if (!acre.oauth.has_credentials(provider)) {
-            return null;
-        }
         delete api_opts.provider;
+
+        // Don't bother calling user info API if the user 
+        // doesn't have valid credentials
+        if (!acre.oauth.has_credentials(provider)) {
+          if (fetch_opts.callback) {
+            return fetch_opts.callback(null);
+          } else {
+            return null;
+          }
+        }
 
         function handle_get_user_info_success(res) {
             return res;
@@ -398,18 +368,17 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Perform a mqlread
     **/
     freebase.mqlread = function(query,envelope,options) {
-        if (envelope && envelope['extended']) { 
-            return legacy_mqlread(query,envelope,options,legacy_prepareContent);
-        } else{
-            return mqlread(query,envelope,options,prepareContent);
-        }
+        var [api_opts, fetch_opts] = decant_options(options);
+        var url = freebase.googleapis_url + "/mqlread";
+        fetch_opts.content = prepareContent(query,envelope,api_opts);
+        return fetch.apply(this, compose_get_or_post(url, fetch_opts));
     };
 
     /**
-    *   Perform a mqlread on multiple queries
+    *   DEPRECATED: Perform a mqlread on multiple queries
     **/
-    freebase.mqlread_multiple = function(queries,envelopes,options) {
-        return mqlread(queries,envelopes,options,prepareMultipleContent);
+    freebase.mqlread_multiple = function() {
+      throw new freebase.Error("acre.freebase.mqlread_multiple() has been deprecated.  Use async to make parallel requests.");
     };
 
     /**
@@ -431,14 +400,24 @@ function augment(freebase, urlfetch, async_urlfetch) {
     **/
     freebase.upload = function(content,media_type,options) {
         var [api_opts, fetch_opts] = decant_options(options);
-        if (!content) throw new Error("You must specify what content to upload");
-        if (!media_type) throw new Error("You must specify a media type for the content to upload");
-        var url = freebase.service_url + "/api/service/upload";
-        if (options) url += "?" + form_encode(api_opts);
-        //acre.response.vary_cookies['mwLastWriteTime'] = 1;
+        if (!content) throw new freebase.Error("You must specify what content to upload");
+        if (!media_type) throw new freebase.Error("You must specify a media type for the content to upload");
+
+        // TODO (MM) binary upload
+        if ((media_type.indexOf('image/') == 0) ||
+            (media_type ==  'application/octet-stream') ||
+            (media_type == 'multipart/form-data')) {
+            throw new freebase.Error("Uploading binary files not currently supported");
+        };
+
+        var url = freebase.googleapis_url + "/text";
+        api_opts.text = content;
+        api_opts.media_type = media_type;
+
         fetch_opts.method = "POST";
-        fetch_opts.content = content;
-        fetch_opts.headers = { "Content-Type" : media_type };
+        fetch_opts.content = form_encode(api_opts);
+        fetch_opts.headers = fetch_opts.headers || {};
+        fetch_opts.headers["content-type"] = "application/x-www-form-urlencoded";
         if (typeof fetch_opts.sign === 'undefined') fetch_opts.sign = true;
         return fetch(url, fetch_opts);
     };
@@ -464,7 +443,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Get a blob from Freebase content store
     **/
     freebase.get_blob = function(id,mode,options) {
-        if (!id) throw new Error("You must provide the id of the blob you want");
+        if (!id) throw new freebase.Error("You must provide the id of the blob you want");
         if (!options) var options = {};
         // this is done for back compatibility with the previous API signature
         if (typeof mode == 'object') {
@@ -491,7 +470,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
                 api_opts.format = 'html';
                 break;
             default:
-                throw new Error("Invalid mode; must be 'html' or 'plain' or 'escaped'");
+                throw new freebase.Error("Invalid mode; must be 'html' or 'plain' or 'escaped'");
         }
 
         // TODO -- this will get the callbacks
@@ -506,9 +485,16 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Get info about a single topic using the Topic API
     **/
     freebase.get_topic = function(id,options) {
-        if (!id) throw new Error('You must provide the id of the topic you want');
-        if (id.indexOf(',') > 0) throw new Error('Use get_topic_multi if you want to retrieve multiple topics');
-        if (typeof id != 'string') throw new Error("'get_topic' needs a string as ID, if you need to get multiple topics use 'get_topic_multi' instead.");
+        if (!id) {
+            throw new freebase.Error('You must provide the id of the topic you want');
+        }
+        if (id.indexOf(',') > 0) {
+            throw new freebase.Error('Use get_topic_multi if you want to retrieve multiple topics');
+        }
+        if (typeof id != 'string') {
+            throw new freebase.Error("'get_topic' needs a string as ID, if you need to get multiple " + 
+                                     "topics use 'get_topic_multi' instead.");
+        }
 
         if (options.callback) {
             var callback = options.callback;
@@ -522,12 +508,10 @@ function augment(freebase, urlfetch, async_urlfetch) {
     };
 
     /**
-    *   Get info about a multiple topics using the Topic API
+    *   DEPRECATED: Get info about a multiple topics using the Topic API
     **/
-    freebase.get_topic_multi = function(ids,options) {
-        if (!ids) throw new Error('You must provide an array of ids of the topics you want');
-        if (!(ids instanceof Array)) throw new Error("'get_topic_multi' needs an array of IDs, if you need to get a single topic use 'get_topic' instead.");
-        return topic(ids,options);
+    freebase.get_topic_multi = function() {
+      throw new freebase.Error("acre.freebase.get_topic_multi() has been deprecated.  Use async to make parallel requests.");
     };
 
     /**
@@ -535,7 +519,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
     **/
     freebase.search = function(query,options) {
         var [api_opts, fetch_opts] = decant_options(options);
-        if (!query) throw new Error("You must provide a string to search");
+        if (!query) throw new freebase.Error("You must provide a string to search");
         if (!api_opts) api_opts = {};
         api_opts.query = query;
         api_opts.format = "json";
@@ -545,17 +529,10 @@ function augment(freebase, urlfetch, async_urlfetch) {
     };
 
     /**
-    *   Perform a geosearch
-    */
-    freebase.geosearch = function(location,options) {
-        var [api_opts, fetch_opts] = decant_options(options);
-        if (!location) throw new Error("You must provide a location to geosearch");
-        if (!options) options = {};
-        api_opts.location = location;
-        api_opts.format = "json";
-        fetch_opts.content = form_encode(api_opts);
-        var url = freebase.service_url + "/api/service/geosearch";
-        return fetch.apply(this, compose_get_or_post(url, fetch_opts));
+    *   DEPRECATED: Perform a geosearch
+    **/
+    freebase.geosearch = function() {
+      throw new freebase.Error("acre.freebase.geosearch() has been deprecated.  Use async to make parallel requests.");
     };
 
     /**
@@ -568,7 +545,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
         if (typeof paths == 'undefined')
         paths = {};
         if (typeof query == 'undefined')
-        throw new Error('extend_query: MQL query is undefined');
+        throw new freebase.Error('extend_query: MQL query is undefined');
 
         // go through all the substitutions in the paths dict,
         // patching query accordingly.
@@ -595,7 +572,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
                     obj = [{}];
 
                     if (obj.length > 1)
-                    throw new Error('extend_query: path ' + JSON.stringify(path)
+                    throw new freebase.Error('extend_query: path ' + JSON.stringify(path)
                     + ' references an array with more than one element');
 
                     obj = obj[0];
@@ -603,7 +580,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
             }
 
             if (obj === null || typeof obj != 'object') {
-                throw new Error('extend_query: path ' + JSON.stringify(path)
+                throw new freebase.Error('extend_query: path ' + JSON.stringify(path)
                 + ' does not exist in query');
             }
 
