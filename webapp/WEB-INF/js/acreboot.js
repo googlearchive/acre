@@ -1,140 +1,20 @@
-
 /*   acreboot.js - implementation of acre host environment using liveconnect and java */
 
-/**
-*   The acre toplevel namespace.
-*   This holds the Javascript functions used by acre scripts
-*
-*   @name acre
-*   @namespace
-**/
 
-if (typeof acre == 'undefined') {
-    acre = {};
-}
-
-if (typeof appengine == 'undefined' && ACRE_REQUEST.server_type == "appengine") {
-    appengine = {};
-}
-
-(function () {
-
-var startup_time = new Date();
-
-var _topscope = this;
-
-// delete the LiveConnect and E4X entry points
-delete _topscope.Packages;
-delete _topscope.java;
-delete _topscope.netscape;
-delete _topscope.XML;
-
-// XXX there should be a java function to sanitize the global scope
-// with a whitelist instead of this blacklist.  most of the
-// global properties aren't enumerable so it's impossible to
-// whitelist them here within javascript
-
-
-// make a private copy of the embedded java objects 
-// and remove them from the global namespace for further protection.
-
-var _hostenv = PROTECTED_HOSTENV;
-delete PROTECTED_HOSTENV;
-
-var _request = ACRE_REQUEST;
-delete ACRE_REQUEST;
-
-var _file = File;
-delete File;
-
-var _domparser = new DOMParser();
-delete DOMParser;
-
-var _ks = new KeyStore();
-delete KeyStore;
-
-var _json = new JSON();
-delete JSON;
-
-var _cache = new Cache();
-delete Cache;
-
-// obtain datastore if present and remove from scope
-if (typeof DataStore != 'undefined') {
-    var _datastore = new DataStore();
-    delete DataStore;
-}
-
-// obtain taskqueue if present and remove from scope
-if (typeof TaskQueue != 'undefined') {
-    var _taskqueue = new TaskQueue();
-    delete TaskQueue;
-}
-
-// obtain mailer if present and remove from scope
-if (typeof MailService != 'undefined') {
-    var _mailer = new MailService();
-    delete MailService;
-}
-
-// obtain userservice if present and remove from scope
-if (typeof UserService != 'undefined') {
-    var _userService = new UserService();
-    delete UserService;
-}
-
-// obtain appidservice if present and remove from scope
-if (typeof AppEngineOAuthService != 'undefined') {
-    var _appengine_oauthservice = new AppEngineOAuthService();
-    delete AppEngineOAuthService();
-}
-
-
-//----------------------------- globals ---------------------------------------
-
-// set these aside to avoid deprecation warnings when used later
-var request_url = _request.request_url;
-var freebase_site_host = _request.freebase_site_host;
-
-var _DELIMITER_HOST = _hostenv.ACRE_HOST_DELIMITER_HOST;
-var _DELIMITER_PATH = _hostenv.ACRE_HOST_DELIMITER_PATH;
-
-var _DEFAULT_HOSTS_PATH = '/freebase/apps/hosts';
-var _DEFAULT_ACRE_HOST_PATH = "/z/acre";
-
-var _DEFAULTS_HOST = _hostenv.DEFAULT_HOST_PATH.substr(2);
-var _METADATA_FILE = "METADATA";
-var _DEFAULT_FILE = "index";
-var _DEFAULT_APP = "main." + _DELIMITER_PATH;
-
-
-//------------------------------- Utils ---------------------------------------
+//-------------------------- sandboxing ----------------------------------
 
 /**
-*   A subset of jQuery utils loaded as 'u':
-*       u.each, u.extend, u.isArray
+*   Helper for minting new script scopes
 *
-*   Plus a few more:
-*       u.escape_re, u.parseUri
+*   This is outside of the main closure so it doesn't accidentally
+*   pick up any system variables, which also means it's usable
+*   (but not enumerable) in user scripts... whatever, it's benign.
 **/
-var util_scope = {};
-_hostenv.load_system_script("util.js", util_scope);
-var u = util_scope.exports;
-
-// helpers for common activities in acreboot
-function make_scope(start, style) {
-    // XXX find a more elegant way to do this
-
-    var copier = object;
-
-    if (style =='deep') {
-        copier = arguments.callee;
-    }
-
-    start = start || _topscope;
+function _make_scope(start) {
+    start = start || {};
 
     function object(o) {
-        function F() {};
+        function F() {}; 
         F.prototype = o;
         return new F();
     }
@@ -143,214 +23,134 @@ function make_scope(start, style) {
     for (var a in start) {
         var o = start[a];
         if (o && o instanceof Object && !(o instanceof Function)) {
-            scope[a] = copier(o);
+            scope[a] = object(o);
         }
     }
 
     return scope;
 }
 
-function compose_req_path(host, path, query_string) {
-    var req_path = '//' + host;
 
-    if (path) {
-        req_path += '/' + path;
-    }
+// the rest of acreboot is in a closure to seal it off
+(function () {
 
-    if (query_string) {
-        req_path += '?' + query_string;
-    }
-    
-    return req_path;
-};
-
-function decompose_req_path(req_path) {
-    var path_re = /^([^\/]*:)?(?:\/\/([^\/\?]*))?(?:\/?([^\?]*))?(?:\?(.*))?$/;
-    var [orig_req_path, protocol, host, path, query_string] = req_path.match(path_re);
-
-    if (!host) throw new Error("Path: " + orig_req_path + " is not fully-qualified");
-
-    // if it's a full URL we need to turn host into new require-style host
-    if (protocol) {
-        // remove port
-        host = host.replace(/\:\d*$/,"");
-
-        // normalize host relative to current acre host
-        var acre_host_re = new RegExp("^((.*)\.)?" + u.escape_re(_request.server_host_base) + "$");
-        var foreign_host_re = new RegExp("^(.*\.)" + _DELIMITER_HOST + "$");
-
-        var m = host.match(acre_host_re);
-        if (m) {
-            if (m[2]) {
-                var h = m[2].match(foreign_host_re);
-                if (h) {
-                    // foreign host:
-                    //  e.g., http://trunk.svn.dev.acre-fmdb.googlecode.com.host.acre.z --> //trunk.svn.dev.acre-fmdb.googlecode.com.
-                    host = h[1];
-                } else {
-                    // registered short host:
-                    //  e.g., http://fmdb.acre.z --> //fmdb
-                    host = m[2];
-                }
-            } else {
-                // host is ACRE_HOST_BASE:
-                //  e.g., http://acre.z
-                host = null;
-            }
-        } else {
-            // registered absolute host:
-            //  e.g., http://tippify.com --> //tippify.com.
-            host = host + ".";
-        }
-    }
-    
-    return [host, path, query_string];
-}
-
-function file_in_path(filename, path) {
-    var file_re = new RegExp(u.escape_re(filename) + "(\/.*)?$");
-    var in_path = false;
-    var path_info = "";
-
-    if (file_re.test(path)) {
-        in_path = true;
-        path_info = path.replace(new RegExp("^" + u.escape_re(filename)),"");
-        // XXX - add leading slash for backward-compatibility
-        if (path_info === "") path_info = "/";
-    } else {
-        // XXX - add leading slash for backward-compatibility
-        path_info = "/" + path;
-    }
-
-    // XXX - strip trailing slash for backward-compatibility
-    if (path_info.length > 1 && path_info.substr(-1) === "/") {
-        path_info = path_info.substr(0, path_info.length-1);
-    }
-
-    return [path_info, in_path];
-}
-
-function get_extension_metadata(name, extensions) {
-    // match from longest to shortest (i.e., .mf.css before .css)
-    var exts = name.split(".");
-    exts.shift();
-    while (exts.length) {
-      var ext = exts.join(".");
-      var ext_data = {};
-      if (ext && extensions && extensions[ext]) {
-          ext_data = extensions[ext];
-          break;
-      }
-      exts.shift();
-    }
-
-    return ext_data;
-};
-
-
-// helpers for backward-compatibility with the days of script_ids
-// it sure would be nice to get rid of these...
-function namespace_to_host(namespace) {
-    var host_re = new RegExp(u.escape_re('^' + _DEFAULT_HOSTS_PATH));
-    var acre_host_re = new RegExp(u.escape_re('^' + _DEFAULT_ACRE_HOST_PATH));
-
-    if (host_re.test(namespace)) {
-        namespace = namespace.replace(host_re, "");
-        if (acre_host_re.test(namespace)) {
-            namespace = namespace.replace(acre_host_re, "").replace(/^\//, "");
-        }
-    } else {
-        namespace = _DELIMITER_PATH + namespace;
-    }
-    return namespace.split("/").reverse().join(".");
-}
-
-function host_to_namespace(host) {
-    var path = null;
-
-    var host_parts = host.split(".");
-    var trailing_host_part = host_parts.pop();
-    if (trailing_host_part === _DELIMITER_PATH) {
-        path = "/" + host_parts.reverse().join("/");
-    } else if (trailing_host_part === '') {
-        path = _DEFAULT_HOSTS_PATH + "/" + host_parts.reverse().join("/");
-    } else {
-        host_parts.push(trailing_host_part);
-        path = _DEFAULT_HOSTS_PATH + _DEFAULT_ACRE_HOST_PATH + "/" + host_parts.reverse().join("/");
-    }
-
-    return path;
-}
-
-function split_script_id(script_id) {
-    var namespace = script_id.split('/');
-    var f = namespace.pop();
-    namespace = namespace.join('/');
-    return [namespace, f];
-}
-
-function req_path_to_script_id(req_path) {
-    var [host, script] = decompose_req_path(req_path);
-    script = script.split("/").pop();
-    return host_to_namespace(host) + "/" + script;
-}
-
-
-// random number generator used in CSRF protection
-function get_random() {
-    return Math.floor(Math.random()*10e15).toString();
-};
-
-function get_csrf_secret(that) {
-    if (!_request.csrf_secret) {
-        var key = _ks.get_key("csrf", _request.app_project);
-        if (key && key[1]) {
-            _request.csrf_secret = key[1];
-        } else {
-            _request.csrf_secret = get_random();
-            _ks.put_key("csrf", _request.app_project, null, _request.csrf_secret);
-        }
-    }
-    return _request.csrf_secret;
-};
-
-
-//--------------------------------- syslog --------------------------------------------
-
-var _syslog = function(level, mesg, event_name) {
-    if (typeof event_name == 'undefined') event_name = null;
-    if (typeof mesg == 'undefined' || mesg === null) mesg = "undefined";
-    _hostenv.syslog(level, event_name, mesg);
-};
-
-var syslog   = function (mesg, event_name) { return _syslog("INFO",mesg,event_name); };
-syslog.debug = function (mesg, event_name) { return _syslog("DEBUG",mesg,event_name); };
-syslog.info  = function (mesg, event_name) { return _syslog("INFO",mesg,event_name); };
-syslog.warn  = function (mesg, event_name) { return _syslog("WARN",mesg,event_name); };
-syslog.error = function (mesg, event_name) { return _syslog("ERROR",mesg,event_name); };
-
-acre.syslog = syslog;
-
-
-//--------------------------------- dev mode ------------------------------------------
 
 /**
-*   this should be enabled for development only!
+*   This is the scope for user scripts and includes:
+*       acre
+*       JSON
+*       console
+*       appengine (on AE & trusted mode only)
+*
+*       // legacy
+*       syslog
+*       mjt
 **/
-var _dev = {};
+var script_scope = this;
 
-_dev.test_internal = function (ename) {
-    return _hostenv.dev_test_internal(ename);
-};
-_dev.syslog = syslog;
 
-// developer entrypoints are invisible by default
-if (_hostenv.ACRE_DEVELOPER_MODE) {
-    acre._dev = _dev;
+/**
+*   The scope for acreboot modules, which will
+*   include script_scope stuff plus:
+*       _u (utils)
+*       _request
+*       _file
+*       _system_urlfetch
+*       _system_async_urlfetch
+*       _keystore
+**/
+var _system_scope = _make_scope(script_scope);
+
+
+/**
+*   make a private copy of the embedded java objects and then
+*   remove them from the global namespace for further protection.
+
+*   TODO (SM) there should be a java function to sanitize the global scope
+*   with a whitelist instead of this blacklist.  most of the
+*   global properties aren't enumerable so it's impossible to
+*   whitelist them here within javascript
+**/
+
+// delete the LiveConnect and E4X entry points
+delete this.Packages;
+delete this.java;
+delete this.netscape;
+delete this.XML;
+
+
+// only acreboot needs this
+var _hostenv = PROTECTED_HOSTENV;
+delete this.PROTECTED_HOSTENV;
+
+
+// stash these away in _system_scope for modules too
+var _request = _system_scope._request = ACRE_REQUEST;
+delete this.ACRE_REQUEST;
+
+var _file = _system_scope._file = File;
+delete this.File;
+
+
+// We'll create JS APIs for these later, so no need 
+// to share the internal variables in system scope
+var _domparser = new DOMParser();
+delete this.DOMParser;
+
+var _ks = new KeyStore();
+delete this.KeyStore;
+
+var _json = new JSON();
+delete this.JSON;
+
+var _cache = new Cache();
+delete this.Cache;
+
+if (typeof DataStore != 'undefined') {
+    var _datastore = new DataStore();
+    delete this.DataStore;
 }
+
+if (typeof TaskQueue != 'undefined') {
+    var _taskqueue = new TaskQueue();
+    delete this.TaskQueue;
+}
+
+if (typeof MailService != 'undefined') {
+    var _mailer = new MailService();
+    delete this.MailService;
+}
+
+if (typeof UserService != 'undefined') {
+    var _userService = new UserService();
+    delete this.UserService;
+}
+
+if (typeof AppEngineOAuthService != 'undefined') {
+    var _appengine_oauthservice = new AppEngineOAuthService();
+    delete this.AppEngineOAuthService;
+}
+
+
+//------------------------------ utils -----------------------------------------
+
+/**
+*   Utilites for all acreboot modules to use, including:
+*    - parseUri
+*    - A subset of jQuery utils (each, extend, isArray, etc.)
+*    - parsers and transformers for managing acre paths
+**/
+var util_scope = _make_scope(_system_scope);
+_hostenv.load_system_script("util.js", util_scope);
+var _u = _system_scope._u = util_scope.exports;
 
 
 // ------------------------------- acre ----------------------------------------
+
+/**
+*   The acre environment
+**/
+var acre = script_scope.acre = {};
 
 acre.version = new String(_request.version);
 
@@ -383,7 +183,7 @@ acre.start_response = function (status, headers) {
     if (typeof headers == 'object') {
         // stupid merge - arguments override existing headers
         // some headers are patched in later though...
-        u.extend(acre.response.headers, headers);
+        _u.extend(acre.response.headers, headers);
     }
 };
 
@@ -392,7 +192,7 @@ acre.start_response = function (status, headers) {
 *   @param str string or markup to append
 **/
 acre.write = function () {
-    u.each(arguments, function(i, arg) {
+    _u.each(arguments, function(i, arg) {
         // XXX - shouldn't have handler-specific code here
         if (typeof arg == 'object' && arg !== null &&
             (typeof arg.toMarkupList === 'function' || typeof arg.toMarkup === 'function')) {
@@ -428,6 +228,41 @@ acre.wait = function(millis) {
 }
 
 
+//------------------------------ syslog -----------------------------------------
+
+var _syslog = function(level, mesg, event_name) {
+    if (typeof event_name == 'undefined') event_name = null;
+    if (typeof mesg == 'undefined' || mesg === null) mesg = "undefined";
+    _hostenv.syslog(level, event_name, mesg);
+};
+
+var syslog   = function (mesg, event_name) { return _syslog("INFO",mesg,event_name); };
+syslog.debug = function (mesg, event_name) { return _syslog("DEBUG",mesg,event_name); };
+syslog.info  = function (mesg, event_name) { return _syslog("INFO",mesg,event_name); };
+syslog.warn  = function (mesg, event_name) { return _syslog("WARN",mesg,event_name); };
+syslog.error = function (mesg, event_name) { return _syslog("ERROR",mesg,event_name); };
+
+acre.syslog = script_scope.syslog = syslog;
+
+
+//------------------------------ dev mode ----------------------------------------
+
+/**
+*   this should be enabled for development only!
+**/
+var _dev = {};
+
+_dev.test_internal = function (ename) {
+    return _hostenv.dev_test_internal(ename);
+};
+_dev.syslog = syslog;
+
+// developer entrypoints are invisible by default
+if (_hostenv.ACRE_DEVELOPER_MODE) {
+    acre._dev = _dev;
+}
+
+
 // ------------------------------- acre.host -----------------------------------------
 
 acre.host = {
@@ -450,7 +285,7 @@ acre.request = {
     protocol : _request.server_protocol, // XXX: how do we get the request protocol?
     method : _request.request_method,
     headers : _request.headers,
-    base_path : _request.request_path_info.replace(new RegExp(u.escape_re(_request.path_info)+"$"), ""),    
+    base_path : _request.request_path_info.replace(new RegExp(_u.escape_re(_request.path_info)+"$"), ""),    
 
     // these can be re-set by acre.route
     body : _request.request_body,
@@ -555,7 +390,7 @@ AcreResponse.prototype.add_header = function (name, value) {
     //   subsequent field-value to the first, each separated by a comma.
     if (!(name in this.headers)) {
         this.headers[name] = value;
-    } else if (u.isArray(this.headers[name])) {
+    } else if (_u.isArray(this.headers[name])) {
         this.headers[name].push(value);
     } else {
         this.headers[name] = [this.headers[name], value];
@@ -735,7 +570,7 @@ var AcreResponse_set_vary = function (res) {
 
 var AcreResponse_get_session = function(res) {
     if (typeof AcreResponse_session === 'undefined') {
-        AcreResponse_session = get_random();
+        AcreResponse_session = _u.get_random();
         AcreResponse_set_session_cookie = true;
     }
     return AcreResponse_session;
@@ -804,8 +639,8 @@ acre.errors.URLTimeoutError.prototype = new acre.errors.URLError('acre.errors.UR
 acre.errors.URLTimeoutError.prototype.name = 'acre.errors.URLTimeoutError';
 _hostenv.URLTimeoutError = acre.errors.URLTimeoutError;
 
-_topscope.AcreExitException = acre.errors.AcreExitException; // deprecated
-_topscope.URLError = acre.errors.URLError; // deprecated
+script_scope.AcreExitException = acre.errors.AcreExitException; // deprecated
+script_scope.URLError = acre.errors.URLError; // deprecated
 
 _hostenv.Error = Error;
 
@@ -863,31 +698,33 @@ function set_environ() {
 };
 
 
-// ------------------------------------ JSON ------------------------------
+// ------------------------------ JSON ------------------------------------
 
-_topscope.JSON = {
+script_scope.JSON = {
+
     stringify: function(obj, resolver, space) {
         try {
             return _json.stringify(obj, resolver, space);
         } catch (e) {
-          var message = e.message.indexOf("JSON.stringify:") == 0
-                          ? e.message
-                          : e.message.replace(/^[^:]*:\s*/, '');
+            var message = e.message.indexOf("JSON.stringify:") == 0
+            ? e.message
+            : e.message.replace(/^[^:]*:\s*/, '');
             throw new Error(message);
         }
     },
+
     parse: function(str, reviver) {
         try {
             if (typeof reviver !== "undefined" && reviver != null) {
                 console.warn("Acre currently ignores 'reviver' in JSON.parse()");
             }
-
             return _json.parse(str);
         } catch (e) {
             // Everything after the first :, if present
             throw new Error(e.message.replace(/^[^:]*:\s*/, ''));
         }
     }
+
 };
 
 
@@ -977,22 +814,16 @@ acre.hash.b64_hmac_md5 = function (key, data) {
 };
 
 
-// ------------------------------------------------------------------------
-
-// used by the keystore and the cache to partition data based on the app_guid
-
-_request.app_project = null;
-
 // ------------------------ keystore --------------------------------------
 
 if (typeof acre.keystore == 'undefined') {
     acre.keystore = {};
 }
 
-var _keystore = {
+var _keystore = _system_scope._keystore = {
 
     get: function (name) {
-        if (_request.app_project !== null) {
+        if (_request.app_project) {
             return _ks.get_key(name, _request.app_project);
         } else {
             return null;
@@ -1000,7 +831,7 @@ var _keystore = {
     },
 
     put: function (name, token, secret) {
-        if (_request.app_project !== null) {
+        if (_request.app_project) {
             return _ks.put_key(name, _request.app_project, token, secret);
         } else {
             return null;
@@ -1008,7 +839,7 @@ var _keystore = {
     },
 
     keys: function () {
-        if (_request.app_project !== null) {
+        if (_request.app_project) {
             return _ks.get_keys(_request.app_project);
         } else {
             return null;
@@ -1016,7 +847,7 @@ var _keystore = {
     },
 
     remove: function (name) {
-        if (_request.app_project !== null) {
+        if (_request.app_project) {
             _ks.delete_key(name, _request.app_project);
         }
     }
@@ -1059,10 +890,10 @@ if (_request.trusted) {
 *
 **/
 
-var _system_urlfetch = function(url,method,headers,content,sign) {
+var _system_urlfetch = _system_scope._system_urlfetch = function(url,method,headers,content,sign) {
     return _urlfetch(true,url,method,headers,content,sign);
 };
-var _system_async_urlfetch = function(url,method,headers,content,sign) {
+var _system_async_urlfetch = _system_scope._system_async_urlfetch = function(url,method,headers,content,sign) {
     return _urlfetch(true,url,method,headers,content,sign, _hostenv.urlOpenAsync);
 };
 
@@ -1298,33 +1129,31 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
 };
 
 
-//=================== acreboot modules ====================
-
-
-//------------------- module environment -------------------
-
-// The scope we initialize modules with:
-var module_env = {
-    _u: u,
-    _request: _request,
-    _system_urlfetch: _system_urlfetch,
-    _system_async_urlfetch: _system_async_urlfetch,
-    _keystore: _keystore
-};
-
 //------------------------ cache --------------------------
 
 if (_request.trusted && _cache) { // the _datastore object won't be available in all environments so we need to check first
-    var cache_scope = make_scope(module_env);
+    var cache_scope = _make_scope(_system_scope);
     cache_scope._cache = _cache;
     _hostenv.load_system_script('cache.js', cache_scope);
     cache_scope.augment(acre);
 }
 
+
+//=================== appengine modules ====================
+
+/**
+*   appengine - JS APIs to the appengine Java APIs
+*   (only available in appengine running in trusted mode)
+**/
+if (_request.trusted && _request.server_type == "appengine") {
+    var appengine = script_scope.appengine = {};
+}
+
+
 //------------------------ datastore --------------------------
 
 if (_request.trusted && _datastore) { // the _datastore object won't be available in all environments so we need to check first
-    var store_scope = make_scope(module_env);
+    var store_scope = _make_scope(_system_scope);
     store_scope._datastore = _datastore;
     _hostenv.load_system_script('datastore.js', store_scope);
     if (appengine) store_scope.augment(appengine);
@@ -1335,7 +1164,7 @@ if (_request.trusted && _datastore) { // the _datastore object won't be availabl
 //------------------------ taskqueue --------------------------
 
 if (_request.trusted && _taskqueue) { // the _taskqueue object won't be available in all environments so we need to check first
-    var queue_scope = make_scope(module_env);
+    var queue_scope = _make_scope(_system_scope);
     queue_scope._taskqueue = _taskqueue;
     _hostenv.load_system_script('taskqueue.js', queue_scope);
     if (appengine) queue_scope.augment(appengine);
@@ -1346,7 +1175,7 @@ if (_request.trusted && _taskqueue) { // the _taskqueue object won't be availabl
 //------------------------ mailer --------------------------
 
 if (_request.trusted && _mailer) { // the _mailer object won't be available in all environments so we need to check first
-    var mailer_scope = make_scope(module_env);
+    var mailer_scope = _make_scope(_system_scope);
     mailer_scope._mailer = _mailer;
     _hostenv.load_system_script('mailservice.js', mailer_scope);
     if (appengine) mailer_scope.augment(appengine);
@@ -1356,11 +1185,12 @@ if (_request.trusted && _mailer) { // the _mailer object won't be available in a
 //------------------------ user service --------------------------
 
 if (_request.trusted && _userService) { // the _userService object won't be available in all environments so we need to check first
-    var userService_scope = make_scope(module_env);
+    var userService_scope = _make_scope(_system_scope);
     userService_scope._userService = _userService;
     _hostenv.load_system_script('userservice.js', userService_scope);
     userService_scope.augment(appengine);
 }
+
 
 // -------------------------------- file handlers -------------------------------------
 
@@ -1384,7 +1214,7 @@ acre.handlers.acre_script = {
 
 acre.handlers.passthrough = {
     'to_js': function(script) {
-        return "var module = ("+JSON.stringify(script.get_content())+");";
+        return "var module = ("+_json.stringify(script.get_content())+");";
     },
     'to_module': function(compiled_js, script) {
         return compiled_js.module;
@@ -1470,7 +1300,7 @@ function make_appfetch_error(msg, code, info, parent) {
     parent = parent || null;
 
     var e = new Error(msg);
-    u.extend(e, info);
+    _u.extend(e, info);
 
     e.__code__ = code;
     e.__parent__ = parent;
@@ -1562,7 +1392,7 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
                         var r2 = _cache.get(ckey);
                         if (r2 !== null) {
                             syslog.debug({'s' : 'memcache', 'key' : ckey, 'm' : 'trampoline' }, 'appfetch.cache.success');
-                            return JSON.parse(r2);
+                            return _json.parse(r2);
                         }
                     }
                 }
@@ -1641,7 +1471,7 @@ var appfetch_cache = function(host) {
         throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
     }
 
-    var app = JSON.parse(res);
+    var app = _json.parse(res);
     syslog.debug({'key': ckey, 's': 'memcache', 'm': app.source}, 'appfetch.cache.success');
 
     return app;
@@ -1670,7 +1500,7 @@ appfetch_methods.push({
 *   Built-in method that loads apps from disk
 **/
 var disk_resolver = function(host) {
-    return _hostenv.STATIC_SCRIPT_PATH + host_to_namespace(host);
+    return _hostenv.STATIC_SCRIPT_PATH + _u.host_to_namespace(host);
 };
 
 var disk_inventory_path = function(app, disk_path) {
@@ -1684,7 +1514,7 @@ var disk_inventory_path = function(app, disk_path) {
     var files = _file.files(disk_path);
     if (!files) return null;
 
-    u.each(files, function(i, file) {
+    _u.each(files, function(i, file) {
         var f = new _file(disk_path+"/"+file, false);
         var file_data = {
             name: file
@@ -1737,7 +1567,7 @@ var custom_methods = [
 ];
 
 for (var i=0; i < custom_methods.length; i++) {
-    var method_scope = make_scope(module_env);
+    var method_scope = _make_scope(_system_scope);
     _hostenv.load_system_script(custom_methods[i], method_scope);
     method_scope.appfetcher(register_appfetch_method, make_appfetch_error, _system_urlfetch);
 }
@@ -1745,16 +1575,16 @@ for (var i=0; i < custom_methods.length; i++) {
 
 //-------------------------------- console - part 1 --------------------------------------
 
-var console_scope = make_scope(module_env);
+var console_scope = _make_scope(_system_scope);
 console_scope.userlog = function(level,arr) { return _hostenv.userlog(level,arr); };
 _hostenv.load_system_script('console.js', console_scope);
-console_scope.augment_topscope(_topscope);
-console_scope.augment_acre(acre);
+var console = console_scope.augment_topscope(script_scope);
+console_scope.augment_acre(script_scope.acre);    // deprecated
 
 
 // ------------------------------ deprecation ------------------------------------------
 
-var deprecate_scope = make_scope(module_env);
+var deprecate_scope = _make_scope(_system_scope);
 _hostenv.load_system_script('acre_deprecate.js', deprecate_scope);
 var deprecate = deprecate_scope.deprecate;
 
@@ -1763,12 +1593,12 @@ var deprecate = deprecate_scope.deprecate;
 
 // NOTE: mjt needs the 'console' object defined at init to work properly
 acre._load_system_script = function (script) {
-    return _hostenv.load_system_script(script, _topscope);
+    return _hostenv.load_system_script(script, script_scope);
 };
 
 // needed by acremjt.js to load scripts
-_hostenv.load_system_script('acrexhr.js', _topscope);
-_hostenv.load_system_script('acremjt.js', _topscope);
+_hostenv.load_system_script('acrexhr.js', script_scope);
+_hostenv.load_system_script('acremjt.js', script_scope);
 
 // remove the script loader from the environment
 delete acre._load_system_script;
@@ -1793,7 +1623,7 @@ acre.form = {
     generate_csrf_token : function(timeout) {
         timeout = (timeout || 600) * 1000;
         var time = new Date().getTime() + timeout;
-        var s = time + AcreResponse_get_session() + get_csrf_secret();
+        var s = time + AcreResponse_get_session() + _u.get_csrf_secret();
         var hash = acre.hash.b64_sha1(s);
         return hash + time;
     },
@@ -1816,7 +1646,7 @@ acre.form = {
             return false;
         }
 
-        var s = token_time + AcreResponse_get_session() + get_csrf_secret();
+        var s = token_time + AcreResponse_get_session() + _u.get_csrf_secret();
         var hash = acre.hash.b64_sha1(s);
         if (hash !== token_hash) {
             console.error("Invalid CSRF token");
@@ -1841,7 +1671,7 @@ acre.markup = {};
 acre.markup.bless = mjt.bless;
 acre.markup.stringify = mjt.flatten_markup;
 acre.markup.define_browser_var = function(obj,name) {
-    return acre.markup.bless('<script type="text/javascript">var ' + name + ' = ' + JSON.stringify(obj).replace(/\//g,'\\/') + ';</script>');
+    return acre.markup.bless('<script type="text/javascript">var ' + name + ' = ' + _json.stringify(obj).replace(/\//g,'\\/') + ';</script>');
 };
 
 acre.markup.MarkupList = mjt.MarkupList;
@@ -1877,10 +1707,6 @@ acre.template.string_to_js = function (string, name) {
     return _mjt.acre.compile_string(string, name).toJS();
 };
 
-// LATER
-// hide the global 'mjt' symbol
-//delete mjt;
-
 
 // ----------------------------- acre.freebase -----------------------------------------
 
@@ -1901,7 +1727,7 @@ for (var k in _mjt.freebase) {
     }
 }
 
-var freebase_scope = make_scope(module_env);
+var freebase_scope = _make_scope(_system_scope);
 freebase_scope._response_callbacks = AcreResponse_callbacks;
 var fb_script = (_request.googleapis_freebase !== "") ? "googleapis_freebase.js" : "freebase.js";
 _hostenv.load_system_script(fb_script, freebase_scope);
@@ -1934,13 +1760,10 @@ for (var k in mjt_freebase_synctasks) {
     })(k);
 }
 
-// cleanup
-delete freebase_scope;
-
 
 //--------------------------------- oauth -----------------------------------
 
-var oauth_scope = make_scope(module_env);
+var oauth_scope = _make_scope(_system_scope);
 oauth_scope._appengine_oauthservice = _appengine_oauthservice;
 _hostenv.load_system_script('oauth.js', oauth_scope);
 var oauth_script = (_request.googleapis_freebase !== "") ? "googleapis_oauth.js" : "acre_oauth.js";
@@ -1950,16 +1773,13 @@ oauth_scope.augment(acre);
 // fish this function out because _urlfetch needs it
 var oauth_sign = oauth_scope.OAuth.sign;
 
-// cleanup
-delete oauth_scope;
-
 
 //-------------------------------- console - part 2 ----------------------------
 
 // tell the console to ignore all the top level objects by default
 // NOTE: this needs to be at the very end as to list all the possible objects
-for (var name in _topscope) {
-    console_scope.skip(_topscope[name]);
+for (var name in script_scope) {
+    console_scope.skip(script_scope[name]);
 }
 
 
@@ -1975,15 +1795,15 @@ function Script(app, name, path_info) {
 
     // get backfill metadata
     // we need to do this post-overrides being applied
-    var ext_md = get_extension_metadata(name, app.extensions);
+    var ext_md = _u.get_extension_metadata(name, app.extensions);
 
     // Create a good looking copy of script metadata 
     // this will be used in acre.current_script, etc.
-    var script_data = u.extend({}, ext_md, app.files[name]);
+    var script_data = _u.extend({}, ext_md, app.files[name]);
 
     script_data.path_info = path_info;
-    script_data.path = compose_req_path(app.host, name);
-    script_data.id = host_to_namespace(app.host) + "/" + name;
+    script_data.path = _u.compose_req_path(app.host, name);
+    script_data.id = _u.host_to_namespace(app.host) + "/" + name;
 
     for (var key in script_data) {
         this[key] = script_data[key];
@@ -1991,7 +1811,7 @@ function Script(app, name, path_info) {
 
     script_data.app = {
         source: app.source,
-        path: compose_req_path(app.host),
+        path: _u.compose_req_path(app.host),
         host: app.host,
         hosts: app.hosts,
         guid: app.guid,
@@ -2028,7 +1848,7 @@ Script.prototype.normalize_path = function(path, version, new_only) {
         var script = namespace.pop();
         if (version) namespace.push(version);
         namespace = namespace.join('/');
-        path = compose_req_path(namespace_to_host(namespace), script);
+        path = _u.compose_req_path(_u.namespace_to_host(namespace), script);
         return path;
     }
 
@@ -2055,28 +1875,28 @@ Script.prototype.normalize_path = function(path, version, new_only) {
         }
 
         // otherwise just push current host back on
-        return compose_req_path(this.app.host, path);
+        return _u.compose_req_path(this.app.host, path);
     }
 }
 
 Script.prototype.set_scope = function(scope) {
     var script = this,
         script_data = this.script_data,
-        scope = scope || make_scope();
+        scope = scope || _make_scope(script_scope);
 
     scope.acre.current_script = script.script_data;
 
     /**
-    *   _request_scope augmentation:
+    *   _request.scope augmentation:
     *   This is stuff we only do for 
     *   the top-level requested script:
     **/
-    if (scope == _request_scope && script.name.indexOf("not_found.") !== 0) {
+    if (scope == _request.scope && script.name.indexOf("not_found.") !== 0) {
         scope.acre.request.script = script.script_data;
 
         // app_project is primarily used for accessing the keystore and the cache
         // don't set it if it's already been set (by /acre/ OTS rule)
-        if (_request.app_project === null) {
+        if (!_request.app_project) {
             _request.app_project = script.app.project;
         }
         syslog("Using keystore: " + _request.app_project, "request.keystore");
@@ -2090,7 +1910,7 @@ Script.prototype.set_scope = function(scope) {
         }
 
         if (script.app.oauth_providers) {
-            u.extend(true, acre.oauth.providers, script.app.oauth_providers);
+            _u.extend(true, acre.oauth.providers, script.app.oauth_providers);
         }
 
         // XXX - freebase appfetch method-specific hacks
@@ -2103,8 +1923,8 @@ Script.prototype.set_scope = function(scope) {
         // Setup deprecated values and decorate with warning messages
         set_environ();
 
-        var script_id = req_path_to_script_id(script.path);
-        var [namespace, script_name] = split_script_id(script_id);
+        var script_id = _u.req_path_to_script_id(script.path);
+        var [namespace, script_name] = _u.split_script_id(script_id);
 
         scope.acre.request_context = { // deprecated
             script_name : script_name,
@@ -2117,8 +1937,8 @@ Script.prototype.set_scope = function(scope) {
 
         scope.acre.context = scope.acre.request_context; // deprecated
         scope.acre.environ.script_name = script.name; // deprecated
-        scope.acre.environ.script_id = host_to_namespace(script_data.app.host) + '/' + script_data.name; // deprecated
-        scope.acre.environ.script_namespace = host_to_namespace(script_data.app.host); // deprecated
+        scope.acre.environ.script_id = _u.host_to_namespace(script_data.app.host) + '/' + script_data.name; // deprecated
+        scope.acre.environ.script_namespace = _u.host_to_namespace(script_data.app.host); // deprecated
 
         deprecate(scope);
     }
@@ -2131,7 +1951,7 @@ Script.prototype.set_scope = function(scope) {
     scope.acre.get_metadata = function(path) {
         path = script.normalize_path(path, null, true);
         var [app_md, filename] = proto_require(path, {metadata_only: true});
-        var [host, path_info] = decompose_req_path(path);
+        var [host, path_info] = _u.decompose_req_path(path);
 
         if (!app_md || (path_info && !filename)) {
             return null;
@@ -2139,11 +1959,11 @@ Script.prototype.set_scope = function(scope) {
 
         var app = GET_METADATA_CACHE[host];
         if (!app) {
-          app = u.extend(true, {}, app_md);
+          app = _u.extend(true, {}, app_md);
           delete app.filenames;
           for (var f in app.files) {
-              var ext_md = get_extension_metadata(app.files[f].name, app.extensions);
-              app.files[f] = u.extend({}, ext_md, app.files[f]);
+              var ext_md = _u.get_extension_metadata(app.files[f].name, app.extensions);
+              app.files[f] = _u.extend({}, ext_md, app.files[f]);
           }
           GET_METADATA_CACHE[host] = app;
         }
@@ -2154,18 +1974,18 @@ Script.prototype.set_scope = function(scope) {
     scope.acre.resolve = function(path) {
         path = script.normalize_path(path, null, true);
         var [app_md, filename] = route_require(path, {metadata_only: true});
-        var [host, path_info] = decompose_req_path(path);
+        var [host, path_info] = _u.decompose_req_path(path);
 
         if (!app_md || (path_info && !filename)) {
             return null;
         }
 
-        return compose_req_path(app_md.host, filename);
+        return _u.compose_req_path(app_md.host, filename);
     };
 
     scope.acre.route = function(path, body, skip_routes) {
         path = script.normalize_path(path, null, true);
-        var [h, p, qs] = decompose_req_path(path);
+        var [h, p, qs] = _u.decompose_req_path(path);
 
         var route_e = new acre.errors.AcreRouteException;
         route_e.route_to = path;
@@ -2194,7 +2014,7 @@ Script.prototype.set_scope = function(scope) {
         var version,
             require_opts = {};
 
-        if (u.isPlainObject(metadata)) {
+        if (_u.isPlainObject(metadata)) {
             require_opts.override_metadata = metadata;
         } else {
             version = metadata;
@@ -2211,7 +2031,7 @@ Script.prototype.set_scope = function(scope) {
             throw new Error('Could not fetch data from ' + path);
         }
 
-        if (compose_req_path(sobj.app.host, sobj.name) === script.path) {
+        if (_u.compose_req_path(sobj.app.host, sobj.name) === script.path) {
             throw new Error("A script can not require itself");
         }
 
@@ -2276,7 +2096,7 @@ Script.prototype.to_module = function(scope) {
 
 Script.prototype.to_http_response = function(scope) {
     // if we're running at the top-level, reset path_info
-    if (scope === _request_scope) {
+    if (scope === _request.scope) {
         acre.request.path_info = this.path_info;
     }
 
@@ -2320,8 +2140,8 @@ var proto_require = function(req_path, req_opts) {
         if (md) {
             for (var key in md) {
                 if (!skip_keys[key]) {
-                    app[key] = u.isPlainObject(md[key]) ? 
-                                u.extend(true, app[key] || {}, md[key]) : 
+                    app[key] = _u.isPlainObject(md[key]) ? 
+                                _u.extend(true, app[key] || {}, md[key]) : 
                                 md[key];
                 }
             }
@@ -2350,8 +2170,8 @@ var proto_require = function(req_path, req_opts) {
             app.guid = app.guid || app.host;
             app.project = app.project || app.guid;
             app.as_of = app.as_of || null; 
-            app.path = app.path || compose_req_path(app.host);
-            app.id = app.id || host_to_namespace(app.host);
+            app.path = app.path || _u.compose_req_path(app.host);
+            app.id = app.id || _u.host_to_namespace(app.host);
         }
         app.versions = app.versions || [];
         app.mounts = app.mounts || {};
@@ -2390,7 +2210,7 @@ var proto_require = function(req_path, req_opts) {
         // extension from when on-disk apps stripped extensions
 
         // is there a "preferred" extension?
-        u.each(["none", "sjs", "mjt"], function(i, ext) {
+        _u.each(["none", "sjs", "mjt"], function(i, ext) {
             if (filenames[ext]) {
                 filename = filenames[ext];
                 return false;
@@ -2409,11 +2229,11 @@ var proto_require = function(req_path, req_opts) {
     };
 
     // parse path
-    var [host, path] = decompose_req_path(req_path);
+    var [host, path] = _u.decompose_req_path(req_path);
 
     // retrieve app metadata using appfetchers
     var method, app_data;
-    u.each(appfetch_methods, function(i, m) {
+    _u.each(appfetch_methods, function(i, m) {
         try {
             method = m;
             var app_defaults = (method.name === 'cache') ? {} : 
@@ -2433,11 +2253,11 @@ var proto_require = function(req_path, req_opts) {
     }
 
     // splice in metadata file before caching app
-    var md_filename = get_file(_METADATA_FILE);
+    var md_filename = get_file(_request.METADATA_FILE);
     if (md_filename && method.cachable) {
         var md_file = new Script(app_data, md_filename).to_module();
         try {
-          var md = md_file[_METADATA_FILE] || JSON.parse(md_file.body);
+          var md = md_file[_request.METADATA_FILE] || _json.parse(md_file.body);
           syslog.info("Loaded app metadata file in //" + host, "proto_require.metadata");
         } catch (e) {
           throw new Error("Metadata file in //" + host + " is not valid. "  + e);
@@ -2452,14 +2272,14 @@ var proto_require = function(req_path, req_opts) {
     if (method.cachable && (ttl !== 0)) {
         // cache the metadata in the long-term cache, the metadata is
         // cached permanently (or until overriden).
-        _cache.put(ckey, JSON.stringify(app_data));
+        _cache.put(ckey, _json.stringify(app_data));
         
         // we want to build an index of ids to the metadata block
         // which we do with HOST keys in the metadata cache. These
         // only last for ten minutes, since they are considered a
         // front-line caching mechanism, and thus require a
         // shift+refresh to refresh.
-        u.each(app_data.hosts, function(i, host) {
+        _u.each(app_data.hosts, function(i, host) {
             if (ttl < 0) {
               _cache.put("HOST:" + host, ckey);
             } else {
@@ -2474,7 +2294,7 @@ var proto_require = function(req_path, req_opts) {
     // whirlycott, for getting the same metadata in a single request
     // cycle. Metadata is directly linked to the link keys (in this
     // case, there should only be one link key)
-    u.each(app_data.hosts, function(i, host) {
+    _u.each(app_data.hosts, function(i, host) {
         METADATA_CACHE[host] = app_data;
     });
 
@@ -2482,7 +2302,7 @@ var proto_require = function(req_path, req_opts) {
     // them now, after caching, so they only affect this scope
     var app = app_data;
     if (req_opts.override_metadata) {
-        app = u.extend(true, {}, app_data);
+        app = _u.extend(true, {}, app_data);
         set_app_metadata(app, req_opts.override_metadata);
     }
 
@@ -2496,7 +2316,7 @@ var proto_require = function(req_path, req_opts) {
 
         while (path_segs.length) {
             var fn = path_segs.join("/");
-            path_info = file_in_path(fn, path)[0];
+            path_info = _u.file_in_path(fn, path)[0];
 
             if (app.mounts[fn]) {
                 return route_require(app.mounts[fn] + path_info, req_opts, {routes: true});
@@ -2531,21 +2351,21 @@ var proto_require = function(req_path, req_opts) {
 var route_require = function(req_path, req_opts, opts) {
     opts = opts || {};
 
-    var [req_host, req_pathinfo, req_query_string] = decompose_req_path(req_path);
+    var [req_host, req_pathinfo, req_query_string] = _u.decompose_req_path(req_path);
 
     // Fill in missing values
     var host = req_host;
-    var pathinfo = req_pathinfo ? req_pathinfo : _DEFAULT_FILE;
-    var path = compose_req_path(host, pathinfo);
+    var pathinfo = req_pathinfo ? req_pathinfo : _request.DEFAULT_FILE;
+    var path = _u.compose_req_path(host, pathinfo);
 
     // Set up the list of paths we're going to try
     var fallbacks = [];
 
     if (opts.routes) {
-        fallbacks.push(compose_req_path(host,  'routes' + '/' + req_pathinfo));
+        fallbacks.push(_u.compose_req_path(host,  'routes' + '/' + req_pathinfo));
     }
 
-    fallbacks.push(compose_req_path(host, pathinfo));
+    fallbacks.push(_u.compose_req_path(host, pathinfo));
 
     if (opts.fallbacks) {
         var FALLTHROUGH_SCRIPTS = {
@@ -2554,8 +2374,8 @@ var route_require = function(req_path, req_opts, opts) {
             'error':true
         };
         for (var sname in  FALLTHROUGH_SCRIPTS) {
-            if (file_in_path(sname, path)[1]) {
-                fallbacks.push(compose_req_path(_DEFAULTS_HOST, pathinfo));
+            if (_u.file_in_path(sname, path)[1]) {
+                fallbacks.push(_u.compose_req_path(_request.DEFAULTS_HOST, pathinfo));
             }
         }
     }
@@ -2563,15 +2383,15 @@ var route_require = function(req_path, req_opts, opts) {
     if (opts.not_found) {
         fallbacks = fallbacks.concat(
             [
-                compose_req_path(host, 'not_found'),
-                compose_req_path(_DEFAULTS_HOST, 'not_found')
+                _u.compose_req_path(host, 'not_found'),
+                _u.compose_req_path(_request.DEFAULTS_HOST, 'not_found')
             ]
         );
     }
 
     // Work our way down the list until we find one that works:
     var script = null;
-    u.each(fallbacks, function(i, fpath) {
+    _u.each(fallbacks, function(i, fpath) {
         script = proto_require(fpath, req_opts);
         if (script !== null) return false;
     });
@@ -2599,24 +2419,24 @@ var handle_request = function (req_path, req_body, skip_routes) {
     // support /acre/ special case -- these are OTS routing rules 
     // that allow certain global scripts to run within the context of any app
     // e.g., keystore, auth, test, etc.
-    if (request_url.split('/')[3] == 'acre') {
-        var [h, p] = decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
+    if (_request.request_url.split('/')[3] == 'acre') {
+        var [h, p] = _u.decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
         try {
-          var source_app = proto_require(compose_req_path(h), {metadata_only: true})[0];
+          var source_app = proto_require(_u.compose_req_path(h), {metadata_only: true})[0];
           if (source_app !== null) {
-              source_path = compose_req_path(h, p);
+              source_path = _u.compose_req_path(h, p);
               _request.app_project = source_app.project;
-              u.extend(true, acre.oauth.providers, source_app.oauth_providers);
+              _u.extend(true, acre.oauth.providers, source_app.oauth_providers);
           }
         } catch(e) {
           syslog.warn("Unresolvable host used with a /acre/ URL.", "handle_request.host");
         }
     }
 
-    var [req_host, req_pathinfo, req_query_string] = decompose_req_path(req_path);
+    var [req_host, req_pathinfo, req_query_string] = _u.decompose_req_path(req_path);
     if (!req_host) {
-        req_host = _DEFAULT_APP;
-        req_path = compose_req_path(req_host);
+        req_host = _request.DEFAULT_APP;
+        req_path = _u.compose_req_path(req_host);
     }
 
     // Now that we know what the path we're running, 
@@ -2632,8 +2452,8 @@ var handle_request = function (req_path, req_body, skip_routes) {
     // version once scope_augmentation is run
     acre.request.script = {
         'app': {
-            'id': host_to_namespace(req_host),
-            'path': compose_req_path(req_host)
+            'id': _u.host_to_namespace(req_host),
+            'path': _u.compose_req_path(req_host)
         },
         'name': req_pathinfo,
         'path': req_path
@@ -2662,20 +2482,20 @@ var handle_request = function (req_path, req_body, skip_routes) {
     // This information is needed by the error page
     _hostenv.script_name = script.name;
     _hostenv.script_path = script.path;
-    _hostenv.script_host_path = compose_req_path(script.app.host);
+    _hostenv.script_host_path = _u.compose_req_path(script.app.host);
     if ('error' in acre && 'script_path' in acre.error) {
         source_path = acre.error.script_path;
     }
 
     // View Source link
     acre.response.set_header('x-acre-source-url',
-                            freebase_site_host + 
+                            _request.freebase_site_host + 
                             '/appeditor#!path=' + source_path);
 
     // execute the script
     try {
-        _request_scope = make_scope();
-        var res = script.to_http_response(_request_scope);
+        _request.scope = _make_scope(script_scope);
+        var res = script.to_http_response(_request.scope);
 
         if (res !== null) {
             // fill out the acre.response object.
@@ -2711,8 +2531,8 @@ _hostenv.finish_response = function () {
     // but we need it so we can easily modify header values
 
     var hdrs = {};
-    u.each(acre.response.headers, function(k, v) {
-        if (u.isArray(v)) {
+    _u.each(acre.response.headers, function(k, v) {
+        if (_u.isArray(v)) {
             v = v.join('; ');
         }
         hdrs[k.toLowerCase()] = v;
@@ -2741,35 +2561,42 @@ _hostenv.finish_response = function () {
 
 // --------------------------------- let's roll -------------------------------
 
+/**
+*   Add static global variables
+**/
+_request.DELIMITER_HOST = _hostenv.ACRE_HOST_DELIMITER_HOST;
+_request.DELIMITER_PATH = _hostenv.ACRE_HOST_DELIMITER_PATH;
+_request.DEFAULT_HOSTS_PATH = '/freebase/apps/hosts';
+_request.DEFAULT_ACRE_HOST_PATH = "/z/acre";
+_request.DEFAULTS_HOST = _hostenv.DEFAULT_HOST_PATH.substr(2);
+_request.METADATA_FILE = "METADATA";
+_request.DEFAULT_FILE = "index";
+_request.DEFAULT_APP = "main." + _request.DELIMITER_PATH;
+
 // get app metadata defaults
 // doing this here so it's once per request rather than for every require
 // XXX - there's probably a less hacky way to do this, but it gets the job done
 acre.response = {};
-var defaults = proto_require(compose_req_path(_DEFAULTS_HOST), {metadata_only: true})[0];
+var defaults = proto_require(_u.compose_req_path(_request.DEFAULTS_HOST), {metadata_only: true})[0];
 var _default_metadata = {
   "error_page": defaults.error_page,
   "extensions": defaults.extensions,
   "ttl": defaults.ttl
 };
 
-// We're going to initialize this in handle_request
-// but we need it to be global for comparison later
-var _request_scope;
-
-var _request_path;
-
-// If it's an internal redirect (error page), get _request_path from handler_script_path:
+// If it's an internal redirect (error page), get _request.path from handler_script_path:
 if (typeof _request.handler_script_path == 'string' && _request.handler_script_path != '') {
-    _request_path = _request.handler_script_path;
+    _request.path = _request.handler_script_path;
     delete _request.handler_script_path;
+}
 
 // Otherwise, get it from the request
 // we don't use _request.request_url because it's set pre-OTS rules,
 // however the following values *are* reset by OTS
-} else {
-    _request_path = 'http://' + _request.server_name.toLowerCase() + _request.path_info + '?' + _request.query_string; 
+else {
+    _request.path = 'http://' + _request.server_name.toLowerCase() + _request.path_info + '?' + _request.query_string;
 }
 
-handle_request(_request_path, _request.request_body, _request.skip_routes);
+handle_request(_request.path, _request.request_body, _request.skip_routes);
 
 })();

@@ -141,6 +141,7 @@ function augment_topscope(_topscope) {
     error : function() { return log('ERROR', arguments, 'console'); },
     enabled : true // this will be turned off in production if the user logging is turned off
   };
+  return _topscope.console;
 }
 
 function augment_acre(acre) {
