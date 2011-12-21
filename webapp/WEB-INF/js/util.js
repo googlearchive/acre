@@ -150,12 +150,12 @@ function get_random() {
 
 function get_csrf_secret(that) {
     if (!_request.csrf_secret) {
-        var key = _ks.get_key("csrf", _request.app_project);
+        var key = _keystore.get("csrf");
         if (key && key[1]) {
             _request.csrf_secret = key[1];
         } else {
             _request.csrf_secret = get_random();
-            _ks.put_key("csrf", _request.app_project, null, _request.csrf_secret);
+            _keystore.put("csrf", null, _request.csrf_secret);
         }
     }
     return _request.csrf_secret;
