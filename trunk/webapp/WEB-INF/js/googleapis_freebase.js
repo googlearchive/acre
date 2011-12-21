@@ -175,6 +175,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
                     exception.code = error.code;
                     exception.errors = error.errors;
                     exception.response = result;
+                    console.error(exception);
                     throw exception;
                 }
 
