@@ -30,15 +30,18 @@ if (!provider) {
 switch (acre.request.path_info) {
 
     case '/signin' :
-        params.onsucceed = get_redirect_url(params.onsucceed, true, true);
-        params.onfail = get_redirect_url(params.onfail, true, true);
-        // fake out oauth1 providers to use same redirect URL-based flow as oauth2
-        if (provider.oauth_version !== 2) {
-          var redirect_url = acre.request.url.replace(/\/signin(\?.*)?$/,"/redirect");
-          params.onsucceed = acre.form.build_url(redirect_url, {
-            onsucceed: params.onsucceed,
-            onfail: params.onfail
-          });
+        if (provider.oauth_version == 2) {
+            params.onsucceed = get_redirect_url(params.onsucceed, true, true);
+            params.onfail = get_redirect_url(params.onfail, true, true);
+        } else {
+            // fake out oauth1 providers to use same redirect URL-based flow as oauth2
+            params.onsucceed = get_redirect_url(params.onsucceed, true, false);
+            params.onfail = get_redirect_url(params.onfail, true, false);
+            var redirect_url = acre.request.url.replace(/\/signin(\?.*)?$/,"/redirect");
+            params.onsucceed = acre.form.build_url(redirect_url, {
+                onsucceed: params.onsucceed,
+                onfail: params.onfail
+            });
         }
         var success = acre.oauth.get_authorization(provider, params.onsucceed, params.onfail);
         redirect(success);
