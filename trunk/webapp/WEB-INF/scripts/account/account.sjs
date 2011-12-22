@@ -60,8 +60,13 @@ switch (acre.request.path_info) {
         break;
 
     case '/redirect':
-        params.onsucceed = get_redirect_url(params.onsucceed, false, true);
-        params.onfail = get_redirect_url(params.onfail, false, true);
+        if (provider.oauth_version == 2) {
+            params.onsucceed = get_redirect_url(params.onsucceed, true, true);
+            params.onfail = get_redirect_url(params.onfail, true, true);
+        } else {
+            params.onsucceed = get_redirect_url(params.onsucceed, true, false);
+            params.onfail = get_redirect_url(params.onfail, true, false);
+        }
         var success = acre.oauth.get_authorization(provider);
         redirect(success);
         break;
