@@ -26,17 +26,15 @@ var provider = acre.oauth.providers[params.provider || "freebase"];
 if (!provider) {
     throw "Unregistered provider '" + params.provider + "'";
 }
+var is_oauth_2 = (provider.oauth_version == 2);
 
 switch (acre.request.path_info) {
 
     case '/signin' :
-        if (provider.oauth_version == 2) {
-            params.onsucceed = get_redirect_url(params.onsucceed, true, true);
-            params.onfail = get_redirect_url(params.onfail, true, true);
-        } else {
+        params.onsucceed = get_redirect_url(params.onsucceed, true, is_oauth_2);
+        params.onfail = get_redirect_url(params.onfail, true, is_oauth_2);
+        if (provider.oauth_version !== 2) {
             // fake out oauth1 providers to use same redirect URL-based flow as oauth2
-            params.onsucceed = get_redirect_url(params.onsucceed, true, false);
-            params.onfail = get_redirect_url(params.onfail, true, false);
             var redirect_url = acre.request.url.replace(/\/signin(\?.*)?$/,"/redirect");
             params.onsucceed = acre.form.build_url(redirect_url, {
                 onsucceed: params.onsucceed,
@@ -60,13 +58,8 @@ switch (acre.request.path_info) {
         break;
 
     case '/redirect':
-        if (provider.oauth_version == 2) {
-            params.onsucceed = get_redirect_url(params.onsucceed, true, true);
-            params.onfail = get_redirect_url(params.onfail, true, true);
-        } else {
-            params.onsucceed = get_redirect_url(params.onsucceed, true, false);
-            params.onfail = get_redirect_url(params.onfail, true, false);
-        }
+        params.onsucceed = get_redirect_url(params.onsucceed, true, is_oauth_2);
+        params.onfail = get_redirect_url(params.onfail, true, is_oauth_2);
         var success = acre.oauth.get_authorization(provider);
         redirect(success);
         break;

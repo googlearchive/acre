@@ -297,14 +297,16 @@ function augment(freebase, urlfetch, async_urlfetch) {
         var provider = api_opts.provider || "freebase";
         delete api_opts.provider;
 
-        // Don't bother calling user info API if the user 
-        // doesn't have valid credentials
-        if (!acre.oauth.has_credentials(provider)) {
-          if (fetch_opts.callback) {
-            return fetch_opts.callback(null);
-          } else {
-            return null;
-          }
+        // Refresh credentials if we have them,
+        // otherwise return null (no logged-in user)
+        if (acre.oauth.has_credentials(provider)) {
+            acre.oauth.get_authorization(provider);
+        } else {
+            if (fetch_opts.callback) {
+                return fetch_opts.callback(null);
+            } else {
+                return null;
+            }
         }
 
         function handle_get_user_info_success(res) {
