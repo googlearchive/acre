@@ -213,9 +213,25 @@ var get_authorization = function(provider, successURL, failureURL, consumer) {
     }
 
     // Check whether there's already valid credentials
-    // This also registers them for use later when signing
-    var access_token = has_credentials(provider, consumer);
-    if (access_token) return access_token;
+    var access_token = has_credentials(provider);
+    if (access_token) {
+        var valid = false;
+
+        if (validateAccessToken(access_token)) {
+            valid = true;
+        } else if (access_token.refresh_token) {
+            consumer = consumer || getConsumer(provider);
+            access_token = refreshOauth2AccessToken(provider, consumer, access_token);
+            storeAccessToken(provider, access_token, consumer);
+            valid = true;
+        }
+
+        // Credentials appear to be good, so register them for use later when signing and return
+        if (valid) {
+            register_authorized_provider(provider, consumer || getConsumer(provider), access_token);
+            return access_token;
+        }
+    }
 
     // state we'll need to carry through the various authorization flows
     var state = acre.form.encode({
@@ -292,25 +308,9 @@ var remove_credentials = function(provider) {
 *   The only way to know for sure is to 'ping' an oauth-enabled URL to react on
 *   error messages from that call that relate to authorization.
 **/
-var has_credentials = function(provider, consumer) {
+var has_credentials = function(provider) {
     provider = getProvider(provider);
-    var access_token = retrieveToken(provider);
-    if (!access_token) return false;
-
-    var valid = false;
-    if (validateAccessToken(access_token)) {
-        valid = true;
-    } else if (access_token.refresh_token) {
-        consumer = consumer || getConsumer(provider);
-        access_token = refreshOauth2AccessToken(provider, consumer, access_token);
-        storeAccessToken(provider, access_token, consumer);
-        valid = true;
-    }
-
-    if (!valid) return false;
-
-    register_authorized_provider(provider, consumer || getConsumer(provider), access_token);
-    return access_token;
+    return retrieveToken(provider);
 };
 
 /**
@@ -686,7 +686,7 @@ var storeAccessToken = function(provider, token) {
 };
 
 function retrieveToken(provider, kind) {
-    var token = null;
+    var token = false;
 
     // check cache
     if (AUTHORIZED_HOSTS[provider.domain]) {
