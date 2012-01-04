@@ -1,5 +1,9 @@
 var _system_freebase;
 var URL_SIZE_LIMIT = 2047;
+var _cookie_opts = {
+    path:'/',
+    max_age: 86400
+};
 
 /**
 *   Attach the functions defined in this script to the given API object
@@ -248,6 +252,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
         acre.oauth.providers.freebase.service_url_prefix = url_parts.path;
     };
 
+    freebase.set_cookie_options = function set_cookie_options(opts) {
+        _u.extend(_cookie_opts, opts);
+    };
 
     /**
     *   Create the exception that we'll throw if freebase returned an error
@@ -1022,8 +1029,5 @@ var cookiejar = function(name) {
 var dateline_cj = cookiejar("fb-dateline");
 
 _response_callbacks.push(function() {
-    dateline_cj.set_cookie({
-        path:'/',
-        max_age: 86400
-    });
+    dateline_cj.set_cookie(_cookie_opts);
 });
