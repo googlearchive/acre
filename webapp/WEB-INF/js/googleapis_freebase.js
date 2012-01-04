@@ -987,35 +987,16 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
 *   We need a cookiejar for storing user's graph datelines
 *   so they get fresh results if they've been editing
 *
-*   dateline_cj == "backend:dateline:backend:dateline"
-*       i.e. "v2-sandbox:xxx:v1:123"
+*   dateline_cj == "backend=dateline&backend=dateline"
+*       i.e. "v2-sandbox=xxx&v1=123"
 **/
 
 var cookiejar = function(name) {
     var _name = name;
-    var _cookiejar = {};
     var _best_match = null;
 
     var val = acre.request.cookies[name];
-
-    if (val) {
-        var parts = val.split(":");
-        if (!(parts.length % 2)) {
-            var key = null;
-            for (var a in parts) {
-                var part = parts[a];
-                if (key == null) {
-                    key = part;
-                } else {
-                    _cookiejar[key] = part;
-                    key = null;
-                }
-            }
-        } else {
-            // Invalid Cookie Jar, fail.
-            syslog.warn({jar:val}, "freebase.cookie_jar.invalid");
-        }
-    }
+    var _cookiejar = acre.form.decode(val);
 
     return {
 
@@ -1030,13 +1011,8 @@ var cookiejar = function(name) {
 
         set_cookie: function(opts) {
             if (_best_match !== null) {
-                var out = [];
-                for (var a in _cookiejar) {
-                    out.push(a);
-                    out.push(_cookiejar[a]);
-                }
-                var val = out.join(":");
-                acre.response.set_cookie(name, val, opts);
+                var cookie_val = acre.form.encode(_cookiejar);
+                acre.response.set_cookie(name, cookie_val, opts);
             }
         }
 
