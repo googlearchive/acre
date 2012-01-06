@@ -1152,7 +1152,7 @@ if (_request.trusted && _request.server_type == "appengine") {
 
 //------------------------ datastore --------------------------
 
-if (_request.trusted && _datastore) { // the _datastore object won't be available in all environments so we need to check first
+if (appengine && _datastore) { // the _datastore object won't be available in all environments so we need to check first
     var store_scope = _make_scope(_system_scope);
     store_scope._datastore = _datastore;
     _hostenv.load_system_script('datastore.js', store_scope);
@@ -1163,7 +1163,7 @@ if (_request.trusted && _datastore) { // the _datastore object won't be availabl
 
 //------------------------ taskqueue --------------------------
 
-if (_request.trusted && _taskqueue) { // the _taskqueue object won't be available in all environments so we need to check first
+if (appengine && _taskqueue) { // the _taskqueue object won't be available in all environments so we need to check first
     var queue_scope = _make_scope(_system_scope);
     queue_scope._taskqueue = _taskqueue;
     _hostenv.load_system_script('taskqueue.js', queue_scope);
@@ -1174,7 +1174,7 @@ if (_request.trusted && _taskqueue) { // the _taskqueue object won't be availabl
 
 //------------------------ mailer --------------------------
 
-if (_request.trusted && _mailer) { // the _mailer object won't be available in all environments so we need to check first
+if (appengine && _mailer) { // the _mailer object won't be available in all environments so we need to check first
     var mailer_scope = _make_scope(_system_scope);
     mailer_scope._mailer = _mailer;
     _hostenv.load_system_script('mailservice.js', mailer_scope);
@@ -1184,7 +1184,7 @@ if (_request.trusted && _mailer) { // the _mailer object won't be available in a
 
 //------------------------ user service --------------------------
 
-if (_request.trusted && _userService) { // the _userService object won't be available in all environments so we need to check first
+if (appengine && _userService) { // the _userService object won't be available in all environments so we need to check first
     var userService_scope = _make_scope(_system_scope);
     userService_scope._userService = _userService;
     _hostenv.load_system_script('userservice.js', userService_scope);
