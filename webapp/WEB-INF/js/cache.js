@@ -32,7 +32,7 @@ var augment;
         if (typeof k == "undefined") throw Error("Can't increment an undefined key");
         if (typeof delta != "number") throw Error("Can't increment by a delta that is not numeric");
         if ((typeof init_value != "undefined") && (typeof init_value != "number")) throw Error("Can't have an init value that is not a number");
-        _cache.increment(key(k),delta,init_value);
+        return _cache.increment(key(k),delta,init_value);
     }
     
     function remove(k) {

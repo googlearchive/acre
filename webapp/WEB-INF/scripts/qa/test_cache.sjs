@@ -50,15 +50,16 @@ if (acre.cache) {
         var id = "o1";
         acre.cache.remove(id);
         var o1 = 1;
-        acre.cache.increment(id,1,0);
-        var o2 = acre.cache.get(id);
+        var o2 = acre.cache.increment(id,1,0);
         equal(o2,1,"at first, the object is not in cache, so it starts with 0 and 1 gets added");
-        acre.cache.increment(id,1,0);
-        var o2 = acre.cache.get(id);
-        equal(o2,2,"then it gets incremented to 2");
-        acre.cache.remove(id);
         var o3 = acre.cache.get(id);
-        ok(o3 == null, "cached object was removed properly");
+        equal(o2,o3,"the object in cache is consistent with what was returned");
+        acre.cache.increment(id,1,0);
+        var o4 = acre.cache.get(id);
+        equal(o4,2,"then it gets incremented to 2");
+        acre.cache.remove(id);
+        var o5 = acre.cache.get(id);
+        ok(o5 == null, "cached object was removed properly");
     });
     
     test('acre.cache set+increment work together', function() {
