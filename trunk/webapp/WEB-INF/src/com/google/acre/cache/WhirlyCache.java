@@ -58,8 +58,9 @@ public class WhirlyCache implements com.google.acre.cache.Cache {
         synchronized(_cache) {
             Object o = this.get(key);
             if (o == null) {
-                _cache.store(key, initValue + delta);
-                return initValue;
+                int i = initValue + delta;
+                _cache.store(key, i);
+                return i;
             }
             
             if (o instanceof String) {
