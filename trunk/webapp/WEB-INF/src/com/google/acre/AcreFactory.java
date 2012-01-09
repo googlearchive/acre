@@ -9,6 +9,8 @@ import org.apache.http.conn.ssl.SSLSocketFactory;
 import com.google.acre.cache.Cache;
 import com.google.acre.classstore.ClassStore;
 import com.google.acre.keystore.KeyStore;
+import com.google.acre.remoting.NoopRemotingManager;
+import com.google.acre.remoting.RemotingManager;
 import com.google.acre.script.AsyncUrlfetch;
 
 public class AcreFactory {
@@ -52,6 +54,17 @@ public class AcreFactory {
         } else {
             SSLSocketFactory.getSocketFactory().setHostnameVerifier(new AllowAllHostnameVerifier());
             return null; // this means that the httpclient will use the default connection manager
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    public static RemotingManager getRemotingManager() throws Exception {
+        if (Configuration.isAppEngine() && Configuration.Values.APPENGINE_REMOTING.getBoolean()) {
+            String manager = "com.google.acre.appengine.remoting.AppEngineRemotingManager";
+            Class<RemotingManager> cls = (Class<RemotingManager>) Class.forName(manager);
+            return cls.newInstance();
+        } else {
+            return new NoopRemotingManager();
         }
     }
 }
