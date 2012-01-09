@@ -15,7 +15,6 @@
 package com.google.acre.servlet;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -40,9 +39,11 @@ import log.Log;
 
 import org.slf4j.MDC;
 
+import com.google.acre.AcreFactory;
 import com.google.acre.Configuration;
 import com.google.acre.Statistics;
 import com.google.acre.logging.SimpleFormatter;
+import com.google.acre.remoting.RemotingManager;
 import com.google.acre.util.Supervisor;
 import com.google.acre.util.TIDGenerator;
 
@@ -56,13 +57,11 @@ public class OneTrueServlet extends HttpServlet implements Filter {
      
     private static boolean LIMIT_EXECUTION_TIME = Configuration.Values.ACRE_LIMIT_EXECUTION_TIME.getBoolean();
     
-    private final static String LOCAL_APPENGINE_CLASS = "com.google.acre.appengine.LocalAppEngine";
-   
     protected static final List<String[]> urlmap;
 
     private static String server;
     
-    private static boolean isLocalAppEngine = false;
+    private static RemotingManager remotingManager;
     
     private int log_level;
     
@@ -73,6 +72,7 @@ public class OneTrueServlet extends HttpServlet implements Filter {
     static {
         try {
             urlmap = OneTrueConfig.parse();
+            remotingManager = AcreFactory.getRemotingManager();
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse OTS config file", e);
         }
@@ -94,13 +94,6 @@ public class OneTrueServlet extends HttpServlet implements Filter {
         initializeLogging();
         this.servletContext = config.getServletContext();
         server = this.servletContext.getServerInfo().toLowerCase();
-        isLocalAppEngine = (server.indexOf("app engine development") > -1);
-
-        try {
-            callLocalAppEngine("init");
-        } catch (Exception e) {
-            throw new ServletException(e);
-        }
 
         Supervisor s = (Supervisor) this.servletContext.getAttribute(SUPERVISOR);
         if (s == null) {
@@ -114,22 +107,6 @@ public class OneTrueServlet extends HttpServlet implements Filter {
         Supervisor s = (Supervisor) this.servletContext.getAttribute(SUPERVISOR);
         if (s != null) {
             s.cancel();
-        }
-                
-        try {
-            callLocalAppEngine("destroy");
-        } catch (Exception e) {
-            _logger.error("destroy", "Error during local appengine destroy", e);
-        }
-    }
-
-    public static void callLocalAppEngine(String method) throws Exception {
-        if (isLocalAppEngine) {
-            Class<?> c = Class.forName(LOCAL_APPENGINE_CLASS);
-            Method getInstance = c.getMethod("getInstance");
-            Object singleton = getInstance.invoke(null);                
-            Method init = c.getMethod(method);
-            init.invoke(singleton);
         }
     }
     
@@ -189,12 +166,7 @@ public class OneTrueServlet extends HttpServlet implements Filter {
 
     private void dispatch(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        // disabled because it throws a StackOverflowException
-        //try {
-        //    callLocalAppEngine("enableRemoting");
-        //} catch (Exception e) {
-        //    _logger.error("Error when enabling remoting", e);
-        //}
+        remotingManager.enable();
         
         long start = System.currentTimeMillis();
         String tid = request.getHeader("X-Metaweb-TID");
@@ -216,7 +188,7 @@ public class OneTrueServlet extends HttpServlet implements Filter {
         String hostval = request.getHeader("Host");
         String portval = "";
 
-        _logger.info("****** request *******",access_log(request, response));
+        _logger.info("****** request *******", access_log(request, response));
         
         _logger.debug("request.start", start_log(request));
         _logger.debug(tid_event, tid);
@@ -317,12 +289,8 @@ public class OneTrueServlet extends HttpServlet implements Filter {
             }
 
         } finally {
-            //try {
-            //    callLocalAppEngine("disableRemoting");
-            //} catch (Exception e) {
-            //    _logger.error("Error when disabling remoting", e);
-            //}
             Statistics.instance().collectRequestTime(start, System.currentTimeMillis());
+            remotingManager.disable();
         }
     }
     
