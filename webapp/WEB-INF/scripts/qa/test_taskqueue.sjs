@@ -106,7 +106,74 @@ if (typeof appengine != "undefined" && appengine.tasks) {
             ok(true,"exception was triggered");
         }
     });
-    
+
+    test('appengine.tasks add to an unknown queue throws', function() {
+        try {
+            appengine.tasks.add({
+                "name" : "test-task-1-" + (new Date()).getTime(),
+                "countdown" : 1000,
+                "url" : "/acre/status",
+                "method" : "GET",
+                "headers" : {
+                   "x-something" : "somewhat",
+                   "foo" : "bar"
+                },
+                "params" : {
+                    "this" : "that",
+                    "foo" : "bar"
+                }
+            },"blah");
+            ok(false,"task was added");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+    });
+
+    test('appengine.tasks add with undefined headers throws', function() {
+        try {
+            appengine.tasks.add({
+                "name" : "test-task-1-" + (new Date()).getTime(),
+                "countdown" : 1000,
+                "url" : "/acre/status",
+                "method" : "GET",
+                "headers" : {
+                   "x-something" : "somewhat",
+                   "foo" : "bar",
+                   "whatever" : undefined
+                },
+                "params" : {
+                    "this" : "that",
+                    "foo" : "bar"
+                }
+            },"blah");
+            ok(false,"task was added");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+    });
+
+    test('appengine.tasks add with undefined params throws', function() {
+        try {
+            appengine.tasks.add({
+                "name" : "test-task-1-" + (new Date()).getTime(),
+                "countdown" : 1000,
+                "url" : "/acre/status",
+                "method" : "GET",
+                "headers" : {
+                   "x-something" : "somewhat",
+                   "foo" : "bar"
+                },
+                "params" : {
+                    "this" : "that",
+                    "foo" : "bar",
+                    "whatever" : undefined
+                }
+            },"blah");
+            ok(false,"task was added");
+        } catch (e) {
+            ok(true,"exception was triggered");
+        }
+    });
     
 }
 

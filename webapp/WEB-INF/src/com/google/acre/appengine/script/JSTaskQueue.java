@@ -21,6 +21,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.Undefined;
 
 import com.google.acre.javascript.JSObject;
 import com.google.acre.script.exceptions.JSConvertableException;
@@ -161,7 +162,11 @@ public class JSTaskQueue extends JSObject {
                                 }
                                 String pp = (String) ii;
                                 Object vv = o.get(pp,obj);
-                                task = task.header(pp, vv.toString());
+                                if (vv != null && !(vv instanceof Undefined)) {
+                                    task = task.header(pp, vv.toString());
+                                } else {
+                                    throw new JSConvertableException("Can't add a header that is null or undefined ('" + pp + "')").newJSException(_scope);
+                                }
                             }
                         } else {
                             throw new JSConvertableException("'headers' property must contain an object").newJSException(_scope);
@@ -176,7 +181,11 @@ public class JSTaskQueue extends JSObject {
                                 }
                                 String pp = (String) ii;
                                 Object vv = o.get(pp,obj);
-                                task = task.param(pp, vv.toString());
+                                if (vv != null && !(vv instanceof Undefined)) {
+                                    task = task.param(pp, vv.toString());
+                                } else {
+                                    throw new JSConvertableException("Can't add a parameter that is null or undefined ('" + pp + "')").newJSException(_scope);
+                                }
                             }
                         } else {
                             throw new JSConvertableException("'params' property must contain an object").newJSException(_scope);
