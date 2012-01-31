@@ -213,23 +213,10 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Get info about topics using the Topic API
     **/
     function topic(id,options) {
-        var base_url = freebase.service_url + "/experimental/topic/";
-        var mode = options.mode || 'standard';
-        delete options.mode;
-        switch (mode) {
-            case "basic" :
-            case "standard" :
-            case "extended" :
-                base_url += mode;
-                break;
-            default:
-                throw new Error("Invalid mode; must be 'basic' or 'standard'");
-        }
-        options.id = (id instanceof Array) ? id.join(',') : id;
-        var [api_opts, fetch_opts] = decant_options(options);
-        var url = acre.form.build_url(base_url, api_opts);
-        fetch_opts.check_results = "json";
-        return fetch(url, fetch_opts);
+      var [api_opts, fetch_opts] = decant_options(options);
+      var base_url = freebase.googleapis_url + "/topic" + id;
+      var url = acre.form.build_url(base_url, api_opts);
+      return fetch(url, fetch_opts);
     };
 
 
@@ -442,7 +429,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
         mode = mode || "plain";
         var base_url = freebase.googleapis_url + "/text" + id;
         switch (mode) {
-            case "escaped": 
+            case "escaped":
             case "unsafe":
                 api_opts.format = 'raw';
                 break;
@@ -455,7 +442,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
                 api_opts.format = 'html';
                 break;
             default:
-                throw new Error("Invalid mode; must be 'html' or 'plain' or 'escaped'");
+                throw new Error("Invalid mode; must be 'html' or 'plain' or 'raw'");
         }
 
         // TODO -- this will get the callbacks
@@ -478,18 +465,18 @@ function augment(freebase, urlfetch, async_urlfetch) {
             throw new Error('Use get_topic_multi if you want to retrieve multiple topics');
         }
         if (typeof id != 'string') {
-            throw new Error("'get_topic' needs a string as ID, if you need to get multiple " + 
+            throw new Error("'get_topic' needs a string as ID, if you need to get multiple " +
                                      "topics use 'get_topic_multi' instead.");
         }
 
         if (options.callback) {
             var callback = options.callback;
             options.callback = function(topic){
-                callback(topic[id]);
+                callback(topic);
             };
             return topic(id,options);
         } else {
-            return topic(id,options)[id];
+            return topic(id,options);
         }
     };
 
