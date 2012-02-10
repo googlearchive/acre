@@ -1,0 +1,107 @@
+#!/bin/sh
+
+##########################################################
+#                Delphi Control System                   #
+##########################################################
+
+# Print Failure Info -------------------------------------
+fail() {
+    cat <<EOF
+Unknown command: $1
+Type '$0 -h' for usage.
+EOF
+    exit 1
+}
+
+# Print Error Info -------------------------------------
+error() {
+    echo "ERROR: $1"
+    exit 1
+}
+
+# Print Usage Info ---------------------------------------
+usage() {
+    cat <<EOF
+Usage: $0 [options] <username/app> <username/app>
+
+Calculates the diff between two different Acre apps stored in Freebase.com.
+
+Example of usage:
+
+  $0 stefanomazzocchi/matchmaker alust/matchmaker-copy
+
+EOF
+    exit 0
+}
+
+# Check Python Installation -------------------------------
+check_python() {
+    PYTHON="`which python 2> /dev/null`"
+    if [ -z "$PYTHON" ] ; then
+        error "'python' needs to be installed and present in your PATH. You can download it for free at http://www.python.org/"
+    fi
+}
+
+# Check acp Installation -------------------------------
+check_acp() {
+    check_python
+    ACP="./acp/acp.py"
+    if [ ! -f "$ACP" ] ; then
+        error "'acp.py' is not the right place, something is wrong"
+    fi
+}
+
+# ---------------------------------------------------------
+
+# We called without arguments print the usage -------------
+[ $# = 2 ] || usage
+
+# Normalize the current directory -------------------------
+cd `dirname $0`
+
+# Extract the options -------------------------------------
+
+while [ $# -ne 0 ]; do
+  case "$1" in
+    -h) usage;;
+
+    -*) echo "$0: invalid option: $1" >&2
+        exit 1;;
+
+    *) break;;
+  esac
+done
+
+# Execute --------------------------------------------------
+
+check_acp
+
+tempfoo=`basename $0`
+TMPDIR1=`mktemp -d /tmp/${tempfoo}.XXXXXX`
+TMPDIR2=`mktemp -d /tmp/${tempfoo}.XXXXXX`
+
+URL1="freebase://www.freebase.com/user/$1"
+echo "" >&2
+echo "================ Retrieving $URL1 ======================================" >&2
+echo "" >&2
+$ACP -f $URL1 $TMPDIR1 >&2
+echo "" >&2
+
+URL2="freebase://www.freebase.com/user/$2"
+echo "" >&2
+echo "================ Retrieving $URL2 ======================================" >&2
+echo "" >&2
+$ACP -f $URL2 $TMPDIR2 >&2
+echo "" >&2
+
+rm $TMPDIR1/.metadata
+rm $TMPDIR2/.metadata
+
+diff -r -u -w -d $TMPDIR1 $TMPDIR2
+
+rm -rf $TMPDIR1
+rm -rf $TMPDIR2
+
+# Done -----------------------------------------------------
+
+exit $?
