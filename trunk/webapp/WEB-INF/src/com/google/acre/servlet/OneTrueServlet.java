@@ -56,12 +56,11 @@ public class OneTrueServlet extends HttpServlet implements Filter {
     public static final String SUPERVISOR = "com.google.acre.supervisor";
      
     private static boolean LIMIT_EXECUTION_TIME = Configuration.Values.ACRE_LIMIT_EXECUTION_TIME.getBoolean();
+    private static boolean REMOTING = Configuration.Values.APPENGINE_REMOTING.getBoolean();
     
     protected static final List<String[]> urlmap;
 
     private static String server;
-    
-    private static RemotingManager remotingManager;
     
     private int log_level;
     
@@ -72,7 +71,6 @@ public class OneTrueServlet extends HttpServlet implements Filter {
     static {
         try {
             urlmap = OneTrueConfig.parse();
-            remotingManager = AcreFactory.getRemotingManager();
         } catch (Exception e) {
             throw new RuntimeException("Failed to parse OTS config file", e);
         }
@@ -166,8 +164,17 @@ public class OneTrueServlet extends HttpServlet implements Filter {
 
     private void dispatch(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        remotingManager.enable();
+        RemotingManager remotingManager = null;
         
+        if (REMOTING) {
+            try {
+                remotingManager = AcreFactory.getRemotingManager();
+                remotingManager.enable();
+            } catch (Exception e) {
+                throw new ServletException(e);
+            }
+        }
+                
         long start = System.currentTimeMillis();
         String tid = request.getHeader("X-Metaweb-TID");
         String sname = Configuration.Values.SERVICE_NAME.getValue();
@@ -290,7 +297,9 @@ public class OneTrueServlet extends HttpServlet implements Filter {
 
         } finally {
             Statistics.instance().collectRequestTime(start, System.currentTimeMillis());
-            remotingManager.disable();
+            if (REMOTING && remotingManager != null) {
+                remotingManager.disable();
+            }
         }
     }
     
