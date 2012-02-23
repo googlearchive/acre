@@ -705,12 +705,12 @@ function retrieveToken(provider, kind) {
         case "cookie":
         default:
           var variations = [ token_name , '"' + token_name + '"' ];
-          variations.forEach(function(name) {
+          _u.each(variations, function(i, name) {
               if (typeof acre.request.cookies[name] != 'undefined') {
                   var value = decodeURIComponent(acre.request.cookies[name]);
                   token = OAuth.getParameterMap(OAuth.decodeForm(value));
+                  return false;
               }
-              break;
           });
     }
     return token;
