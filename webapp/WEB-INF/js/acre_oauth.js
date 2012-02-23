@@ -462,7 +462,7 @@ var augment;
                     // the subdomain, continue matching on their paths
                     var max = 0;
                     var path_frags = path.split("/");
-                    for each (var scope in authorized_scopes) {
+                    authorized_scopes.forEach(function(scope) {
                         var parsed_scope = parseUri(scope);
                         scope_path_frags = parsed_scope.path.split("/");
                         for (var i = 0; i < scope_path_frags.length; i++) {
@@ -477,7 +477,7 @@ var augment;
                                 break;
                             }
                         }
-                    }
+                    });
                 }
                 break;
             }
@@ -646,13 +646,13 @@ var augment;
      */
     function retrieveToken(cookie_name, provider) {
         var variations = [ cookie_name , '"' + cookie_name + '"' ];
-        for each (var name in variations) {
+        variations.forEach(function(name) {
             if (typeof acre.request.cookies[name] != 'undefined') {
                 var token = OAuth.getParameterMap(OAuth.decodeForm(acre.request.cookies[name]));
                 token.name = getName(provider);
                 return token;
             }
-        }
+        });
     }
 
     /*

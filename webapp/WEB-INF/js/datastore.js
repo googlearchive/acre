@@ -67,9 +67,9 @@ var augment;
         if (!key) throw "Can't remove an object with a null or undefined key";
         
         if (key instanceof Array) {
-            for each (var k in key) {
+            key.forEach(function(k) {
                 remove(k, transaction);
-            }
+            });
         } else if (typeof key == "object") {
             if (typeof key._ == "undefined") throw "Can only remove objects retrieved from the store";
             _datastore.remove(key._.key, transaction);
