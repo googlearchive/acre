@@ -15,9 +15,9 @@ var augment;
     
     function add(obj,name) {
         if (obj instanceof Array) {
-            for each (var o in obj) {
+            obj.forEach(function(o) {
                 add(o,name);
-            }
+            });
         } else {
             if (typeof name == "undefined" || name == null) {
                 name = "default";
