@@ -646,13 +646,14 @@ var augment;
      */
     function retrieveToken(cookie_name, provider) {
         var variations = [ cookie_name , '"' + cookie_name + '"' ];
-        variations.forEach(function(name) {
+        for (var i = 0; i < variations.length; i++) {
+            var name = variations[i];
             if (typeof acre.request.cookies[name] != 'undefined') {
                 var token = OAuth.getParameterMap(OAuth.decodeForm(acre.request.cookies[name]));
                 token.name = getName(provider);
                 return token;
             }
-        });
+        }
     }
 
     /*
