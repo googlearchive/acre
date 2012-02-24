@@ -173,6 +173,7 @@ appengine_run() {
         echo " Freebase APIs: $ACRE_METAWEB_API_ADDR"
     fi
     echo " Trusted Mode: $ACRE_TRUSTED_MODE"
+    echo " Remote Require: $ACRE_REMOTE_REQUIRE"
     echo " Limit Execution Time: $ACRE_LIMIT_EXECUTION_TIME"
     echo " Log level: $ACRE_LOG_LEVEL"
     if [ "$APPENGINE_REMOTING" != "" ]; then

@@ -116,6 +116,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     private static String ACRE_HOST_BASE = Configuration.Values.ACRE_HOST_BASE.getValue();
     private static String ACRE_HOST_DELIMITER_PATH = Configuration.Values.ACRE_HOST_DELIMITER_PATH.getValue();
     private static boolean ACRE_DEVELOPER_MODE = Configuration.Values.ACRE_DEVELOPER_MODE.getBoolean();
+    private static boolean ACRE_REMOTE_REQUIRE = Configuration.Values.ACRE_REMOTE_REQUIRE.getBoolean();
     
     private static final String DEFAULT_HOST_PATH = "//default." + ACRE_HOST_DELIMITER_PATH;
 
@@ -513,6 +514,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         this.put("STATIC_SCRIPT_PATH", this,
                  Configuration.Values.STATIC_SCRIPT_PATH.getValue());
         this.put("ACRE_DEVELOPER_MODE", this, ACRE_DEVELOPER_MODE);
+        this.put("ACRE_REMOTE_REQUIRE", this, ACRE_REMOTE_REQUIRE);
         this.put("DEFAULT_HOST_PATH", this, DEFAULT_HOST_PATH);
 
         _scope.put("ACRE_REQUEST", _scope, req.toJsObject(_scope));

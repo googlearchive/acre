@@ -78,6 +78,7 @@ public class Configuration implements ConfigurationMBean {
         ACRE_APP_THRESHOLDING("false"),
         ACRE_DEVELOPER_MODE("false"),
         ACRE_TRUSTED_MODE("false"),
+        ACRE_REMOTE_REQUIRE("true"),
         APPENGINE_REMOTING("false"),
         
         // numbers
