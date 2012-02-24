@@ -263,6 +263,11 @@ if (_hostenv.ACRE_DEVELOPER_MODE) {
 }
 
 
+// ----------------------------- remote require -----------------------------------------
+
+var remote_require = _hostenv.ACRE_REMOTE_REQUIRE;
+
+
 // ------------------------------- acre.host -----------------------------------------
 
 acre.host = {
@@ -1559,19 +1564,20 @@ register_appfetch_method("disk", disk_resolver, disk_inventory_path, disk_get_co
 *   Load custom appfetch methods
 */
 
-// XXX - how can we make this dynamic?
-var custom_methods = [
-    "googlecode.js"
-    /* "webdav.js" // not currently in use */
-    /* freebase graph method registered in freebase.js */
-];
+if (remote_require) {
+    // XXX - how can we make this dynamic?
+    var custom_methods = [
+        "googlecode.js"
+        /* "webdav.js" // not currently in use */
+        /* freebase graph method registered in freebase.js */
+    ];
 
-for (var i=0; i < custom_methods.length; i++) {
-    var method_scope = _make_scope(_system_scope);
-    _hostenv.load_system_script(custom_methods[i], method_scope);
-    method_scope.appfetcher(register_appfetch_method, make_appfetch_error, _system_urlfetch);
+    for (var i=0; i < custom_methods.length; i++) {
+        var method_scope = _make_scope(_system_scope);
+        _hostenv.load_system_script(custom_methods[i], method_scope);
+        method_scope.appfetcher(register_appfetch_method, make_appfetch_error, _system_urlfetch);
+    }
 }
-
 
 //-------------------------------- console - part 1 --------------------------------------
 
@@ -1735,8 +1741,10 @@ _hostenv.load_system_script(fb_script, freebase_scope);
 // decorate acreboot objects with just what we need... a lot
 freebase_scope.augment(acre.freebase, acre.urlfetch, acre.async.urlfetch);
 freebase_scope.augment(_system_freebase, _system_urlfetch, _system_async_urlfetch);
-freebase_scope.appfetcher(register_appfetch_method, make_appfetch_error);
 acre.handlers.mqlquery = freebase_scope.handler();
+if (remote_require) {
+    freebase_scope.appfetcher(register_appfetch_method, make_appfetch_error);
+}
 
 // for backwards compatibility, these mjt.Task classes
 // are enqueue()d immediately in the acre environment only.
