@@ -78,7 +78,7 @@ public class JSCache extends JSObject {
         } catch (java.lang.Exception e) {
            //Do not throw an exception for failing to access the cache.
             _logger.log("jscache", WARN, "Error in cache.get(): " + e.getMessage());
-            return "";
+            return null;
         }
     }
 
