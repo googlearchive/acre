@@ -25,14 +25,20 @@ import com.google.acre.javascript.JSON;
 import com.google.acre.javascript.JSONException;
 import com.google.acre.javascript.JSObject;
 import com.google.acre.script.exceptions.JSConvertableException;
+import com.google.acre.util.CostCollector;
 
 public class JSJSON extends JSObject {
     private static final long serialVersionUID = -306790422514648132L;
 
-    public JSJSON() { }
+    private CostCollector _costCollector;
+
+    public JSJSON() {
+        _costCollector = CostCollector.getInstance();
+    }
 
     public JSJSON(Scriptable scope) {
         _scope = scope;
+        _costCollector = CostCollector.getInstance();
     }
 
     public static Scriptable jsConstructor(Context cx, Object[] args, 
@@ -47,7 +53,11 @@ public class JSJSON extends JSObject {
 
     public Object jsFunction_parse(String obj) {
         try {
-            return JSON.parse(obj, _scope);
+            long start_time = System.currentTimeMillis();
+            Object result = JSON.parse(obj, _scope);
+            _costCollector.collect("jsonsw", System.currentTimeMillis() - start_time).collect("jsonsc");
+            return result;
+
         } catch (JSONException e) {
             throw new JSConvertableException(e.getMessage()).newJSException(_scope);
         }
@@ -79,7 +89,10 @@ public class JSJSON extends JSObject {
     	}
     	
         try {
-            return JSON.stringify(obj, indent, _scope);
+            long start_time = System.currentTimeMillis();
+            String result = JSON.stringify(obj, indent, _scope);
+            _costCollector.collect("jsonpw", System.currentTimeMillis() - start_time).collect("jsonpc");
+            return result;
         } catch (JSONException e) {
         	throw new JSConvertableException(e.getMessage()).newJSException(_scope);
         }

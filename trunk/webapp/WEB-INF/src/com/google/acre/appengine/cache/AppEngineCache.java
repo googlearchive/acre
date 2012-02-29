@@ -19,6 +19,9 @@ import com.google.appengine.api.memcache.Expiration;
 import com.google.appengine.api.memcache.MemcacheService;
 import com.google.appengine.api.memcache.MemcacheServiceFactory;
 
+import java.util.Collection;
+import java.util.Map;
+
 public class AppEngineCache implements Cache {
     
     private MemcacheService _cache;
@@ -39,6 +42,10 @@ public class AppEngineCache implements Cache {
         return _cache.get(key);
     }
 
+    public Map<String, Object> getAll(Collection<String> keys) {
+        return _cache.getAll(keys);
+    }
+
     public void put(String key, Object value, long expires) {
         _cache.put(key, value, Expiration.byDeltaMillis((int) expires));
     }
@@ -47,8 +54,20 @@ public class AppEngineCache implements Cache {
         _cache.put(key, value);
     }
 
+    public void putAll(Map<String, Object> obj, long expires) {
+        _cache.putAll(obj, Expiration.byDeltaMillis((int) expires));
+    }
+
+    public void putAll(Map<String, Object> obj) {
+        _cache.putAll(obj);
+    }
+
     public void delete(String key) {
         _cache.delete(key);
+    }
+
+    public void deleteAll(Collection<String> keys){
+        _cache.deleteAll(keys);
     }
 
     public int increment(String key, int delta, int initValue) {

@@ -7,45 +7,253 @@ var augment;
 
         // augment the given object (normally the 'acre' object)
         
+        // acre.cache interface
         obj.cache = {
-           "get" : get,
-           "put" : put,
-           "increment" : increment,
-           "remove" : remove
+           "get" : persistentGet,
+           "getAll" : persistentGetAll,
+           "put" : persistentPut,
+           "putAll" : persistentPutAll,
+           "increment" : persistentIncrement,
+           "remove" : persistentRemove,
+           "removeAll" : persistentRemoveAll,
+
+           // acre.cache.request interface
+           request: {
+            "get": requestGet,
+            "getAll": requestGetAll,
+            "put" : requestPut,
+            "putAll" : requestPutAll,
+            "remove" : requestRemove,
+            "removeAll" : requestRemoveAll
+           }
         };
     };
-        
-    function get(k) {
+
+    _local = {};
+
+    //There are two implementations of the cache interface.
+    //acre.cache.*: persistent caching across requests.
+    //acre.cache.request.*: persistent and request caching (faster but more memory intensive since objects exist at least twice).
+
+    // ******** <cache>.get()  ************ //
+
+    function _Get(k) {
         if (typeof k == "undefined") throw Error("Can't retrieve with an undefined key");
-        var value = _cache.get(key(k));
-        return JSON.parse(value);
+        return _cache.get(key(k));
     }
     
-    function put(k,obj,expires) {
-        if (typeof k == "undefined") throw Error("Can't save with an undefined key");
-        if (typeof obj == "undefined") throw Error("Can't save an undefined object in cache");
-        if (typeof expires != "undefined" && typeof expires != "number") throw Error("Expiration must be a number");
-        _cache.put(key(k),JSON.stringify(obj),expires);
+    function persistentGet(k) {
+        return JSON.parse(_Get(k));
     }
 
-    function increment(k,delta,init_value) {
+    function requestGet(k) {
+        if (typeof k == "undefined") throw Error("Can't retrieve with an undefined key");
+
+        if (k in _local) {
+            return JSON.parse(_local[k]);
+        }
+
+        var value = _Get(k);
+
+        if (value != null) {
+            //Save it back to the local cache before decoding it.
+            _local[k] = value;
+            return JSON.parse(value);
+        }
+
+        return null;
+    }
+
+    // ********* <cache>.getAll() ********** //
+
+  function _GetAll(k_list) {
+
+        var modified_k_list = k_list.map(function(k) { return key(k); });
+
+        var result = _cache.getAll(modified_k_list);
+        for (var k in result) {
+            result[unkey(k)] = result[k];
+            delete result[k];
+        }
+
+        return result;
+    }
+
+    function persistentGetAll(k_list) {
+        if (k_list == null || !(k_list instanceof Array)) throw Error("Must call getAll() with an array of strings.");
+        var result = _GetAll(k_list);
+        for (k in result) {
+            result[k] = JSON.parse(result[k]);
+        }
+
+        return result;
+    }
+
+    function requestGetAll(k_list) {
+        if (k_list == null || !(k_list instanceof Array)) throw Error("Must call getAll() with an array of strings.");
+
+        //The final result;
+        var result = {};
+
+        //List of keys missing from the local cache.
+        var missing = [];
+
+        // Entries we get from the local request cache.
+
+        k_list.forEach(function(k){
+            if (_local[k] == null) {
+                missing.push(k);
+            } else {
+                result[k] = JSON.parse(_local[k]);
+            }
+        });
+
+        // Entries we get from the persistent cache. 
+
+        if (missing.length > 0) {
+            var persistent_result = _GetAll(missing);
+            for (k in persistent_result) {
+                //Assign to the local cache.
+                _local[k] = persistent_result[k];
+                result[k] = JSON.parse(_local[k]);
+            }
+        }
+
+        return result;
+    }
+
+
+    // ********* <cache>.put() ********** //
+
+
+     function _Put(k, obj, expires) {
+        if (typeof expires != "undefined" && typeof expires != "number") throw Error("Expiration must be a number");
+        return _cache.put(key(k),obj,expires);
+    }
+
+    function persistentPut(k,obj,expires) {
+        if (typeof k == "undefined") throw Error("Can't save with an undefined key");
+        if (typeof obj == "undefined") throw Error("Can't save an undefined object in cache");
+        return _Put(k,JSON.stringify(obj),expires);
+    }
+
+    function requestPut(k, obj, expires){
+        if (typeof k == "undefined") throw Error("Can't save with an undefined key");
+        if (typeof obj == "undefined") throw Error("Can't save an undefined object in cache");
+        //Note: expires is not enforced for the request cache by definition.
+
+        var value = JSON.stringify(obj);
+
+        _local[k] = value;
+        return _Put(k, value, expires);
+    }
+
+
+    // ********* <cache>.putAll() ********** //
+
+    function _PutAll(obj, expires) {
+        if (typeof expires != "undefined" && typeof expires != "number") throw Error("Expiration must be a number");
+        var modified_keys_obj = {};
+        for (var k in obj) {
+            modified_keys_obj[key(k)] = obj[k];
+        }
+        return _cache.putAll(modified_keys_obj, expires);
+    }
+
+    function persistentPutAll(obj, expires) {
+        if (typeof obj == "undefined") throw Error("Can't save an undefined object.");
+        for (var k in obj){
+            obj[k] = JSON.stringify(obj[k]);
+        }
+        return _PutAll(obj, expires);
+    }
+
+    function requestPutAll(obj, expires) {
+        if (typeof obj == "undefined") throw Error("Can't save an undefined object in cache");
+
+        var value = null;
+        for (var k in obj) {
+            obj[k] = JSON.stringify(obj[k]);
+            _local[k] = obj[k];
+        }
+
+        return _PutAll(obj, expires);
+    }
+
+
+    // ********* <cache>.remove() ********** //
+
+    function _Remove(k) {
+      return _cache.remove(key(k));
+    }
+
+
+    function persistentRemove(k) {
+      if (typeof k == "undefined") throw Error("Can't delete with an undefined key");
+      return _Remove(k);
+    }
+
+
+    function requestRemove(k) {
+      if (typeof k == "undefined") throw Error("Can't delete with an undefined key");
+      delete _local[k];
+      return _Remove(k);
+    }
+
+    // ********* <cache>.removeAll() ********** //
+
+    function _RemoveAll(k_list) {
+      var modified_k_list = k_list.map(function(k) { return key(k); });
+      return _cache.removeAll(modified_k_list);
+    }
+
+
+    function persistentRemoveAll(k_list) {
+      if (k_list == null || !(k_list instanceof Array)) throw Error("Must call removeAll() with an array of strings.");
+      return _RemoveAll(k_list);
+    }
+
+
+    function requestRemoveAll(k_list) {
+      if (k_list == null || !(k_list instanceof Array)) throw Error("Must call removeAll() with an array of strings.");
+      k_list.forEach(function(k){
+        delete _local[k];
+      });
+      return _RemoveAll(k_list);
+    }
+
+
+    // ******* <cache>.increment() ********* //
+
+    function _Increment(k,delta,init_value) {
+        return _cache.increment(key(k),delta,init_value);
+    }
+
+    function persistentIncrement(k, delta,init_value) {
         if (typeof k == "undefined") throw Error("Can't increment an undefined key");
         if (typeof delta != "number") throw Error("Can't increment by a delta that is not numeric");
         if ((typeof init_value != "undefined") && (typeof init_value != "number")) throw Error("Can't have an init value that is not a number");
-        return _cache.increment(key(k),delta,init_value);
+        return _Increment(k, delta,init_value);
     }
-    
-    function remove(k) {
-        if (typeof k == "undefined") throw Error("Can't delete with an undefined key");
-        _cache.remove(key(k));
-    }
-    
-    // -----------------------------------------------------
+
+
+    // ******** helpers *********
     
     function key(k) {
         var appid = _request.app_project;
         if (!appid) throw Error("appid can't be null or undefined");
         return appid + ":" + k;
+    }
+
+
+
+    function unkey(k) {
+        // Removes the appid from a cache key.
+        // Will turn <appid>:<cachekey> to <cachekey>.
+        var appid = _request.app_project;
+        if (!appid) throw Error("appid can't be null or undefined");
+        return k.slice(appid.length+1);
+
     }
     
 })();

@@ -4,12 +4,21 @@ acre.require('/test/lib').enable(this);
 if (acre.cache) {
     
     test('acre.cache exists and has all the pieces', function() {
-        ok(typeof acre.cache != "undefined", "cache exists");
-        ok(typeof acre.cache.get == "function", "cache.get exists");
-        ok(typeof acre.cache.put == "function", "cache.put exists");
-        ok(typeof acre.cache.remove == "function", "cache.remove exists");
-        ok(typeof acre.cache.increment == "function", "cache.increment exists");
+        var ca = acre.cache;
+        ok(typeof ca != "undefined", "cache exists");
+        ["get", "getAll", "put", "putAll", "remove", "removeAll", "increment"].forEach(function(m) {
+          ok(typeof ca[m] === "function", "cache." + m + " exists")
+        });
     });
+
+    test('acre.request.cache exists and has all the pieces', function() {
+        var ca = acre.cache.request;
+        ok(typeof ca != "undefined", "cache exists");
+        ["get", "getAll", "put", "putAll", "remove", "removeAll"].forEach(function(m) {
+          ok(typeof ca[m] === "function", "cache." + m + " exists")
+        });
+    });
+
 
     var do_test = function(obj) {
         var id = "o1";
@@ -86,7 +95,56 @@ if (acre.cache) {
         acre.cache.remove(id);
         ok(acre.cache.get(id) == null, "cached object was removed properly");
     });
-        
+    
+
+    test('request get', function() {
+
+        acre.cache.request.put("name", "Michael");
+        acre.cache.put("name", "Bob");
+        var name = acre.cache.request.get("name");
+
+        ok(name === "Michael", "Did not get locally cached object.");
+
+    });
+
+    test('request getAll', function() {
+
+        acre.cache.request.put("name", "Michael");
+        acre.cache.request.put("color", "Blue");
+
+        var data = acre.cache.request.getAll(["name", "color", "boguskey"]);
+
+        ok(data["name"] === "Michael", "Did not get cached object with getAll");
+        ok(data["color"] === "Blue", "Did not get cached object with getAll");
+        ok(data["boguskey"] === undefined, "Did not get undefined for non-cached key.");
+
+    });
+
+    test('request putAll', function() { 
+
+        foo = {"person1" : {"name": "Bob"}, "person2" : { "name" : "John"}};
+        acre.cache.request.putAll(foo);
+
+        var data = acre.cache.request.getAll(["person1"]);
+
+        ok(data["person1"]["name"] === "Bob", "Did not get data cached with putAll.");
+
+    });
+
+    test('request removeAll', function() {
+
+        var d = {"name" : "Bob", "surname" : "Marley"};
+        acre.cache.request.putAll(d);
+
+        acre.cache.request.removeAll(["name"]);
+
+        var result = acre.cache.request.getAll(["name", "surname"]);
+
+        ok(result["name"] === undefined, "Did not get undefined for deleted cache key.");
+        ok(result["surname"] === "Marley", "Did not get back expected cached data.");
+
+    });
+
 }
 
 acre.test.report();

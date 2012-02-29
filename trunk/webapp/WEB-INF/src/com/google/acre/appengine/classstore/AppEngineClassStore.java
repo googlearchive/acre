@@ -31,7 +31,7 @@ public class AppEngineClassStore implements ClassStore {
     }
 
     public StoredClass get(String name) {
-        _costCollector.collect("amrc");
+        _costCollector.collect("amrc").collect("amrn");
         final long start_time = System.currentTimeMillis();
 
         StoredClass sc = (StoredClass) _cache.get(name);
@@ -41,7 +41,7 @@ public class AppEngineClassStore implements ClassStore {
     }
 
     public void set(String name, StoredClass klass) {
-        _costCollector.collect("amwc");
+        _costCollector.collect("amwc").collect("amwn");
         final long start_time = System.currentTimeMillis();
         _cache.put(name, klass);
         _costCollector.collect("amww", System.currentTimeMillis() - start_time);

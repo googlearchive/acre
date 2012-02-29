@@ -155,10 +155,13 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
             request_header_log.append(entry.getKey() + ": " + entry.getValue() + ", ");
         }
 
+        String request_body = new String();
+
         if (body != null) {
             if (body instanceof JSBinary) {
                 req.setPayload(((JSBinary)body).get_data());
             } else if (body instanceof String) {
+                request_body = (String)body;
                 req.setPayload(((String)body).getBytes());
             }
         }
@@ -168,7 +171,8 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                 "Method", method,
                 "URL", url,
                 "Headers", request_header_log,
-                "Follow Redirects", !no_redirect);
+                "Follow Redirects", !no_redirect,
+                "Body", request_body);
                 
         if (!system && log_to_user) {
             _response.userlog4j("INFO", "urlfetch.request.async",
@@ -231,8 +235,11 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
 
         out.put("status", out, res.getResponseCode());
 
+        String response_body = null;
+
         try {
-            out.put("body", out, new String(res.getContent(), getResponseEncoding(res)));
+            response_body = new String(res.getContent(), getResponseEncoding(res));
+            out.put("body", out, response_body);
         } catch (java.io.UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -264,11 +271,17 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
 
         boolean system = req.system;
         boolean log_to_user = req.log_to_user;
+
+        String log_body = new String();
+        if (res.getResponseCode() != 200 && response_body != null) {
+            log_body = response_body;
+        }
                 
         _logger.syslog4j("INFO", "urlfetch.response.async",
                          "URL", furl.toString(),
                          "Status", Integer.toString(res.getResponseCode()),
-                         "Headers", response_header_log);
+                         "Headers", response_header_log,
+                         "Body", log_body);
         
         if (system && log_to_user) {
             _response.userlog4j("INFO", "urlfetch.response.async",
