@@ -13,13 +13,19 @@
 // limitations under the License.
 
 package com.google.acre.cache;
+import java.util.Collection;
+import java.util.Map;
 
 public interface Cache {
     // public Cache getCache();
     
     public Object get(String key);
+    public Map<String, Object>  getAll(Collection<String> keys);
     public void put(String key, Object value);
     public void put(String key, Object value, long expires);
+    public void putAll(Map<String, Object> obj, long expires);
+    public void putAll(Map<String, Object> obj);
     public int increment(String key, int delta, int initValue);
     public void delete(String key);
+    public void deleteAll(Collection<String> keys);
 }

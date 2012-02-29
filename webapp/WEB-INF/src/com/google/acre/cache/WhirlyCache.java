@@ -17,6 +17,9 @@ package com.google.acre.cache;
 import com.whirlycott.cache.Cache;
 import com.whirlycott.cache.CacheException;
 import com.whirlycott.cache.CacheManager;
+import java.util.Collection;
+import java.util.Map;
+import java.util.HashMap;
 
 public class WhirlyCache implements com.google.acre.cache.Cache {
 
@@ -51,6 +54,34 @@ public class WhirlyCache implements com.google.acre.cache.Cache {
 
     public void delete(String key) {
         _cache.remove(key);
+    }
+
+    public void deleteAll(Collection<String> keys){
+        for (String k: keys){
+            delete(k);
+        }
+    }
+
+    public Map<String, Object> getAll(Collection<String> keys) {
+        Map<String, Object> result =  new HashMap<String, Object>();
+        // Unfortunately Whirlycott does not support multi_get so we have to fake it :(
+        // http://www.jarvana.com/jarvana/view/com/whirlycott/whirlycache/1.0.1/whirlycache-1.0.1-javadoc.jar!/com/whirlycott/cache/Cache.html
+        for (String k: keys) {
+            result.put(k, get(k));
+        }
+        return result;
+    }
+
+    public void putAll(Map<String, Object> obj, long expires) {
+        for (Map.Entry<String, Object> entry : obj.entrySet()) {
+            put(entry.getKey(), entry.getValue(), expires);
+        }
+    }
+
+    public void putAll(Map<String, Object> obj) {
+        for (Map.Entry<String, Object> entry : obj.entrySet()) {
+            put(entry.getKey(), entry.getValue());
+        }
     }
 
     public int increment(String key, int delta, int initValue) {
