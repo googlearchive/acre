@@ -162,7 +162,7 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                 req.setPayload(((JSBinary)body).get_data());
             } else if (body instanceof String) {
                 request_body = (String)body;
-                req.setPayload(((String)body).getBytes());
+                req.setPayload(request_body.getBytes());
             }
         }
         Future<HTTPResponse> futr = _urlfetch_service.fetchAsync(req);

@@ -37,13 +37,13 @@ var augment;
 
     // ******** <cache>.get()  ************ //
 
-    function _Get(k) {
+    function _get(k) {
         if (typeof k == "undefined") throw Error("Can't retrieve with an undefined key");
         return _cache.get(key(k));
     }
     
     function persistentGet(k) {
-        return JSON.parse(_Get(k));
+        return JSON.parse(_get(k));
     }
 
     function requestGet(k) {
@@ -53,7 +53,7 @@ var augment;
             return JSON.parse(_local[k]);
         }
 
-        var value = _Get(k);
+        var value = _get(k);
 
         if (value != null) {
             //Save it back to the local cache before decoding it.
@@ -66,8 +66,7 @@ var augment;
 
     // ********* <cache>.getAll() ********** //
 
-  function _GetAll(k_list) {
-
+  function _getAll(k_list) {
         var modified_k_list = k_list.map(function(k) { return key(k); });
 
         var result = _cache.getAll(modified_k_list);
@@ -81,7 +80,7 @@ var augment;
 
     function persistentGetAll(k_list) {
         if (k_list == null || !(k_list instanceof Array)) throw Error("Must call getAll() with an array of strings.");
-        var result = _GetAll(k_list);
+        var result = _getAll(k_list);
         for (k in result) {
             result[k] = JSON.parse(result[k]);
         }
@@ -111,7 +110,7 @@ var augment;
         // Entries we get from the persistent cache. 
 
         if (missing.length > 0) {
-            var persistent_result = _GetAll(missing);
+            var persistent_result = _getAll(missing);
             for (k in persistent_result) {
                 //Assign to the local cache.
                 _local[k] = persistent_result[k];
@@ -125,8 +124,7 @@ var augment;
 
     // ********* <cache>.put() ********** //
 
-
-     function _Put(k, obj, expires) {
+     function _put(k, obj, expires) {
         if (typeof expires != "undefined" && typeof expires != "number") throw Error("Expiration must be a number");
         return _cache.put(key(k),obj,expires);
     }
@@ -134,7 +132,7 @@ var augment;
     function persistentPut(k,obj,expires) {
         if (typeof k == "undefined") throw Error("Can't save with an undefined key");
         if (typeof obj == "undefined") throw Error("Can't save an undefined object in cache");
-        return _Put(k,JSON.stringify(obj),expires);
+        return _put(k,JSON.stringify(obj),expires);
     }
 
     function requestPut(k, obj, expires){
@@ -145,13 +143,13 @@ var augment;
         var value = JSON.stringify(obj);
 
         _local[k] = value;
-        return _Put(k, value, expires);
+        return _put(k, value, expires);
     }
 
 
     // ********* <cache>.putAll() ********** //
 
-    function _PutAll(obj, expires) {
+    function _putAll(obj, expires) {
         if (typeof expires != "undefined" && typeof expires != "number") throw Error("Expiration must be a number");
         var modified_keys_obj = {};
         for (var k in obj) {
@@ -165,7 +163,7 @@ var augment;
         for (var k in obj){
             obj[k] = JSON.stringify(obj[k]);
         }
-        return _PutAll(obj, expires);
+        return _putAll(obj, expires);
     }
 
     function requestPutAll(obj, expires) {
@@ -177,32 +175,32 @@ var augment;
             _local[k] = obj[k];
         }
 
-        return _PutAll(obj, expires);
+        return _putAll(obj, expires);
     }
 
 
     // ********* <cache>.remove() ********** //
 
-    function _Remove(k) {
+    function _remove(k) {
       return _cache.remove(key(k));
     }
 
 
     function persistentRemove(k) {
       if (typeof k == "undefined") throw Error("Can't delete with an undefined key");
-      return _Remove(k);
+      return _remove(k);
     }
 
 
     function requestRemove(k) {
       if (typeof k == "undefined") throw Error("Can't delete with an undefined key");
       delete _local[k];
-      return _Remove(k);
+      return _remove(k);
     }
 
     // ********* <cache>.removeAll() ********** //
 
-    function _RemoveAll(k_list) {
+    function _removeAll(k_list) {
       var modified_k_list = k_list.map(function(k) { return key(k); });
       return _cache.removeAll(modified_k_list);
     }
@@ -210,7 +208,7 @@ var augment;
 
     function persistentRemoveAll(k_list) {
       if (k_list == null || !(k_list instanceof Array)) throw Error("Must call removeAll() with an array of strings.");
-      return _RemoveAll(k_list);
+      return _removeAll(k_list);
     }
 
 
@@ -219,13 +217,13 @@ var augment;
       k_list.forEach(function(k){
         delete _local[k];
       });
-      return _RemoveAll(k_list);
+      return _removeAll(k_list);
     }
 
 
     // ******* <cache>.increment() ********* //
 
-    function _Increment(k,delta,init_value) {
+    function _increment(k,delta,init_value) {
         return _cache.increment(key(k),delta,init_value);
     }
 
@@ -233,7 +231,7 @@ var augment;
         if (typeof k == "undefined") throw Error("Can't increment an undefined key");
         if (typeof delta != "number") throw Error("Can't increment by a delta that is not numeric");
         if ((typeof init_value != "undefined") && (typeof init_value != "number")) throw Error("Can't have an init value that is not a number");
-        return _Increment(k, delta,init_value);
+        return _increment(k, delta,init_value);
     }
 
 
