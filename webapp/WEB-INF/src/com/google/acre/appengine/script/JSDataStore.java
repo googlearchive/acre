@@ -14,7 +14,9 @@
 
 package com.google.acre.appengine.script;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -331,8 +333,8 @@ public class JSDataStore extends JSObject {
                     prop = prop.substring(0,prop.length() - 2);
                     filterOperator = Query.FilterOperator.NOT_EQUAL;
                 } else if (prop.endsWith("|=")) {
-                    // TODO (SM): implement the "|=" operator since appengine supports the IN filteroperator
-                    throw new JSConvertableException("Sorry, the '|=' operator is not yet supported").newJSException(_scope);
+                    prop = prop.substring(0,prop.length() - 2);
+                    filterOperator = Query.FilterOperator.IN;
                 }
                 
                 Object value = obj.get(origProp, obj);
@@ -367,7 +369,22 @@ public class JSDataStore extends JSObject {
                         query.addFilter(path + prop, filterOperator, value);
                     }
                 } else if (value instanceof Scriptable) {
-                    compile_query(path + prop + ".", prop, (Scriptable) value, query);
+                    Scriptable s = (Scriptable) value;
+                    if ("Array".equals(s.getClassName()) && filterOperator == Query.FilterOperator.IN) {
+                        int length = ((Number) s.get("length", s)).intValue();
+                        
+                        List<Object> values = new ArrayList<Object>(length);
+                        for (int j = 0; j < length; j++) {
+                            Object v = s.get(j, s);
+                            if (v instanceof Number && !(v instanceof Double)) {
+                                v = new Double(((Number) v).doubleValue());
+                            }
+                            values.add(v);
+                        }
+                        query.addFilter(path + prop, filterOperator, values);
+                    } else {
+                        compile_query(path + prop + ".", prop, (Scriptable) value, query);
+                    }
                 } else {
                     throw new JSConvertableException("Sorry, you can't have null or undefined constrains").newJSException(_scope);
                     // NOTE(SM): I suspect this is going to be hard to digest for people used to MQL where 'null' basically means
