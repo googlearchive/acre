@@ -581,6 +581,68 @@ if (typeof appengine != "undefined" && appengine.store) {
         appengine.store.remove([key1,key2,key3]);
     });
 
+    test('appengine.store works with |= filter operator on strings', function() {
+        var o1 = {
+            "a" : {
+                "b" : "1"
+            }
+        };
+        var key1 = appengine.store.put(o1);
+        var o2 = {
+            "a" : {
+                "b" : "2"
+            }
+        };
+        var key2 = appengine.store.put(o2);
+        var o3 = {
+            "a" : {
+                "b" : "3"
+            }
+        };
+        var key3 = appengine.store.put(o3);
+
+        var result = appengine.store.find({
+            "a" : {
+                "b|=" : [ "1", "2" ]
+            }
+        });
+        var c = 0;
+        for (var r in result) c++;
+        equal(c, 2, "got correct number of results");
+        appengine.store.remove([key1,key2,key3]);
+    });
+
+    test('appengine.store works with |= filter operator on numbers', function() {
+        var o1 = {
+            "a" : {
+                "b" : 1
+            }
+        };
+        var key1 = appengine.store.put(o1);
+        var o2 = {
+            "a" : {
+                "b" : 2
+            }
+        };
+        var key2 = appengine.store.put(o2);
+        var o3 = {
+            "a" : {
+                "b" : 3
+            }
+        };
+        var key3 = appengine.store.put(o3);
+
+        var result = appengine.store.find({
+            "a" : {
+                "b|=" : [1,2]
+            }
+        });
+        var c = 0;
+        for (var r in result) c++;
+        equal(c, 2, "got correct number of results");
+        appengine.store.remove([key1,key2,key3]);
+    });
+
     test('appengine.store commit works', function() {
         var root = { "root" : "yeah!" };
         var key = appengine.store.put("root",root);
