@@ -361,7 +361,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
         fetch_opts.headers["content-type"] = "application/x-www-form-urlencoded";
         fetch_opts.content = prepareContent(query,envelope,api_opts);
         if (typeof fetch_opts.sign === 'undefined') fetch_opts.sign = true;
-        return fetch(url, fetch_opts);
+        return fetch.apply(this, compose_get_or_post(url, fetch_opts));
     };
 
 
