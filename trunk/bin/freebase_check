@@ -1,20 +1,30 @@
 #!/bin/sh
 ECHO=/bin/echo
-$ECHO -n "CHECK: freebase service endpoint... "
-API_HOST="http://api.${ACRE_METAWEB_BASE_ADDR}:${ACRE_METAWEB_API_ADDR_PORT}"
-RESP=`curl -s -S -m 5 -H "CACHE-CONTROL:no-cache" ${API_HOST}/api/service/mqlread?query=%7B%22query%22%3A%7B%22id%22%3A%22/boot%22%7D%7D`
-RET=$?
-echo $RESP | grep -q "/api/status/ok" &> /dev/null
-RET2=$?
-if [ $RET -ne 0 ]; then
-    $ECHO "FAILED"
-    $ECHO "FATAL: cannot reach $API_HOST. Test results won't be significant under these conditions."
-    exit 1
-elif [ $RET2 -ne 0 ]; then
-    $ECHO "FAILED"
-    $ECHO "FATAL: $API_HOST bad response from mqlread. Test results won't be significant under these conditions."
-    exit 1
-else
-    $ECHO "PASSED"
-fi
+$ECHO -n "CHECK: freebase service endpoint. "
 
+if [ -z "$ACRE_GOOGLEAPIS_FREEBASE" ]; then
+  API_HOST="http://api.${ACRE_METAWEB_BASE_ADDR}:${ACRE_METAWEB_API_ADDR_PORT}"
+  CMD="curl -s -S -m 5 -H \"CACHE-CONTROL:no-cache\" ${API_HOST}/api/service/mqlread?query=%7B%22query%22%3A%7B%22id%22%3A%22/boot%22%7D%7D"
+else
+  API_HOST=${ACRE_GOOGLEAPIS_HOST}
+  CMD="curl -s -S -m 5 ${API_HOST}${ACRE_GOOGLEAPIS_FREEBASE}/mqlread?query=%7B%22id%22%3A%22/boot%22%7D"
+fi 
+
+for TRY in 1 2 3 4 5; do
+    $ECHO -n "trying... "
+    RESP=`${CMD}`
+    $ECHO "$RESP" | grep "\"/boot\"" > /dev/null
+    RET=$?
+    if [ $RET -eq 0 ] ; then
+        $ECHO "PASSED"
+        exit 0
+    fi
+    $ECHO "failed check "
+    sleep_int=$(($TRY*5))
+    sleep $sleep_int
+done
+
+$ECHO RESPONSE WAS:
+$ECHO $RESP
+$ECHO "FATAL: $API_HOST bad response from mqlread. Test results won't be significant under these conditions."
+exit -1
