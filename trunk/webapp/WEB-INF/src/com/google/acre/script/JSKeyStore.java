@@ -28,6 +28,7 @@ import com.google.acre.AcreFactory;
 import com.google.acre.javascript.JSObject;
 import com.google.acre.keystore.KeyStore;
 import com.google.acre.script.exceptions.JSConvertableException;
+import com.google.acre.util.CostCollector;
 
 public class JSKeyStore extends JSObject {
 
@@ -36,6 +37,8 @@ public class JSKeyStore extends JSObject {
     private static final long serialVersionUID = -306790422514648132L;
     
     private static KeyStore _keystore;
+
+    CostCollector _costCollector;
     
     static {
         try {
@@ -45,10 +48,13 @@ public class JSKeyStore extends JSObject {
         }
     }
 
-    public JSKeyStore() { }
+    public JSKeyStore() {
+        _costCollector = CostCollector.getInstance();
+    }
 
     public JSKeyStore(Scriptable scope) {
         _scope = scope;
+        _costCollector = CostCollector.getInstance();
     }
 
     public static Scriptable jsConstructor(Context cx, Object[] args,
@@ -64,7 +70,11 @@ public class JSKeyStore extends JSObject {
     public Scriptable jsFunction_get_key(String name, String appid) {
         Scriptable ret = Context.getCurrentContext().newArray(_scope, 2);
         try {
+            _costCollector.collect("akrc");
+            final long start_time = System.currentTimeMillis();
             String[] out = _keystore.get_key(name, appid);
+            _costCollector.collect("akrw", System.currentTimeMillis() - start_time);
+
             if (out != null) {
                 _logger.debug("keystore.get_key", "found key '" + name + "' for app '" + appid + "'");
                 ret.put(0, ret, out[0]);
@@ -81,7 +91,10 @@ public class JSKeyStore extends JSObject {
 
     public Scriptable jsFunction_get_keys(String appid) {
         try {
+            _costCollector.collect("akrkc");
+            final long start_time = System.currentTimeMillis();
             List<String> keys = _keystore.get_keys(appid);
+            _costCollector.collect("akrkw", System.currentTimeMillis() - start_time);
             if ((keys != null) && (keys.size() > 0)) {
                 _logger.debug("keystore.get_keys", "found keys for app '" +
                               appid + "'");
@@ -103,7 +116,10 @@ public class JSKeyStore extends JSObject {
         try {
             _logger.debug("keystore.put_key", "Storing key '" +
                           name + "' for app '" + appid + "'");
+            _costCollector.collect("akwc");
+            final long start_time = System.currentTimeMillis();
             _keystore.put_key(name, appid, token, secret);
+            _costCollector.collect("akww", System.currentTimeMillis() - start_time);
         } catch (java.lang.Exception e) {
             throw new JSConvertableException("Failed to set key named " +
                                              name +" in KeyStore: " +
