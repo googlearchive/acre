@@ -829,15 +829,45 @@ var _keystore = _system_scope._keystore = {
 
     get: function (name) {
         if (_request.app_project) {
-            return _ks.get_key(name, _request.app_project);
+
+            // Read the key value from the cache if present.
+            if (acre.cache && acre.cache.request) {
+                var result = acre.cache.request.get(name + ":" + _request.app_project);
+                if (result != null) {
+                    return result;
+                }
+            }
+
+            var result = _ks.get_key(name, _request.app_project);
+
+            // Write the key value to the cache.
+            if (acre.cache && acre.cache.request) {
+                acre.cache.request.put(name + ":" + _request.app_project, result);
+            }
+
+            return result;
+
         } else {
+            acre.syslog.info({'name': name}, "no request.app_project - cannot access the keystore.");
             return null;
         }
     },
 
     put: function (name, token, secret) {
         if (_request.app_project) {
-            return _ks.put_key(name, _request.app_project, token, secret);
+
+            var put_result = _ks.put_key(name, _request.app_project, token, secret);
+
+            // Write the key value to the cache. This is incurring an extra roundtrip but only
+            // in the case of a keystore.put() which is very rare.
+            // What we are getting in return is guaranteed consistency of the underlying keystore
+            // object (we don't have to re-implement the structure in js and java)
+            if (acre.cache && acre.cache.request) {
+                acre.cache.request.put(name + ":" + _request.app_project, _ks.get_key(name, _request.app_project));
+            }
+
+            return put_result;
+
         } else {
             return null;
         }
