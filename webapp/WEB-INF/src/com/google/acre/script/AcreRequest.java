@@ -73,6 +73,7 @@ public class AcreRequest extends JSConvertable {
     public String script_name;
     public String freebase_service_url;
     public String freebase_site_host;
+    public String site_host;
 
     //The hostname of googleapis - usually https://www.googleapis.com
     public String googleapis_host;

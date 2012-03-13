@@ -291,6 +291,7 @@ acre.request = {
     method : _request.request_method,
     headers : _request.headers,
     base_path : _request.request_path_info.replace(new RegExp(_u.escape_re(_request.path_info)+"$"), ""),    
+    site_host : _request.site_host,
 
     // these can be re-set by acre.route
     body : _request.request_body,
