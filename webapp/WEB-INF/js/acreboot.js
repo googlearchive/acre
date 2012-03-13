@@ -831,8 +831,8 @@ var _keystore = _system_scope._keystore = {
         if (_request.app_project) {
 
             // Read the key value from the cache if present.
-            if (acre.cache && acre.cache.request) {
-                var result = acre.cache.request.get(name + ":" + _request.app_project);
+            if (acre.cache && acre.cache.request && !acre.request.skip_cache) {
+                var result = acre.cache.request.get(_request.app_project + ":" + name);
                 if (result != null) {
                     return result;
                 }
@@ -842,7 +842,7 @@ var _keystore = _system_scope._keystore = {
 
             // Write the key value to the cache.
             if (acre.cache && acre.cache.request) {
-                acre.cache.request.put(name + ":" + _request.app_project, result);
+                acre.cache.request.put(_request.app_project + ":" + name, result);
             }
 
             return result;
@@ -863,7 +863,7 @@ var _keystore = _system_scope._keystore = {
             // What we are getting in return is guaranteed consistency of the underlying keystore
             // object (we don't have to re-implement the structure in js and java)
             if (acre.cache && acre.cache.request) {
-                acre.cache.request.put(name + ":" + _request.app_project, _ks.get_key(name, _request.app_project));
+                acre.cache.request.put(_request.app_project + ":" + name, _ks.get_key(name, _request.app_project));
             }
 
             return put_result;
