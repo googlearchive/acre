@@ -49,6 +49,7 @@ public class Configuration implements ConfigurationMBean {
         ACRE_HOST_DELIMITER_PATH("dev"),
         ACRE_SERVICE_ADDR(DEFAULT_HOSTNAME + ":" + DEFAULT_PORT), 
         ACRE_METAWEB_API_ADDR(SANDBOX_API), 
+        ACRE_SITE_HOST(SANDBOX_SITE),
         ACRE_FREEBASE_SITE_ADDR(SANDBOX_SITE),
         ACRE_APPEDITOR_HOST("acre.freebase.com"),
         ACRE_METAWEB_API_PATH("USE_SERVLET_PATH"), 
@@ -84,7 +85,8 @@ public class Configuration implements ConfigurationMBean {
         // numbers
         ACRE_PORT(DEFAULT_PORT), 
         ACRE_MAX_CACHED_SCRIPT_CLASSES("1000"), 
-        ACRE_METAWEB_API_ADDR_PORT("80"), 
+        ACRE_METAWEB_API_ADDR_PORT("80"),
+        ACRE_SITE_HOST_PORT("80"),
         ACRE_FREEBASE_SITE_ADDR_PORT("80"),
         ACRE_POOL_CORE_THREADS("10"), // lowest amount of available threads in the pool
         ACRE_POOL_MAX_THREADS("500"), // max amount of concurrently running threads
