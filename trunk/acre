@@ -164,8 +164,8 @@ appengine_run() {
     echo "=========== Starting Acre ======================================= "
     echo ""
     echo " Host Base: $ACRE_HOST_BASE"
-    if [ "$ACRE_GOOGLEAPIS_FREEBASE" != "" ]; then
-        echo " Freebase APIs: $ACRE_GOOGLEAPIS_HOST$ACRE_GOOGLEAPIS_FREEBASE"
+    if [ "$ACRE_GOOGLEAPIS_FREEBASE_VERSION" != "" ]; then
+        echo " Freebase APIs: $ACRE_GOOGLEAPIS_HOST/freebase/$ACRE_GOOGLEAPIS_FREEBASE_VERSION"
         if [ ! "$ACRE_GOOGLEAPIS_KEY" ]; then
             echo " WARNING: You are using the new Freebase APIs (googleapis.com) but have no API acre key specified in your project or private config. Visit https://code.google.com/apis/console to obtain a key and specify the ACRE_GOOGLEAPIS_KEY configuration parameter. Your acre installation will be unstable until acre can do registered Freebase API calls."
         fi

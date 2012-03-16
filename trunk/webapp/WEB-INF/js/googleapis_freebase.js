@@ -51,7 +51,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
         }
 
         // Add dateline to request if we have one in the cookie jar
-        var backend = _request.googleapis_freebase.split("/").pop();
+        var backend = _request.googleapis_freebase_version;
         var dateline = dateline_cj.get(backend);
         if (dateline) {
             api_opts.dateline = dateline;
@@ -169,7 +169,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
                 // Add dateline to cookie jar if there was one in the response
                 if (result.dateline) {
                     // service identifier is the last path segment for googleapis
-                    var backend = _request.googleapis_freebase.split("/").pop();
+                    var backend = _request.googleapis_freebase_version;
                     dateline_cj.set(backend, result.dateline);
                 }
 
@@ -230,7 +230,10 @@ function augment(freebase, urlfetch, async_urlfetch) {
     freebase.googleapis = true;     // Hacky, but need some visible indicator
 
     //XXX (JD) - remove freebase.googleapis_url once freebase-site updated
-    freebase.googleapis_url = _request.googleapis_host + _request.googleapis_freebase;
+    freebase.googleapis_url = _request.googleapis_host + 
+        "/freebase/" + _request.googleapis_freebase_version;
+    freebase.googleapis_rpc = _request.googleapis_rpc;
+    freebase.googleapis_freebase_version = _request.googleapis_freebase_version;
 
     freebase.set_service_url = function set_service_url(url) {
         var url_parts = _u.parseUri(url);
@@ -599,10 +602,65 @@ function augment(freebase, urlfetch, async_urlfetch) {
 
 
     /**
-    *   DEPRECATED: Get info about a multiple topics using the Topic API
-    **/
-    freebase.get_topic_multi = function() {
-      throw new Error("acre.freebase.get_topic_multi() has been deprecated.  Use async to make parallel requests.");
+     *  Get multiple topics from the Topic API using JSON-RPC
+     * 
+     **/
+    freebase.get_topic_multi = function(ids, options) {
+        if (!_u.isArray(ids)) {
+            throw new Error("'get_topic_multi' needs a list of ids, " +
+                            "if you need a single topic " +
+                            "use 'get_topic' instead.");
+        }
+        if (ids.length < 1) {
+            throw new Error("'get_topic_multi' needs at least one id");
+        }
+        var [api_opts, fetch_opts] = decant_options(options);
+        var base_url = freebase.googleapis_rpc;
+        // some Topic API parameters must be an array as specified
+        // by freebase.get_topic_multi.PARAM_SPEC
+        var api_params = {};
+        for (var key in api_opts) {
+            if (api_opts[key] != null) {
+                if (freebase.get_topic_multi.PARAM_SPEC[key] === Array &&
+                    ! (api_opts[key] instanceof Array)) {
+                    api_params[key] = [api_opts[key]];
+                }
+                else {
+                    api_params[key] = api_opts[key];
+                }
+            }
+        }
+        // the JSON-RPC request JSON body
+        var requests = [];
+        ids.forEach(function(id) {
+            requests.push({
+                method: "freebase.topic.lookup",
+                apiVersion: freebase.googleapis_freebase_version,
+                params: _u.extend(true, {id: [id]}, api_params),
+                id: id
+            });
+        });
+        fetch_opts.method = "POST";
+        fetch_opts.headers = fetch_opts.headers || {};
+        fetch_opts.headers["content-type"] = "application/json";
+        fetch_opts.content = JSON.stringify(requests);
+        // JSON-RPC always needs to be a POST and 
+        // is not state changing (aka safe request)
+        fetch_opts.bless = true;  
+        return fetch(base_url, fetch_opts);
+    };
+
+    /**
+     * When using get_topic_multi (JSON-RPC) we need to adhere 
+     * to Topic API's spec for the type of the parameter value.
+     */
+    freebase.get_topic_multi.PARAM_SPEC = {
+        id: Array,
+        lang: Array,
+        filter: Array,
+        limit: Number,
+        dateline: String,
+        alldata: Boolean    
     };
 
 

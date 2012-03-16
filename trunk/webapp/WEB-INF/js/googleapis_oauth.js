@@ -9,7 +9,7 @@ augment = function (obj) {
     var freebase = {
         oauth_version: 2,
         domain: _u.parseUri(_request.googleapis_host).host,
-        service_url_prefix: _request.googleapis_freebase,
+        service_url_prefix: "/freebase/" + _request.googleapis_freebase_version,
         keystore_name: "www.googleapis.com",
         access_token_URL: "https://accounts.google.com/o/oauth2/token",
         refresh_token_URL: "https://accounts.google.com/o/oauth2/token",
