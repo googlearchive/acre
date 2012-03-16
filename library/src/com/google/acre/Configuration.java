@@ -111,8 +111,9 @@ public class Configuration implements ConfigurationMBean {
 
         // googleapis
         ACRE_GOOGLEAPIS_HOST,
-        ACRE_GOOGLEAPIS_FREEBASE,
         ACRE_GOOGLEAPIS_KEY,
+        ACRE_GOOGLEAPIS_RPC,
+        ACRE_GOOGLEAPIS_FREEBASE_VERSION,
 
         // Compilation mode (interepreted/compiled) flag
         ACRE_COMPILER_OPTIMIZATION_LEVEL("0"),

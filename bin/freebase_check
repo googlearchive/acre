@@ -2,12 +2,12 @@
 ECHO=/bin/echo
 $ECHO -n "CHECK: freebase service endpoint. "
 
-if [ -z "$ACRE_GOOGLEAPIS_FREEBASE" ]; then
+if [ -z "$ACRE_GOOGLEAPIS_FREEBASE_VERSION" ]; then
   API_HOST="http://api.${ACRE_METAWEB_BASE_ADDR}:${ACRE_METAWEB_API_ADDR_PORT}"
   CMD="curl -s -S -m 5 -H \"CACHE-CONTROL:no-cache\" ${API_HOST}/api/service/mqlread?query=%7B%22query%22%3A%7B%22id%22%3A%22/boot%22%7D%7D"
 else
   API_HOST=${ACRE_GOOGLEAPIS_HOST}
-  CMD="curl -s -S -m 5 ${API_HOST}${ACRE_GOOGLEAPIS_FREEBASE}/mqlread?query=%7B%22id%22%3A%22/boot%22%7D"
+  CMD="curl -s -S -m 5 ${API_HOST}/freebase/${ACRE_GOOGLEAPIS_FREEBASE_VERSION}/mqlread?query=%7B%22id%22%3A%22/boot%22%7D"
 fi 
 
 for TRY in 1 2 3 4 5; do

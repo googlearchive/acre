@@ -112,9 +112,9 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
     private static int ACRE_FREEBASE_SITE_ADDR_PORT = Configuration.Values.ACRE_FREEBASE_SITE_ADDR_PORT.getInteger();
     
     private static String ACRE_GOOGLEAPIS_HOST = Configuration.Values.ACRE_GOOGLEAPIS_HOST.getValue();
-    private static String ACRE_GOOGLEAPIS_FREEBASE = Configuration.Values.ACRE_GOOGLEAPIS_FREEBASE.getValue();
     private static String ACRE_GOOGLEAPIS_KEY = Configuration.Values.ACRE_GOOGLEAPIS_KEY.getValue();
-
+    private static String ACRE_GOOGLEAPIS_RPC = Configuration.Values.ACRE_GOOGLEAPIS_RPC.getValue();
+    private static String ACRE_GOOGLEAPIS_FREEBASE_VERSION = Configuration.Values.ACRE_GOOGLEAPIS_FREEBASE_VERSION.getValue();
 
     private static String ACRE_HOST_BASE = Configuration.Values.ACRE_HOST_BASE.getValue();
     private static String ACRE_HOST_DELIMITER_PATH = Configuration.Values.ACRE_HOST_DELIMITER_PATH.getValue();
@@ -505,8 +505,9 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         req.site_host = ACRE_SITE_HOST;
         if (ACRE_SITE_HOST_PORT != 80) req.site_host += ":" + ACRE_SITE_HOST;
         req.googleapis_host = ACRE_GOOGLEAPIS_HOST;
-        req.googleapis_freebase = ACRE_GOOGLEAPIS_FREEBASE;
         req.googleapis_key = ACRE_GOOGLEAPIS_KEY;
+        req.googleapis_rpc = ACRE_GOOGLEAPIS_RPC;
+        req.googleapis_freebase_version = ACRE_GOOGLEAPIS_FREEBASE_VERSION;
 
         _scope.put("PROTECTED_HOSTENV", _scope, this);
 
