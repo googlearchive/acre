@@ -1963,7 +1963,9 @@ Script.prototype.set_scope = function(scope) {
         set_environ();
 
         var script_id = _u.req_path_to_script_id(script.path);
-        var [namespace, script_name] = _u.split_script_id(script_id);
+        var a = _u.split_script_id(script_id);
+        var namespace = a[0];
+        var script_name = a[1];
 
         scope.acre.request_context = { // deprecated
             script_name : script_name,
@@ -1989,8 +1991,14 @@ Script.prototype.set_scope = function(scope) {
 
     scope.acre.get_metadata = function(path) {
         path = script.normalize_path(path, null, true);
-        var [app_md, filename] = proto_require(path, {metadata_only: true});
-        var [host, path_info] = _u.decompose_req_path(path);
+
+        var md = proto_require(path, {metadata_only: true});
+        var app_md = md[0];
+        var filename = md[1];
+
+        var path_parts = _u.decompose_req_path(path);
+        var host = path_parts[0];
+        var path_info = path_parts[1];
 
         if (!app_md || (path_info && !filename)) {
             return null;
@@ -2012,8 +2020,14 @@ Script.prototype.set_scope = function(scope) {
 
     scope.acre.resolve = function(path) {
         path = script.normalize_path(path, null, true);
-        var [app_md, filename] = route_require(path, {metadata_only: true});
-        var [host, path_info] = _u.decompose_req_path(path);
+
+        var md = route_require(path, {metadata_only: true});
+        var app_md = md[0];
+        var filename = md[1];
+
+        var path_parts = _u.decompose_req_path(path);
+        var host = path_parts[0];
+        var path_info = path_parts[1];
 
         if (!app_md || (path_info && !filename)) {
             return null;
@@ -2024,12 +2038,14 @@ Script.prototype.set_scope = function(scope) {
 
     scope.acre.route = function(path, body, skip_routes) {
         path = script.normalize_path(path, null, true);
-        var [h, p, qs] = _u.decompose_req_path(path);
+
+        var path_parts = _u.decompose_req_path(path);
+        var host = path_parts[0];
 
         var route_e = new acre.errors.AcreRouteException;
         route_e.route_to = path;
         route_e.body = body || acre.request.body;
-        route_e.skip_routes = (skip_routes ? true : (script.app.host == h));
+        route_e.skip_routes = (skip_routes ? true : (script.app.host == host));
         throw route_e;
     };
 
@@ -2268,7 +2284,9 @@ var proto_require = function(req_path, req_opts) {
     };
 
     // parse path
-    var [host, path] = _u.decompose_req_path(req_path);
+    var path_parts = _u.decompose_req_path(req_path);
+    var host = path_parts[0];
+    var path = path_parts[1];
 
     // retrieve app metadata using appfetchers
     var method, app_data;
@@ -2390,7 +2408,10 @@ var proto_require = function(req_path, req_opts) {
 var route_require = function(req_path, req_opts, opts) {
     opts = opts || {};
 
-    var [req_host, req_pathinfo, req_query_string] = _u.decompose_req_path(req_path);
+    var path_parts = _u.decompose_req_path(req_path);
+    var req_host = path_parts[0];
+    var req_pathinfo = path_parts[1];
+    var req_query_string = path_parts[2];
 
     // Fill in missing values
     var host = req_host;
@@ -2459,7 +2480,10 @@ var handle_request = function (req_path, req_body, skip_routes) {
     // that allow certain global scripts to run within the context of any app
     // e.g., keystore, auth, test, etc.
     if (_request.request_url.split('/')[3] == 'acre') {
-        var [h, p] = _u.decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
+        var path_parts = _u.decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
+        var h = path_parts[0];
+        var p = path_parts[1];
+
         try {
           var source_app = proto_require(_u.compose_req_path(h), {metadata_only: true})[0];
           if (source_app !== null) {
@@ -2472,7 +2496,11 @@ var handle_request = function (req_path, req_body, skip_routes) {
         }
     }
 
-    var [req_host, req_pathinfo, req_query_string] = _u.decompose_req_path(req_path);
+    var path_parts = _u.decompose_req_path(req_path);
+    var req_host = path_parts[0];
+    var req_pathinfo = path_parts[1];
+    var req_query_string = path_parts[2];
+
     if (!req_host) {
         req_host = _request.DEFAULT_APP;
         req_path = _u.compose_req_path(req_host);

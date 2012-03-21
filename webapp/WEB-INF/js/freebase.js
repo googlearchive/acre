@@ -229,8 +229,11 @@ function augment(freebase, urlfetch, async_urlfetch) {
     /**
      * Perform the mqlread (composer
      */
-    function mqlread(q,e,o,composer) {
-        var [api_opts, fetch_opts] = decant_options(o);
+    function mqlread(q,e,options,composer) {
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
+
         var url = freebase.service_url + "/api/service/mqlread";
         fetch_opts.content = composer(q,e,api_opts);
         return fetch.apply(this, compose_get_or_post(url, fetch_opts));
@@ -253,7 +256,11 @@ function augment(freebase, urlfetch, async_urlfetch) {
                 throw new Error("Invalid mode; must be 'basic' or 'standard'");
         }
         options.id = (id instanceof Array) ? id.join(',') : id;
-        var [api_opts, fetch_opts] = decant_options(options);
+
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
+
         var url = acre.form.build_url(base_url, api_opts);
         fetch_opts.check_results = "json";
         return fetch(url, fetch_opts);
@@ -271,7 +278,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
      * Call the 'touch' api to reset the caches
      */
     freebase.touch = function(options) {
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
         //acre.response.vary_cookies['mwLastWriteTime'] = 1;
         var url = freebase.service_url + "/api/service/touch";
         fetch_opts.method = "POST";
@@ -284,48 +293,50 @@ function augment(freebase, urlfetch, async_urlfetch) {
      * if the user has no valid oauth credentials
      */
      freebase.get_user_info = function(options) {
-         var [api_opts, fetch_opts] = decant_options(options);
-         var url = freebase.service_url + "/api/service/user_info";
-         fetch_opts.method = "POST";
-         fetch_opts.bless = true;  // safe request, even though it's POST
-         fetch_opts.content = form_encode(api_opts);
-         fetch_opts.sign = true;
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
+        var url = freebase.service_url + "/api/service/user_info";
+        fetch_opts.method = "POST";
+        fetch_opts.bless = true;  // safe request, even though it's POST
+        fetch_opts.content = form_encode(api_opts);
+        fetch_opts.sign = true;
 
-         function handle_get_user_info_success(res) {
-             if ('metaweb-user' in acre.request.cookies) {
-                 //acre.response.vary_cookies['metaweb-user'] = 1;
-             } else {
-                 acre.oauth.has_credentials(); // this sets vary_cookies on the oauth cookies for us
-             }
-             return res;
+        function handle_get_user_info_success(res) {
+            if ('metaweb-user' in acre.request.cookies) {
+                //acre.response.vary_cookies['metaweb-user'] = 1;
+            } else {
+                acre.oauth.has_credentials(); // this sets vary_cookies on the oauth cookies for us
+            }
+            return res;
+        }
+
+        function handle_get_user_info_error(e) {
+            // remove the oauth cookies if the user credentials are no longer valid
+            acre.oauth.remove_credentials();
+            return null;
          }
 
-         function handle_get_user_info_error(e) {
-             // remove the oauth cookies if the user credentials are no longer valid
-             acre.oauth.remove_credentials();
-             return null;
-         }
+        var callback = fetch_opts.callback;
+        var errback = fetch_opts.errback;
 
-         var callback = fetch_opts.callback;
-         var errback = fetch_opts.errback;
-
-         if(callback) {
-             fetch_opts.callback = function(res){
-                 callback(handle_get_user_info_success(res));
-             };
-             fetch_opts.errback = function(e){
-                 callback(handle_get_user_info_error(e));
-             };
-             return fetch(url, fetch_opts);
-         } else {
-             try {
-                 var res = fetch(url, fetch_opts);
-                 return handle_get_user_info_success(res);
-             } catch (e) {
-                 return handle_get_user_info_error(e);
-             }
-         }
-     };
+        if(callback) {
+            fetch_opts.callback = function(res){
+                callback(handle_get_user_info_success(res));
+            };
+            fetch_opts.errback = function(e){
+                callback(handle_get_user_info_error(e));
+            };
+            return fetch(url, fetch_opts);
+        } else {
+            try {
+                var res = fetch(url, fetch_opts);
+                return handle_get_user_info_success(res);
+            } catch (e) {
+                return handle_get_user_info_error(e);
+            }
+        }
+    };
 
     /**
      * Perform a mqlread
@@ -345,7 +356,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
      * Perform a mqlwrite
      */
     freebase.mqlwrite = function(query,envelope,options) {
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
         var url = freebase.service_url + "/api/service/mqlwrite";
         fetch_opts.method = "POST";
         fetch_opts.content = prepareContent(query,envelope,api_opts);
@@ -358,7 +371,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
      * Perform an upload
      */
     freebase.upload = function(content,media_type,options) {
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
         if (!content) throw new Error("You must specify what content to upload");
         if (!media_type) throw new Error("You must specify a media type for the content to upload");
         var url = freebase.service_url + "/api/service/upload";
@@ -375,7 +390,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
      * Creates an anonymous, self-administering group
      */
     freebase.create_group = function(name, options) {
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
         var url = freebase.service_url + "/api/service/create_group";
         if (typeof name != 'undefined') {
             var params = { 'name' : name };
@@ -401,7 +418,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
             delete options.mode;
         }
 
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
 
         mode = mode || "raw";
         var base_url = freebase.service_url + "/api/trans/";
@@ -455,7 +474,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
      * Perform a search
      */
     freebase.search = function(query,options) {
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
         if (!query) throw new Error("You must provide a string to search");
         if (!api_opts) api_opts = {};
         api_opts.query = query;
@@ -469,7 +490,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
      * Perform a geosearch
      */
     freebase.geosearch = function(location,options) {
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
         if (!location) throw new Error("You must provide a location to geosearch");
         if (!options) options = {};
         api_opts.location = location;

@@ -213,10 +213,12 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Get info about topics using the Topic API
     **/
     function topic(id,options) {
-      var [api_opts, fetch_opts] = decant_options(options);
-      var base_url = freebase.googleapis_url + "/topic" + id;
-      var url = acre.form.build_url(base_url, api_opts);
-      return fetch(url, fetch_opts);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
+        var base_url = freebase.googleapis_url + "/topic" + id;
+        var url = acre.form.build_url(base_url, api_opts);
+        return fetch(url, fetch_opts);
     };
 
 
@@ -266,7 +268,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Call the 'touch' api to reset the caches
     **/
     freebase.touch = function(options) {
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
 
         // TODO (JD) - We're missing a real dateline API
         if (fetch_opts.callback) {
@@ -282,7 +286,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   if the user has no valid oauth credentials
     **/
     freebase.get_user_info = function(options) {
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
         var base_url = freebase.googleapis_url + "/user/info";
         var url = acre.form.build_url(base_url, api_opts);
         fetch_opts.sign = true;
@@ -346,7 +352,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Perform a mqlread
     **/
     freebase.mqlread = function(query,envelope,options) {
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
         var url = freebase.googleapis_url + "/mqlread";
         fetch_opts.content = prepareContent(query,envelope,api_opts);
         return fetch.apply(this, compose_get_or_post(url, fetch_opts));
@@ -357,11 +365,11 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Perform a mqlwrite
     **/
     freebase.mqlwrite = function(query,envelope,options) {
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
         var url = freebase.googleapis_url + "/mqlwrite";
         fetch_opts.method = "POST";
-        fetch_opts.headers = fetch_opts.headers || {};
-        fetch_opts.headers["content-type"] = "application/x-www-form-urlencoded";
         fetch_opts.content = prepareContent(query,envelope,api_opts);
         if (typeof fetch_opts.sign === 'undefined') fetch_opts.sign = true;
         return fetch.apply(this, compose_get_or_post(url, fetch_opts));
@@ -372,7 +380,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Perform an upload
     **/
     freebase.upload = function(content,media_type,options) {
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
         if (!content) throw new Error("You must specify what content to upload");
         if (!media_type) throw new Error("You must specify a media type for the content to upload");
 
@@ -400,7 +410,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Creates an anonymous, self-administering group
     **/
     freebase.create_group = function(name, options) {
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
         var url = freebase.service_url + "/api/service/create_group";
         if (typeof name != 'undefined') {
             var params = { 'name' : name };
@@ -427,7 +439,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
             delete options.mode;
         }
 
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
 
         mode = mode || "plain";
         var base_url = freebase.googleapis_url + "/text" + id;
@@ -491,7 +505,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
         if (!query) throw new Error("You must provide a string to search");
 
         var url = freebase.googleapis_url + "/search";
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
 
         api_opts.query = query;
         fetch_opts.content = form_encode(api_opts);
@@ -614,7 +630,9 @@ function augment(freebase, urlfetch, async_urlfetch) {
         if (ids.length < 1) {
             throw new Error("'get_topic_multi' needs at least one id");
         }
-        var [api_opts, fetch_opts] = decant_options(options);
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
         var base_url = freebase.googleapis_rpc;
         // some Topic API parameters must be an array as specified
         // by freebase.get_topic_multi.PARAM_SPEC
