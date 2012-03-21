@@ -180,8 +180,13 @@ function compose_req_path(host, path, query_string) {
 };
 
 function decompose_req_path(req_path) {
-    var path_re = /^([^\/]*:)?(?:\/\/([^\/\?]*))?(?:\/?([^\?]*))?(?:\?(.*))?$/;
-    var [orig_req_path, protocol, host, path, query_string] = req_path.match(path_re);
+    var parts = req_path.match(/^([^\/]*:)?(?:\/\/([^\/\?]*))?(?:\/?([^\?]*))?(?:\?(.*))?$/);
+
+    var orig_req_path = parts[0];
+    var protocol = parts[1];
+    var host = parts[2];
+    var path = parts[3];
+    var query_string = parts[4];
 
     if (!host) throw new Error("Path: " + orig_req_path + " is not fully-qualified");
 
@@ -305,7 +310,9 @@ function split_script_id(script_id) {
 }
 
 function req_path_to_script_id(req_path) {
-    var [host, script] = decompose_req_path(req_path);
+    var path_parts = decompose_req_path(req_path);
+    var host = path_parts[0];
+    var script = path_parts[1];
     script = script.split("/").pop();
     return host_to_namespace(host) + "/" + script;
 }

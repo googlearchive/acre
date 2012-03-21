@@ -27,7 +27,9 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
         // a rudimentary (hacky) XML path parser
         function getNodeVal(node, path) {
             var segs = path.split("/");
-            var [namespace, prop] = segs.shift().split(":");
+            var a = segs.shift().split(":");
+            var namespace = a[0];
+            var prop = a[1];
 
             var els = node.getElementsByTagNameNS(NS[namespace], prop);
             if (els.length) {
