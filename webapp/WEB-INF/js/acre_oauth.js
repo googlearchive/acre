@@ -363,7 +363,11 @@ var augment;
      * and if it's running inside AppEngine.
      */
     var get_oauth_user = function(scope) {
-        return _appengine_oauthservice.getCurrentUser(scope);
+        try {
+            return _appengine_oauthservice.getCurrentUser(scope);
+        } catch (e) {
+            return null;
+        }
     }
 
     /*
