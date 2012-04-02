@@ -8,7 +8,7 @@
         },
         "js": {
             "handler": "passthrough",
-            "media_type": "application/x-javascript"
+            "media_type": "text/javascript"
         },
         "css": {
             "handler": "passthrough",
