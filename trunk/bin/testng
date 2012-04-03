@@ -30,8 +30,9 @@ else
     $ECHO "PASSED"
 fi
 
-$ECHO -n "CHECK: your local DNS configurations... "
-RESP=`curl -s -S -m 5  http://${ACRE_HOST_BASE}:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
+URL="http://${ACRE_HOST_BASE}:$ACRE_PORT/status"
+$ECHO -n "CHECK: your local DNS configurations ($URL)... "
+RESP=`curl -s -S -m 5 $URL 2> /dev/null | grep "status: 200 OK"`
 if [ -z "$RESP" ]; then
     $ECHO "FAILED"
     $ECHO "FATAL: make sure '${ACRE_HOST_BASE}' points to 127.0.0.1 in your DNS or /etc/hosts"
@@ -44,9 +45,9 @@ TEST_TYPE=$1
 shift
 if [ -z "$TEST_TYPE" ]; then
     TEST_TYPE="testng"
-
-    $ECHO -n "CHECK: your local DNS configurations for the tests... "
-    RESP=`curl -s -S -m 5  http://qa.dev.${ACRE_HOST_BASE}:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
+    URL="http://qa.dev.${ACRE_HOST_BASE}:$ACRE_PORT/status"
+    $ECHO -n "CHECK: your local DNS configurations for the tests ($URL)... "
+    RESP=`curl -s -S -m 5 $URL 2> /dev/null | grep "status: 200 OK"`
     if [ -z "$RESP" ]; then
         $ECHO "FAILED"
         $ECHO "FATAL: make sure 'qa.dev.${ACRE_HOST_BASE}' points to 127.0.0.1 in your DNS or /etc/hosts"
@@ -55,8 +56,9 @@ if [ -z "$TEST_TYPE" ]; then
         $ECHO "PASSED"
     fi
     
-    $ECHO -n "CHECK: local tests are present... "
-    RESP=`curl -s -S -m 5  http://qa.dev.${ACRE_HOST_BASE}:$ACRE_PORT/write 2> /dev/null | grep "ok"`
+    URL="http://qa.dev.${ACRE_HOST_BASE}:$ACRE_PORT/write"
+    $ECHO -n "CHECK: local tests are present ($URL)... "
+    RESP=`curl -s -S -m 5 $URL 2> /dev/null | grep "ok"`
     if [ -z "$RESP" ]; then
         $ECHO "FAILED"
         $ECHO "FATAL: the required local tests don't seem to be available"
