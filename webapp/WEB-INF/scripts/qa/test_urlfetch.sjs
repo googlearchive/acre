@@ -37,6 +37,54 @@ test('acre.urlfetch redirection', function() {
     equal(result2.status,301);
 });
 
+test('acre.urlfetch no url',function() {
+    var results = {};
+    try {
+      acre.urlfetch("");
+      ok(true == false, 'urlfetch should not have suceeded');
+    } catch (e) {
+      equals(e.message, "'url' argument (1st) to acre.urlfetch() must be a string");
+    }
+});
+
+test('acre.urlfetch invalid protocol',function() {
+    var results = {};
+    try {
+      acre.urlfetch("telnet://www.googleapis.com/freebase/v1/text/en/google");
+      ok(true == false, 'urlfetch should not have suceeded');
+    } catch (e) {
+      equals(e.message, "Malformed URL: telnet://www.googleapis.com/freebase/v1/text/en/google");
+    }
+});
+
+test('acre.urlfetch invalid method',function() {
+    var results = {};
+    try {
+      acre.urlfetch("www.google.com",
+       options={"method":"foo"});
+      ok(true == false, 'urlfetch should not have suceeded');
+    } catch (e) {
+      var pat = RegExp('Request to www.google.com appears to be a state-changing.+');
+      ok(pat.test(e), 'acre should complain that this is unsafe');
+    }
+});
+
+test('acre.urlfetch file no exist',function() {
+    var results = {};
+    try {
+      acre.urlfetch(acre.request.base_url + 'noexist');
+      ok(true == false, 'urlfetch should not have suceeded');
+    } catch (e) {
+      equals(e.message, "urlfetch failed: 404");
+    }
+});
+
+test('acre.urlfetch binary data',function() {
+    var response = acre.urlfetch("https://www.googleapis.com/freebase/v1/image/m/04pxcqr");
+    equals(response.headers['content-length'], 2001);
+    equals(response.headers['content-type'], 'image/jpeg');
+});
+
 // --------------------- async urlfetch ---------------------------------
 
 test('parallel acre.async.urlfetch works',function() {
@@ -148,6 +196,8 @@ test('unsafe subrequest using POST & X-Requested-With header', {"bug": "can't ru
     });
     equal(response.body, "success");
 });
+
+
 
 // --------------------------- mixed ----------------------------------------
 

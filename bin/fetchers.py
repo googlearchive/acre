@@ -25,9 +25,12 @@ TEST_TIMEOUT = 240
 devel_host = os.environ["ACRE_FREEBASE_SITE_ADDR"]
 devel_port = os.environ["ACRE_FREEBASE_SITE_ADDR_PORT"]
 
-flakey_pattern = '(Time limit exceeded|Timeout while fetching)'
+flakey_pattern = '(Time limit exceeded|Timeout while fetching|Cannot read property .+ from undefined)'
 class FlakeyBackendError(Exception):
-  pass
+  def __init__(self):
+    pass
+  def __str__(self):
+    return 'backend timeout'
 
 def retry(ExceptionToCheck, tries=5, delay=2, backoff=2):
   def deco_retry(f):
@@ -40,7 +43,7 @@ def retry(ExceptionToCheck, tries=5, delay=2, backoff=2):
           try_one_last_time = False
           break
         except ExceptionToCheck, e:
-          logger.warning('%s, Retrying in %d seconds...' % (str(e), mdelay))
+          logger.warning('%s, Retrying in %d seconds...' % (e, mdelay))
           time.sleep(mdelay)
           mtries -= 1
           mdelay *= backoff
