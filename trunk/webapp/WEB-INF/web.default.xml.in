@@ -81,7 +81,6 @@
  <security-constraint>
    <web-resource-collection>
      <url-pattern>/acre/keystore_console</url-pattern>
-     <url-pattern>/keystore</url-pattern>
    </web-resource-collection>
    <auth-constraint>
      <role-name>admin</role-name>
