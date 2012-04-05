@@ -349,6 +349,9 @@ function set_request_params() {
 
 // ------------------------------- acre.respose -----------------------------------------
 
+// Gets filled in at the end of the reques by _hostenv.finish_response()
+acre.response = {};
+
 function AcreResponse() {
     this.status = 200;
     this.headers = {};
@@ -593,8 +596,6 @@ AcreResponse_callbacks.push(AcreResponse_set_vary);
 AcreResponse_callbacks.push(AcreResponse_set_last_modified);
 AcreResponse_callbacks.push(AcreResponse_set_expires);
 AcreResponse_callbacks.push(AcreResponse_set_session);
-
-acre.response = null;
 
 
 // --------------------------- acre.errors ---------------------------------
@@ -892,9 +893,6 @@ var _keystore = _system_scope._keystore = {
 acre.keystore.get     = _keystore.get;
 acre.keystore.keys    = _keystore.keys;
 acre.keystore.remove  = _keystore.remove;
-if (_request.trusted) {
-    acre.keystore.put = _keystore.put;
-}
 
 
 // ------------------------------ urlfetch -----------------------------------
@@ -1163,69 +1161,6 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
 
     return response;
 };
-
-
-//------------------------ cache --------------------------
-
-if (_request.trusted && _cache) { // the _datastore object won't be available in all environments so we need to check first
-    var cache_scope = _make_scope(_system_scope);
-    cache_scope._cache = _cache;
-    _hostenv.load_system_script('cache.js', cache_scope);
-    cache_scope.augment(acre);
-}
-
-
-//=================== appengine modules ====================
-
-/**
-*   appengine - JS APIs to the appengine Java APIs
-*   (only available in appengine running in trusted mode)
-**/
-if (_request.trusted && _request.server_type == "appengine") {
-    var appengine = script_scope.appengine = {};
-}
-
-
-//------------------------ datastore --------------------------
-
-if (appengine && _datastore) { // the _datastore object won't be available in all environments so we need to check first
-    var store_scope = _make_scope(_system_scope);
-    store_scope._datastore = _datastore;
-    _hostenv.load_system_script('datastore.js', store_scope);
-    if (appengine) store_scope.augment(appengine);
-    store_scope.augment(acre); // FIXME(SM): remove once refinery has transitioned
-}
-
-
-//------------------------ taskqueue --------------------------
-
-if (appengine && _taskqueue) { // the _taskqueue object won't be available in all environments so we need to check first
-    var queue_scope = _make_scope(_system_scope);
-    queue_scope._taskqueue = _taskqueue;
-    _hostenv.load_system_script('taskqueue.js', queue_scope);
-    if (appengine) queue_scope.augment(appengine);
-    queue_scope.augment(acre); // FIXME(SM): remove once refinery has transitioned
-}
-
-
-//------------------------ mailer --------------------------
-
-if (appengine && _mailer) { // the _mailer object won't be available in all environments so we need to check first
-    var mailer_scope = _make_scope(_system_scope);
-    mailer_scope._mailer = _mailer;
-    _hostenv.load_system_script('mailservice.js', mailer_scope);
-    if (appengine) mailer_scope.augment(appengine);
-    mailer_scope.augment(acre); // FIXME(SM): remove once refinery has transitioned
-}
-
-//------------------------ user service --------------------------
-
-if (appengine && _userService) { // the _userService object won't be available in all environments so we need to check first
-    var userService_scope = _make_scope(_system_scope);
-    userService_scope._userService = _userService;
-    _hostenv.load_system_script('userservice.js', userService_scope);
-    userService_scope.augment(appengine);
-}
 
 
 // -------------------------------- file handlers -------------------------------------
@@ -1822,6 +1757,68 @@ for (var name in script_scope) {
 }
 
 
+// -------------------------------- trusted mode -------------------------------------
+
+/**
+*   Add features only available in trusted mode
+**/
+function set_trusted_mode() {
+    //we've alredy set up trusted mode
+    if (acre.trusted) return;
+
+    // trusted scripts can write to the keystore
+    acre.keystore.put = _keystore.put;
+
+    // trusted scripts can directly use the cache
+    if (_cache) {
+        var cache_scope = _make_scope(_system_scope);
+        cache_scope._cache = _cache;
+        _hostenv.load_system_script('cache.js', cache_scope);
+        cache_scope.augment(acre);
+    }
+
+    // trusted scripts can access some appengine Java APIs from JS
+    if (_request.server_type == "appengine") {
+        var appengine = script_scope.appengine = {};
+
+        if (_datastore) {
+            var store_scope = _make_scope(_system_scope);
+            store_scope._datastore = _datastore;
+            _hostenv.load_system_script('datastore.js', store_scope);
+            store_scope.augment(appengine);
+            store_scope.augment(acre); // FIXME(SM): remove once refinery has transitioned
+        }
+
+
+        if (_taskqueue) {
+            var queue_scope = _make_scope(_system_scope);
+            queue_scope._taskqueue = _taskqueue;
+            _hostenv.load_system_script('taskqueue.js', queue_scope);
+            queue_scope.augment(appengine);
+            queue_scope.augment(acre); // FIXME(SM): remove once refinery has transitioned
+        }
+
+
+        if (_mailer) {
+            var mailer_scope = _make_scope(_system_scope);
+            mailer_scope._mailer = _mailer;
+            _hostenv.load_system_script('mailservice.js', mailer_scope);
+            mailer_scope.augment(appengine);
+            mailer_scope.augment(acre); // FIXME(SM): remove once refinery has transitioned
+        }
+
+        if (_userService) {
+            var userService_scope = _make_scope(_system_scope);
+            userService_scope._userService = _userService;
+            _hostenv.load_system_script('userservice.js', userService_scope);
+            userService_scope.augment(appengine);
+        }
+    }
+
+    acre.trusted = true;
+};
+
+
 //-------------------------------- Script object -------------------------------
 
 /**
@@ -1930,7 +1927,7 @@ Script.prototype.set_scope = function(scope) {
     *   This is stuff we only do for 
     *   the top-level requested script:
     **/
-    if (scope == _request.scope && script.name.indexOf("not_found.") !== 0) {
+    if (scope == _request.scope && !scope.__augmented__ && script.name.indexOf("not_found.") !== 0) {
         scope.acre.request.script = script.script_data;
 
         // app_project is primarily used for accessing the keystore and the cache
@@ -1939,6 +1936,11 @@ Script.prototype.set_scope = function(scope) {
             _request.app_project = script.app.project;
         }
         syslog("Using keystore: " + _request.app_project, "request.keystore");
+
+        // If the top-level script is trusted, add trusted features
+        if (_request.trusted || (script.app.path === "//acre.dev")) {
+            set_trusted_mode();
+        }
 
         if (script.app.csrf_protection) {
             _request.csrf_protection = script.app.csrf_protection;
@@ -1982,6 +1984,7 @@ Script.prototype.set_scope = function(scope) {
         scope.acre.environ.script_namespace = _u.host_to_namespace(script_data.app.host); // deprecated
 
         deprecate(scope);
+        scope.__augmented__ = true;
     }
 
 
@@ -2294,7 +2297,7 @@ var proto_require = function(req_path, req_opts) {
         try {
             method = m;
             var app_defaults = (method.name === 'cache') ? {} : 
-                set_app_metadata({host: host}, _default_metadata);
+                set_app_metadata({host: host}, _request.default_metadata);
             app_data = method.fetcher(host, app_defaults);
             return false;
         } catch (e if e.__code__ == APPFETCH_ERROR_NOT_FOUND) {
@@ -2469,33 +2472,6 @@ var route_require = function(req_path, req_opts, opts) {
 *   3. repeat (if acre.route is called)
 **/
 var handle_request = function (req_path, req_body, skip_routes) {
-    // reset the response
-    acre.response = new AcreResponse();
-
-    // we might need the original path for situations 
-    // like "/acre/" URLs, so let's set it aside
-    var source_path = req_path;
-
-    // support /acre/ special case -- these are OTS routing rules 
-    // that allow certain global scripts to run within the context of any app
-    // e.g., keystore, auth, test, etc.
-    if (_request.request_url.split('/')[3] == 'acre') {
-        var path_parts = _u.decompose_req_path('http://' + _request.request_server_name.toLowerCase() + _request.request_path_info);
-        var h = path_parts[0];
-        var p = path_parts[1];
-
-        try {
-          var source_app = proto_require(_u.compose_req_path(h), {metadata_only: true})[0];
-          if (source_app !== null) {
-              source_path = _u.compose_req_path(h, p);
-              _request.app_project = source_app.project;
-              _u.extend(true, acre.oauth.providers, source_app.oauth_providers);
-          }
-        } catch(e) {
-          syslog.warn("Unresolvable host used with a /acre/ URL.", "handle_request.host");
-        }
-    }
-
     var path_parts = _u.decompose_req_path(req_path);
     var req_host = path_parts[0];
     var req_pathinfo = path_parts[1];
@@ -2506,8 +2482,7 @@ var handle_request = function (req_path, req_body, skip_routes) {
         req_path = _u.compose_req_path(req_host);
     }
 
-    // Now that we know what the path we're running, 
-    // set up rest of acre.request
+    // set up the rest of acre.request
     // path_info will get set once we know which part
     // of the path is file vs. path_info (in proto_require)
     acre.request.body = req_body || "";
@@ -2525,6 +2500,12 @@ var handle_request = function (req_path, req_body, skip_routes) {
         'name': req_pathinfo,
         'path': req_path
     };
+
+    // initialize the response
+    acre.response = new AcreResponse();
+    acre.response.set_header('x-acre-source-url',
+                            _request.freebase_site_host + 
+                            '/appeditor#!path=' + _request.source_path);
 
     try {
         script = route_require(req_path, null, {
@@ -2550,14 +2531,6 @@ var handle_request = function (req_path, req_body, skip_routes) {
     _hostenv.script_name = script.name;
     _hostenv.script_path = script.path;
     _hostenv.script_host_path = _u.compose_req_path(script.app.host);
-    if ('error' in acre && 'script_path' in acre.error) {
-        source_path = acre.error.script_path;
-    }
-
-    // View Source link
-    acre.response.set_header('x-acre-source-url',
-                            _request.freebase_site_host + 
-                            '/appeditor#!path=' + source_path);
 
     // execute the script
     try {
@@ -2596,7 +2569,6 @@ var handle_request = function (req_path, req_body, skip_routes) {
 _hostenv.finish_response = function () {
     // post process headers so everything is lower case, this sucks
     // but we need it so we can easily modify header values
-
     var hdrs = {};
     _u.each(acre.response.headers, function(k, v) {
         if (_u.isArray(v)) {
@@ -2628,42 +2600,86 @@ _hostenv.finish_response = function () {
 
 // --------------------------------- let's roll -------------------------------
 
-/**
-*   Add static global variables
-**/
-_request.DELIMITER_HOST = _hostenv.ACRE_HOST_DELIMITER_HOST;
-_request.DELIMITER_PATH = _hostenv.ACRE_HOST_DELIMITER_PATH;
-_request.DEFAULT_HOSTS_PATH = '/freebase/apps/hosts';
-_request.DEFAULT_ACRE_HOST_PATH = "/z/acre";
-_request.DEFAULTS_HOST = _hostenv.DEFAULT_HOST_PATH.substr(2);
-_request.METADATA_FILE = "METADATA";
-_request.DEFAULT_FILE = "index";
-_request.DEFAULT_APP = "main." + _request.DELIMITER_PATH;
+var init_request = function(req) {
+    // Add static global variables
+    req.DELIMITER_HOST = _hostenv.ACRE_HOST_DELIMITER_HOST;
+    req.DELIMITER_PATH = _hostenv.ACRE_HOST_DELIMITER_PATH;
+    req.DEFAULT_HOSTS_PATH = '/freebase/apps/hosts';
+    req.DEFAULT_ACRE_HOST_PATH = "/z/acre";
+    req.DEFAULTS_HOST = _hostenv.DEFAULT_HOST_PATH.substr(2);
+    req.METADATA_FILE = "METADATA";
+    req.DEFAULT_FILE = "index";
+    req.DEFAULT_APP = "main." + req.DELIMITER_PATH;
 
-// get app metadata defaults
-// doing this here so it's once per request rather than for every require
-// XXX - there's probably a less hacky way to do this, but it gets the job done
-acre.response = {};
-var defaults = proto_require(_u.compose_req_path(_request.DEFAULTS_HOST), {metadata_only: true})[0];
-var _default_metadata = {
-  "error_page": defaults.error_page,
-  "extensions": defaults.extensions,
-  "ttl": defaults.ttl
+    // get app metadata defaults
+    // doing this here so it's once per request rather than for every require
+    var defaults = proto_require(_u.compose_req_path(req.DEFAULTS_HOST), {metadata_only: true})[0];
+    req.default_metadata = {
+        "error_page": defaults.error_page,
+        "extensions": defaults.extensions,
+        "ttl": defaults.ttl
+    };
+
+    // we don't use req.request_url here because it's set pre-OTS rules,
+    // while the following values *are* reset by OTS
+    req.path = req.source_path = 'http://' + req.server_name.toLowerCase() + 
+                                 req.path_info + 
+                                 (req.query_string ? '?' + req.query_string : '');
+
+    // if we're running an error page, setup running it
+    if (typeof req.handler_script_path == 'string' && req.handler_script_path != '') {
+        req.path = req.handler_script_path;
+        delete req.handler_script_path;
+    }
+
+    // check whether we're running an admin script
+    else {
+        var admin_path = null;
+
+        // check for acre.* query params
+        if (!admin_path) {
+            var params = acre.form.decode(req.query_string);
+            for (p in params) {
+                if (p.indexOf("acre.") === 0) {
+                    admin_path = p.substr(5);
+                    delete params[p];
+                    req.query_string = acre.form.encode(params);
+                    break;
+                }
+            }
+        }
+
+        // check for /acre/* path
+        if (!admin_path) {
+            var original_pathinfo = _u.decompose_req_path(req.request_url)[1];
+            if (original_pathinfo.indexOf("acre/") == 0) {
+                admin_path = original_pathinfo.substr(5);
+            }
+        }
+
+        // if we have an admin script, setup running it
+        if (admin_path) {
+            // request-level trust config should still be set to the source app
+            try {
+                var source_app = proto_require(req.path, {metadata_only: true})[0];
+                if (source_app !== null) {
+                    req.app_project = source_app.project;
+                    _u.extend(true, acre.oauth.providers, source_app.oauth_providers);
+                }
+            } catch(e) {
+                syslog.warn("Unresolvable host used with a /acre/ URL.", "initreq.host");
+            }
+
+            acre.admin = {
+                script_path: req.path
+            };
+            req.path = "//acre.dev/" + admin_path + (req.query_string ? '?' + req.query_string : '');
+        }
+    }
+
+    handle_request(req.path, req.request_body, req.skip_routes);
 };
 
-// If it's an internal redirect (error page), get _request.path from handler_script_path:
-if (typeof _request.handler_script_path == 'string' && _request.handler_script_path != '') {
-    _request.path = _request.handler_script_path;
-    delete _request.handler_script_path;
-}
-
-// Otherwise, get it from the request
-// we don't use _request.request_url because it's set pre-OTS rules,
-// however the following values *are* reset by OTS
-else {
-    _request.path = 'http://' + _request.server_name.toLowerCase() + _request.path_info + '?' + _request.query_string;
-}
-
-handle_request(_request.path, _request.request_body, _request.skip_routes);
+init_request(_request);
 
 })();
