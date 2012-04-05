@@ -20,7 +20,7 @@ else
     $ECHO "PASSED"
 fi
 
-URL="http://127.0.0.1:$ACRE_PORT/status"
+URL="http://127.0.0.1:$ACRE_PORT/acre/status"
 $ECHO -n "CHECK: your local acre installation ($URL)... "
 RESP=`curl -s -S -m 5 $URL 2> /dev/null | grep "status: 200 OK"`
 if [ -z "$RESP" ]; then
@@ -31,7 +31,7 @@ else
     $ECHO "PASSED"
 fi
 
-URL="http://${ACRE_SITE_HOST}:${ACRE_SITE_HOST_PORT}/status"
+URL="http://${ACRE_SITE_HOST}:${ACRE_SITE_HOST_PORT}/acre/status"
 $ECHO -n "CHECK: your local DNS configurations ($URL)... "
 RESP=`curl -s -S -m 5 $URL 2> /dev/null | grep "status: 200 OK"`
 if [ -z "$RESP" ]; then

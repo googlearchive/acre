@@ -1,4 +1,4 @@
-var show_suite,report_modules; // TODO: hang these off QUnit?
+var show_suite,report_modules,run_dash; // TODO: hang these off QUnit?
 (function() {
 
 show_suite = function(test_suite) {
@@ -19,7 +19,7 @@ show_suite = function(test_suite) {
     acre.write(JSON.stringify(flatten_test_suite(test_suite),null,2));
   } else {
     // output==='html'
-    var templates = acre.require('report');
+    var templates = acre.require('/test/report');
     acre.response.set_header('Content-Type','text/html');
     acre.write(templates.show_suite(test_suite));
   }
@@ -213,7 +213,7 @@ function get_app_path() {
   return '//' + (acre.request.server_name).replace('.'+acre.host.name,'');
 }
 
-if (acre.current_script === acre.request.script) {
+run_dash = function() {
   var app_path = get_app_path();
 
   var testscripts = testfinder.get(app_path, acre.request.params.recurse);
@@ -230,7 +230,11 @@ if (acre.current_script === acre.request.script) {
     acre.write(JSON.stringify(run_urls,null,2));
   } else {
     show_suite(get_test_suite(app_path,testscripts));
-  }
+  }  
+};
+
+if (acre.current_script === acre.request.script) {
+  run_dash();
 }
 
 })();
