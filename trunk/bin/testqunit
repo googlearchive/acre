@@ -21,7 +21,7 @@ else
 fi
 
 $ECHO -n "CHECK: your local acre installation... "
-RESP=`curl -s -S -m 5 http://127.0.0.1:$ACRE_PORT/status 2> /dev/null | grep "status: 200 OK"`
+RESP=`curl -s -S -m 5 http://127.0.0.1:$ACRE_PORT/acre/status 2> /dev/null | grep "status: 200 OK"`
 if [ -z "$RESP" ]; then
     $ECHO "FAILED"
     $ECHO "FATAL: local acre does not not seem to be running or reachable"
@@ -31,7 +31,7 @@ else
 fi
 
 $ECHO -n "CHECK: your local DNS configurations... "
-URL="http://${ACRE_FREEBASE_SITE_ADDR}:${ACRE_FREEBASE_SITE_ADDR_PORT}/status"
+URL="http://${ACRE_FREEBASE_SITE_ADDR}:${ACRE_FREEBASE_SITE_ADDR_PORT}/acre/status"
 RESP=`curl -s -S -m 5 $URL 2> /dev/null | grep "status: 200 OK"`
 if [ -z "$RESP" ]; then
     $ECHO "FAILED"
