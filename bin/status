@@ -8,7 +8,7 @@ cd `dirname $0`/..
  
 for try in 1 2 3 4 5 ; do
     curlmsg="\nstatus=%{http_code}\n"
-    result=`curl -w "$curlmsg" -s "http://127.0.0.1:$ACRE_PORT/status"`
+    result=`curl -w "$curlmsg" -s "http://127.0.0.1:$ACRE_PORT/acre/status"`
     ret=$?
     if [ $ret -eq 0 ] ; then
         echo "$result" | grep "status=200" > /dev/null
