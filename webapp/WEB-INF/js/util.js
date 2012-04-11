@@ -10,6 +10,7 @@ var exports = {
     get_csrf_secret: get_csrf_secret,
     compose_req_path: compose_req_path,
     decompose_req_path: decompose_req_path,
+    normalize_req_path: normalize_req_path,
     file_in_path: file_in_path,
     get_extension_metadata: get_extension_metadata,
     namespace_to_host: namespace_to_host,
@@ -226,6 +227,11 @@ function decompose_req_path(req_path) {
     
     return [host, path, query_string];
 }
+
+// by chaining these functions we can turn any request URL into a normalized acre path
+function normalize_req_path(path) {
+    return compose_req_path.apply(null, decompose_req_path(path));
+};
 
 function file_in_path(filename, path) {
     var file_re = new RegExp(escape_re(filename) + "(\/.*)?$");

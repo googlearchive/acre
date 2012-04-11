@@ -848,7 +848,7 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
         // get a new _mwLastWriteTime for the client so all
         // requests will also be fresh.
         if (acre.request.skip_cache === true && have_touched === false) {
-            _system_freebase.touch();
+            _system_freebase.touch({'key' : _request.googleapis_key });
             have_touched = true;
         }
 
@@ -872,6 +872,14 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
             "/freebase/apps/acre_app_version/service_url": null,
             "/freebase/apps/acre_app_version/as_of_time" : null,
             "/type/domain/owners" : {
+                "id" : null,
+                "limit" : 1,
+                "member" : [{
+                    "id" : null
+                }],
+                "optional" : true
+            },
+            "wu:/type/domain/owners" : {
                 "id" : null,
                 "limit" : 1,
                 "member" : {
@@ -987,15 +995,23 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
         // Explictly build out the metadata here, filling in any blanks, in case
         // we didn't hit a version node up front.
         app.id = res.id;
-        app.guid = app.project = res.guid;
+        app.guid = res.guid;
+        app.project = res.guid.substr(1);
         app.ttl = (app.versions && app.versions.length) ? 600000 : 0;
 
-        // set writeuser
+        // set owners
         if (res['/type/domain/owners'] != null) {
+            app.owners = res['/type/domain/owners'].member.map(function(o) {
+                return o.id.substr(6);
+            });
+        }
+
+        // set writeuser
+        if (res['wu:/type/domain/owners'] != null) {
             _u.extend(app, {
                 "oauth_providers": {
                     "freebase_writeuser" : {
-                        "writeuser": res['/type/domain/owners'].member.id.substr(6)
+                        "writeuser": res['wu:/type/domain/owners'].member.id.substr(6)
                     }
                 }
             });
