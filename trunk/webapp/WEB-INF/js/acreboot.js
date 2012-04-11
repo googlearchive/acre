@@ -829,64 +829,59 @@ if (typeof acre.keystore == 'undefined') {
 
 var _keystore = _system_scope._keystore = {
 
-    get: function (name) {
-        if (_request.app_project) {
 
-            // Read the key value from the cache if present.
-            if (acre.cache && acre.cache.request && !acre.request.skip_cache) {
-                var result = acre.cache.request.get(_request.app_project + ":" + name);
-                if (result != null) {
-                    return result;
-                }
-            }
-
-            var result = _ks.get_key(name, _request.app_project);
-
-            // Write the key value to the cache.
-            if (acre.cache && acre.cache.request) {
-                acre.cache.request.put(_request.app_project + ":" + name, result);
-            }
-
-            return result;
-
-        } else {
-            acre.syslog.info({'name': name}, "no request.app_project - cannot access the keystore.");
-            return null;
+    get_project: function() {
+        if (!_request.app_project) {
+            throw new Error("Cannot access the keystore without a set project.");
         }
+        return _request.app_project;
+    },
+
+    get: function (name) {
+        var project = _keystore.get_project();
+
+        // Read the key value from the cache if present.
+        if (acre.cache && acre.cache.request && !acre.request.skip_cache) {
+            var result = acre.cache.request.get(project + ":" + name);
+            if (result != null) {
+                return result;
+            }
+        }
+
+        var result = _ks.get_key(name, project);
+
+        // Write the key value to the cache.
+        if (acre.cache && acre.cache.request) {
+            acre.cache.request.put(project + ":" + name, result);
+        }
+
+        return result;
     },
 
     put: function (name, token, secret) {
-        if (_request.app_project) {
+        var project = _keystore.get_project();
 
-            var put_result = _ks.put_key(name, _request.app_project, token, secret);
+        var put_result = _ks.put_key(name, project, token, secret);
 
-            // Write the key value to the cache. This is incurring an extra roundtrip but only
-            // in the case of a keystore.put() which is very rare.
-            // What we are getting in return is guaranteed consistency of the underlying keystore
-            // object (we don't have to re-implement the structure in js and java)
-            if (acre.cache && acre.cache.request) {
-                acre.cache.request.put(_request.app_project + ":" + name, _ks.get_key(name, _request.app_project));
-            }
-
-            return put_result;
-
-        } else {
-            return null;
+        // Write the key value to the cache. This is incurring an extra roundtrip but only
+        // in the case of a keystore.put() which is very rare.
+        // What we are getting in return is guaranteed consistency of the underlying keystore
+        // object (we don't have to re-implement the structure in js and java)
+        if (acre.cache && acre.cache.request) {
+            acre.cache.request.put(project + ":" + name, _ks.get_key(name, project));
         }
+
+        return put_result;
     },
 
     keys: function () {
-        if (_request.app_project) {
-            return _ks.get_keys(_request.app_project);
-        } else {
-            return null;
-        }
+        var project = _keystore.get_project();
+        return _ks.get_keys(project);
     },
 
     remove: function (name) {
-        if (_request.app_project) {
-            _ks.delete_key(name, _request.app_project);
-        }
+        var project = _keystore.get_project();
+        return _ks.delete_key(name, project);
     }
 };
 
@@ -1013,7 +1008,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
         response_encoding = options_or_method.response_encoding;
         callback = options_or_method.callback || function (res) { };
         errback = options_or_method.errback || function (res) { throw res; };
-        var i =  parseInt(options_or_method.timeout, 10) ;
+        var i =  parseInt(options_or_method.timeout, 10);
         timeout = (i > 0) ? i : undefined;
         bless = !!options_or_method.bless;
         no_redirect = options_or_method.no_redirect;
@@ -1761,6 +1756,9 @@ for (var name in script_scope) {
 
 /**
 *   Add features only available in trusted mode
+*
+*   This is broken out as a function so trusted mode 
+*   can also be set for cases like admin scripts
 **/
 function set_trusted_mode() {
     //we've alredy set up trusted mode
@@ -1817,6 +1815,8 @@ function set_trusted_mode() {
 
     acre.trusted = true;
 };
+
+if (_request.trusted) set_trusted_mode();
 
 
 //-------------------------------- Script object -------------------------------
@@ -1936,11 +1936,6 @@ Script.prototype.set_scope = function(scope) {
             _request.app_project = script.app.project;
         }
         syslog("Using keystore: " + _request.app_project, "request.keystore");
-
-        // If the top-level script is trusted, add trusted features
-        if (_request.trusted || (script.app.path === "//acre.dev")) {
-            set_trusted_mode();
-        }
 
         if (script.app.csrf_protection) {
             _request.csrf_protection = script.app.csrf_protection;
@@ -2231,6 +2226,7 @@ var proto_require = function(req_path, req_opts) {
             app.path = app.path || _u.compose_req_path(app.host);
             app.id = app.id || _u.host_to_namespace(app.host);
         }
+        app.owners = app.owners || [];
         app.versions = app.versions || [];
         app.mounts = app.mounts || {};
         app.files = app.files || {};
@@ -2466,10 +2462,9 @@ var route_require = function(req_path, req_opts, opts) {
 //----------------------------------- Main ---------------------------------
 
 /**
-*   this is the main function where we:
-*   1. finish setting up acre.request
-*   2. run the top-level script
-*   3. repeat (if acre.route is called)
+*   this is the main function where we
+*   run the top-level script and then
+*   repeat (if acre.route is called)
 **/
 var handle_request = function (req_path, req_body, skip_routes) {
     var path_parts = _u.decompose_req_path(req_path);
@@ -2598,8 +2593,14 @@ _hostenv.finish_response = function () {
 };
 
 
-// --------------------------------- let's roll -------------------------------
-
+/**
+*   Initialize the request
+*   1. Set global static variables
+*   2. Initialize path to route
+*   3. Manipulate paths for some special cases:
+*      - error scripts
+*      - admin scripts
+**/
 var init_request = function(req) {
     // Add static global variables
     req.DELIMITER_HOST = _hostenv.ACRE_HOST_DELIMITER_HOST;
@@ -2622,9 +2623,10 @@ var init_request = function(req) {
 
     // we don't use req.request_url here because it's set pre-OTS rules,
     // while the following values *are* reset by OTS
-    req.path = req.source_path = 'http://' + req.server_name.toLowerCase() + 
-                                 req.path_info + 
-                                 (req.query_string ? '?' + req.query_string : '');
+    req.path = _u.normalize_req_path('http://' + req.server_name.toLowerCase() + req.path_info + "?" + req.query_string);
+
+    // stow this away so we always know what the original path was
+    req.source_path = req.path;
 
     // if we're running an error page, setup running it
     if (typeof req.handler_script_path == 'string' && req.handler_script_path != '') {
@@ -2637,19 +2639,17 @@ var init_request = function(req) {
         var admin_path = null;
 
         // check for acre.* query params
-        if (!admin_path) {
-            var params = acre.form.decode(req.query_string);
-            for (p in params) {
-                if (p.indexOf("acre.") === 0) {
-                    admin_path = p.substr(5);
-                    delete params[p];
-                    req.query_string = acre.form.encode(params);
-                    break;
-                }
+        var params = acre.form.decode(req.query_string);
+        for (p in params) {
+            if (p.indexOf("acre.") == 0) {
+                admin_path = p.substr(5);
+                delete params[p];
+                req.query_string = acre.form.encode(params);
+                break;
             }
         }
 
-        // check for /acre/* path
+        // check for /acre/* path on the pre-OTS URL
         if (!admin_path) {
             var original_pathinfo = _u.decompose_req_path(req.request_url)[1];
             if (original_pathinfo.indexOf("acre/") == 0) {
@@ -2657,29 +2657,34 @@ var init_request = function(req) {
             }
         }
 
-        // if we have an admin script, setup running it
+        // admin scripts are a unique situation;
+        // they run in trusted mode, but in the trust context
+        // (e.g., keystore) of the potentially untrusted source app
         if (admin_path) {
-            // request-level trust config should still be set to the source app
+            set_trusted_mode();
+            acre.admin = {
+                script_path: req.source_path
+            };
             try {
-                var source_app = proto_require(req.path, {metadata_only: true})[0];
+                var source_app = proto_require(req.source_path, {metadata_only: true})[0];
                 if (source_app !== null) {
+                    acre.admin.app = source_app;
                     req.app_project = source_app.project;
                     _u.extend(true, acre.oauth.providers, source_app.oauth_providers);
                 }
             } catch(e) {
-                syslog.warn("Unresolvable host used with a /acre/ URL.", "initreq.host");
+                console.log(e);
+                syslog.warn("Unresolvable app host used with an admin URL (/acre/* or ?acre.*).", "initreq.host");
             }
-
-            acre.admin = {
-                script_path: req.path
-            };
-            req.path = "//acre.dev/" + admin_path + (req.query_string ? '?' + req.query_string : '');
+            req.path = _u.compose_req_path("acre.dev", admin_path, req.query_string);
         }
     }
 
     handle_request(req.path, req.request_body, req.skip_routes);
 };
 
+
+// --------------------------------- let's roll -------------------------------
 init_request(_request);
 
 })();

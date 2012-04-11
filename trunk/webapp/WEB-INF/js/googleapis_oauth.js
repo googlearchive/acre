@@ -305,7 +305,7 @@ var has_credentials = function(provider, consumer) {
         storeAccessToken(provider, access_token, consumer);
     }
 
-    register_authorized_provider(provider, consumer || getConsumer(provider), access_token);
+    register_authorized_provider(provider, consumer, access_token);
     return access_token;
 };
 
