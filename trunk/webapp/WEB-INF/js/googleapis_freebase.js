@@ -283,10 +283,16 @@ function augment(freebase, urlfetch, async_urlfetch) {
         var fetch_opts = opts[1];
 
         // TODO (JD) - We're missing a real dateline API
+        var result = {
+            status: "200 OK",
+            code: "/api/status/ok",
+            result: null
+        };
+
         if (fetch_opts.callback) {
-          return fetch_opts.callback(null);
+          return fetch_opts.callback(result);
         } else {
-          return null;
+          return result;
         }
     };
 
