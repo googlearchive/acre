@@ -135,6 +135,16 @@ function augment(freebase, urlfetch, async_urlfetch) {
                     }
                 };
             }
+            if (errback) {
+                opts.errback = function(e) {
+                    if (!e.response) errback(e);
+                    try {
+                        check_results(e.response, opts.check_results);
+                    } catch(e) {
+                        errback(e);
+                    }
+                };
+            }
             return async_urlfetch(url, opts);
         } else {
             // run synchronously
