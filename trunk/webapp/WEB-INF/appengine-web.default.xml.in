@@ -6,4 +6,6 @@
       <property name="configDir" value="META-INF" />
       <property name="java.util.logging.config.file" value="META-INF/logging.properties" />
     </system-properties>
+    <threadsafe>true</threadsafe>
+
 </appengine-web-app>
