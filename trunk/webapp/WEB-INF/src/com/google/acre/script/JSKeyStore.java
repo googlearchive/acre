@@ -14,7 +14,6 @@
 
 package com.google.acre.script;
 
-
 import java.util.List;
 
 import log.Log;
@@ -102,7 +101,7 @@ public class JSKeyStore extends JSObject {
             } else {
                 _logger.debug("keystore.get_keys", "NO keys found for app '" +
                               appid + "'");
-                return null;
+                return Context.getCurrentContext().newArray(_scope, new String[0]);
             }
         } catch (java.lang.Exception e) {
             throw new
