@@ -101,7 +101,7 @@ public class JSKeyStore extends JSObject {
             } else {
                 _logger.debug("keystore.get_keys", "NO keys found for app '" +
                               appid + "'");
-                return Context.getCurrentContext().newArray(_scope, new String[0]);
+                return Context.getCurrentContext().newArray(_scope,keys.toArray());
             }
         } catch (java.lang.Exception e) {
             throw new
