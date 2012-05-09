@@ -429,14 +429,14 @@ function augment(freebase, urlfetch, async_urlfetch) {
         var opts = decant_options(options);
         var api_opts = opts[0];
         var fetch_opts = opts[1];
-        var url = freebase.service_url + "/api/service/create_group";
-        if (typeof name != 'undefined') {
-            var params = { 'name' : name };
-        } else {
-            var params = {};
+        if (name) {
+            api_opts.name = name;
         }
+        var url = freebase.googleapis_url + "/group/create";
         fetch_opts.method = "POST";
         fetch_opts.content = form_encode(api_opts);
+        fetch_opts.headers = fetch_opts.headers || {};
+        fetch_opts.headers["content-type"] = "application/x-www-form-urlencoded";
         if (typeof fetch_opts.sign === 'undefined') fetch_opts.sign = true;
         return fetch(url, fetch_opts);
     };
