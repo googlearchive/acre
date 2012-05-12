@@ -514,10 +514,10 @@ var initiateOauth2AuthorizationFlow = function(provider, consumer, state) {
 var handleOauth2AuthorizationError = function(provider, error_type) {
     switch (error_type) {
         case "access_denied":
-        acre.oauth.remove_credentials(provider);
-        break;
+            acre.oauth.remove_credentials(provider);
+            break;
         default:
-        throw new oauthError(error_type);
+            throw new oauthError(error_type);
     }
 };
 
