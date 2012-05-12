@@ -881,6 +881,12 @@ var _keystore = _system_scope._keystore = {
 
     remove: function (name) {
         var project = _keystore.get_project();
+
+        // remove from the cache
+        if (acre.cache && acre.cache.request) {
+            acre.cache.request.remove(project + ":" + name);
+        }
+
         return _ks.delete_key(name, project);
     }
 };
