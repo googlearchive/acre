@@ -139,7 +139,8 @@ function augment(freebase, urlfetch, async_urlfetch) {
                 opts.errback = function(e) {
                     if (!e.response) errback(e);
                     try {
-                        check_results(e.response, opts.check_results);
+                        var result = check_results(e.response, opts.check_results);
+                        errback(result);
                     } catch(e) {
                         errback(e);
                     }
