@@ -10,10 +10,6 @@ if (acre.keystore.put) { // we can test only if put exists
         ok(typeof acre.keystore.put == "function", "store.put exists");
     });
 
-    test("make sure there are no keys when we start", function() {
-        ok(acre.keystore.keys() == null, "no keys in the keystore for this app");
-    });
-
     test("test adding and deleting a key", function() {
         var name = "a";
         var token = "b";
@@ -26,8 +22,7 @@ if (acre.keystore.put) { // we can test only if put exists
         equal(key[0],token, "token was saved correctly");
         equal(key[1],secret, "secret was saved correctly");
         acre.keystore.remove(name);
-        keys = acre.keystore.keys();
-        ok(keys == null, "key was removed");
+        ok(acre.keystore.get(name) == null, "key was removed");
     });
 
     test("test adding multiple keys", function() {
@@ -53,8 +48,8 @@ if (acre.keystore.put) { // we can test only if put exists
         equal(key[1],secret1, "secret of first key  was saved correctly");
         acre.keystore.remove(name0);
         acre.keystore.remove(name1);
-        keys = acre.keystore.keys();
-        ok(keys == null, "keys were removed");
+        ok(acre.keystore.get(name0) == null, "key was removed");
+        ok(acre.keystore.get(name1) == null, "key was removed");
     });
 
 }
