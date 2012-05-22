@@ -200,11 +200,13 @@ class UnittestFetcher:
       meth = str(fail[0]).split(' ')[0]
       failure = str(fail[1])
       results['%s.%s.%s' % (pack, testmod, meth)] = ['FAIL', failure]
-    for skp in r.result.skipped:
-      meth = str(skp[0]).split(' ')[0]
-      msg = str(skp[1])
-      results['%s.%s.%s' % (pack, testmod, meth)] = ['SKIP', msg]
-      num_skips += 1
+    if hasattr(r.result, 'skipped'):
+      # unittest2 only
+      for skp in r.result.skipped:
+        meth = str(skp[0]).split(' ')[0]
+        msg = str(skp[1])
+        results['%s.%s.%s' % (pack, testmod, meth)] = ['SKIP', msg]
+        num_skips += 1
     for err in r.result.errors:
       meth = str(err[0]).split(' ')[0]
       error = str(err[1])
