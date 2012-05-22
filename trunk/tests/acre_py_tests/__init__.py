@@ -56,7 +56,7 @@ class AcreRedirectHandler(urllib2.HTTPRedirectHandler):
         print "Now throwing catchable HTTPError";
         raise urllib2.HTTPError(newurl, code, msg, headers, fp)
 
-class ExtraAsserts(object):
+class ExtraAsserts(TestCase):
     
     def assertIn(self, array, value, msg=None):
         self.assert_(value in array, msg or "value %s not in %r" % (value, array))
@@ -81,9 +81,26 @@ def tag(**kwds):
        return f
    return inner
 
+class DevNull():
+    def __init__(self):
+        self.lines = []
+
+    def write(self, s):
+        self.lines.append(s)
+
 class TestController(ExtraAsserts):
 
+    def tearDown(self):
+        sys.stdout = self.real_stdout
+
     def setUp(self, *args, **kwargs):
+        # supress prints
+        verbose = False
+        if verbose is False:
+            self.real_stdout = sys.stdout
+            sys.stdout = DevNull()
+      
+        
         self.cookiefile = "./cookies.lwp",
         self.cookiejar = cookielib.LWPCookieJar("./cookies.lwp")
 

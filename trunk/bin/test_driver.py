@@ -35,27 +35,22 @@ def drive_apps(manifest, opts):
 
   if test_type == 'qunit':
     tester = fetchers.QunitFetcher(browser=browser, selenium_rh=opts.selenium_rh)
+  elif test_type == 'unittest':
+    tester = fetchers.UnittestFetcher()
   else:
     tester = fetchers.AcreFetcher()
   
-  for app, test_urls in manifest.iteritems():
+  for app, test_paths in manifest.iteritems():
     out.write(app + ":\n")
-    for test_url in test_urls:
+    for test_path in test_paths:
       errors = 0
       skips = 0
       failures = 0
       fetch_starttime = time.time()
-      path = test_url.split("/")[3:]
-      last = path.pop()
-      module = re.split('(\?|.(template|sjs)\?)', last)[0]
-      if len(path) > 0:
-        pack = '/'.join(path)
-      else:
-        pack = app
-
+      tester.set_module(app, test_path)
       try:
-        logger.debug('fetching url: %s' % test_url)
-        [tests, failures, skips, results] = tester.fetchtest(pack, module, test_url)
+        logger.debug('fetching url: %s' % test_path)
+        [tests, failures, skips, errors, results] = tester.fetchtest()
       except KeyboardInterrupt:
         raise
       except:
@@ -64,9 +59,9 @@ def drive_apps(manifest, opts):
         errors = 1
         tests = 1
         results = {\
-          "%s/%s" % (pack, module):\
-                   ["ERROR","exception fetching url: " +\
-          test_url + "time elapsed: %2.3fs" % (time.time() - fetch_starttime) +\
+          "%s/%s" % (tester.pack, tester.module):\
+                   ["ERROR","exception running test: " +\
+          test_path + " time elapsed: %2.3fs" % (time.time() - fetch_starttime) +\
           " py_exception: %s %s" % sys.exc_info()[:2]]\
           }
 
@@ -79,7 +74,7 @@ def drive_apps(manifest, opts):
       total_errors += errors
       total_skips += skips
       out.write(" ")
-      out.write(module.ljust(60,'.'))
+      out.write(tester.module.ljust(60,'.'))
       if color:
         if failures > 0 or errors > 0:
           out.write(colors.FAIL)
@@ -89,8 +84,8 @@ def drive_apps(manifest, opts):
       if color:
         out.write(colors.RESET)
       out.write("\n")
-    # for test_url
-  # for app
+    # for test_path
+  # for app, test_path
   tester.cleanup()
   ret = 0
   out.write("\n")

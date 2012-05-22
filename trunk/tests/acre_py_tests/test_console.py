@@ -1,10 +1,12 @@
-from acre_py_tests import *
 from urllib2 import HTTPError
 try:
     import simplejson
 except ImportError:
     import json as simplejson
 import re
+
+from __init__ import TestController
+from __init__ import tag
 
 class test_class(TestController):
     @tag(bug=False, bugid="ACRE-882")

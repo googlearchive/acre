@@ -1,11 +1,12 @@
-from acre_py_tests import *
 import re
 import urllib2
 try:
     import simplejson
 except ImportError:
     import json as simplejson
-from unittest import TestCase
+
+from __init__ import TestController
+from __init__ import tag
 
 class test_class(TestController):
 

@@ -1,108 +1,27 @@
 #!/bin/sh
 
-# this should be called with ./acre to pickup the environment vars
-# if you want to call it directly, set the env vars found in
-# tests/acre_py_tests/__init__.py
+# this should be called with ./acre to pickup the environment vars 
 
 # Normalize the current directory
 cd `dirname $0`/..
+# the driver can find python unittest packages in the tests dir
+export PYTHONPATH=$PYTHONPATH:`pwd`
 
 ECHO="/bin/echo"
 
 $ECHO
 
-# allow the nose executable to be configurable
-if [ -z "$NOSETESTS" ]; then
-    NOSETESTS="nosetests"
-fi
-
-$ECHO -n "CHECK: nose availability... "
-$NOSETESTS -V &> /dev/null
+$ECHO -n "CHECK: python availability... "
+python -V &> /dev/null
 RET=$?
 if [ $RET == 127 ]; then
     $ECHO "FAILED"
-    $ECHO "FATAL: $NOSETESTS doesn't seem to exist. These tests require 'nose' to be installed. Get it from http://code.google.com/p/python-nose/"
+    $ECHO "FATAL: These tests require 'python'"
     exit 1
 else
     $ECHO "PASSED"
 fi
 
-$ECHO -n "CHECK: your local acre installation... "
-RESP=`curl -s -S -m 5 http://127.0.0.1:$ACRE_PORT/acre/status 2> /dev/null | grep "Acre  status: 200 OK"`
-if [ -z "$RESP" ]; then
-    $ECHO "FAILED"
-    $ECHO "FATAL: local acre does not not seem to be running or reachable"
-    exit 1
-else
-    $ECHO "PASSED"
-fi
-
-$ECHO -n "CHECK: your local DNS configurations... "
-RESP=`curl -s -S -m 5  http://api.qatests.apps.freebase.dev.${ACRE_HOST_BASE}:$ACRE_PORT/return_status 2> /dev/null | grep "status is: 200"`
-if [ -z "$RESP" ]; then
-    $ECHO "FAILED"
-    $ECHO "FATAL: make sure 'api.qatests.apps.freebase.dev.${ACRE_HOST_BASE}' points to 127.0.0.1 in your DNS or /etc/hosts"
-    exit 1
-else
-    $ECHO "PASSED"
-fi
-
-$ECHO -n "CHECK: local tests are present... "
-RESP=`curl -s -S -m 5  http://api.qatests.apps.freebase.dev.${ACRE_HOST_BASE}:$ACRE_PORT/request 2> /dev/null | grep "api.qatests.apps.freebase"`
-if [ -z "$RESP" ]; then
-    $ECHO "FAILED"
-    $ECHO "FATAL: the required local tests don't seem to be available"
-    exit 1
-else
-    $ECHO "PASSED"
-fi
-
-bin/freebase_check
-if [ $? -ne 0 ]; then
-    exit 1
-fi
-
-$ECHO
-
-# test flags explanation:
-#
-#   '!bug'         include tests that are supposed to work (if a test is broken, the 
-#                  'bug' tag is set to 'True' - this runs any with no bug tag or bug=False)
-#   '!deprecated'  include tests that were not deprecated
-#
-
-cd tests/acre_py_tests
-
-if [ -z "$1" ]; then
-    # if no specific test is passed as parameter, run them all
-    $ECHO -n "Running all tests: " 
-    $NOSETESTS -vda '!bug','!deprecated'
-else
-    
-    # if something is passed as a parameter, first check to see if it's a group of tests (a directory)
-    if [ -d "test_$1" ]; then
-        $NOSETESTS -da '!bug','!deprecated' test_$1
-    else
-        # if not, expect it to be a single test
-        test_id="$1"
-        
-        # if the test identifier starts with "acre_py_tests" it means that it reflects the file paths
-        # so we need to remove the extra stuff from the front
-        if [ $(echo $test_id | cut -d '.' -f 1) == "acre_py_tests" ]; then
-            test_file_name=$(echo $test_id | cut -d'.' -f3).py
-            test_selector=$(echo $test_id | cut -d'.' -f4-)
-        else
-            test_file_name=$(echo $test_id | cut -d'.' -f1).py
-            test_selector=$(echo $test_id | cut -d'.' -f2-)
-        fi
-
-        test_file=$(find . -name $test_file_name)
-
-        test="${test_file}:${test_selector}"
-        $ECHO "Running single test $1 [$test]:"
-        $ECHO
-        $NOSETESTS -sdv $test
-    fi
-fi
-
+ARGS=$*
+python bin/testrunner -t unittest $ARGS
 exit $?
