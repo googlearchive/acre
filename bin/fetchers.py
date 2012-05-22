@@ -8,12 +8,19 @@ import sys
 import time
 import urllib
 import urllib2
+
+# I'll complain later if you really need these
 try:
-  # I'll complain later if you really need this
   from selenium import webdriver
   from selenium import common
 except ImportError:
   pass
+try:
+  # for python unittest driver, make sure acre root is in sys.path
+  import tests
+except ImportError:
+  pass
+
 # global socket timeout, seemed to help with a weird connection reset issue in appengine
 socket.setdefaulttimeout(260)
 
@@ -24,6 +31,9 @@ logger = logging.getLogger('tst')
 TEST_TIMEOUT = 240
 devel_host = os.environ["ACRE_FREEBASE_SITE_ADDR"]
 devel_port = os.environ["ACRE_FREEBASE_SITE_ADDR_PORT"]
+
+class TestRunnerException(Exception):
+  pass
 
 flakey_pattern = '(Time limit exceeded|Timeout while fetching|Cannot read property .+ from undefined)'
 class FlakeyBackendError(Exception):
@@ -56,9 +66,18 @@ def retry(ExceptionToCheck, tries=5, delay=2, backoff=2):
     return f_retry # true decorator
   return deco_retry
 
+def selenium_import_test():
+  try:
+    import selenium
+  except ImportError:
+    print "failed to import 'selenium' package, have you installed selenium (easy_install)?"
+    raise
+
 class QunitFetcher:
+  """This runs browser-side qunit tests using selenium, parses output."""
 
   def __init__(self, browser='chrome', selenium_rh=None):
+    selenium_import_test()
     self.drivers = []
     logger.debug('selenium remote: %s' % selenium_rh)
     if browser == 'firefox':
@@ -82,13 +101,26 @@ class QunitFetcher:
     self.driver.desired_capabilities.get('browserName'),
     self.driver.desired_capabilities.get('version'))
 
+  def set_module(self, app, test_path):
+    self.test_path = test_path
+    path = test_path.split("/")[3:]
+    last = path.pop()
+    self.module = re.split('(\?|.template\?)', last)[0]
+    if len(path) > 0:
+      self.pack = '/'.join(path)
+    else:
+      self.pack = app
+
   def quit(self):
     self.driver.quit()
 
   def cleanup(self):
     self.quit()
  
-  def fetchtest(self, pack, module, test_url):
+  def fetchtest(self):
+    test_url = self.test_path
+    pack = self.pack
+    module = self.module
     driver = self.driver
     try:
       driver.get(test_url)
@@ -126,9 +158,62 @@ class QunitFetcher:
       if failed > 0:
         failures += 1
         results[name] = ['FAIL', t.text.encode('utf-8')]
-    return [tests, failures, 0, results]
+    return [tests, failures, 0, 0, results]
+
+class UnittestFetcher:
+  """runs test_*py unittest files in the tests package."""
+
+  def __init__(self):
+    try:
+      import tests
+    except ImportError:
+      print "failed to import 'tests' package, make sure acre root is in sys.path"
+      raise
+
+  def quit(self):
+    pass
+
+  def cleanup(self):
+    pass
+ 
+  def set_module(self, app, test_path):
+    self.test_path = test_path
+    self.pack = app
+    self.module = test_path
+
+  def fetchtest(self):
+    """Run a python unittest.
+       see tests/__init__.py
+       unittest has the ability to take a module id in the form of
+       a string e.g. 'tests.acre_py_tests.test_console' and do the
+       importing and running required
+    """
+
+    testmod = self.module
+    pack = self.pack
+    fullmodule = 'tests.%s' % testmod
+    r=tests.AcreTestProgram(module=fullmodule, argv=['testrunner'])
+    results = {}
+    num_errors = 0
+    num_skips = 0
+    for fail in r.result.failures:
+      meth = str(fail[0]).split(' ')[0]
+      failure = str(fail[1])
+      results['%s.%s.%s' % (pack, testmod, meth)] = ['FAIL', failure]
+    for skp in r.result.skipped:
+      meth = str(skp[0]).split(' ')[0]
+      msg = str(skp[1])
+      results['%s.%s.%s' % (pack, testmod, meth)] = ['SKIP', msg]
+      num_skips += 1
+    for err in r.result.errors:
+      meth = str(err[0]).split(' ')[0]
+      error = str(err[1])
+      results['%s.%s.%s' % (pack, testmod, meth)] = ['ERROR', error]
+      num_errors += 1
+    return [r.result.testsRun, len(r.result.failures), num_skips,  num_errors, results]
 
 class AcreFetcher:
+  """This knows how to run qunit/acre tests and parse results."""
 
   def __init__(self, username=None, password=None, api_url=None):
     if not username: username = os.environ.get("FSTEST_USERNAME")
@@ -138,6 +223,16 @@ class AcreFetcher:
     self.password=password
     self.api_url=api_url
     #if username: self.login()
+
+  def set_module(self, app, test_path):
+    self.test_path = test_path
+    path = test_path.split("/")[3:]
+    last = path.pop()
+    self.module = re.split('(\?|.sjs\?)', last)[0]
+    if len(path) > 0:
+      self.pack = '/'.join(path)
+    else:
+      self.pack = app
 
   def login(self):
     username = self.username
@@ -170,9 +265,10 @@ class AcreFetcher:
   @retry(socket.error)
   # for test error that are identifiably due to flakey backends
   @retry(FlakeyBackendError)
-  def fetchtest(self, pack, module, test_url, last_retry=False):
+  def fetchtest(self, last_retry=False):
+    test_url = self.test_path
     data = self.fetch(test_url)
-    results = parse_json(pack, module, json.loads(data))
+    results = parse_json(self.pack, self.module, json.loads(data))
     if results[1] > 0:
       if re.search(flakey_pattern, data) and last_retry is False:
         raise FlakeyBackendError
@@ -207,4 +303,4 @@ def parse_json(pack, module, data):
        if not msg: msg = "fail but no message found"
        testout += "%s\n" % msg
      results[name] = ["FAIL", testout]
-  return tests, failures, skips, results
+  return tests, failures, skips, 0, results

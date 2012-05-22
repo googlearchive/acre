@@ -44,6 +44,24 @@ def testng_manifest(apps):
 
 # ---------------------------------------------------------------------------------
 
+def unittest_manifest(whitelist):
+  """Find any module named test_*py in tests to run python unittest tests."""
+
+  manifest = {}
+  os.chdir(base_path + '/' + 'tests')
+  fls = os.popen("find * -name test_*py").read().split('\n')
+  fls.pop()
+  for fl in fls:
+     parts = fl.split('/')
+     pack = '.'.join(parts[:len(parts)-1])
+     mod = pack + '.' + parts.pop().split('.py')[0]
+     if whitelist and pack not in whitelist: continue
+     if pack in manifest:
+       manifest[pack].append(mod)
+     else:
+       manifest[pack] = [mod]
+  return manifest
+ 
 def testfs_manifest(nomock, whitelist, test_type=False):
   params = '?output=flatjson'
   if nomock:
@@ -181,6 +199,8 @@ def main(argv=None):
     manifest = testfs_manifest(opts.nomock, args[1:], test_type='qunit')
   elif opts.test_type == 'testrf':
     manifest = testrf_manifest(opts.nomock, args[1:])
+  elif opts.test_type == 'unittest':
+    manifest = unittest_manifest(args[1:])
   else:
     print ('%s is not a valid test_type' % opts.test_type)
     sys.exit(1)

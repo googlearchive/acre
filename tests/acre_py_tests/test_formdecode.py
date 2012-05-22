@@ -1,4 +1,3 @@
-from acre_py_tests import *
 import re
 import urllib2
 try:
@@ -7,6 +6,9 @@ except ImportError:
     import json as simplejson
 from unittest import TestCase
 from urllib2 import HTTPError
+
+from __init__ import TestController
+from __init__ import tag
 
 class test_class(TestController):
 
