@@ -129,20 +129,22 @@ function augment(freebase, urlfetch, async_urlfetch) {
                 opts.callback = function(res) {
                     try {
                         var result = check_results(res, opts.check_results);
-                        callback(result);
+                        return callback(result);
                     } catch (e if errback) {
-                        errback(e);
+                        return errback(e);
                     }
                 };
             }
             if (errback) {
                 opts.errback = function(e) {
-                    if (!e.response) errback(e);
+                    if (!e.response) {
+                        return errback(e);
+                    }
                     try {
                         var result = check_results(e.response, opts.check_results);
-                        errback(result);
+                        return errback(result);
                     } catch(e) {
-                        errback(e);
+                        return errback(e);
                     }
                 };
             }
@@ -348,10 +350,10 @@ function augment(freebase, urlfetch, async_urlfetch) {
 
         if(callback) {
             fetch_opts.callback = function(res) {
-                callback(handle_get_user_info_success(res));
+                return callback(handle_get_user_info_success(res));
             };
             fetch_opts.errback = function(e) {
-                callback(handle_get_user_info_error(e));
+                return callback(handle_get_user_info_error(e));
             };
             return fetch(url, fetch_opts);
         } else {
@@ -506,7 +508,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
         if (options.callback) {
             var callback = options.callback;
             options.callback = function(topic){
-                callback(topic);
+                return callback(topic);
             };
             return topic(id,options);
         } else {
