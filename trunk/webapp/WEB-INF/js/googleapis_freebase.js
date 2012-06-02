@@ -310,13 +310,13 @@ function augment(freebase, urlfetch, async_urlfetch) {
         var fetch_opts = opts[1];
         var base_url = freebase.googleapis_url + "/user/info";
         var url = acre.form.build_url(base_url, api_opts);
-        fetch_opts.sign = true;
         fetch_opts.check_results = "freebase";
 
         // Enable specifying the provider so
         // different auth configurations can be used
         // i.e., writeuser
         var provider = api_opts.provider || "freebase";
+        fetch_opts.sign = provider.token_storage;
         delete api_opts.provider;
 
         // Refresh credentials if we have them,
@@ -336,7 +336,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
         }
 
         function handle_get_user_info_error(e) {
-            // remove the oauth cookies if the user credentials are no longer valid
+            // remove the oauth credentials if they are no longer valid
             if ((e.code == 401) || (e.code == 403)) {
                 acre.oauth.remove_credentials(provider);
             } else {
