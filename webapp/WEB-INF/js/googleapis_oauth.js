@@ -788,7 +788,7 @@ function getCredentials(url, token, consumer) {
     } else if (typeof token == "string") {
         token = [ token ];
     }
-    if (typeof token == "array") {
+    if (_u.isArray(token)) {
         storage = {};
         token.forEach(function(kind) {
             storage[kind] = true;
@@ -843,6 +843,7 @@ function getCredentials(url, token, consumer) {
     if (token) {
         credentials.token = token;
     }
+
     return credentials;
 }
 
