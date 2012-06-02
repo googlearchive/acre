@@ -316,7 +316,13 @@ function augment(freebase, urlfetch, async_urlfetch) {
         // different auth configurations can be used
         // i.e., writeuser
         var provider = api_opts.provider || "freebase";
-        fetch_opts.sign = provider.token_storage;
+        if (typeof provider === "string") {
+            provider = acre.oauth.providers[provider];
+            if (!_u.isPlainObject) {
+                throw new freebase.Error("get_user_info called with unknown provider name");
+            }
+        }
+        fetch_opts.sign = provider.token_storage || true;
         delete api_opts.provider;
 
         // Refresh credentials if we have them,
