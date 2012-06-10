@@ -28,7 +28,7 @@ test('acre.require no url',function() {
   this.file = "require";
   var result = acre.test.urlfetch();
   var msg = JSON.parse(result.body).message;
-  equal(msg, 'No URL provided');
+  equal(msg, 'No path provided');
 });
 
 test('acre.require noexist url',function() {
