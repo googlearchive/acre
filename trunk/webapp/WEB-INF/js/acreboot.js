@@ -2082,7 +2082,7 @@ Script.prototype.set_scope = function(scope) {
         }
 
         if (!path) {
-            throw new Error("No URL provided");
+            throw new Error("No path provided");
         }
 
         path = script.normalize_path(path, version);
