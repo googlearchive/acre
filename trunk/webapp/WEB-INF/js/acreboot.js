@@ -1090,7 +1090,14 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
     // this may add an Authorization: header
     if (sign) {
         try {
-            var signed = _u.isPlainObject(sign) ? oauth_sign(url, method, headers, content, sign) : oauth_sign(url, method, headers, content, null, sign);
+            var signed;
+            if (sign === true || _u.isPlainObject(sign)) {
+                // Freebase OAuth1 signing
+                signed = oauth_sign(url, method, headers, content, sign);
+            } else {
+                // googleapis OAuth2 signing
+                signed = oauth_sign(url, method, headers, content, null, sign);
+            }
         } catch (e if typeof errback !== 'undefined') { 
             errback(e);
             return null;
