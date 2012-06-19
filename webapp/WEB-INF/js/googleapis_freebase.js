@@ -318,10 +318,11 @@ function augment(freebase, urlfetch, async_urlfetch) {
         var provider = api_opts.provider || "freebase";
         if (typeof provider === "string") {
             provider = acre.oauth.providers[provider];
-            if (!_u.isPlainObject) {
-                throw new freebase.Error("get_user_info called with unknown provider name");
-            }
         }
+        if (!_u.isPlainObject(provider)) {
+            throw new freebase.Error("get_user_info called with invalid provider");
+        }
+
         fetch_opts.sign = provider.token_storage || true;
         delete api_opts.provider;
 
