@@ -240,7 +240,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
     /**
     *   Change the API backend in use for the rest of the request
     **/
-    freebase.site_host = _request.freebase_site_host;
+    freebase.site_host = _request.site_host;
     freebase.service_url = _request.freebase_service_url;
     freebase.googleapis = true;     // Hacky, but need some visible indicator
 

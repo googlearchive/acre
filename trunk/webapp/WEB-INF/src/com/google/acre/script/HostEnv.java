@@ -502,7 +502,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         if (ACRE_METAWEB_API_ADDR_PORT != 80) req.freebase_service_url += ":" + ACRE_METAWEB_API_ADDR_PORT;
         req.freebase_site_host = "http://" + ACRE_FREEBASE_SITE_ADDR;
         if (ACRE_FREEBASE_SITE_ADDR_PORT != 80) req.freebase_site_host += ":" + ACRE_FREEBASE_SITE_ADDR_PORT;
-        req.site_host = ACRE_SITE_HOST;
+        req.site_host = "http://" + ACRE_SITE_HOST;
         if (ACRE_SITE_HOST_PORT != 80) req.site_host += ":" + ACRE_SITE_HOST;
         req.googleapis_host = ACRE_GOOGLEAPIS_HOST;
         req.googleapis_key = ACRE_GOOGLEAPIS_KEY;
