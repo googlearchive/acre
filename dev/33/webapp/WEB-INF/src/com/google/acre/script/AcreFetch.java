@@ -196,6 +196,9 @@ public class AcreFetch extends JsConvertable {
         // we're not streaming the request so this should be a win.
         client.getParams().setParameter(AllClientPNames.TCP_NODELAY, true);
 
+        // reuse an existing socket if it is in TIME_WAIT state.
+        client.getParams().setParameter(AllClientPNames.SO_REUSEADDR, true);
+
         // set the encoding of our POST payloads to UTF-8
         client.getParams().setParameter(AllClientPNames.HTTP_CONTENT_CHARSET,
                                         "UTF-8");
