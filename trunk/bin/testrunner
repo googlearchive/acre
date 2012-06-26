@@ -15,11 +15,12 @@ logger = logging.getLogger('tst')
 
 base_path = os.path.split(os.path.abspath(os.path.join(__file__,'..')))[0]
 
-acre_host = os.environ["ACRE_HOST_BASE"]
-acre_port = os.environ["ACRE_PORT"]
-devel_host = os.environ["ACRE_FREEBASE_SITE_ADDR"]
-devel_port = os.environ["ACRE_FREEBASE_SITE_ADDR_PORT"]
-host_delimiter_path = os.environ["ACRE_HOST_DELIMITER_PATH"]
+acre_host = os.environ.get("ACRE_HOST_BASE")
+acre_port = os.environ.get("ACRE_PORT")
+devel_host = os.environ.get("ACRE_SITE_HOST")
+devel_port = os.environ.get("ACRE_SITE_PORT")
+if devel_port is None: devel_port = "80"
+host_delimiter_path = os.environ.get("ACRE_HOST_DELIMITER_PATH")
 
 # ---------------------------------------------------------------------------------
 
