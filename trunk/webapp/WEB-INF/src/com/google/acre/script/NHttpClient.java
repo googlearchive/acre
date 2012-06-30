@@ -456,7 +456,7 @@ public class NHttpClient {
                 public void run() {
                     try {
                         _reactor.execute(_dispatch); 
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         e.printStackTrace();
                         try {
                             _reactor.shutdown();
