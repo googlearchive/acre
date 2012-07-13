@@ -366,6 +366,7 @@ var augment;
         try {
             return _appengine_oauthservice.getCurrentUser(scope);
         } catch (e) {
+            syslog.warn(e);
             return null;
         }
     }

@@ -92,7 +92,7 @@ public class JSAppEngineOAuthService extends JSObject {
                 return jsonize(_oauthService.getCurrentUser(scope.toString()));
             }
         } catch (java.lang.Exception e) {
-            throw new JSConvertableException("Failed to obtain current user name: " + e.getMessage()).newJSException(_scope);
+            throw new JSConvertableException("Failed to obtain current user name: " + e.getMessage() + " [" + e.getClass().getSimpleName() + "]").newJSException(_scope);
         }
     }
     
