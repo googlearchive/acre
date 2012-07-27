@@ -260,6 +260,11 @@ public class AppEngineAsyncUrlfetch implements AsyncUrlfetch {
                             cookies.put(c.getName(), cookies, new AcreCookie(c).toJsObject(_scope));
                         }
                     } catch (MalformedCookieException e) {
+                        // we've occasionally choked on cookie-set,
+                        // e.g. www.google.com returning expires=; expires=Mon, 01-Jan-1990 00:00:00 GMT;
+                        // no solution but at least log exactly what's happening.
+                        String cookiestring = ch.toString();
+                        _logger.warn("urlfetch.response.async", "exception thrown on bad cookie " + cookiestring);
                         throw new RuntimeException(e);
                     }
                 }
