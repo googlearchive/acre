@@ -1,0 +1,83 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<title>All domains</title>
+<script type="text/javascript" src="../../mjt.js"></script>
+<script type="text/javascript" src="./util.js"></script>
+<link type="text/css" rel="stylesheet" href="chrome.css" />
+</head>
+
+<body onload="mjt.run('top')">
+
+<div id="top" style="display:none;"> 
+<h3>Categories and Domains</h3>
+<a href="all_domains_detail.html">[switch to detail view]</a> 
+    <div mjt.script="1">document.title='all domains';</div>
+    <div mjt.task="o">
+       mjt.freebase.MqlRead([{
+         "type":"/freebase/domain_category",
+         "name":null,
+         "id":null,
+         "domains":[{
+           "type":"/type/domain",
+           "id":null,
+           "name":null,
+           "types":[],
+           "owners":[{
+             "optional":true,
+             "name":null,
+             "id":null,
+             "member":[{
+               "optional":true,
+               "name":null,
+               "sort":"name",
+               "id":null,
+               "a:type":"/freebase/user_profile"
+             }]
+           }]
+         }]
+       }])
+    </div>
+
+    <table mjt.for="category in o.result" cellpadding="2">
+   
+      <tr><td>&nbsp;</td></tr>
+      <tr>
+        <td width="20"></td><td width="150" align="left"><b>$category.name</b>
+          <div mjt.script="">
+            function compareCounts(a,b) {
+              if (a.types.length &lt; b.types.length) return 1;
+              if (a.types.length &gt; b.types.length) return -1;
+              return 0;
+            }
+            category.domains.sort(compareCounts);
+          </div>
+        </td>
+        <td align="right"><b>types</b></td>
+        <td align="left">&nbsp;<b>key</b></td>
+        <td align="left"><b>admins</b></td>
+      </tr>
+      <tr mjt.for="domain in category.domains">
+        <td width="20">        
+        </td>
+        <td width="150" align="left">
+          <a href="domain.html?id=$domain.id">
+             $domain.name</a>
+        </td>     
+        <td align="right" width="30">
+          $domain.types.length
+        </td>
+        <td width="150" align="left">
+          &nbsp;$domain.id
+        </td>
+        <td><span mjt.for="owner in domain.owners">
+              <span mjt.for="i,member in owner.member"><span mjt.if="i &gt; 0">,</span><a href="http://www.freebase.com/view$member.id">
+                  $member.name</a></span></span></td>
+      </tr>
+    </table>
+</div>
+
+</body>
+</html>
