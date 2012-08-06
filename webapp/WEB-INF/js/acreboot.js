@@ -1228,7 +1228,7 @@ var _load_handler = function(scope, handler_name, handler_path) {
         if (!resolved_handler_path) {
           throw make_appfetch_error("Could not find handler: " + handler_path, APPFETCH_ERROR_APP);
         }
-        var sobj = proto_require(handler_path);
+        var sobj = proto_require(resolved_handler_path);
         handler = sobj.to_module().handler();
         handler.content_hash = sobj.content_hash;
         scope.acre.handlers[handler_name] = handler;
