@@ -10,6 +10,9 @@
 
     <property environment="env"/>
 
+    <defaultexcludes add="**/.git"/>
+    <defaultexcludes add="**/.git/**"/>
+
     <condition property="version" value="trunk">
         <not><isset property="version"/></not>
     </condition>
