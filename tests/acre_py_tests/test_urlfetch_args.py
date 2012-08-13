@@ -5,10 +5,10 @@ try:
 except ImportError:
     import json as simplejson
 
-from __init__ import TestController
+from __init__ import TestClass
 from __init__ import tag
 
-class test_class(TestController):
+class test_class(TestClass):
 
     @tag(bug=False, bugid="ACRE-210")
     def test_urlfetch_post_with_headers(self):

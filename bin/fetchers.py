@@ -8,16 +8,16 @@ import sys
 import time
 import urllib
 import urllib2
+import acreunit
+
+# Copyright 2012, Google Inc.
+# Licensed under the Apache V2.0 License. See:
+# http://code.google.com/p/acre/source/browse/trunk/LICENSE
 
 # I'll complain later if you really need these
 try:
   from selenium import webdriver
   from selenium import common
-except ImportError:
-  pass
-try:
-  # for python unittest driver, make sure acre root is in sys.path
-  import tests
 except ImportError:
   pass
 
@@ -70,7 +70,7 @@ def selenium_import_test():
   try:
     import selenium
   except ImportError:
-    print "failed to import 'selenium' package, have you installed selenium (easy_install)?"
+    print "failed to import 'selenium' package, have you installed selenium (e.g. 'easy_install selenium')?"
     raise
 
 class QunitFetcher:
@@ -102,6 +102,7 @@ class QunitFetcher:
     self.driver.desired_capabilities.get('version'))
 
   def set_module(self, app, test_path):
+    """parse the path into a standardized test id."""
     self.test_path = test_path
     path = test_path.split("/")[3:]
     last = path.pop()
@@ -117,7 +118,7 @@ class QunitFetcher:
   def cleanup(self):
     self.quit()
  
-  def fetchtest(self):
+  def run_test(self):
     test_url = self.test_path
     pack = self.pack
     module = self.module
@@ -125,10 +126,10 @@ class QunitFetcher:
     try:
       driver.get(test_url)
       # this should show up right away
-      container=driver.find_element_by_id('qunit-tests')
+      container = driver.find_element_by_id('qunit-tests')
       # this signifies all tests are done
       driver.implicitly_wait(TEST_TIMEOUT)
-      container=driver.find_element_by_id('qunit-testresult')
+      container = driver.find_element_by_id('qunit-testresult')
       driver.implicitly_wait(1)
     except common.exceptions.NoSuchElementException:
       body = driver.page_source
@@ -163,12 +164,9 @@ class QunitFetcher:
 class UnittestFetcher:
   """runs test_*py unittest files in the tests package."""
 
-  def __init__(self):
-    try:
-      import tests
-    except ImportError:
-      print "failed to import 'tests' package, make sure acre root is in sys.path"
-      raise
+  def __init__(self, browser='chrome', selenium_rh=None):
+    self.browser = browser
+    self.selenium_rh = selenium_rh
 
   def quit(self):
     pass
@@ -181,18 +179,17 @@ class UnittestFetcher:
     self.pack = app
     self.module = test_path
 
-  def fetchtest(self):
+  def run_test(self):
     """Run a python unittest.
-       see tests/__init__.py
+       see bin/acreunit.py
        unittest has the ability to take a module id in the form of
-       a string e.g. 'tests.acre_py_tests.test_console' and do the
+       a string e.g. 'acre_py_tests.test_console' and do the
        importing and running required
     """
 
     testmod = self.module
     pack = self.pack
-    fullmodule = 'tests.%s' % testmod
-    r=tests.AcreTestProgram(module=fullmodule, argv=['testrunner'])
+    r=acreunit.AcreTestProgram(module=testmod, argv=['testrunner'], browser=self.browser, selenium_rh=self.selenium_rh)
     results = {}
     num_errors = 0
     num_skips = 0
@@ -221,9 +218,9 @@ class AcreFetcher:
     if not username: username = os.environ.get("FSTEST_USERNAME")
     if not password: password = os.environ.get("FSTEST_PASSWORD")
     if not api_url: api_url = os.environ.get("ACRE_METAWEB_BASE_ADDR")
-    self.username=username
-    self.password=password
-    self.api_url=api_url
+    self.username = username
+    self.password = password
+    self.api_url = api_url
     #if username: self.login()
 
   def set_module(self, app, test_path):
@@ -267,7 +264,7 @@ class AcreFetcher:
   @retry(socket.error)
   # for test error that are identifiably due to flakey backends
   @retry(FlakeyBackendError)
-  def fetchtest(self, last_retry=False):
+  def run_test(self, last_retry=False):
     test_url = self.test_path
     data = self.fetch(test_url)
     results = parse_json(self.pack, self.module, json.loads(data))
@@ -291,18 +288,18 @@ def parse_json(pack, module, data):
   tests = int(data.get("total"))
   skips = int(data.get("skips"))
   for t in data['tests']:
-     name = "%s/%s:%s" % (pack, module, t['name'])
-     r = t.get("result")
-     if r == "pass": continue
-     testout = ""
-     if r.startswith("skip"):
+    name = "%s/%s:%s" % (pack, module, t['name'])
+    r = t.get("result")
+    if r == "pass": continue
+    testout = ""
+    if r.startswith("skip"):
       results[name] = ["SKIP", r]
       continue
-     for l in t['log']:
-       res = l.get('result')
-       msg = l.get('message')
-       if res is True: continue
-       if not msg: msg = "fail but no message found"
-       testout += "%s\n" % msg
-     results[name] = ["FAIL", testout]
+    for l in t['log']:
+      res = l.get('result')
+      msg = l.get('message')
+      if res is True: continue
+      if not msg: msg = "fail but no message found"
+      testout += "%s\n" % msg
+    results[name] = ["FAIL", testout]
   return tests, failures, skips, 0, results

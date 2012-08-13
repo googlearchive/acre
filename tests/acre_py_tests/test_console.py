@@ -5,10 +5,10 @@ except ImportError:
     import json as simplejson
 import re
 
-from __init__ import TestController
+from __init__ import TestClass
 from __init__ import tag
 
-class test_class(TestController):
+class test_class(TestClass):
     @tag(bug=False, bugid="ACRE-882")
     def test_console(self):
         self.set_acre_script("acre_console", domain="api.qatests.apps.freebase");

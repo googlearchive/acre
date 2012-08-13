@@ -2,10 +2,15 @@ import fetchers
 import os
 import re
 import sys
+import traceback
 import time
 import logging
 import json as simplejson
 logger = logging.getLogger('tst')
+
+# Copyright 2012, Google Inc.
+# Licensed under the Apache V2.0 License. See:
+# http://code.google.com/p/acre/source/browse/trunk/LICENSE
 
 class colors:
   OK  = '\033[92m'
@@ -18,7 +23,6 @@ acre_host = os.environ["ACRE_HOST_BASE"]
 acre_port = os.environ["ACRE_PORT"]
 
 def drive_apps(manifest, opts):
-  browser = opts.browser
   test_type = opts.test_type
   jsn = False
   color = True
@@ -34,9 +38,12 @@ def drive_apps(manifest, opts):
   starttime = time.time()
 
   if test_type == 'qunit':
-    tester = fetchers.QunitFetcher(browser=browser, selenium_rh=opts.selenium_rh)
+    tester = fetchers.QunitFetcher(browser=opts.browser, selenium_rh=opts.selenium_rh)
   elif test_type == 'unittest':
-    tester = fetchers.UnittestFetcher()
+    if opts.browser:
+      tester = fetchers.UnittestFetcher(browser=opts.browser, selenium_rh=opts.selenium_rh)
+    else:
+      tester = fetchers.UnittestFetcher()
   else:
     tester = fetchers.AcreFetcher()
   
@@ -50,7 +57,7 @@ def drive_apps(manifest, opts):
       tester.set_module(app, test_path)
       try:
         logger.debug('fetching url: %s' % test_path)
-        [tests, failures, skips, errors, results] = tester.fetchtest()
+        [tests, failures, skips, errors, results] = tester.run_test()
       except KeyboardInterrupt:
         raise
       except:
@@ -62,7 +69,7 @@ def drive_apps(manifest, opts):
           "%s/%s" % (tester.pack, tester.module):\
                    ["ERROR","exception running test: " +\
           test_path + " time elapsed: %2.3fs" % (time.time() - fetch_starttime) +\
-          " py_exception: %s %s" % sys.exc_info()[:2]]\
+          " py_exception: %s" % traceback.format_exc()]\
           }
 
       # add results

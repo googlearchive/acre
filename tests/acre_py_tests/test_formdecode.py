@@ -7,10 +7,10 @@ except ImportError:
 from unittest import TestCase
 from urllib2 import HTTPError
 
-from __init__ import TestController
+from __init__ import TestClass
 from __init__ import tag
 
-class test_class(TestController):
+class test_class(TestClass):
 
     @tag(bug=False, bugid="ACRE-662")
     def test_formdecode_simple(self):
