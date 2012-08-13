@@ -4,8 +4,7 @@
 
 # Normalize the current directory
 cd `dirname $0`/..
-# the driver can find python unittest packages in the tests dir
-export PYTHONPATH=$PYTHONPATH:`pwd`
+BASE=`pwd`
 
 ECHO="/bin/echo"
 
@@ -23,5 +22,6 @@ else
 fi
 
 ARGS=$*
-python bin/testrunner -t unittest $ARGS
+python bin/testrunner -t unittest -u $BASE/tests acre_py_tests
+
 exit $?

@@ -7,8 +7,11 @@ import urllib2
 import re
 import test_driver
 import logging
-
 from optparse import OptionParser
+
+# Copyright 2012, Google Inc.
+# Licensed under the Apache V2.0 License. See:
+# http://code.google.com/p/acre/source/browse/trunk/LICENSE
 
 logging.basicConfig()
 logger = logging.getLogger('tst')
@@ -45,22 +48,57 @@ def testng_manifest(apps):
 
 # ---------------------------------------------------------------------------------
 
-def unittest_manifest(whitelist):
-  """Find any module named test_*py in tests to run python unittest tests."""
+def unittest_manifest(unittest_basepath, tests=[]):
+  """Build a manifest of test packages or test files to run python unittest tests."""
 
+  def add_components(path):
+    components = path.split('/')
+    module = components.pop()
+    if module.endswith('.py'):
+      pack = components.pop()
+    else:
+      pack = module
+      module = None
+    parent = '/'.join(components)
+    pack_path = parent + '/' + pack
+    if not pack_path in sys.path:
+      sys.path.append(pack_path)
+    # also add the parent dir to sys.path
+    if not parent in sys.path:
+      sys.path.append(parent)
+    return pack, module
+
+  test_pat = re.compile('test_(.+)\.py$')
   manifest = {}
-  os.chdir(base_path + '/' + 'tests')
-  fls = os.popen("find * -name test_*py").read().split('\n')
-  fls.pop()
-  for fl in fls:
-     parts = fl.split('/')
-     pack = '.'.join(parts[:len(parts)-1])
-     mod = pack + '.' + parts.pop().split('.py')[0]
-     if whitelist and pack not in whitelist: continue
-     if pack in manifest:
-       manifest[pack].append(mod)
-     else:
-       manifest[pack] = [mod]
+  for tst in tests:
+    os.chdir(base_path)
+    p = unittest_basepath + '/' + tst
+    fls = []
+    realp = os.path.realpath(p)
+    if re.search(test_pat, realp):
+      # it's a test file
+      pack, module = add_components(realp)
+      fls.append(module)
+    else:
+      # it's a test module (containing test files)
+      pack, module = add_components(realp)
+      os.chdir(realp)
+      for f in os.listdir(realp):
+        if re.search(test_pat, f): fls.append(f)
+
+    for fl in fls:
+      mod = fl.replace('.py','')
+      if pack in manifest:
+        manifest[pack].append(mod)
+      else:
+        manifest[pack] = [mod] 
+  print 'Running the following pyunit tests:'
+  for k, v in manifest.iteritems():
+    sys.stdout.write('%s: ' % k)
+    for t in v:
+      sys.stdout.write('%s ' % t)
+    sys.stdout.write('\n')
+  sys.stdout.write('\n')
   return manifest
  
 def testfs_manifest(nomock, whitelist, test_type=False):
@@ -186,6 +224,7 @@ def main(argv=None):
   parser.add_option('-n',  dest='nocolor', action="store_true", help='disable test driver sans terminal colors')
   parser.add_option('-r',  dest='selenium_rh', help='selenium remote e.g. "http://localhost:4444/wd/hub"')
   parser.add_option('-b',  dest='browser', help='browser if running selenium tests', default='chrome')
+  parser.add_option('-u',  dest='unittest_basepath', help='base path of unittest test packages')
   parser.add_option('-t',  dest='test_type', help='tests to discover and run', default='testng')
   parser.add_option('-m',  dest='nomock', action="store_true", help='disable the default backend mockmode')
   (opts, args) = parser.parse_args(argv)
@@ -201,7 +240,7 @@ def main(argv=None):
   elif opts.test_type == 'testrf':
     manifest = testrf_manifest(opts.nomock, args[1:])
   elif opts.test_type == 'unittest':
-    manifest = unittest_manifest(args[1:])
+    manifest = unittest_manifest(opts.unittest_basepath, args[1:])
   else:
     print ('%s is not a valid test_type' % opts.test_type)
     sys.exit(1)

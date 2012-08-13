@@ -1,7 +1,6 @@
 """
 When the test runner finds and executes tests within this directory,
-this file will be loaded to setup the test environment. Tests
-are run using python nose (usually invoked with ./acre test)
+this file will be loaded to setup the test environment. 
 
 configuration comes in through os.environ, see config below
 
@@ -26,12 +25,11 @@ import socket
 socket.setdefaulttimeout(60)
 
 
-__all__ = ['TestController', 'tag']
+__all__ = ['TestClass', 'tag']
 
 here_dir = os.path.dirname(os.path.abspath(__file__))
 conf_file = here_dir + '/test.ini'
 
-from nose.tools import *
 
 def setup_context():
     """ 
@@ -65,7 +63,7 @@ class ExtraAsserts(TestCase):
         self.assert_(not value in array, msg or "value %s is in %r" % (value, array))
 
     def assert_(self, cond, msg=None):
-        return assert_true(cond, msg)
+        return self.assertTrue(cond, msg)
 
 def tag(**kwds):
    """ decorator that sets attributes on a function
@@ -88,7 +86,7 @@ class DevNull():
     def write(self, s):
         self.lines.append(s)
 
-class TestController(ExtraAsserts):
+class TestClass(ExtraAsserts):
 
     def tearDown(self):
         sys.stdout = self.real_stdout
@@ -748,87 +746,3 @@ class TestController(ExtraAsserts):
         print "timestamp created: %s" % app_name
         return app_name;
 
-
-def FileTester(f, line_tester, filter=None):
-    """
-    Creates a function that yields a new tester for each line. This is
-    nice for nose, because nose will run such a function and treat
-    each tester as a separate test.
-
-    line_tester can be any callable, including a class
-
-    filter is any callable that returns a non-True or non-False
-    value. So a filter can be as simple as 'lambda x: x' to just
-    return non-blank lines.
-    
-    Sample usage:
-
-    With a filename:
-    def check_mydata(one_line):
-        assert "data" in one_line
-        
-    test_mydata = FileTester("mydata.txt", check_mydata)
-
-    Using a filter. This one checks for non-blank lines:
-
-    test_mydata_stripped = FileTester("mydata.txt", check_mydata, lambda x: x.strip())
-
-    """
-
-    if isinstance(f, basestring):
-        f = file(f)
-
-    filename = getattr(f, 'name', None)
-    if filename is None:
-        # try really hard here - mostly we're just letting someone
-        # wrap a generator around a file, as in SimpleFileTester
-        # below. Maybe we eventually want to delve into recursive
-        # generators, but not now.
-        if hasattr(f, 'gi_frame'):
-            # look at function declaration for name of first argument
-            first_arg_name = f.gi_frame.f_code.co_varnames[0]
-
-            # now look in the local variables for the value of that argument
-            inner_file = f.gi_frame.f_locals[first_arg_name]
-
-            # finally, lets just assume that it is a file
-            
-            # perhaps we can/should recurse here to walk up a
-            # generator stack, but we've already worked pretty hard
-            filename = getattr(inner_file, 'name', None)
-            
-        
-    def run_test():
-        def test_line(line):
-            line_tester(line)
-
-        for line in f:
-            if filter and not filter(line):
-                continue
-
-            # update description so nose can print something
-            test_line.description = '%s: %s' % (filename, line)
-            yield test_line, line
-
-    return run_test
-
-def SimpleFileTester(f, line_tester):
-    """
-    This is a wrapper around FileTester which strips out "#" comments
-    and blank lines. Your line_tester function will only get non-blank
-    lines, with the comments stripped out.
-    """
-
-    # need to do the string->file conversion here because we need to
-    # examine each line of the file.
-    if isinstance(f, basestring):
-        f = file(f)
-        
-    def linefilter(f):
-        for line in f:
-            if '#' in line:
-                line = line[:line.index('#')]
-            line.rstrip()
-            yield line
-
-    return FileTester(linefilter(f), line_tester, lambda x: x)
