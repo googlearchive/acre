@@ -2141,6 +2141,10 @@ Script.prototype.to_module = function(scope) {
                         undefined;
     this._handler = _load_handler(this.scope, this.handler, handler_path);
 
+    if (typeof this._handler.augment_scope === "function") {
+        this._handler.augment_scope(this.scope, this);
+    }
+
     // let's make sure we don't end up with the cached compiled_js 
     // from a different file version or different handler
     var class_name = this.path;
