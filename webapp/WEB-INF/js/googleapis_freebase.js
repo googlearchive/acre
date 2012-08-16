@@ -1,5 +1,6 @@
 var _system_freebase;
 var URL_SIZE_LIMIT = 2047;
+var has_touched = false;
 var _cookie_opts = {
     path:'/',
     max_age: 86400
@@ -48,6 +49,13 @@ function augment(freebase, urlfetch, async_urlfetch) {
             } else {
                 api_opts[k] = options[k];
             }
+        }
+
+        // On shift-reload, or when explicitly requested, touch before making the first request
+        if ((api_opts.touch === true) ||
+            (!has_touched && acre.request.headers['cache-control'].indexOf("no-cache") !== -1)) {
+            has_touched = true;
+            freebase.touch();
         }
 
         // Add dateline to request if we have one in the cookie jar
@@ -281,19 +289,32 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Call the 'touch' api to reset the caches
     **/
     freebase.touch = function(options) {
-        var opts = decant_options(options);
-        var api_opts = opts[0];
-        var fetch_opts = opts[1];
+        options = options || {};
 
-        // TODO (JD) - We're missing a real dateline API
+        var q = {
+            "timestamp": null,
+            "sort": "-timestamp",
+            "limit": 1
+        }
+        // extra cache-busting by embedding timestamp in query
+        var tlabel = "t" + new Date().getTime() + ":guid"
+        q[tlabel] = null;
+
+        var res = freebase.mqlread(q).result;
+        var timestamp = acre.freebase.date_from_iso(res.timestamp).getTime();
+        var dateline = [timestamp, res[tlabel].substr(1)].join(",");
+
+        // set the dateline cookie
+        dateline_cj.set(_request.googleapis_freebase_version, dateline);
+
         var result = {
             status: "200 OK",
             code: "/api/status/ok",
-            result: null
+            dateline: dateline
         };
 
-        if (fetch_opts.callback) {
-          return fetch_opts.callback(result);
+        if (options.callback) {
+          return options.callback(result);
         } else {
           return result;
         }
