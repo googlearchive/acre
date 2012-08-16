@@ -1305,6 +1305,11 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
                 throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
             }
 
+            // skip nested apps
+            if (dir.has_metadata && (depth !== 0)) {
+                return;
+            }
+
             // skip empty subdirs
             if (dir) {
                 for (var f in dir.files) {
@@ -1485,7 +1490,8 @@ var disk_resolver = function(host) {
 var disk_inventory_path = function(app, disk_path) {
     var res = {
         dirs : {},
-        files : {}
+        files : {},
+        has_metadata : false
     };
 
     app.ttl = 0     // don't cache disk apps for now
@@ -1508,6 +1514,12 @@ var disk_inventory_path = function(app, disk_path) {
             file_data.content_hash = disk_path+"/"+file+f.mtime;
             res.files[file] = file_data;
         }
+
+        // keep track of whether path has a metadata file
+        if (file.split(".")[0] === _request.METADATA_FILE) {
+            res.has_metadata = true;
+        }
+
         delete f;
     });
     
