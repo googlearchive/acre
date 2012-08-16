@@ -11,7 +11,8 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
     var googlecode_json_inventory_path = function(app, resource, dir) {
         var res = {
             dirs : {},
-            files : {}
+            files : {},
+            has_metadata : false
         };
 
         var segs = resource.split("/");
@@ -52,11 +53,15 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
             var file_data = {
                 name: file
             };
-
             var revision = f[1];
             file_data.content_id = source_url + "/" + file + "?r=" + revision;
             file_data.content_hash = revision;
             res.files[file] = file_data;
+
+            // keep track of whether path has a metadata file
+            if (file.split(".")[0] === _request.METADATA_FILE) {
+                res.has_metadata = true;
+            }
         }
 
         for (var d in dir.subdirs) {

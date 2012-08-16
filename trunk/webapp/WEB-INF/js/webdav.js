@@ -49,7 +49,8 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
 
         var res = {
             dirs : {},
-            files : {}
+            files : {},
+            has_metadata : false
         };
 
         // fetch the directory listing
@@ -112,6 +113,11 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
                                      getNodeVal(prop, "D:getlastmodified")[1];
 
             res.files[file] = file_data;
+
+            // keep track of whether path has a metadata file
+            if (file.split(".")[0] === _request.METADATA_FILE) {
+                res.has_metadata = true;
+            }
         }
         return res;
     }
