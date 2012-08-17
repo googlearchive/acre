@@ -53,7 +53,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
 
         // On shift-reload, or when explicitly requested, touch before making the first request
         if ((api_opts.touch === true) ||
-            (!has_touched && acre.request.headers['cache-control'].indexOf("no-cache") !== -1)) {
+            (!has_touched && (typeof acre.request.headers['cache-control'] === "string") && (acre.request.headers['cache-control'].indexOf("no-cache") !== -1))) {
             has_touched = true;
             freebase.touch();
         }
