@@ -2025,16 +2025,15 @@ Script.prototype.set_scope = function(scope) {
         }
 
         var app = GET_METADATA_CACHE[host];
-        if (app) {
-            app = JSON.parse(app);
-        } else {
-          app = _u.extend(true, {}, app_md);
-          delete app.filenames;
-          for (var f in app.files) {
-              var ext_md = _u.get_extension_metadata(app.files[f].name, app.extensions);
-              app.files[f] = _u.extend({}, ext_md, app.files[f]);
-          }
-          GET_METADATA_CACHE[host] = JSON.stringify(app);
+        if (!app) {
+            // make a deep copy but avoid copying filenames
+            app = _u.clone(app_md, {"filenames":false});
+            for (var f in app.files) {
+                var ext_md = _u.get_extension_metadata(app.files[f].name, app.extensions);
+                app.files[f] = _u.extend({}, ext_md, app.files[f]);
+            }
+
+            GET_METADATA_CACHE[host] = app;
         }
 
         return (filename) ? app.files[filename] : app;
