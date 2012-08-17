@@ -127,7 +127,11 @@ public class AcreRequest extends JSConvertable {
         if (server.indexOf("jetty") > -1) {
             server_type = "acre_server";
         } else if (server.indexOf("app engine") > -1) {
-            server_type = "appengine";
+            if (server.indexOf("development") > -1) {
+                server_type = "appengine_development";
+            } else {
+                server_type = "appengine";
+            }
         } else {
             server_type = server;
         }
