@@ -1801,7 +1801,7 @@ function set_trusted_mode() {
     }
 
     // trusted scripts can access some appengine Java APIs from JS
-    if (_request.server_type == "appengine") {
+    if (_request.server_type.indexOf("appengine") == 0) {
         var appengine = script_scope.appengine = {};
 
         if (_datastore) {
@@ -1809,7 +1809,6 @@ function set_trusted_mode() {
             store_scope._datastore = _datastore;
             _hostenv.load_system_script('datastore.js', store_scope);
             store_scope.augment(appengine);
-            store_scope.augment(acre); // FIXME(SM): remove once refinery has transitioned
         }
 
 
@@ -1818,7 +1817,6 @@ function set_trusted_mode() {
             queue_scope._taskqueue = _taskqueue;
             _hostenv.load_system_script('taskqueue.js', queue_scope);
             queue_scope.augment(appengine);
-            queue_scope.augment(acre); // FIXME(SM): remove once refinery has transitioned
         }
 
 
@@ -1827,7 +1825,6 @@ function set_trusted_mode() {
             mailer_scope._mailer = _mailer;
             _hostenv.load_system_script('mailservice.js', mailer_scope);
             mailer_scope.augment(appengine);
-            mailer_scope.augment(acre); // FIXME(SM): remove once refinery has transitioned
         }
 
         if (_userService) {
