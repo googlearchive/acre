@@ -107,64 +107,24 @@ def testfs_manifest(nomock, whitelist, test_type=False):
     params += '&mock=0'
   else:
     params += '&mock=1'
-  url = "http://%s:%s/_fs_routing" % (devel_host, devel_port)
-  try:
-    response = urllib2.urlopen(url)
-  except:
-    sys.stderr.write("error fetching: %s\n" % url)
-    sys.stderr.write("perhaps you need to add %s to /etc/hosts?\n\n" % devel_host)
-    raise
-  data = json.loads(response.read())
-
-  apps = {}
-  for p in data['prefix']:
-    appurl = p.get('app')
-    prefix = p.get('prefix')
-    if appurl:
-      m = re.match('//([^\.]+)\.www[^\/]+(/.*$|$)', appurl)
-      if not m: continue
-      app = m.groups()[0]
-      path = app + m.groups()[1]
-      #
-      # Some routing rules have a script, need to key off of both
-      #
-      extra = ('/'+p.get('script')) if 'script' in p else ''
-      apps[path+extra] = prefix
-
   test_paths = {}
-  www_path = base_path + '/webapp/WEB-INF/scripts/googlecode/freebase-site/svn/trunk/www'
+  www_path = base_path + '/webapp/WEB-INF/scripts/googlecode/freebase-site/svn/trunk/www/test'
   os.chdir(www_path)
   if test_type == 'qunit':
     params = ''
     fls = os.popen("find . -name qunit*.template").read().split('\n')
   else:
-    fls = os.popen("find . -name test_*sjs").read().split('\n')
+    fls = os.popen("find . -name *.test").read().split('\n')
   manifest = {}
   for f in fls:
     if not f: break
-    tfile = f[2:].split('/')
-    tapp = tfile[0]
+    segs = f.split("/")
+    tapp = segs[1]
+    tpath = "/".join(segs[1:])
     if whitelist and tapp not in whitelist: continue
     if not manifest.get(tapp):
       manifest[tapp] = []
-    tpath = tfile[:len(tfile)-1]
-    fl = tfile[len(tfile)-1:][0]
-    i = len(tpath)
-    found = False
-    # start with an exact match then try the parent
-    while i > 0:
-      path = '/'.join(tpath[:i])
-      remainder = '/'
-      if len(tpath) > i:
-        remainder = '/' + '/'.join(tpath[i:]) + '/'
-
-      i = i - 1
-      if apps.get(path):
-        #print tpath, path
-        found = True
-        manifest[tapp].append("http://" + devel_host + ":" + devel_port + apps[path] + remainder + fl + params)
-        break
-    if not found: sys.stderr.write("WARN: did not find a route for: %s\n" % f)
+    manifest[tapp].append('http://' + devel_host + ':' + devel_port + '/test/' + tpath + params)
   logger.debug('retrieved test manifest:\n%s' % manifest)
   return manifest
 
