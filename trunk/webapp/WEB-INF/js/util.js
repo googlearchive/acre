@@ -1,6 +1,7 @@
 var exports = {
     parseUri: parseUri,
     extend: extend,
+    clone: clone,
     each: each,
     isArray: isArray,
     isPlainObject: isPlainObject,
@@ -116,6 +117,40 @@ function extend() {
     }
 
     return target;
+};
+
+function clone(a, blacklist) {
+  if (typeof a != "object") {
+    throw new Error("Can clone only objects or arrays.");
+  }
+
+  blacklist = blacklist || {};
+
+  var b = {};
+  for (var p in a) {
+    if (!a.hasOwnProperty(p)) continue;
+    if (p in blacklist) continue;
+
+    if (typeof a[p] == "object" && a[p] !== null) {
+      if (a[p] instanceof Array) {
+        var c = [];
+        for each (var i in a[p]) {
+          if (typeof i == "object" && i !== null) {
+            c.push(clone(i));
+          } else {
+            c.push(i);
+          }
+        }
+        b[p] = c;
+      } else {
+        b[p] = clone(a[p]);
+      }
+    } else {
+      b[p] = a[p];
+    }
+  }
+
+  return b;
 };
 
 function each(object, callback) {
