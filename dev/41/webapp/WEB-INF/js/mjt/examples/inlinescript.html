@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+
+<title>Invoking Mjt with an inline &lt;script&gt; tag</title>
+
+<style type="text/css">
+/* hide template code */
+.mjtinline {
+  display:none;
+}
+</style>
+
+</head>
+<body>
+
+<h2>Invoking Mjt with an inline &lt;script&gt; tag</h2>
+<div>
+This is an example of how to use <a href="../">Mjt</a> from inside
+a blog post, or in other situations where you can't put scripts in the
+document HEAD.
+</div>
+
+
+<h3>example 1</h3>
+this just expands <code>$mjt.VERSION</code>:
+<div class="mjtinline">
+  <script type="text/javascript" src="../mjtinline.js"></script>
+  <div style="border:1px solid black; padding:6px; margin: 6px;">
+    Mjt version $mjt.VERSION
+  </div>
+</div>
+
+
+<h3>example 2</h3>
+<div>
+  Thanks to
+  <a href="http://mikelove.wordpress.com/">Mike Love</a> for 
+  <a href="http://mikelove.wordpress.com/2007/06/22/mjt-on-the-way-to-freebase-widgits/">suggesting this example</a>.
+</div>
+
+<div class="mjtinline">
+  <script type="text/javascript" src="../mjtinline.js"></script>
+  <div mjt.def="influenced(name)">
+    <div mjt.task="q">
+      mjt.freebase.MqlRead({
+        name: name,
+        id: null,
+        type: '/influence/influence_node',
+        influenced: [{
+          date_of_birth: null,
+          id: null,
+          name: null,
+          type: '/people/person'
+        }]
+      })
+    </div>
+
+    <div mjt.choose="q.state">
+      <div mjt.when="ready">
+        <a href="http://www.freebase.com/view?id=${encodeURIComponent(q.result.id)}"
+           >$q.result.name</a> influenced:
+        <ul>
+          <li mjt.for="figure in q.result.influenced">
+            <a href="http://www.freebase.com/view?id=${encodeURIComponent(q.result.id)}">$figure.name</a>, $figure.date_of_birth
+          </li>
+        </ul>
+      </div>
+      <div mjt.when="wait">
+        <i>loading...</i>
+      </div>
+      <div mjt.when="error">
+        ERROR
+      </div>
+    </div>
+  </div>
+
+  <div style="border:1px solid black; padding:6px; margin: 6px;">
+    ${influenced("Georg Wilhelm Friedrich Hegel")}
+  </div>
+</div>
+
+
+</body>
+</html>

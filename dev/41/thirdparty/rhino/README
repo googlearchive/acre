@@ -1,0 +1,22 @@
+
+This directory contains the (possibly patched) rhino source code.
+
+to compile:
+
+	wget ftp://ftp.mozilla.org/pub/mozilla.org/js/rhino1_7R2.zip
+    unzip rhino1_7R2.zip
+    cd rhino
+    patch -p 1 < rhino-exception-catching.patch
+    ant jar
+    cp build/rhino*/js.jar ../../../webapp/WEB-INF/lib/rhino-1.7R2.jar
+
+
+Currently we are based on:
+ Rhino 1.7R2 
+
+with the following patches:
+ rhino-exception-catching.patch
+    this fixes https://bugs.freebase.com/browse/ACRE-960
+    and https://bugs.freebase.com/browse/ACRE-961
+
+Please update this README if you change the rhino distribution.
