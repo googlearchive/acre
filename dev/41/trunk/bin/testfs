@@ -1,0 +1,48 @@
+#!/bin/sh
+
+# this should be called with ./acre to pickup the environment vars 
+
+# Normalize the current directory
+cd `dirname $0`/..
+
+ECHO="/bin/echo"
+
+$ECHO
+
+$ECHO -n "CHECK: python availability... "
+python -V &> /dev/null
+RET=$?
+if [ $RET == 127 ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: These tests require 'python' to be in your path"
+    exit 1
+else
+    $ECHO "PASSED"
+fi
+
+URL="http://127.0.0.1:$ACRE_PORT/acre/status"
+$ECHO -n "CHECK: your local acre installation ($URL)... "
+RESP=`curl -s -S -m 5 $URL 2> /dev/null | grep "status: 200 OK"`
+if [ -z "$RESP" ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: local acre does not not seem to be running or reachable"
+    exit 1
+else
+    $ECHO "PASSED"
+fi
+
+URL="http://${ACRE_SITE_HOST}:${ACRE_SITE_HOST_PORT}/acre/status"
+$ECHO -n "CHECK: your local DNS configurations ($URL)... "
+RESP=`curl -s -S -m 5 $URL 2> /dev/null | grep "status: 200 OK"`
+if [ -z "$RESP" ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: $URL failed"
+    exit 1
+else
+    $ECHO "PASSED"
+fi
+
+$ECHO
+ARGS=$*
+python bin/testrunner -t testfs $ARGS
+exit $?

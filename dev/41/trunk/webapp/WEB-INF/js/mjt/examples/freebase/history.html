@@ -1,0 +1,315 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<link rel="stylesheet" href="../../style.css" type="text/css"></link>
+<title>freebase edit history</title>
+<script type="text/javascript" src="../../mjt.js"></script>
+<script type="text/javascript" src="../../rison.js"></script>
+
+
+<style type="text/css">
+tr.subject_row {
+}
+.subject_id {
+  border:1px solid black;
+  background-color: #eff;
+  font-size:+120%;
+}
+td.prop_id0 {
+  width:20em;
+  text-align:right;
+}
+td.prop_id1 {
+  width:8em;
+  font-weight:bold;
+}
+.edit_prop_value {
+   width:300px;
+}
+.edit_creator {
+   width:5em;
+}
+.edit_timestamp {
+   width:6em;
+}
+.prop_schema {
+}
+.prop_id {
+}
+
+</style>
+
+<script type="text/javascript">// <![CDATA[
+
+// from alecf's History query    
+    // giant concept query.
+    // this basically says:
+    // Give me all topics whose links have changed since this.since,
+    // including GUID and value.
+    // 
+    // along with it get:
+    //   - scope of left side and link
+    //   - type of the left side
+    //   - property name of the link
+window.mkquery = function() {
+  var query = {
+      limit: 21,
+
+      // left side
+      id: mjt.urlquery.node || null,
+      timestamp:null,
+      creator: null,
+      type: [],
+      name: null,
+      key: [{}],
+      sort:["-timestamp"],
+      "/type/reflect/any_master":[{
+	sort: "-link.timestamp",
+	link: { 
+	  timestamp: null,
+	  operation: null,
+	  valid: null,
+	  master_property: null,
+	  creator: mjt.urlquery.user||null
+	},
+	id: null,
+	type: [],
+	name: null,
+	key: [{}]
+      }],
+      "/type/reflect/any_value":[{
+	sort: "-link.timestamp",
+	link: { 
+	  timestamp: null,
+	  operation: null,
+	  valid: null,
+	  master_property: null,
+	  creator: mjt.urlquery.user||null
+	},
+	value: null,
+	type: null
+      }]
+  };
+
+  if (mjt.urlquery.since) {
+    query['/type/reflect/any_master'][0].link['timestamp>='] = mjt.urlquery.since;
+    query['/type/reflect/any_value'][0].link['timestamp>='] = mjt.urlquery.since;
+  }
+
+  return query;
+};
+
+
+
+//
+// clean up the mess made by use of /type/reflect and
+//  make a result look more like a normal query result.
+// the 'link' information goes into '%link' in the target.
+//
+window.clean_result = function (r) {
+    var rprops = {any_master:1,
+                  any_value:1};
+
+    for (var rpi in rprops) {
+        var rpk = '/type/reflect/' + rpi;
+        var ps = r[rpk];
+        delete r[rpk];
+
+        for (var i = 0; i < ps.length; i++) {
+            var p = ps[i];
+            var rd = {};
+            for (var pi in p) {
+                switch (pi) {
+                    case 'sort':
+                        break;
+                    case 'link':
+                        rd['%link'] = p.link
+                        break;
+                    default:
+                        rd[pi] = p[pi];
+                        break;
+                }
+            }
+
+            var propid = p.link.master_property;
+            if (rpi == 'any_reverse')
+                propid = '-' + propid;
+
+            if (propid in r) {
+                if (! r[propid] instanceof Array) {
+                    mjt.warn('history query overlapped with constraint query on ' + propid + ', use [] in query');
+                    r[propid] = [r[propid]];
+                }
+            } else {
+                r[propid] = [];
+            }
+            r[propid].push(rd);
+        }
+    }
+    return r;
+}
+
+//]]></script>
+
+
+</head>
+
+<body onload="mjt.run('top');">
+
+
+<div id="top" style="display:none;">
+
+  <span mjt.def="showtime(mqldate)" mjt.strip="1">
+    ${mjt.freebase.date_from_iso(mqldate).toLocaleTimeString()}
+  </span>
+
+  <span mjt.def="showlink(o, name)" mjt.choose="typeof(o)">
+    <span mjt.when="object">
+       <span mjt.script="">
+           if (typeof name != 'undefined')
+               ;
+           else if (typeof o.name != 'undefined')
+               name = o.name;
+           else if (typeof o.id != 'undefined')
+               name = o.id;
+           else if (typeof o.value != 'undefined')
+               name = o.value;
+           else 
+               name = '[unknown object]';
+  
+           var tid = o.id;
+           if (!tid &amp;&amp;  /* hack for /type/key */
+               typeof(o.namespace) == 'object' &amp;&amp; 
+               o.namespace.id) {
+               tid = o.namespace.id;
+           }
+       </span>
+
+       <a mjt.if="tid"
+          href="$mjt.service_url/view${mjt.formquote(tid)}"
+          >$name</a>
+       <span mjt.else=""
+          >$name</span>
+    </span>
+    <span mjt.when="string">
+       <span mjt.script="">
+           if (!name) name = o;
+       </span>
+       <a href="$mjt.service_url/view$o">$name</a>
+    </span>
+    <span mjt.otherwise="">
+        $o
+    </span>
+  </span>
+
+  <table mjt.def="showpage(subjects)">
+    <tr mjt.for="subject in subjects" class="subject_row">
+      <td>
+        <div class="subject_id">${showlink(subject)}</div>
+        <pre mjt.script="">
+          clean_result(subject);
+          /* flatten the "cleaned" result, which has a list
+           * for each prop id, into a single list */
+          var props = [], propvals;
+          for (var pid in subject) {
+              propvals = subject[pid];
+              if (pid.charAt(0) != '/')  /* avoid %link etc */
+                  continue;
+              props = props.concat(propvals);
+          }
+          var last_creator = '';
+          var last_timestamp = '';
+          var last_propid;
+          var last_proptype = '';
+          var last_propkey = '';
+        </pre>
+        <table>
+          <tr mjt.for="prop in props">
+            <td class="prop_id0">
+              <span mjt.script="">
+                var epropid = prop['%link'].master_property;
+                var eproptype = '';
+                var epropkey = '';
+                var m = /^(.*)\/([^\/]+)$/.exec(epropid);
+                if (m) {
+                    eproptype = m[1];
+                    epropkey = m[2];
+                }
+              </span>
+              <span mjt.if="epropid != last_propid">
+                <span mjt.if="eproptype &amp;&amp; eproptype != last_proptype"
+                      class="prop_schema">
+                  ${showlink(eproptype, eproptype)}/
+                </span>
+
+                <span mjt.if="!epropkey"
+                      class="prop_id">
+                  ${showlink(epropid)}
+                </span>
+              </span>
+            </td>
+            <td class="prop_id1">
+              <span mjt.if="epropid != last_propid &amp;&amp; epropkey"
+                    class="prop_key">
+                ${showlink(epropid, epropkey)}
+              </span>
+
+              <span mjt.script="">
+                last_propid = epropid;
+                last_proptype = eproptype;
+                last_propkey = epropkey;
+              </span>
+            </td>
+            <td class="edit_prop_value">
+              &larr; ${showlink(prop)}
+            </td>
+            <td class="edit_creator">
+              <span mjt.if="last_creator != prop['%link'].creator">
+                <span mjt.script="">
+                  last_creator = prop['%link'].creator;
+                </span>
+                ${showlink(last_creator)}
+              </span>
+            </td>
+            <td class="edit_timestamp">
+              <span mjt.if="last_timestamp != prop['%link'].timestamp">
+                <span mjt.script="">
+                  last_timestamp = prop['%link'].timestamp;
+                </span>
+                ${showtime(last_timestamp)}
+              </span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <pre mjt.task="q">
+    mjt.freebase.MqlRead([mkquery()])
+  </pre>
+
+  <h2>Recent edit history:</h2>
+
+  <div mjt.choose="q.state">
+    <div mjt.when="ready">
+      ${showpage(q.result)}
+    </div>
+
+    <div mjt.when="wait">loading...</div>
+    
+    <div mjt.when="error">
+      error:
+      <div mjt.for="msg in q.messages" style="padding-left:20px">
+        $msg.message
+        (${showlink(msg.code, 'help')})
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
