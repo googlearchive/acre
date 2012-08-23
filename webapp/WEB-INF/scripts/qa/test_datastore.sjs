@@ -693,7 +693,69 @@ if (typeof appengine != "undefined" && appengine.store) {
         ok(typeof result == 'undefined', "nothing was added");
         appengine.store.remove(key);
     });
-        
+
+    test('appengine.store sorting work', function() {
+        var counter = 10;
+        var keys = [];
+        for (var i = 0; i < counter; i++) {
+            var key = appengine.store.put({
+                "type" : "sort",
+                index : i
+            });
+            keys.push(key);
+        }
+
+        var result = appengine.store.find({
+            "type" : "sort",
+            "_sort_asc" : "index"
+        }).first();
+        equal(result.index, 0 , "ascending sorting works");
+
+        var result = appengine.store.find({
+            "type" : "sort",
+            "_sort_desc" : "index"
+        }).first();
+        equal(result.index, counter - 1 , "descending sorting works");
+
+        var result = appengine.store.find({
+            "type" : "sort",
+            "_" : {
+                "_sort_asc" : "creation_time"
+            }
+        }).first();
+        equal(result.index, 0 , "ascending sorting works on creation_time");
+
+        var result = appengine.store.find({
+            "type" : "sort",
+            "_" : {
+                "_sort_desc" : "creation_time"
+            }
+        }).first();
+        equal(result.index, counter - 1 , "descending sorting works on creation_time");
+
+        var result = appengine.store.find({
+            "type" : "sort",
+            "_" : {
+                "_sort_asc" : "last_modified_time"
+            }
+        }).first();
+        equal(result.index, 0 , "ascending sorting works on last_modified_time");
+
+        var obj = appengine.store.get(keys[4]);
+        obj.blah = "blah";
+        appengine.store.put(obj);
+
+        var result = appengine.store.find({
+            "type" : "sort",
+            "_" : {
+                "_sort_desc" : "last_modified_time"
+            }
+        }).first();
+        equal(result.index, 4 , "descending sorting works on last_modified_time");
+
+        appengine.store.remove(keys);
+    })
+
 }
 
 acre.test.report();

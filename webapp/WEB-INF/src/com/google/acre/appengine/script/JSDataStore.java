@@ -36,6 +36,7 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.FilterOperator;
+import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.appengine.api.datastore.Text;
 import com.google.appengine.api.datastore.Transaction;
 
@@ -195,6 +196,8 @@ public class JSDataStore extends JSObject {
     private final static String KEY = "key";
     private final static String CREATION_TIME = "creation_time";
     private final static String LAST_MODIFIED_TIME = "last_modified_time";
+    private final static String SORT_ASC = "_sort_asc";
+    private final static String SORT_DESC = "_sort_desc";
     
     public static Object extract(Entity entity, Scriptable scope) throws JSONException {
         Object json = entity.getProperty(JSON_PROPERTY);
@@ -352,7 +355,29 @@ public class JSDataStore extends JSObject {
                 
                 if (value instanceof String || value instanceof Boolean || value instanceof Number) {
                     if (METADATA.equals(context)) {
-                        throw new JSConvertableException("Sorry, metadata field '" + prop + "' does not exist.").newJSException(_scope);
+                        if (SORT_ASC.equals(prop)) {
+                            if (value.equals(CREATION_TIME)) {
+                                query.addSort(CREATION_TIME_PROPERTY, SortDirection.ASCENDING);
+                            } else if (value.equals(LAST_MODIFIED_TIME)) {
+                                query.addSort(CREATION_TIME_PROPERTY, SortDirection.ASCENDING);
+                            } else {
+                                throw new JSConvertableException("Sorry, can't sort on metadata field '" + value + "' as it does not exist.").newJSException(_scope);
+                            }
+                        } else if (SORT_DESC.equals(prop)) {
+                            if (value.equals(CREATION_TIME)) {
+                                query.addSort(CREATION_TIME_PROPERTY, SortDirection.DESCENDING);
+                            } else if (value.equals(LAST_MODIFIED_TIME)) {
+                                query.addSort(CREATION_TIME_PROPERTY, SortDirection.DESCENDING);
+                            } else {
+                                throw new JSConvertableException("Sorry, can't sort on metadata field '" + value + "' as it does not exist.").newJSException(_scope);
+                            }
+                        } else {
+                            throw new JSConvertableException("Sorry, metadata field '" + prop + "' does not exist.").newJSException(_scope);
+                        }
+                    } else if (SORT_ASC.equals(prop)) {
+                        query.addSort(path + value, SortDirection.ASCENDING);
+                    } else if (SORT_DESC.equals(prop)) {
+                        query.addSort(path + value, SortDirection.DESCENDING);
                     } else {
                         query.addFilter(path + prop, filterOperator, value);
                     }
