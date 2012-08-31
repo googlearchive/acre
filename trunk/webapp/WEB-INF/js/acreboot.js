@@ -1926,7 +1926,7 @@ Script.prototype.normalize_path = function(path, version, new_only) {
             while (path_segs.length) {
                 var mpath = path_segs.join("/");
                 if (mpath in this.app.mounts) {
-                    return this.app.mounts[mpath] + path.replace(mpath, "");
+                    return path.replace(mpath, this.app.mounts[mpath]);
                 }
                 path_segs.pop();
             }
