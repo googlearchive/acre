@@ -491,29 +491,37 @@ function augment(freebase, urlfetch, async_urlfetch) {
         var fetch_opts = opts[1];
 
         mode = mode || "plain";
-        var base_url = freebase.googleapis_url + "/text" + id;
+        var base_url = freebase.googleapis_url;
         switch (mode) {
+            case "raw":
+                base_url += "/image";
+                fetch_opts.check_results = "raw";
+                break;
             case "escaped":
             case "unsafe":
+                base_url += "/text";
                 api_opts.format = 'raw';
+                fetch_opts.check_results = "text-json";
                 break;
             case "blurb":
             case "plain":
+                base_url += "/text";
                 api_opts.format = 'plain';
+                fetch_opts.check_results = "text-json";
                 break;
-            case "raw":
             case "html":
+                base_url += "/text";
                 api_opts.format = 'html';
+                fetch_opts.check_results = "text-json";
                 break;
             default:
                 throw new Error("Invalid mode; must be 'html' or 'plain' or 'raw'");
         }
 
         // TODO -- this will get the callbacks
-        var url = acre.form.build_url(base_url, api_opts);
+        var url = acre.form.build_url(base_url + id, api_opts);
         fetch_opts.method = "GET";
-        fetch_opts.headers = {'X-Requested-With' : '1' },
-        fetch_opts.check_results = "text-json";
+        fetch_opts.headers = {'X-Requested-With' : '1' };
         return fetch(url, fetch_opts);
     };
 
