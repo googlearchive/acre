@@ -239,7 +239,7 @@ var augment;
     
     function key(k) {
         var appid = _request.app_project;
-        if (!appid) throw Error("appid can't be null or undefined");
+        if (!appid) console.error("Cache key '" + k + "' cannot be accessed because no project has been set.");
         return appid + ":" + k;
     }
 
@@ -249,7 +249,7 @@ var augment;
         // Removes the appid from a cache key.
         // Will turn <appid>:<cachekey> to <cachekey>.
         var appid = _request.app_project;
-        if (!appid) throw Error("appid can't be null or undefined");
+        if (!appid) console.error("Cache key '" + k + "' cannot be accessed because no project has been set.");
         return k.slice(appid.length+1);
 
     }
