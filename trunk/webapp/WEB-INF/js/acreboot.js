@@ -1942,6 +1942,11 @@ Script.prototype.set_scope = function(scope) {
         script_data = this.script_data,
         scope = scope || _make_scope(script_scope);
 
+    // we're dealing with a custon non-Acre scope
+    if (typeof scope.acre === 'undefined') {
+        throw "Scripts must be run in a scope created by Acre.";
+    }
+
     scope.acre.current_script = script.script_data;
 
     /**
