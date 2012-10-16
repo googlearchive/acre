@@ -160,7 +160,7 @@ public class AcreFetch extends JSConvertable {
         // NOTE: this is done *after* the user sets the headers to overwrite
         // whatever settings they might have tried to change for this value
         // (which could be a security hazard)
-        long sub_deadline = (HostEnv.LIMIT_EXECUTION_TIME) ? _deadline - HostEnv.SUBREQUEST_DEADLINE_ADVANCE : HostEnv.ACRE_URLFETCH_TIMEOUT;
+        long sub_deadline = (HostEnv.LIMIT_EXECUTION_TIME) ? _deadline - HostEnv.SUBREQUEST_DEADLINE_ADVANCE : System.currentTimeMillis() + HostEnv.ACRE_URLFETCH_TIMEOUT;
         int reentries = _reentries + 1;
         request_headers.put(HostEnv.ACRE_QUOTAS_HEADER, "td=" + sub_deadline + ",r=" + reentries);
         

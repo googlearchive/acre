@@ -50,6 +50,7 @@ class AppEngineClientConnection implements ManagedClientConnection {
     private HttpRoute _route;
     private Object _state;
     private boolean _reuseable;
+    double _deadline = 10d;
 
     public AppEngineClientConnection(HttpRoute route, Object state) {
         _route = route;
@@ -224,7 +225,7 @@ class AppEngineClientConnection implements ManagedClientConnection {
         }
 
         HTTPMethod method = HTTPMethod.valueOf(apache_request.getRequestLine().getMethod());
-        _appengine_hrequest = new HTTPRequest(request_url, method, allowTruncate().doNotFollowRedirects().setDeadline(10.0d));
+        _appengine_hrequest = new HTTPRequest(request_url, method, allowTruncate().doNotFollowRedirects().setDeadline(_deadline));
 
         Header[] apache_headers = apache_request.getAllHeaders();
         for (int i = 0; i < apache_headers.length; i++) {
@@ -244,7 +245,7 @@ class AppEngineClientConnection implements ManagedClientConnection {
     }
 
     public int getSocketTimeout()  {
-        return -1;
+        return (int) (_deadline * 1000d);
     }
 
     public boolean isOpen() {
@@ -256,7 +257,7 @@ class AppEngineClientConnection implements ManagedClientConnection {
     }
 
     public void setSocketTimeout(int timeout) {
-        return;
+        _deadline = ((double) timeout) / 1000d;
     }
 
     public void shutdown() {
