@@ -837,7 +837,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
         }
         
         // give the subrequest a shorter deadline so this request can handle any failure
-        long net_deadline = (LIMIT_EXECUTION_TIME) ? req._deadline - NETWORK_DEADLINE_ADVANCE : ACRE_URLFETCH_TIMEOUT;
+        long net_deadline = (LIMIT_EXECUTION_TIME) ? req._deadline - NETWORK_DEADLINE_ADVANCE : System.currentTimeMillis() + ACRE_URLFETCH_TIMEOUT;
 
         AcreFetch fetch = new AcreFetch(url, method, net_deadline, req._reentries, res, AcreFactory.getClientConnectionManager());
         
@@ -892,7 +892,7 @@ public class HostEnv extends ScriptableObject implements AnnotatedForJS {
 
         // if execution is limited, give the subrequest a shorter deadline so this request can
         // handle any failure
-        long timeout = (LIMIT_EXECUTION_TIME) ? req._deadline - NETWORK_DEADLINE_ADVANCE : ACRE_URLFETCH_TIMEOUT;
+        long timeout = (LIMIT_EXECUTION_TIME) ? req._deadline - NETWORK_DEADLINE_ADVANCE : System.currentTimeMillis() + ACRE_URLFETCH_TIMEOUT;
         
         if (!timeout_ms.isNaN() && timeout_ms.longValue() < timeout) {
         	timeout = timeout_ms.longValue();
