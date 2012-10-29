@@ -1,0 +1,260 @@
+
+============
+mjt.freebase
+============
+
+**Mjt.freebase** is a browser Javascript library for working with
+Freebase_.  
+
+This is a full-featured Freebase client library, with good coverage
+of the Freebase APIs and many helpful utility functions.
+
+Mjt.freebase provides:
+
+- Wrappers for most of the `Freebase Service API`_
+- service error checking
+- MQL key quoting and unquoting
+- MQL time format parsing and generation
+- asynchronous task management
+- robust JSONP with caching, timeouts, and cache-friendly callbacks
+- information about Freebase login status
+
+Mjt.freebase has been used to build the Freebaseapps `Application
+Editor`_, a full-featured in-browser development environment for
+server-side Javascript applications.
+
+Mjt.freebase can be used independently of the mjt Templating
+system or mjt.App framework.
+
+
+Tasks
+-----
+
+Mjt.freebase is layered on top of the mjt.Task asynchronous task
+framework, which provides timeouts and makes it easy to describe
+complex dependencies.  Some basic information is given here.  For more
+information, see the mjt.Task_ documentation.
+
+A newly created task starts life in **init** state::
+
+    var task = mjt.freebase.MqlRead({...});
+
+Once prepared, the task must be "enqueued" putting it in **wait** state::
+
+    task.enqueue();
+
+When the task completes it will move to **ready** or **error** state.
+Separate callbacks can be attached to handle success and failure::
+
+    task.onready(function (result) { ... });
+    task.onerror(function (code, msg, info) { ... });
+
+Most task operations can be chained for a more compact syntax::
+
+    var task = mjt.freebase.MqlRead({...})
+                   .enqueue()
+                   .onready(function (result) { ... })
+                   .onerror(function (code, msg, info) { ... });
+
+Security
+--------
+
+The Freebase data store contains user-contributed content, and
+developers should be careful not to execute any Javascript
+of unknown authorship.  Mjt.freebase was designed for use with
+the mjt.Template_ template system which offers good protection
+against cross-site scripting (XSS_) by quoting output when
+necessary.  If you are formatting your own output from freebase
+data, you should be careful to call **mjt.htmlencode()** as
+needed.
+
+
+JSONP services
+--------------
+
+Read access to Freebase is done using dynamic <script> tags and
+JSONP_ whenever possible.  This is a very fast form of I/O and
+allows queries from any webpage directly to Freebase.
+
+Queries too large to fit in a single URL may require XMLHttpRequest
+support, and mjt.freebase will attempt to fall back on that method.
+
+
+mjt.freebase.MqlRead(query, envelope)
+=====================================
+
+Wraps `api/service/mqlread`_.
+
+The result is a Javascript object that contains a property called "result" if the query was successful.
+
+* mql_query - The MQL query as a Javascript object.
+* envelope (optional) - Envelope parameters used by the query, (e.g., as_of_time, page).
+
+
+mjt.freebase.MqlReadMultiple()
+==============================
+
+Wraps `api/service/mqlread`_, but allows multiple MqlRead tasks
+to be combined into a single HTTP request.  Subtasks must be
+added before calling .enqueue()::
+
+  var read1 = mjt.freebase.MqlRead({... query 1 ... });
+  var read2 = mjt.freebase.MqlRead({... query 2 ... });
+  var reads = mjt.freebase.MqlReadMultiple()
+                  .mqlread(read1);
+                  .mqlread(read2);
+                  .enqueue();
+
+When the call completes, each of the subtasks will run its
+onready or onerror handlers.
+
+
+mjt.freebase.Touch()
+====================
+
+Wraps `api/service/touch`_.
+
+Updates the browser MWLastWriteTime cookie which is necessary for
+getting the latest content from other Freebase APIs. 
+
+Using this call will cause your Freebase queries to return fresher
+results, but your queries may run slower.  Use sparingly.
+
+
+mjt.freebase.TransGet(id, mode, options)
+========================================
+
+Wraps `api/trans/raw`_.
+
+Retrieves content from the content store given a document's ID.
+
+* id - The ID of the Blob to obtain.
+* mode - The retrieval mode, e.g. 'raw' or 'blurb'
+* options (optional) - Optional arguments passed to some retrieval modes.
+
+You can invoke `api/trans/blurb`_ using TransGet(doc_id, 'blurb');
+
+
+XMLHttpRequest services
+-----------------------
+
+Privileged services are only accessible in the browser using
+XMLHttpRequest, which imposes a `same origin`_ restriction.
+Only web pages hosted at freebase.com are able to write directly
+to the HTTP services hosted there.  Other applications must 
+provide a local HTTP proxy to the service entry points at
+http://api.freebase.com/api and configure mjt.freebase to 
+point to that proxy.
+
+Mjt.freebase uses the variable ``mjt.freebase.service_url``
+to generate API URLs.
+
+
+mjt.freebase.TransUnsafe(id)
+============================
+
+Wraps `api/trans/unsafe`_.
+
+The TransGet() API sanitizes HTML and other formats that may contain
+executable code.  If you absolutely need access to the raw data from
+a document, use TransUnsafe().  
+
+
+mjt.freebase.MqlWrite(query, envelope)
+======================================
+
+Wraps `api/service/mqlwrite`_.
+
+Performs a MQL write.
+
+* query - The MQL query as a Javascript object.
+* envelope (optional) - Envelope parameters used by the query.
+
+
+mjt.freebase.Upload(content, content_type, options)
+===================================================
+
+Uploads content to the content store.
+
+* content - The content to upload as a string.
+* content_type - The MIME type of the content.
+* options - Custom key/value options for the upload service
+
+
+Utilities
+---------
+
+mjt.freebase.date_from_iso(iso_date)
+====================================
+
+
+Converts an ISO8601 date string returned in MQL to Javascript Date object.
+Freebase uses a subset of ISO8601 dates, which are not handled
+natively by Javascript.
+
+* iso_date - The ISO8601 date/time string to parse (e.g., "2009-11-29").
+
+
+mjt.freebase.date_to_iso(date)
+==============================
+
+Converts a Javascript Date object to an ISO8601 date string usable in MQL.
+
+* date - The Javascript Date object to encode as an ISO8601 string.
+
+
+mjt.freebase.imgurl(id, maxwidth, maxheight, mode, errorid)
+===========================================================
+
+Returns a URL that can be used as the src attribute of an <img> tag.
+The generated url refers to `api/trans/image_thumb`_.
+
+* id - The ID of the image.
+* maxwidth - Maximum width of the image, in pixels.
+* maxheight - Maximum height of the image, in pixels.
+* mode - How to fit the image into the specified maximum dimensions by scaling and cropping.
+* errorid - Freebase ID of a topic or image that is the fallback in case the original cannot be thumbnailed.
+
+
+mjt.freebase.extend_query(mql_obj, overrides)
+=============================================
+
+Overlay new key/value pairs in the given obj into an existing query.
+
+* mql_obj - A MQL query as a Javascript object
+* overrides - A Javascript object whose properties are used to override properties in the MQL query.
+
+
+
+
+.. _api/service/mqlread: http://www.freebaseapps.com/docs/web_services/mqlread
+.. _api/service/search: http://www.freebaseapps.com/docs/web_services/search
+.. _api/trans/raw: http://www.freebaseapps.com/docs/web_services/trans_raw
+.. _api/trans/blurb: http://www.freebaseapps.com/docs/web_services/trans_blurb
+.. _api/trans/unsafe: http://www.freebaseapps.com/docs/web_services/trans_unsafe
+
+
+.. _api/service/touch: http://www.freebaseapps.com/docs/web_services/touch
+
+.. _api/service/login: http://www.freebaseapps.com/docs/web_services/login
+.. _api/service/logout: http://www.freebaseapps.com/docs/web_services/logout
+
+.. _api/service/user_info: http://www.freebaseapps.com/docs/web_services/user_info
+.. _api/service/mqlwrite: http://www.freebaseapps.com/docs/web_services/mqlwrite
+
+
+.. _api/trans/image_thumb: http://www.freebaseapps.com/docs/web_services/image_thumb
+.. _api/service/upload: http://www.freebaseapps.com/docs/web_services/upload
+
+
+.. _jsonp: http://en.wikipedia.org/wiki/JSON#JSONP
+.. _mjt: /
+.. _Application Editor: http://freebaseapps.com
+.. _mjt.Task: taskdoc.html
+.. _mjt.Template: doc/intro-tour.html
+.. _Freebase: http://www.freebaseapps.com/docs/
+.. _Freebase Service API: http://www.freebaseapps.com/docs/web_services
+
+.. _Acre: http://freebaseapps.com/
+.. _same origin: http://en.wikipedia.org/wiki/Same_origin_policy
+.. _XSS: http://en.wikipedia.org/wiki/Cross-site_scripting

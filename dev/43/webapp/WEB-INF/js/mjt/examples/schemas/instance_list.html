@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Instance list</title>
+<script type="text/javascript" src="../../mjt.js"></script>
+<script type="text/javascript" src="./util.js"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+
+
+<link type="text/css" rel="stylesheet" href="chrome.css" />
+</head>
+
+<body onload="mjt.run('top')">
+
+
+
+<div id="top" style="display:none;">
+    <div mjt.task="q">
+       mjt.freebase.MqlRead([{
+         "creator":null,
+         "limit":1000,
+         "name":null,
+         "id":null,
+         "sort":"-timestamp",
+         "timestamp":null,
+         "type":mjt.urlquery.id
+       }])     
+    </div>
+
+   <div mjt.if="q.result">
+    <table cellpadding="2">
+       <tr>
+         <th></th><th></th>
+         <th align="left">name</th>
+         <th align="left">creator</th>
+         <th align="left">created</th>
+       </tr>
+       <tr mjt.for="i in q.result">
+         <td></td>
+         <td width="20"></td>
+         <td>
+           <a href="$mjt.service_url/view$i.id">${i.name || '(unnamed)'}</a>
+         </td>
+         <td>
+           <a href="$mjt.service_url/view$i.creator">$i.creator</a>&nbsp;
+         </td>
+         <td align="left">
+            ${mjt.freebase.date_from_iso(i.timestamp).toLocaleDateString()}
+         </td>
+         <td align="left">
+           $i.timestamp
+         </td>
+       </tr>
+    </table>
+   </div>
+   <div mjt.else="">
+     no result
+   </div>
+</div>
+
+</body>
+</html>
