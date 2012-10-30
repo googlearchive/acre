@@ -22,9 +22,11 @@ function augment(freebase, urlfetch, async_urlfetch) {
 
     /**
     *   Cache API keys
+    *   Can't use acre.cache since it's not always available
     **/
+    var CACHED_KEYS = {}
     function get_api_key(kind) {
-        var key= acre.cache.request.get("KEY:" + kind);
+        var key= CACHED_KEYS[kind];
         if (!key) {
             var names = [];
             if (kind) {
@@ -35,7 +37,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
                 try {
                     key = acre.keystore.get(name)[0];
                     if (key) {
-                        acre.cache.request.put("KEY:" + kind, key);
+                        CACHED_KEYS[kind] = key;
                         return false;
                     }
                 } catch(e) {}
