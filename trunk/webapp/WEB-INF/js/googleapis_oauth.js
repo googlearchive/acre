@@ -766,9 +766,9 @@ function getConsumer(provider) {
                              "for provider '" + provider.name + "': " + e);
     }
     if (!key) {
-        throw new oauthError("Could not find the OAuth key " + 
-                             "for provider '" + provider.name + "' in the keystore. " + 
-                             "Have you added the key to the keystore yet?");
+        console.error("Could not find the OAuth key " + 
+                      "for provider '" + provider.name + "' in the keystore. " + 
+                      "Have you added the key to the keystore yet?");
     }
     return key;
 }

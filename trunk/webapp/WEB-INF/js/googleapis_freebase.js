@@ -21,6 +21,34 @@ function augment(freebase, urlfetch, async_urlfetch) {
     // ----------------------- internal helpers -----------------------------------
 
     /**
+    *   Cache API keys
+    **/
+    function get_api_key(kind) {
+        var key= acre.cache.request.get("KEY:" + kind);
+        if (!key) {
+            var names = [];
+            if (kind) {
+                names.push("googleapis_" + kind);
+            }
+            names.push("googleapis");
+            _u.each(names, function(i, name) {
+                try {
+                    key = acre.keystore.get(name)[0];
+                    if (key) {
+                        acre.cache.request.put("KEY:" + kind, key);
+                        return false;
+                    }
+                } catch(e) {}
+            });
+        }
+        if (!key) {
+            console.warn("Couldn't retrieve " + (kind ? kind + " " : "") + "key for freebase API calls");
+            key = null;
+        }
+        return key;
+    };
+
+    /**
     *   Separate out fetch options from api options;
     *   Also make sure we're not munging the original options object we were passed.
     **/
@@ -67,11 +95,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
 
         // Make sure all fetch requests have a key option
         if (!api_opts.key) {
-            try {
-                var api_key = acre.keystore.get('googleapis_server_side')[0];
-            } catch (e) {
-                console.warn("Couldn't retrieve server-side key for freebase API calls");
-            }
+            var api_key = get_api_key("server_side");
             if (api_key) api_opts.key = api_key;
         }
 
@@ -300,7 +324,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
         var tlabel = "t" + new Date().getTime() + ":guid"
         q[tlabel] = null;
 
-        var res = freebase.mqlread(q).result;
+        var res = freebase.mqlread(q, null, options).result;
         var timestamp = acre.freebase.date_from_iso(res.timestamp).getTime();
         var dateline = [timestamp, res[tlabel].substr(1)].join(",");
 
@@ -647,11 +671,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
         }
 
         var qstr = "";
-        try {
-            var key = acre.keystore.get('googleapis_client_side')[0];
-        } catch (e) {
-            console.warn("Couldn't retrieve client-side key for freebase image URLs");
-        }
+        var key = get_api_key("client_side");
         if (key) qstr += "key=" + key;
 
         for (var a in qargs) {
@@ -887,13 +907,15 @@ function host_to_namespace(host) {
 
 function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) {
 
-    var APPFETCH_ERROR_UNKNOWN = 1,
-    APPFETCH_ERROR_METHOD = 2,
-    APPFETCH_ERROR_APP = 3,
-    APPFETCH_ERROR_NOT_FOUND = 4,
-    APPFETCH_THUNK = 5;
+    var APPFETCH_ERROR_UNKNOWN = 1;
+    var APPFETCH_ERROR_METHOD = 2;
+    var APPFETCH_ERROR_APP = 3;
+    var APPFETCH_ERROR_NOT_FOUND = 4;
+    var APPFETCH_THUNK = 5;
 
-    var have_touched = false;
+    var api_opts = {
+        'key' : _request.googleapis_key
+    }
 
     var graph_resolver = function(host) {
         return host_to_namespace(host);
@@ -902,9 +924,9 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
     var graph_inventory_path  = function(app, namespace) {
         // get a new _mwLastWriteTime for the client so all
         // requests will also be fresh.
-        if (acre.request.skip_cache === true && have_touched === false) {
-            _system_freebase.touch({'key' : _request.googleapis_key });
-            have_touched = true;
+        if (acre.request.skip_cache === true && has_touched === false) {
+            has_touched = true;
+            _system_freebase.touch(api_opts);
         }
 
         var result = {
@@ -986,7 +1008,7 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
         }
 
         try {
-            var res = _system_freebase.mqlread(q, envelope, {'key' : _request.googleapis_key }).result;
+            var res = _system_freebase.mqlread(q, envelope, api_opts).result;
         } catch (e) {
             syslog.error(e, "appfetch.graph.mqlread.error");
             throw make_appfetch_error("Mqlread Error", APPFETCH_ERROR_METHOD, e);
@@ -1111,9 +1133,9 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
 
     var graph_get_content = function() {
         if (this.handler === 'binary') {
-            return _system_freebase.get_blob(this.content_id, 'raw', {'key' : _request.googleapis_key });
+            return _system_freebase.get_blob(this.content_id, 'raw', api_opts);
         } else {
-            return _system_freebase.get_blob(this.content_id, 'unsafe', { 'key' : _request.googleapis_key });
+            return _system_freebase.get_blob(this.content_id, 'unsafe', api_opts);
         }
     };
 
