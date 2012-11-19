@@ -6,7 +6,7 @@ except ImportError:
 from freebase.api import HTTPMetawebSession, MetawebError
 from freebase.api.session import urlencode_weak
 
-from mql_queries import uberquery
+import mql_queries
 
 class MetawebServicesBundle(HTTPMetawebSession):
     def __init__(self, me_server, acre_server=None, username=None, password=None):
@@ -47,5 +47,9 @@ class MetawebServicesBundle(HTTPMetawebSession):
         return resp['keys']
 
     def uberfetch_metadata(self, appid, asof=None):
-        q = uberquery(appid)
+        q = mql_queries.uberquery(appid)
         return self.mqlread(q, asof=asof)
+
+    def version_metadata(self, appid, version):
+        q = mql_queries.versions(appid + '/' + version)
+        return self.mqlread(q)

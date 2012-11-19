@@ -1,5 +1,12 @@
 null, true, false = None, True, False
 
+def versions(appid):
+    return {
+        "id": appid,
+        "type": "/freebase/apps/acre_app_version",
+        "as_of_time": null
+    }
+
 def uberquery(appid):
     return {
         "/freebase/apps/acre_app_version/acre_app" : {
