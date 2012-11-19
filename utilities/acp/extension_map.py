@@ -2,7 +2,7 @@ def invert_index(idx):
     out = {}
     for k,v in idx.iteritems():
         out[v] = k
-        
+
     return out
 
 FILE_TYPES = {

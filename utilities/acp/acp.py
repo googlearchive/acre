@@ -14,25 +14,25 @@ def usage():
 
 where the parameters are:
 
-    source - the acre app to be copied 
+    source - the acre app to be copied
     dest - the destination to copy the app to
-    
+
 The URL are of the form:
-    
+
     freebase://username:password@freebase_api_server/app_id
-    
+
 for example
 
     freebase://bob:secure@sandbox-freebase.com/user/bob/example
-    
+
 and the options mean:
 
     -u
         the username to use (if not specified in the URL)
-        
+
     -p
-        the password associated to the given username (if not specified in the URL) 
-        
+        the password associated to the given username (if not specified in the URL)
+
     -l
         don't do anything, just show what would occur (defaults to 'no')
 
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         in_app = urlparse.urlparse(leftover[0])
     except:
         error("%s is not a valid Acre app" % leftover[0])
-                
+
     try:
         out_app = urlparse.urlparse(leftover[1])
     except IndexError, e:
@@ -89,10 +89,10 @@ if __name__ == "__main__":
 
     if out_app.scheme != "" and out_app.scheme != "freebase":
         error("%s is not a valid acre URL" % leftover[1])
-        
+
     if in_app.scheme == "" and in_app.scheme == out_app.scheme:
         error("You must specify at least one URL")
-        
+
     if in_app.netloc:
         username = in_app.username or username
         password = in_app.password or password
@@ -104,8 +104,8 @@ if __name__ == "__main__":
         in_app.msb = MetawebServicesBundle(in_app.metadata['graph_host'], None,
                                     username, password)
 
-    # XXX out_app should preferbly be an instance of AcreApp, for now we use 	 
-    # this hack. 	 
+    # XXX out_app should preferbly be an instance of AcreApp, for now we use
+    # this hack.
     if out_app.scheme != 'freebase':
         in_app.to_disk(out_app.path, force)
     else:

@@ -143,7 +143,7 @@ class AcreApp(object):
                     print "content change in", f
                     if not list_only:
                         fi = in_files.get(f)
-                        res = msb.upload(fi['contents'], fi['content_type'], 
+                        res = msb.upload(fi['contents'], fi['content_type'],
                                          app_id+'/'+f, app_id)
                 elif c[0] == 'M':
                     print "change in property", c[1], "for file", f
@@ -151,7 +151,7 @@ class AcreApp(object):
                         fi = in_files.get(f)
                         q = update_property_query(app_id, f, fi['handler'])
                         res = msb.mqlwrite(q, use_permission_of=app_id);
-                    
+
         # if local but not in orig and not in remote, add to remote
         # if local and in orig but not in remote <merge notice>
         # if local and in orig and in remote <check blobs>
@@ -204,7 +204,7 @@ class AcreApp(object):
             output = file(os.path.join(directory, fn), 'w');
             output.write(f['contents'])
             output.close()
-        
+
 
         md = {}
         mfile = file(os.path.join(directory, '.metadata'), 'w')
@@ -256,7 +256,7 @@ class InGraphAcreApp(AcreApp):
             script = {'id':null, 'handler':null, 'content_type':null,
                       'content_id':null}
             f = a['namespace']
-            
+
             if not f or not f["doc:type"]:
                 continue
             script['id'] = f.id
@@ -276,7 +276,7 @@ class InGraphAcreApp(AcreApp):
 class OnDiskAcreApp(AcreApp):
     def __init__(self, directory, msb):
         super(OnDiskAcreApp, self).__init__(self._metadata(directory), msb)
-    
+
     def _metadata(self, directory):
         mdpath = os.path.join(directory, '.metadata')
         if not os.path.exists(mdpath):
@@ -314,4 +314,3 @@ class OnDiskAcreApp(AcreApp):
             metadata['files'][d['name']] = d
 
         return metadata
-
