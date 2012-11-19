@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+# Note(wdm) This script uses the old Freebase client library. You must have
+#           an old-style Freebase account with a password to use it.
+
 import os, sys, urlparse, getopt
 
 from metaweb_services import MetawebServicesBundle
@@ -10,7 +13,7 @@ def error(msg):
     sys.exit(1);
 
 def usage():
-    print >> sys.stderr, """Usage: %s [-u user] [-p password] [-f] [-l] [-i] source [dest]
+    print >> sys.stderr, """Usage: %s [OPTIONS] source [dest]
 
 where the parameters are:
 
@@ -25,13 +28,19 @@ for example
 
     freebase://bob:secure@sandbox-freebase.com/user/bob/example
 
-and the options mean:
+and the OPTIONS are:
 
     -u
         the username to use (if not specified in the URL)
 
     -p
         the password associated to the given username (if not specified in the URL)
+
+    -t
+        as_of_time timestamp to use when fetching from the graph (defaults to None)
+
+    -v
+        version of app to fetch from the graph (defaults to None)
 
     -l
         don't do anything, just show what would occur (defaults to 'no')
@@ -48,7 +57,7 @@ and the options mean:
 urlparse.uses_netloc.append('freebase')
 
 if __name__ == "__main__":
-    opts, leftover = getopt.getopt(sys.argv[1:], "ifhlu:p:")
+    opts, leftover = getopt.getopt(sys.argv[1:], "ifhlu:p:t:v:")
     if len(leftover) == 0 or len(leftover) > 2:
         usage()
         sys.exit(1)
@@ -57,6 +66,8 @@ if __name__ == "__main__":
     list_only = False
     username = None
     password = None
+    timestamp = None
+    version = None
     interactive = True
 
     for a in opts:
@@ -66,6 +77,10 @@ if __name__ == "__main__":
             username = a[1]
         elif a[0] == '-p':
             password = a[1]
+        elif a[0] == '-t':
+            timestamp = a[1]
+        elif a[0] == '-v':
+            version = a[1]
         elif a[0] == '-l':
             list_only = True
         elif a[0] == '-i':
@@ -97,7 +112,14 @@ if __name__ == "__main__":
         username = in_app.username or username
         password = in_app.password or password
         msb = MetawebServicesBundle(in_app.netloc, None, username, password)
-        in_app = InGraphAcreApp(in_app.path, msb)
+        if version:
+            if timestamp:
+                error("Cannot specify timestamp and version")
+            version_metadata = msb.version_metadata(in_app.path, version)
+            if not version_metadata:
+                error("App:%s does not have version:%s" % (in_app.path, version))
+            timestamp = version_metadata.as_of_time
+        in_app = InGraphAcreApp(in_app.path, msb, asof=timestamp)
     else:
         in_app = OnDiskAcreApp(in_app.path, None)
         #XXX: why was this here? in_app.metadata['graph_host'] = 'trunk.qa.metaweb.com'
