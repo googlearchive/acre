@@ -267,7 +267,7 @@ mjt.formencode = function(values) {
             qtext.push(sep);
             sep = '&';
             qtext.push(mjt.formquote(k));
-            if (lv) {
+            if (typeof lv !== 'undefined' && lv !== null) {
               qtext.push('=');
               qtext.push(mjt.formquote(lv));              
             }
