@@ -1,0 +1,125 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<script type="text/javascript" src="../../mjt.js"></script>
+<script type="text/javascript" src="./couchdb.js"></script>
+<title>couchdb databases</title>
+<script type="text/javascript">
+var couchdb = new mjt.services.CouchdbService(window.location.protocol + '//' + window.location.host + '/couchdb');
+</script>
+</head>
+<body onload="mjt.run()" style="display:none">
+
+
+<div mjt.def="createdb(name)">
+  <pre mjt.task="q">
+    couchdb.CreateDb(name)
+  </pre>
+
+  <div mjt.if="q.state == 'ready'">
+    created
+  </div>
+
+  <div mjt.if="q.state == 'wait'">
+    waiting...
+  </div>
+
+  <div mjt.if="q.state == 'error'">
+    <div mjt.for="msg in q.messages">
+      <a href="apiref?message=$msg.code">$msg.message</a>
+    </div>
+  </div>
+</div>
+
+
+<span mjt.def="showdbname(name)">
+    <!-- db.html?db=${mjt.formquote(q.result.db_name)} -->
+    <a href="#"
+       mjt.onclick="mjt.run('dbinfo', showdb, [name]); return false;"
+       >$name</a>
+</span>
+
+
+<div mjt.def="showdb(name)">
+  <pre mjt.task="q">
+    couchdb.GetDb(name)
+  </pre>
+  <pre mjt.task="docs">
+    couchdb.AllDocs(name)
+  </pre>
+
+  <div mjt.if="q.state == 'ready'">
+    <a href="db.html?db=${mjt.formquote(q.result.db_name)}">$q.result.db_name</a>
+    - $q.result.doc_count row(s)
+    - update_seq=$q.result.update_seq
+  </div>
+
+  <div mjt.if="q.state == 'error'">
+    <div mjt.for="msg in q.messages">
+      $msg.code: $msg.message
+    </div>
+  </div>
+
+
+  <div mjt.if="docs.state == 'ready'">
+    $docs.result.total_rows rows:
+    <div mjt.for="doc in docs.result.rows">
+${mjt.warn(doc)}
+      $doc
+    </div>
+  </div>
+
+  <div mjt.if="docs.state == 'error'">
+    <div mjt.for="msg in docs.messages">
+      $msg.code: $msg.message
+    </div>
+  </div>
+</div>
+
+
+
+<div mjt.def="alldbs()">
+  <pre mjt.task="q">
+    couchdb.AllDbs()
+  </pre>
+  
+  <div mjt.if="q.state == 'ready'">
+    <table><tr>
+    <td mjt.if="q.result.length > 0">
+      databases: 
+    </td>
+    <td mjt.else="">
+      no databases yet
+    </td>
+    <td mjt.for="db in q.result">
+      ${showdbname(db)} |
+    </td>
+    <td>
+      <input id="createdb_name" type="text" size="20" value="testdb">
+      </input>
+      <button mjt.onclick="mjt.run('action_log', createdb, [document.getElementById('createdb_name').value])">create db</button>
+    </td>
+    <td>
+      <div id="action_log"></div>
+    </td>
+    </tr></table>
+  </div>
+
+  <div mjt.if="q.state == 'error'">
+    error fetching database list:
+    <div mjt.for="msg in q.messages">
+      $msg.code: $msg.message
+    </div>
+  </div>
+</div>
+
+
+couchdb on $couchdb.service_url
+${alldbs()}
+
+<div id="dbinfo">
+</div>
+
+</body></html>
