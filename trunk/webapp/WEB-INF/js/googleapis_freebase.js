@@ -279,7 +279,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
     freebase.googleapis = true;     // Hacky, but need some visible indicator
 
     //XXX (JD) - remove freebase.googleapis_url once freebase-site updated
-    freebase.googleapis_url = _request.googleapis_host + 
+    freebase.googleapis_url = _request.googleapis_host +
         "/freebase/" + _request.googleapis_freebase_version;
     freebase.googleapis_rpc = _request.googleapis_rpc;
     freebase.googleapis_freebase_version = _request.googleapis_freebase_version;
@@ -321,12 +321,13 @@ function augment(freebase, urlfetch, async_urlfetch) {
             "timestamp": null,
             "sort": "-timestamp",
             "limit": 1
-        }
+        };
         // extra cache-busting by embedding timestamp in query
-        var tlabel = "t" + new Date().getTime() + ":guid"
+        var tlabel = "t" + new Date().getTime() + ":guid";
         q[tlabel] = null;
 
-        var res = freebase.mqlread(q, null, options).result;
+        // do synchronous MQL request
+        var res = freebase.mqlread(q).result;
         var timestamp = acre.freebase.date_from_iso(res.timestamp).getTime();
         var dateline = [timestamp, res[tlabel].substr(1)].join(",");
 
@@ -696,7 +697,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
 
     /**
      *  Get multiple topics from the Topic API using JSON-RPC
-     * 
+     *
      **/
     freebase.get_topic_multi = function(ids, options) {
         if (!_u.isArray(ids)) {
@@ -739,14 +740,14 @@ function augment(freebase, urlfetch, async_urlfetch) {
         fetch_opts.headers = fetch_opts.headers || {};
         fetch_opts.headers["content-type"] = "application/json";
         fetch_opts.content = JSON.stringify(requests);
-        // JSON-RPC always needs to be a POST and 
+        // JSON-RPC always needs to be a POST and
         // is not state changing (aka safe request)
-        fetch_opts.bless = true;  
+        fetch_opts.bless = true;
         return fetch(base_url, fetch_opts);
     };
 
     /**
-     * When using get_topic_multi (JSON-RPC) we need to adhere 
+     * When using get_topic_multi (JSON-RPC) we need to adhere
      * to Topic API's spec for the type of the parameter value.
      */
     freebase.get_topic_multi.PARAM_SPEC = {
@@ -755,7 +756,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
         filter: Array,
         limit: Number,
         dateline: String,
-        alldata: Boolean    
+        alldata: Boolean
     };
 
 
