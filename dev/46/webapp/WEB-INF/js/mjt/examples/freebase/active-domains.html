@@ -1,0 +1,719 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title>Freebase Domain Activity Report</title>
+    <meta http-equiv="Content-Type"
+      content="text/html; charset=utf-8" />
+    <script type="text/javascript" src="../../mjt.js"></script>
+    <script type="text/javascript">
+      // we link back to ourself a lot
+      var filename = "active-domains.html";
+
+      // the base title may change from time to time
+      var freebase_title = "Freebase - The World's Database";
+
+      // generate a flexible link from an ID
+      function href_from_id( mwid ) {
+          return mjt.service_url + "/view" + mwid;
+      };
+
+      // we have to turn a query inside-out to avoid timeouts
+
+      // result with recently-edited properties
+      function collate_editprops( result ) {
+          var sorted = Array();
+          for ( var linkidx = 0 ;
+                result.length > linkidx ;
+                linkidx++ ) {
+              link = result[linkidx];
+              prop = link.master_property;
+              type = prop.schema;
+              domain = type.domain;
+
+              newdom = null;
+              for ( var domidx = 0 ;
+                    sorted.length > domidx ;
+                    domidx++ ) {
+                  if ( sorted[domidx].id == domain.id ) {
+                      newdom = sorted[domidx];
+                      break;
+                  }
+              }
+              if ( newdom == null ) {
+                  if ( 10 > sorted.length ) {
+                      newdom = domain;
+                      newdom.types = [];
+                      sorted.push( newdom );
+                  }
+              }
+              if ( newdom != null ) {
+                  newtype = null;
+                  for ( var typeidx = 0 ;
+                        newdom.types.length > typeidx ;
+                        typeidx++ ) {
+                      if ( newdom.types[typeidx].id == type.id ) {
+                          newtype = newdom.types[typeidx];
+                          break;
+                      }
+                  }
+                  if ( newtype == null ) {
+                      if ( 3 > newdom.types.length ) {
+                          newtype = {
+                                      "id" : type.id,
+                                      "name" : type.name,
+                                      "properties" : []
+                                    }
+                          newdom.types.push( newtype );
+                      }
+                  }
+                  if ( newtype != null ) {
+                      newprop = null;
+                      for ( var propidx = 0 ;
+                            newtype.properties.length > propidx ;
+                            propidx++ ) {
+                          if ( newtype.properties[propidx].id ==
+                               prop.id ) {
+                              newprop = newtype.properties[propidx];
+                              break;
+                          }
+                      }
+                      if ( newprop == null ) {
+                          if ( 3 > newtype.properties.length ) {
+                              newprop = {
+                                          "id" : prop.id,
+                                          "links" : [],
+                                          "name" : prop.name
+                                        }
+                              newtype.properties.push( newprop );
+                          }
+                      }
+                      if ( newprop != null ) {
+                          if ( 3 > newprop.links.length ) {
+                              newprop.links.push( {
+                                                    "source" :
+                                                      link.source,
+                                                    "timestamp" :
+                                                      link.timestamp
+                                                  } );
+                          }
+                      }
+                  }
+              }
+          }
+          return sorted;
+      }
+    </script>
+    <!-- Christopher R. Maden
+         <crism@metaweb.com>
+         Copyright © 2007–2008 Metaweb Technologies, Inc.
+         All rights reserved.
+         Redistribution and use in source and binary forms, with or
+         without modification, are permitted provided that the
+         following conditions are met:
+         ∙ Redistributions of source code must retain the above
+           copyright notice, this list of conditions and the following
+           disclaimer.
+         ∙ Redistributions in binary form must reproduce the above
+           copyright notice, this list of conditions and the following
+           disclaimer in the documentation and/or other materials
+           provided with the distribution.
+         THIS SOFTWARE IS PROVIDED BY METAWEB TECHNOLOGIES “AS IS” AND
+         ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+         TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+         A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL
+         METAWEB TECHNOLOGIES BE LIABLE FOR ANY DIRECT, INDIRECT,
+         INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+         (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+         GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+         INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+         WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+         NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+         THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+         DAMAGE.
+    -->
+    <style type="text/css">
+      .domain        { border-top: thin solid silver; }
+      .footer        { border-top: thin solid; font-size: 80%; }
+      .nav           { border-bottom: thin solid; font-size: 80%; }
+      table          { border-collapse: collapse; }
+      td, th         { padding: 0.2em; }
+      td p, th p     { margin: 0.2em; }
+    </style>
+  </head>
+  <body onload="mjt.run()" style="display: none;">
+    <span mjt.def="name_object( obj )"><span
+        mjt.if="obj.name">$obj.name</span><span
+        mjt.else="">None</span></span>
+    <span mjt.def="topic_link( obj, label )"><span mjt.if="obj.id"
+        mjt.strip="true"><a href="${href_from_id( obj.id )}"
+          title="$obj.name : $freebase_title"
+          mjt.if="obj.name">$label</a><a
+          href="${href_from_id( obj.id )}"
+          title="None : $freebase_title"
+          mjt.else="">$label</a></span><span
+        mjt.else="">$label</span></span>
+    <span mjt.def="show_int( value )"><span
+        mjt.if="value">$value</span><span mjt.else="">0</span></span>
+    <span mjt.def="showdate( mqldate )">
+      <span>${mjt.freebase.date_from_iso(mqldate).toLocaleString()}</span>
+    </span>
+    <div class="nav">
+      <ul>
+        <li mjt.if="( 'action' in mjt.urlquery &amp;&amp;
+          mjt.urlquery.action != 'createtype' ) ||
+          'id' in mjt.urlquery"><a
+            href="$filename?action=createtype">Recently created
+            types</a></li>
+        <li mjt.if="mjt.urlquery.action != 'createprop'"><a
+            href="$filename?action=createprop">Recently created
+            properties</a></li>
+        <li mjt.if="mjt.urlquery.action != 'editprop'"><a
+            href="$filename?action=editprop">Recently edited
+            properties</a></li>
+        <li mjt.if="mjt.urlquery.action != 'usetype'"><a
+            href="$filename?action=usetype">Recently used
+            types</a></li>
+        <li mjt.if="mjt.urlquery.action != 'useprop'"><a
+            href="$filename?action=useprop">Recently used
+            properties</a></li>
+      </ul>
+    </div>
+    <div class="body" mjt.if="mjt.urlquery.id">
+      <div mjt.task="fulldomain">
+        mjt.freebase.MqlRead( {
+                                "id" : mjt.urlquery.id,
+                                "name" : null,
+                                "owners" : {
+                                  "member" : [
+                                    {
+                                      "id" : null,
+                                      "name" : null
+                                    }
+                                  ]
+                                },
+                                "type" : "/type/domain",
+                                "types" : [
+                                  {
+                                    "id" : null,
+                                    "c:instance" : [
+                                      {
+                                        "optional" : true,
+                                        "return" : "count"
+                                      }
+                                    ],
+                                    "t:instance" : [
+                                      {
+                                        "id" : null,
+                                        "limit" : 3,
+                                        "link" : {
+                                          "timestamp" : null
+                                        },
+                                        "name" : null,
+                                        "optional" : true,
+                                        "sort" : "-link.timestamp"
+                                      }
+                                    ],
+                                    "link" : {
+                                      "timestamp" : null
+                                    },
+                                    "name" : null,
+                                    "properties" : [
+                                      {
+                                        "expected_type" : {
+                                          "id" : null,
+                                          "link" : {
+                                            "timestamp" : null
+                                          },
+                                          "name" : null,
+                                          "optional" : true
+                                        },
+                                        "id" : null,
+                                        "link" : {
+                                          "timestamp" : null
+                                        },
+                                        "name" : null,
+                                        "optional" : true,
+                                        "sort" : [
+                                          "-expected_type.link.timestamp",
+                                          "-link.timestamp"
+                                        ]
+                                      }
+                                    ],
+                                    "sort" : [
+                                      "-properties.expected_type.link.timestamp",
+                                      "-properties.link.timestamp",
+                                      "-t:instance.link.timestamp",
+                                      "-link.timestamp"
+                                    ]
+                                  }
+                                ]
+                              } )
+      </div>
+      <div mjt.choose="fulldomain.state">
+        <div mjt.when="ready" mjt.strip="true">
+          <h1>Full Activity Report for Domain
+            “${name_object( fulldomain.result )}”</h1>
+          <p>All types; most recent ECT changes listed first.</p>
+          <p>Owners: <span mjt.for="user in
+              fulldomain.result.owners.member">${topic_link( user,
+              name_object( user ) )}; </span>updated ${showdate(
+            fulldomain.result.types[0].link.timestamp )}</p>
+          <div class="domain"
+            mjt.for="type in fulldomain.result.types">
+            <h2>${topic_link( type, name_object( type ) )}</h2>
+            <p>New ${showdate( type.link.timestamp )}</p>
+            <p>${show_int( type["c:instance"] )} instance(s):
+              <span mjt.for="inst in type['t:instance']">${topic_link(
+                inst, name_object( inst ) )}
+                (${showdate( inst.link.timestamp )}); </span></p>
+            <h3>Properties</h3>
+            <ul>
+              <li mjt.for="prop in type.properties">
+                <p>${topic_link( prop, name_object( prop ) )}<br
+                    />Created ${showdate( prop.link.timestamp )}<br
+                    />ECT ${topic_link( prop.expected_type,
+                  name_object( prop.expected_type ) )}; changed
+                  ${showdate( prop.expected_type.link.timestamp )}</p>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div mjt.when="error" mjt.strip="true">
+          <p>Error!</p>
+          <div mjt.for="msg in fulldomain.messages">
+            <pre>$msg.message</pre>
+          </div>
+        </div>
+        <div mjt.when="wait" mjt.strip="true">
+          <p>Loading; please wait…</p>
+        </div>
+      </div>
+    </div>
+    <div class="body"
+      mjt.elif="( !( 'action' in mjt.urlquery ) &amp;&amp;
+      !( 'id' in mjt.urlquery ) ) ||
+      mjt.urlquery.action == 'createtype'">
+      <div mjt.task="createdtypes">
+        mjt.freebase.MqlRead( [
+                                {
+                                  "id" : null,
+                                  "limit" : 10,
+                                  "name" : null,
+                                  "owners" : {
+                                    "member" : [
+                                      {
+                                        "id" : null,
+                                        "name" : null
+                                      }
+                                    ]
+                                  },
+                                  "sort" : "-types.link.timestamp",
+                                  "type" : "/type/domain",
+                                  "types" : [
+                                    {
+                                      "id" : null,
+                                      "instance" : [
+                                        {
+                                          "optional" : true,
+                                          "return" : "count"
+                                        }
+                                      ],
+                                      "limit" : 3,
+                                      "link" : {
+                                        "timestamp" : null
+                                      },
+                                      "name" : null,
+                                      "sort" : "-link.timestamp"
+                                    }
+                                  ]
+                                }
+                              ] )
+      </div>
+      <h1>Domains with Most Recently Created Types</h1>
+      <p>Ten domains with their three most recently-added types, most
+        recent first.</p>
+      <div mjt.choose="createdtypes.state">
+        <div mjt.when="ready" mjt.strip="true">
+          <div class="domain"
+            mjt.for="domain in createdtypes.result">
+            <h2>${name_object( domain )} (<a
+                href="$filename?id=${domain.id}">more detail</a>,
+              ${topic_link( domain, "Freebase" )})</h2>
+            <p>Owners: <span mjt.for="user in
+                domain.owners.member">${topic_link( user,
+                name_object( user ) )}; </span>updated
+              ${showdate( domain.types[0].link.timestamp )}</p>
+            <ul>
+              <li mjt.for="type in domain.types">
+                <p>${topic_link( type, name_object( type ) )};
+                  ${show_int( type.instance[0] )} instance(s); created
+                  ${showdate( type.link.timestamp )}</p>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div mjt.when="error" mjt.strip="true">
+          <p>Error!</p>
+          <div mjt.for="msg in createdtypes.messages">
+            <pre>$msg.message</pre>
+          </div>
+        </div>
+        <div mjt.when="wait" mjt.strip="true">
+          <p>Loading; please wait…</p>
+        </div>
+      </div>
+    </div>
+    <div class="body" mjt.elif="mjt.urlquery.action == 'createprop'">
+      <div mjt.task="createdprops">
+        mjt.freebase.MqlRead( [
+                                {
+                                  "id" : null,
+                                  "limit" : 10,
+                                  "name" : null,
+                                  "owners" : {
+                                    "member" : [
+                                      {
+                                        "id" : null,
+                                        "name" : null
+                                      }
+                                    ]
+                                  },
+                                  "sort" :
+                                    "-types.properties.link.timestamp",
+                                  "type" : "/type/domain",
+                                  "types" : [
+                                    {
+                                      "id" : null,
+                                      "limit" : 3,
+                                      "name" : null,
+                                      "properties": [
+                                        {
+                                          "id" : null,
+                                          "limit" : 3,
+                                          "link" : {
+                                            "timestamp" : null
+                                          },
+                                          "name" : null,
+                                          "sort" : "-link.timestamp"
+                                        }
+                                      ],
+                                      "sort" :
+                                        "-properties.link.timestamp"
+                                    }
+                                  ]
+                                }
+                              ] )
+      </div>
+      <h1>Domains with Most Recently Created Properties</h1>
+      <p>Ten domains with the three types with the most
+        recently-created properties, most recent first.</p>
+      <div mjt.choose="createdprops.state">
+        <div mjt.when="ready" mjt.strip="true">
+          <div class="domain" mjt.for="domain in createdprops.result">
+            <h2>${name_object( domain )} (<a
+                href="$filename?id=${domain.id}">more detail</a>,
+              ${topic_link( domain, "Freebase" )})</h2>
+            <p>Owners: <span mjt.for="user in
+                domain.owners.member">${topic_link( user,
+                name_object( user ) )}; </span>updated ${showdate(
+                domain.types[0].properties[0].link.timestamp )}</p>
+            <ul>
+              <li mjt.for="type in domain.types">
+                <p>${topic_link( type, name_object( type ) )}; updated
+                  ${showdate( type.properties[0].link.timestamp )}</p>
+                <ul>
+                  <li mjt.for="prop in type.properties">
+                    <p>${topic_link( prop, name_object( prop ) )};
+                      created ${showdate( prop.link.timestamp )}</p>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div mjt.when="error" mjt.strip="true">
+          <p>Error!</p>
+          <div mjt.for="msg in createdprops.messages">
+            <pre>$msg.message</pre>
+          </div>
+        </div>
+        <div mjt.when="wait" mjt.strip="true">
+          <p>Loading; please wait…</p>
+        </div>
+      </div>
+    </div>
+    <div class="body" mjt.elif="mjt.urlquery.action == 'editprop'">
+      <div mjt.task="editedprops">
+        mjt.freebase.MqlRead( [
+                                {
+                                  "id" : null,
+                                  "limit" : 10,
+                                  "name" : null,
+                                  "owners" : {
+                                    "member" : [
+                                      {
+                                        "id" : null,
+                                        "name" : null
+                                      }
+                                    ]
+                                  },
+                                  "sort" :
+                                    "-types.properties.expected_type.link.timestamp",
+                                  "type" : "/type/domain",
+                                  "types" : [
+                                    {
+                                      "id" : null,
+                                      "limit" : 3,
+                                      "name" : null,
+                                      "properties": [
+                                        {
+                                          "expected_type" : {
+                                            "id" : null,
+                                            "link" : {
+                                              "timestamp" : null
+                                            },
+                                            "name" : null
+                                          },
+                                          "id" : null,
+                                          "limit" : 3,
+                                          "name" : null,
+                                          "sort" :
+                                            "-expected_type.link.timestamp"
+                                        }
+                                      ],
+                                      "sort" :
+                                        "-properties.expected_type.link.timestamp"
+                                    }
+                                  ]
+                                }
+                              ] )
+      </div>
+      <h1>Domains with Most Recently Edited Properties</h1>
+      <p>Ten domains with the three types with the most
+        recently-edited properties, most recent first.</p>
+      <div mjt.choose="editedprops.state">
+        <div mjt.when="ready" mjt.strip="true">
+          <div class="domain" mjt.for="domain in editedprops.result">
+            <h2>${name_object( domain )} (<a
+                href="$filename?id=${domain.id}">more detail</a>,
+              ${topic_link( domain, "Freebase" )})</h2>
+            <p>Owners: <span mjt.for="user in
+                domain.owners.member">${topic_link( user,
+                name_object( user ) )}; </span>updated ${showdate(
+                domain.types[0].properties[0].expected_type.link.timestamp
+                )}</p>
+            <ul>
+              <li mjt.for="type in domain.types">
+                <p>${topic_link( type, name_object( type ) )}; updated
+                  ${showdate(
+                  type.properties[0].expected_type.link.timestamp
+                  )}</p>
+                <ul>
+                  <li mjt.for="prop in type.properties">
+                    <p>${topic_link( prop, name_object( prop ) )}; ECT
+                      ${topic_link( prop.expected_type,
+                      name_object( prop.expected_type ) )}; updated
+                      ${showdate( prop.expected_type.link.timestamp
+                      )}</p>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div mjt.when="error" mjt.strip="true">
+          <p>Error!</p>
+          <div mjt.for="msg in editedprops.messages">
+            <pre>$msg.message</pre>
+          </div>
+        </div>
+        <div mjt.when="wait" mjt.strip="true">
+          <p>Loading; please wait…</p>
+        </div>
+      </div>
+    </div>
+    <div class="body" mjt.elif="mjt.urlquery.action == 'usetype'">
+      <div mjt.task="usedtypes">
+        mjt.freebase.MqlRead( [
+                                {
+                                  "id" : null,
+                                  "limit" : 10,
+                                  "name" : null,
+                                  "owners" : {
+                                    "member" : [
+                                      {
+                                        "id" : null,
+                                        "name" : null
+                                      }
+                                    ]
+                                  },
+                                  "sort" :
+                                    "-types.t:instance.link.timestamp",
+                                  "type" : "/type/domain",
+                                  "types" : [
+                                    {
+                                      "id" : null,
+                                      "t:instance" : [
+                                        {
+                                          "id" : null,
+                                          "limit" : 3,
+                                          "link" : {
+                                            "timestamp" : null
+                                          },
+                                          "name" : null,
+                                          "sort" : "-link.timestamp"
+                                        }
+                                      ],
+                                      "limit" : 3,
+                                      "name" : null,
+                                      "sort" :
+                                        "-t:instance.link.timestamp"
+                                    }
+                                  ]
+                                }
+                              ] )
+      </div>
+      <h1>Domains with Most Recently Used Types</h1>
+      <p>Ten domains with their most recently-used types, most recent
+        first.</p>
+      <div mjt.choose="usedtypes.state">
+        <div mjt.when="ready" mjt.strip="true">
+          <div class="domain" mjt.for="domain in usedtypes.result">
+            <h2>${name_object( domain )} (<a
+                href="$filename?id=${domain.id}">more detail</a>,
+              ${topic_link( domain, "Freebase" )})</h2>
+            <p>Owners: <span mjt.for="user in
+                domain.owners.member">${topic_link( user,
+                name_object( user ) )}; </span>used ${showdate(
+                domain.types[0]["t:instance"][0].link.timestamp )}</p>
+            <ul>
+              <li mjt.for="type in domain.types">
+                <p>${topic_link( type, name_object( type ) )}; used
+                  ${showdate( type["t:instance"][0].link.timestamp
+                  )}</p>
+                <ul>
+                  <li mjt.for="inst in type['t:instance']">
+                    <p>${topic_link( inst, name_object( inst ) )};
+                      updated ${showdate( inst.link.timestamp )}</p>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div mjt.when="error" mjt.strip="true">
+          <p>Error!</p>
+          <div mjt.for="msg in usedtypes.messages">
+            <pre>$msg.message</pre>
+          </div>
+        </div>
+        <div mjt.when="wait" mjt.strip="true">
+          <p>Loading; please wait…</p>
+        </div>
+      </div>
+    </div>
+    <div class="body" mjt.elif="mjt.urlquery.action == 'useprop'">
+      <div mjt.task="usedprops">
+        mjt.freebase.MqlRead( [
+                                {
+                                  "limit" : 1000,
+                                  "master_property" : {
+                                    "id" : null,
+                                    "name" : null,
+                                    "schema" : {
+                                      "domain" : {
+                                        "id" : null,
+                                        "name" : null,
+                                        "owners" : {
+                                          "member" : [
+                                            {
+                                              "id" : null,
+                                              "name" : null
+                                            }
+                                          ]
+                                        },
+                                      },
+                                      "id" : null,
+                                      "name" : null
+                                    }
+                                  },
+                                  "sort" : "-timestamp",
+                                  "source" : {
+                                    "id" : null,
+                                    "name" : null
+                                  },
+                                  "timestamp" : null,
+                                  "type" : "/type/link"
+                                }
+                              ] )
+      </div>
+      <h1>Domains with Most Recently Used Properties</h1>
+      <p>Up to ten domains with up to the three types with the most
+        recently-used properties, most recent first.</p>
+      <div mjt.choose="usedprops.state">
+        <div mjt.when="ready" mjt.strip="true">
+          <div class="domain"
+            mjt.for="domain in collate_editprops( usedprops.result )">
+            <h2>${name_object( domain )} (<a
+                href="$filename?id=${domain.id}">more detail</a>,
+              ${topic_link( domain, "Freebase" )})</h2>
+            <p>Owners: <span mjt.for="user in
+                domain.owners.member">${topic_link( user,
+                name_object( user ) )}; </span>used ${showdate(
+                domain.types[0].properties[0].links[0].timestamp
+                )}</p>
+            <ul>
+              <li mjt.for="type in domain.types">
+                <p>${topic_link( type, name_object( type ) )}; updated
+                  ${showdate( type.properties[0].links[0].timestamp
+                  )}</p>
+                <ul>
+                  <li mjt.for="prop in type.properties">
+                    <p>${topic_link( prop, name_object( prop ) )};
+                      updated ${showdate( prop.links[0].timestamp
+                      )}</p>
+                    <ul>
+                      <li mjt.for="link in prop.links">
+                        <p>${topic_link( link.source,
+                          name_object( link.source ) )}; updated
+                          ${showdate( link.timestamp )}</p>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div mjt.when="error" mjt.strip="true">
+          <p>Error!</p>
+          <div mjt.for="msg in usedprops.messages">
+            <pre>$msg.message</pre>
+          </div>
+        </div>
+        <div mjt.when="wait" mjt.strip="true">
+          <p>Loading; please wait…</p>
+        </div>
+      </div>
+    </div>
+    <div class="footer">
+      <p><img
+          src="http://www.freebase.com/api/trans/raw/freebase/attribution"
+          alt="Freebase | CC-BY"
+          />
+        Data powered by <a href="http://www.freebase.com/"
+          title="$freebase_title">Freebase</a>; freely licensed under
+        <a
+          href="http://www.freebase.com/view/common/license/cc_attribution_25"
+          title="Creative Commons (by) : $freebase_title">CC-BY</a>.</p>
+      <p>Code powered by <a
+          href="http://mjtemplate.org/" title="mjt">mjt
+          v.$mjt.VERSION</a>; copyright © 2007–2008 <a
+          href="http://www.metaweb.com/"
+          title="Metaweb Technologies, Inc.">Metaweb Technologies,
+          Inc.</a>; please view page source for warranty and
+        redistribution information.</p>
+    </div>
+  </body>
+</html>
