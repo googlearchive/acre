@@ -759,6 +759,56 @@ function augment(freebase, urlfetch, async_urlfetch) {
         alldata: Boolean
     };
 
+    /**
+     * FreeQ Integration
+     */
+    freebase.freeq = {
+
+        freeq_url: freebase.googleapis_url + "/freeq/jobs/",
+
+        call: function(path, options) {
+            var url = freebase.freeq.freeq_url + path;
+            options = options || {};
+            options.http_method = options.http_method || "POST";
+
+            var query = options.query;
+            if (query instanceof Object) {
+                query = JSON.stringify(query);
+            }
+            delete options.query;
+
+            opts = decant_options(options);
+            var api_opts = opts[0];
+            var fetch_opts = opts[1];
+
+            fetch_opts.content = query;
+            fetch_opts.check_results = "json";
+            fetch_opts.headers = fetch_opts.headers || {};
+            fetch_opts.headers["content-type"] = "application/json";
+
+            var url_with_api_options = acre.form.build_url(url, api_opts);
+
+            return fetch(url_with_api_options, fetch_opts);
+        },
+
+        create_job: function(options) {
+            var path = "";
+            return freebase.freeq.call(path, options);
+        },
+
+        add_task: function(id_job, options) {
+            if (!id_job) throw new Error("You must provide id of a job.");
+            var path = id_job + "/tasks";
+            return freebase.freeq.call(path, options);
+        },
+
+        execute_job: function(id_job, options) {
+            if (!id_job) throw new Error("You must provide id of a job.");
+            var path = id_job + "/status";
+            return freebase.freeq.call(path, options);
+        }
+    };
+
 
     /**
     *   DEPRECATED: Perform a geosearch
