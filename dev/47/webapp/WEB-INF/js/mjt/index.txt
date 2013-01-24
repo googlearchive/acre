@@ -1,0 +1,235 @@
+
+================================
+Mjt: a Javascript Webapp Library
+================================
+
+Template-Driven Web Applications in Javascript
+==============================================
+
+*Mjt* is a Javascript application framework that can run entirely in
+a web browser.  It has three main components:
+
+  `mjt.Template`_ is a full-featured and extremely fast HTML/XML templating
+  system.  Server-side web frameworks rely heavily on templating
+  engines: mjt.Template is similarly useful in the browser.
+
+  `mjt.Task`_ is a powerful asynchronous framework for JS.
+  Asynchronous operations described using mjt.Task are easily
+  composed and chained.
+
+  `Mjt.freebase`_ is an interface to the Freebase_ web service using mjt.Task.
+
+  *mjt.App* is a simple in-browser web framework for building single-page
+  applications.
+
+Mjt has been used (in combination with jQuery_ and CodeMirror_)
+to build a complex in-browser Javascript development environment,
+the `Freebase App Editor`_.  Mjt.Template also provides 
+`server-side templating`_ for the hosted `Freebase Apps`_ service.
+
+If you can get your data from a JSON_-aware web service, creating
+a Mjt application is the quickest way to get that data displayed
+in a browser with complete control of the HTML formatting.
+You can run the application from your local filesystem or share it
+on any web server as static files.  No server-side support is
+necessary - all the work can take place in the browser using Javascript.
+
+Mjt is particularly useful with JSONP_ services that return JSON
+values and accept a ``callback=`` parameter.  Most modern JSON web
+services support this feature, and with these services you can use Mjt
+to build "mash-ups" that incorporate data from services on multiple
+hosts.
+
+
+Examples
+========
+
+Many of the Mjt examples are now Acre examples for ease of hosting,
+but there are several browser-side examples_.
+
+The examples primarily use Freebase data sources but there are
+examples using Yahoo image search and the Google feed API as well.
+
+For a step-by-step introduction to the Mjt template language,
+as well as an example of Mjt in action, start with the `intro tour`_.
+
+
+New in Mjt 0.9
+==============
+
+- now `hosted on Google code`_.
+
+- works browser-side on IE6.
+
+- works server-side under Rhino_ using RhinoDOM_
+
+- `mjt.Task`_ is better separated from the rest of the code and fleshed
+  out for complicated tasks.
+  - Tasks support prerequisites (the most common form of task composition).
+  - mjt.Task is separately documented
+
+- both XML and HTML output are supported
+
+- the mjt.trim="" attribute removes unsightly whitespace from the output
+
+- the mjt.script="ondomready" attribute runs Javascript after the template
+  has been rendered into the page.
+
+- compiled template code may be serialized (precompiled to Javascript)
+
+- better JSONP cache invalidation
+
+- Mjt will extend jQuery if present.
+
+- The default mjt.js file comes with XHR and jQuery support.
+
+
+
+Usage
+=====
+
+Here's a very simple mjt page.  If you visit it at `examples-minimal`_
+you should see that the ``$mjt.VERSION`` string has been substituted::
+
+    <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+    <script type="text/javascript" src="http://mjtemplate.org/dist/mjt-0.6/mjt.js"></script>
+    <title>a minimal mjt example</title>
+    </head>
+    <body onload="mjt.run()" style="display:none">
+        running mjt version $mjt.VERSION
+    </body></html>
+
+
+.. _examples-minimal: examples/minimal.html
+
+
+Download
+========
+
+Mjt is hosted on Google code at http://code.google.com/p/mjt.
+
+You can copy mjt.js to your own web server or include a minimized
+version from http://freebaselibs.com/static/mjt/mjt-0.9.3/mjt.min.js.
+This includes the parts of Mjt necessary for building Freebase
+applications: some files are not included.
+
+This version is also available at http://freebaselibs.com/static/mjt/mjt-0.9.3/mjt.js
+which loads files from http://freebaselibs.com/static/mjt/mjt-0.9.3/src
+
+Older versions can be found at http://freebaselibs.com/static/mjt.
+
+
+Support
+=======
+
+Mailing list TBA.  For now, subscribe to `developers@freebase.com`_
+or watch blog.freebase.com_
+
+
+License
+=======
+
+Mjt is distributed under a `two-clause BSD`_ open source license:
+
+  Copyright (c) 2007-2009, Metaweb Technologies, Inc.
+  All rights reserved.
+  
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
+  are met:
+  
+  - Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+  - Redistributions in binary form must reproduce the above
+    copyright notice, this list of conditions and the following
+    disclaimer in the documentation and/or other materials provided
+    with the distribution.
+  
+  THIS SOFTWARE IS PROVIDED BY METAWEB TECHNOLOGIES "AS IS" AND ANY
+  EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+  PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL METAWEB TECHNOLOGIES BE
+  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+  BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+  OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+  IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  
+  
+
+
+.. references
+
+.. _hosted on Google code: http://code.google.com/p/mjt
+
+.. _Freebase Apps: http://freebaseapps.com
+.. _Freebase App Editor: http://acre.freebase.com
+.. _server-side templating: http://freebaseapps.com/wiki/acre_template_reference
+
+.. _jQuery: http://jquery.com
+.. _CodeMirror: http://marijn.haverbeke.nl/codemirror/
+
+.. _json: http://json.org
+
+.. _jsonp: http://en.wikipedia.org/wiki/JSON#JSONP
+
+.. _freebase: http://www.freebase.com/
+
+
+.. _yahoo json api: http://developer.yahoo.com/common/json.html
+.. _callback=: http://developer.yahoo.com/common/json.html#callbackparam
+
+.. _examples: examples
+
+.. _inline script example: examples/inlinescript.html
+
+.. _type suggestion example: examples/freebase/suggest/suggest.html
+
+.. _intro tour: doc/intro-tour.html
+
+
+.. _jsmin : http://www.crockford.com/javascript/jsmin.html
+
+.. _sign in : http://www.freebase.com/signin.html
+
+
+.. _developers@freebase.com: http://lists.freebase.com/mailman/listinfo/developers
+.. _freebase dev blog: http://blog.freebase.com/
+
+.. _two-clause BSD: http://www.opensource.org/licenses/bsd-license.php
+
+
+
+.. _kid : http://kid-templating.org/
+.. _genshi : http://genshi.edgewall.org/
+.. _genshi template language : http://genshi.edgewall.org/wiki/Documentation/xml-templates.html
+.. _genshi2js : http://dev.codeflow.org/trac/genshi2js
+.. _trimpath jst : http://trimpath.com/project/wiki/JavaScriptTemplates
+
+.. _jsont : http://goessner.net/articles/jsont/
+.. _xindesk jtemplate: http://www.xindesk.com/jtemplate/
+.. _jstemplate: http://jstemplate.sourceforge.net/
+.. _jemplate.pm: http://search.cpan.org/~ingy/Jemplate-0.20/lib/Jemplate.pm
+.. _zparse: http://zparse.net.tc/
+.. _jslt: http://www.rikarends.com/jslt-alternative-to-xslt
+
+
+.. _firebug : http://getfirebug.org
+
+.. _blog.freebase.com : http://blog.freebase.com/
+
+.. _setting up nxhtml-mode: http://hamstersoup.wordpress.com/2007/07/08/editing-mjt-code-with-emacs-nxhtmlmode/#comments
+.. _Will Moffat's blog: http://hamstersoup.wordpress.com/
+
+.. _Exhibit: http://simile.mit.edu/wiki/Exhibit
+
+
+.. _mjt.Task: doc/taskdoc.html
+.. _mjt.Template: doc/intro-tour.html
+.. _mjt.freebase: doc/freebaseapi.html
+.. _rhinodom: http://repo.or.cz/w/rhinodom.git
+.. _rhino: http://www.mozilla.org/rhino/

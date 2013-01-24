@@ -1,0 +1,137 @@
+html {
+  color: #333;
+  font-size: 62.5%;
+}
+
+body,div,dl,dt,dd,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,th,td {
+  margin: 0;
+  padding: 0;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+table,tr,td {
+  vertical-align: top;
+}
+
+fieldset,img {
+  border: 0;
+}
+
+table,address,caption,cite,code,dfn,em,strong,th,var,optgroup,input,button,textarea,select,optgroup,option {
+  font-size: inherit;
+  font-style: inherit;
+  font-weight: inherit;
+}
+
+caption,th {
+  text-align: left;
+}
+
+body {
+  color: #333;
+  font-size: 1.3em;
+  font-family: "Tahoma", sans-serif;
+  text-align: left;
+}
+
+a {
+  color: #0663A1;
+}
+
+a:visited {
+  color: #4686B8;
+}
+
+/* ----------------------- special behavior -------------------------------- */
+
+table.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+img.favicon {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+
+ul.horizontal li {
+  margin: 0;
+  padding: 0;
+  display: inline;
+}
+
+ul.path {
+  margin: 0em 0.4em;
+  padding: 0;
+}
+
+pre.code {
+  border: 1px solid #ccc;
+  background-color: #f8f8f8;
+  padding: 0.5em;
+  font-size: 1.1em;
+}
+
+.path li {
+  display: inline;
+}
+
+.path li:after {
+  content: "»";
+  font-size: 1.1em;
+  margin: 0 0.2em 0 0.5em;
+}
+
+.path li.current:after {
+  content: "";
+}
+
+/* ----------------------- classes ------------------------------- */
+
+.hidden { display: none; }
+.left { text-align: left; }
+.center { text-align: center; }
+.right { text-align: right; }
+
+.rounded {
+  -moz-border-radius: 1em;
+  -webkit-border-radius: 1em;
+}
+
+.activity {
+  color: #888;
+  font-size: 140%;
+}
+
+.activity img {
+  vertical-align: middle;
+}
+
+/* ----------------------- IDs ----------------------------------- */
+
+#header{
+  background-color: #f0f0f0;
+  border-bottom: 1px solid #ccc;
+  padding: 1em;
+}
+
+#signin {
+  text-align: right;
+}
+
+#body {
+  margin: 1em;
+}
+
+#footer {
+  background-color: #f0f0f0;
+  border-top: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  padding: 1em;
+}
+

@@ -1,0 +1,104 @@
+
+============
+mjt examples
+============
+
+- the mjt `intro tour`_
+
+  - author: Nick Thompson
+
+- internationalized names_ on freebase.com
+
+  - author: `Will Luo`_
+
+- a freebase.com-based `architecture portal`_
+
+  - uses data from freebase.com and the Google Maps API
+  - author: `Zak Stein`_
+
+- an RSS/Atom `Feed Reader`_ with almost no Javascript
+
+  - uses the `Google Feed AJAX API`_
+  - author: Nick Thompson
+
+- a `map of freebase users`_
+
+  - uses data from freebase.com and the Google Maps API
+  - author: `Will Moffat`_
+
+- a new Freebase comments_ page that shows discussion posts
+  in the context of their threads.
+  (here's the older `recent discussion posts`_ page)
+
+  - author: Chris Maden
+
+- a `Yahoo image search client`_
+
+  - uses the `Yahoo JSON API`_
+  - author: Nick Thompson
+
+- a Freebase `edit history`_ page
+
+  - author: Nick Thompson
+
+- a simple `schema browser`_ for Freebase_
+
+  - author: Robert Cook
+
+- Rison_ is a serialization for JSON-like data structures,
+  optimized for use in URIs.  The specification page
+  tests itself in your browser using Mjt.
+
+- a `minimal example`_ of a mjt page
+
+  this is mostly useful as boilerplate
+
+- an example using `inline script tags`_ and mjtinline.js
+
+  experimental: this might allow you to insert Mjt templates into a blog post.
+
+- an example of creating a custom autosuggest menu using Freebase
+  This is an implementation of autosuggest pop-up menus using Mjt
+  and jQuery_.
+  Menus are Mjt templates that use a particular microformat.  The
+  controller is almost completely isolated from the query used to
+  populate the menu, though the `type suggestion example`_  uses
+  a Freebase query.
+  This code is fairly robust but there are some painful edges on
+  the ui state machine.
+
+
+.. _minimal example: minimal.html
+.. _inline script tags: inlinescript.html
+.. _rison: ../examples/rison.html
+
+.. _schema browser: schemas/
+.. _intro tour: ../doc/intro-tour.html
+
+.. _yahoo image search client: yahoo/imagesearch.html
+.. _yahoo json api: <a href="http://developer.yahoo.com/common/json.html">
+
+.. _feed reader: google/feed.html
+.. _google feed ajax api: http://code.google.com/apis/ajaxfeeds/documentation/
+
+.. _map of freebase users: http://mqlx.com/~willmoffat/maps/FreebaseUsers/FreebaseUsers.html
+
+
+.. _edit history: freebase/history.html
+.. _recent discussion posts: freebase/posts.html
+.. _comments: freebase/comments.html
+
+.. _names: freebase/names.html
+
+.. _type suggestion example: freebase/suggest/suggest.html
+
+.. _freebase: http://www.freebase.com/
+
+.. _jquery: http://jquery.com/
+
+.. _will moffat: http://hamstersoup.wordpress.com/
+
+.. _will luo: http://wluo.org/
+
+.. _architecture portal: http://dev.mqlx.com/~zak/arch
+.. _zak stein: http://www.freebase.com/view/user/zakstein
