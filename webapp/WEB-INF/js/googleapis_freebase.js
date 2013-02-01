@@ -763,7 +763,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
      *  Get Statistics from Stats API
      **/
     freebase.get_statistics = function(path, options) {
-        var stats_url = freebase.googleapis_url + "/stats/" + path;
+        var stats_url = freebase.googleapis_url + "/stats" + path;
         var opts = decant_options(options);
         var api_opts = opts[0];
         var fetch_opts = opts[1];
