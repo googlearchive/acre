@@ -1,0 +1,16 @@
+[
+    {
+        "host":null,
+        "rules":[
+            {
+                "from":{
+                    "path":"/acre/static"
+                },
+                "to":{
+                    "route_as":"static",
+                    "path":"/global_static"
+                }
+            }
+        ]
+    }
+]

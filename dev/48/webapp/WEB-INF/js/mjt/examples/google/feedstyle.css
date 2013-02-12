@@ -1,0 +1,51 @@
+
+body {
+  font-family: Helvetica, sans-serif;
+}
+
+a:link {
+  color: #06c;
+  text-decoration: none;
+}
+
+a:visited {
+  color: #06c;
+  text-decoration:none;
+}
+
+a:hover {
+  color: #06c;
+  text-decoration: underline;
+}
+
+a[name]:hover {
+  text-decoration: inherit; 
+  color: inherit; 
+  background: inherit
+  }
+
+h2 {
+  margin: 0;
+  color: #b20;
+  font-weight: normal;
+}
+  
+.feedform {
+  margin: 1em;
+}
+.feedtitle {
+  font-style: italic;
+}
+.entrytitle {
+  font-style: italic;
+  font-size: 120%;
+}
+.entryheader {
+  margin-bottom: 1em;
+}
+.entry {
+  border:1px solid black;
+  padding:1em;
+  margin: 1em;
+  width:600px;
+}
