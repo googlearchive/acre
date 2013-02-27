@@ -315,36 +315,8 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   Call the 'touch' api to reset the caches
     **/
     freebase.touch = function(options) {
-        options = options || {};
-
-        var q = {
-            "timestamp": null,
-            "sort": "-timestamp",
-            "limit": 1
-        };
-        // extra cache-busting by embedding timestamp in query
-        var tlabel = "t" + new Date().getTime() + ":guid";
-        q[tlabel] = null;
-
-        // do synchronous MQL request
-        var res = freebase.mqlread(q).result;
-        var timestamp = acre.freebase.date_from_iso(res.timestamp).getTime();
-        var dateline = [timestamp, res[tlabel].substr(1)].join(",");
-
-        // set the dateline cookie
-        dateline_cj.set(_request.googleapis_freebase_version, dateline);
-
-        var result = {
-            status: "200 OK",
-            code: "/api/status/ok",
-            dateline: dateline
-        };
-
-        if (options.callback) {
-          return options.callback(result);
-        } else {
-          return result;
-        }
+        var url = freebase.googleapis_url + "/status";
+        return fetch(url, options);
     };
 
 
