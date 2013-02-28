@@ -31,11 +31,11 @@ public class AppEngineClassStore implements ClassStore {
     }
 
     public StoredClass get(String name) {
-        _costCollector.collect("amrc").collect("amrn");
+        _costCollector.collect("amsrc").collect("amsrn");
         final long start_time = System.currentTimeMillis();
 
         StoredClass sc = (StoredClass) _cache.get(name);
-        _costCollector.collect("amrw", System.currentTimeMillis() - start_time);
+        _costCollector.collect("amsrw", System.currentTimeMillis() - start_time);
         return sc;
         
     }
