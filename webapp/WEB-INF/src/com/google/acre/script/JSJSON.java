@@ -55,7 +55,7 @@ public class JSJSON extends JSObject {
         try {
             long start_time = System.currentTimeMillis();
             Object result = JSON.parse(obj, _scope);
-            _costCollector.collect("jsonsw", System.currentTimeMillis() - start_time).collect("jsonsc");
+            _costCollector.collect("jsonpw", System.currentTimeMillis() - start_time).collect("jsonpc");
             return result;
 
         } catch (JSONException e) {
@@ -91,7 +91,7 @@ public class JSJSON extends JSObject {
         try {
             long start_time = System.currentTimeMillis();
             String result = JSON.stringify(obj, indent, _scope);
-            _costCollector.collect("jsonpw", System.currentTimeMillis() - start_time).collect("jsonpc");
+            _costCollector.collect("jsonsw", System.currentTimeMillis() - start_time).collect("jsonsc");
             return result;
         } catch (JSONException e) {
         	throw new JSConvertableException(e.getMessage()).newJSException(_scope);
