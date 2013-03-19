@@ -316,7 +316,13 @@ function augment(freebase, urlfetch, async_urlfetch) {
     **/
     freebase.touch = function(options) {
         var url = freebase.googleapis_url + "/status";
-        return fetch(url, options);
+
+        var opts = decant_options(options);
+        var api_opts = opts[0];
+        var fetch_opts = opts[1];
+
+        var url_with_api_options = acre.form.build_url(url, api_opts);
+        return fetch(url_with_api_options, fetch_opts);
     };
 
 
