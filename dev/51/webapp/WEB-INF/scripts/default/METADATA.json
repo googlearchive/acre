@@ -1,0 +1,44 @@
+{
+    "ttl": 600000,
+    "csrf_protection": false,
+    "error_page": "//default.dev/error.mjt",
+    "extensions": {
+        "sjs": {
+            "handler": "acre_script"
+        },
+        "js": {
+            "handler": "passthrough",
+            "media_type": "text/javascript"
+        },
+        "css": {
+            "handler": "passthrough",
+            "media_type": "text/css"
+        },
+        "json": {
+          "handler": "passthrough",
+          "media_type": "text/plain"
+        },
+        "html": {
+            "handler": "passthrough",
+            "media_type": "text/html"
+        },
+        "gif": {
+            "handler": "binary",
+            "media_type": "image/gif"
+        },
+        "png": {
+            "handler": "binary",
+            "media_type": "image/png"
+        },
+        "jpg": {
+            "handler": "binary",
+            "media_type": "image/jpg"
+        },
+        "mjt": {
+            "handler": "mjt"
+        },
+        "mql": {
+            "handler": "mqlquery"
+        }
+    }
+}
