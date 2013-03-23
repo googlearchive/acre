@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app version="2.5" 
-	xmlns="http://java.sun.com/xml/ns/javaee" 
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
+<web-app version="2.5"
+	xmlns="http://java.sun.com/xml/ns/javaee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
 	http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
-	
+
   <servlet>
     <description>Dispatch request to javascript</description>
     <display-name>DISPATCH REQUEST TO JAVASCRIPT</display-name>
     <servlet-name>DispatchServlet</servlet-name>
     <servlet-class>com.google.acre.servlet.DispatchServlet</servlet-class>
   </servlet>
-  
+
+  <servlet>
+    <description>Redirect request</description>
+    <display-name>REDIRECT REQUEST</display-name>
+    <servlet-name>RedirectServlet</servlet-name>
+    <servlet-class>com.google.acre.servlet.RedirectServlet</servlet-class>
+  </servlet>
+
   <servlet>
     <description>proxy</description>
     <display-name>ProxyPassServlet</display-name>
@@ -20,7 +27,7 @@
   </servlet>
 
   <servlet>
-    <description>One Servlet to rule them all, One Servlet to find them, 
+    <description>One Servlet to rule them all, One Servlet to find them,
       One Servlet to bring them all, and in the darkness bind them
     </description>
     <display-name>OneTrueServlet</display-name>
@@ -64,7 +71,7 @@
     <url-pattern>/remote_api</url-pattern>
   </servlet-mapping>
 -->
-  
+
   <servlet-mapping>
     <servlet-name>OneTrueServlet</servlet-name>
     <url-pattern>/*</url-pattern>
@@ -82,5 +89,5 @@
     <url-pattern>*</url-pattern>
   </filter-mapping>
 -->
-  
+
 </web-app>

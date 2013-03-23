@@ -30,9 +30,9 @@ import com.google.acre.javascript.JSON;
 import com.google.acre.javascript.JSONException;
 
 public class OneTrueConfig {
-    
+
     private static String PATH_DELIMITER = Configuration.Values.ACRE_HOST_DELIMITER_PATH.getValue();
-	
+
     public OneTrueConfig() {
     }
 
@@ -48,7 +48,7 @@ public class OneTrueConfig {
                                                  "String but is here used with "+
                                                  "type Object: "+
                                                  JSON.stringify(valv));
-            } 
+            }
         }
         return out;
     }
@@ -96,7 +96,7 @@ public class OneTrueConfig {
             throw new OneTrueConfigException("No Location provided in script "+
                                              "route: "+JSON.stringify(to));
         }
-        
+
         if (location.startsWith("//")) {
             // parse new require paths
             String[] loc_parts = location.split("/", 4);
@@ -111,7 +111,7 @@ public class OneTrueConfig {
                 host  = path_parts[i]+host;
             }
             host = host + "." + PATH_DELIMITER;
-            path = "/"+path_parts[i];            
+            path = "/"+path_parts[i];
         }
 
 
@@ -148,6 +148,15 @@ public class OneTrueConfig {
         out.put("servlet", "DispatchServlet");
         out.put("host", host);
         out.put("path", path);
+        return out;
+    }
+
+    public Map<String, String> route_as_redirect(Map<?,?> to) throws JSONException, OneTrueConfigException {
+        Map<String, String> out = new HashMap<String, String>();
+        String location = get_string_property(to, "location");
+        out.put("servlet", "RedirectServlet");
+        out.put("host", "");
+        out.put("path", location);
         return out;
     }
 
@@ -282,10 +291,12 @@ public class OneTrueConfig {
                 route_rule = route_as_script(to);
             } else if (route_as.equals("app")) {
                 route_rule = route_as_app(to);
+            } else if (route_as.equals("redirect")) {
+                route_rule = route_as_redirect(to);
             } else {
                 throw new OneTrueConfigException("Not a valid route_as "+route_as);
             }
-            
+
             for (String pth : to_pathes) {
                 String route_path = route_rule.get("path");
                 /*
@@ -293,7 +304,7 @@ public class OneTrueConfig {
                     String pth_only = pth.substring(pth.indexOf(":")+1).split("\\?")[0];
                     route_path = pth_only+route_path;
                     }*/
-                res.add(new String[] { pth, route_rule.get("servlet"), 
+                res.add(new String[] { pth, route_rule.get("servlet"),
                                        route_rule.get("host"),
                                        route_path });
             }
@@ -306,7 +317,7 @@ public class OneTrueConfig {
     }
 
     @SuppressWarnings("unchecked")
-	public List<String[]> handle_rule(Map<?,?> rule) 
+	public List<String[]> handle_rule(Map<?,?> rule)
         throws JSONException, OneTrueConfigException {
         List<String[]> res = new ArrayList<String[]>();
         if (rule.containsKey("rules") && rule.containsKey("host")) {
@@ -338,7 +349,7 @@ public class OneTrueConfig {
         return res;
     }
 
-    public List<String[]> handle_rules_list(List<?> rules) 
+    public List<String[]> handle_rules_list(List<?> rules)
         throws JSONException, OneTrueConfigException {
         List<String[]> res = new ArrayList<String[]>();
         for (Object obj : rules) {
@@ -355,7 +366,7 @@ public class OneTrueConfig {
     public static List<String[]> parse(String jsonstr) throws JSONException,
                                                        OneTrueConfigException {
         OneTrueConfig otc = new OneTrueConfig();
-        
+
         Object parsed = JSON.parse(jsonstr);
         if (parsed instanceof List) {
             List<?> rules = (List<?>)parsed;
@@ -374,7 +385,7 @@ public class OneTrueConfig {
     }
 
     public static List<String[]> parse() throws JSONException, OneTrueConfigException {
-        
+
         File cdir = new File(System.getProperty("configDir"));
         List<String[]> rules = new ArrayList<String[]>();
 
@@ -394,7 +405,7 @@ public class OneTrueConfig {
                 }
             }
         }
-        
+
         // this rule must be last
         String[] dispatch_rule = { "/", "DispatchServlet", null, "/" };
         rules.add(dispatch_rule);
