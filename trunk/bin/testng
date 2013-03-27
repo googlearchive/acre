@@ -68,7 +68,9 @@ if [ -z "$TEST_TYPE" ]; then
     fi
 fi
 
-bin/freebase_check
+if [ "$ACRE_REMOTE_REQUIRE" != "FALSE" ]; then
+  bin/freebase_check
+fi
 
 $ECHO
 $ECHO "running tests of type '$TEST_TYPE'"
