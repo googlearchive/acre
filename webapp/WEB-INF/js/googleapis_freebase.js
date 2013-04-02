@@ -121,7 +121,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
     *   if read request is going to be longer than URL_SIZE_LIMIT,
     *   then switch to a POST
     **/
-    function compose_get_or_post(url, opts) {
+    function compose_get_or_post(url, opts, force_post) {
         if (typeof opts !== "object") {
             opts = {};
         }
@@ -130,7 +130,10 @@ function augment(freebase, urlfetch, async_urlfetch) {
             opts.content = "";
         }
 
-        if ((!opts.method || opts.method === "GET") && url.length + opts.content.length < URL_SIZE_LIMIT) {
+        var is_get = opts.method == null || opts.method == 'GET';
+        var is_get_limit = (url.length + opts.content.length) < URL_SIZE_LIMIT;
+
+        if (!force_post && is_get && is_get_limit) {
             opts.method = "GET";
             url += "?" + opts.content;
             delete opts.content;
@@ -451,10 +454,8 @@ function augment(freebase, urlfetch, async_urlfetch) {
 
         fetch_opts.method = "POST";
         fetch_opts.content = form_encode(api_opts);
-        fetch_opts.headers = fetch_opts.headers || {};
-        fetch_opts.headers["content-type"] = "application/x-www-form-urlencoded";
         if (typeof fetch_opts.sign === 'undefined') fetch_opts.sign = true;
-        return fetch(url, fetch_opts);
+        return fetch.apply(this, compose_get_or_post(url, fetch_opts, true));
     };
 
 
