@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# Normalize the current directory
+cd `dirname $0`/..
+
+# Generate any derived settings
+. bin/fixup-settings
+
+if [ ! -f $ACRE_PID ]; then
+    echo "No PID file; Acre is (probably) not running"
+    exit
+fi
+
+PID=`cat $ACRE_PID 2>/dev/null`
+echo "Shutting down Acre: $PID"
+kill $PID 2>/dev/null
+sleep 2
+kill -9 $PID 2>/dev/null
+rm $ACRE_PID
+echo "done"
