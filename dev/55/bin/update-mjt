@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Normalize the current directory
+cd `dirname $0`/..
+
+# Generate any derived settings
+. bin/fixup-settings
+
+MJT_SVN_URL="http://mjt.googlecode.com/svn/trunk"
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 <revision>"
+    exit 1
+fi
+
+MJT_REV="$1"
+
+svn export --force -r$MJT_REV $MJT_SVN_URL webapp/WEB-INF/js/mjt
+
+echo 
+echo "Done."
+echo
+
+exit $?
