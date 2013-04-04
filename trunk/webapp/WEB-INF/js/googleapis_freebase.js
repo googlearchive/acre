@@ -1230,5 +1230,3 @@ var dateline_cj = cookiejar("fb-dateline");
 _response_callbacks.push(function() {
     dateline_cj.set_cookie(_cookie_opts);
 });
-;
-});
