@@ -14,7 +14,7 @@ function _make_scope(start) {
     start = start || {};
 
     function object(o) {
-        function F() {}; 
+        function F() {};
         F.prototype = o;
         return new F();
     }
@@ -92,7 +92,7 @@ var _file = _system_scope._file = File;
 delete this.File;
 
 
-// We'll create JS APIs for these later, so no need 
+// We'll create JS APIs for these later, so no need
 // to share the internal variables in system scope
 var _domparser = new DOMParser();
 delete this.DOMParser;
@@ -290,18 +290,18 @@ acre.request = {
     protocol : _request.server_protocol, // XXX: how do we get the request protocol?
     method : _request.request_method,
     headers : _request.headers,
-    base_path : _request.request_path_info.replace(new RegExp(_u.escape_re(_request.path_info)+"$"), ""),    
+    base_path : _request.request_path_info.replace(new RegExp(_u.escape_re(_request.path_info)+"$"), ""),
     site_host : _request.site_host,
 
     // these can be re-set by acre.route
     body : _request.request_body,
     path_info : _request.path_info,
     query_string : _request.query_string,
-    
+
     // set in request params
     params: {},
     body_params: {},
-    
+
     start_time : _request.request_start_time,
     skip_cache : false,
     cookies : (function() {
@@ -317,7 +317,7 @@ acre.request = {
 // if we get 'cache-control: no-cache' in the request headers (i.e., shift-reload),
 // then set a flag that appfetchers can key off of.
 // some browsers will by default issue this header for *all* XHRs, however,
-// which can make requests very slow. the work-around is that if an 
+// which can make requests very slow. the work-around is that if an
 // x-acre-cache-control header is present, then we do not set the flag
 if ('cache-control' in acre.request.headers && !('x-acre-cache-control' in acre.request.headers)) {
     if (/no-cache/.test(acre.request.headers['cache-control'])) {
@@ -859,6 +859,8 @@ var _keystore = _system_scope._keystore = {
     },
 
     put: function (name, token, secret) {
+        syslog.warn("Keystore put key "+name, "keystore.put");
+
         var project = _keystore.get_project();
 
         var put_result = _ks.put_key(name, project, token, secret);
@@ -880,6 +882,8 @@ var _keystore = _system_scope._keystore = {
     },
 
     remove: function (name) {
+        syslog.warn("Keystore remove key "+name, "keystore.remove");
+
         var project = _keystore.get_project();
 
         // remove from the cache
@@ -1050,7 +1054,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
                 // reject
             } else if (token && acre.form.validate_csrf_token(token)) {
                 reject = false;
-            } else if ((_request.csrf_protection !== "strong") && 
+            } else if ((_request.csrf_protection !== "strong") &&
                        ("x-requested-with" in acre.request.headers)) {
                 reject = false;
             }
@@ -1058,8 +1062,8 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
                 throw new acre.errors.URLError("Request to " + url + " appears to be a state-changing subrequest made " +
                 "from an insecure top-level request and csrf_protection is enabled. " +
                 "Top-level request must use a method beside 'GET' or 'HEAD' " +
-                "and include a csrf_token or an 'X-Requested-With' header (if csrf_protection not set to 'strong') " + 
-                "to be considered secure. To force the subrequest anyway, use the 'bless' option to acre.urlfetch.");                
+                "and include a csrf_token or an 'X-Requested-With' header (if csrf_protection not set to 'strong') " +
+                "to be considered secure. To force the subrequest anyway, use the 'bless' option to acre.urlfetch.");
             }
         }
     }
@@ -1098,7 +1102,7 @@ var _urlfetch = function (system, url, options_or_method, headers, content, sign
                 // googleapis OAuth2 signing
                 signed = oauth_sign(url, method, headers, content, null, sign);
             }
-        } catch (e if typeof errback !== 'undefined') { 
+        } catch (e if typeof errback !== 'undefined') {
             errback(e);
             return null;
         }
@@ -1253,7 +1257,7 @@ var _load_handler = function(scope, handler_name, handler_path) {
 *
 *   - called from proto_require()
 *   - each registered appfetch method is called until one succeeds
-*   - successful results are added to cache with key: 
+*   - successful results are added to cache with key:
 *       METADATA:{app.guid}:{app.as_of}
 *   - app_data.hosts as pointers to results also cached:
 *       HOST:{app.hosts[i]} with value METADATA:{app.guid}:{app.asof}
@@ -1348,7 +1352,7 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
         var resource = resolver(host);
         if (!resource) {
             syslog.debug({'host': host}, "appfetch." + name + ".not_found");
-            throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);      
+            throw make_appfetch_error("Not Found Error", APPFETCH_ERROR_NOT_FOUND);
         }
 
         // this will recurse until all files are added or MAX_DIRECTORY_DEPTH reached
@@ -1357,7 +1361,7 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
         _add_directory(app, resource);
 
         syslog.debug({'host': host}, "appfetch." + name + ".found");
-        return app;  
+        return app;
     };
 
     // if method throws an appfetch thunk, check the cache before re-calling
@@ -1398,8 +1402,8 @@ function register_appfetch_method(name, resolver, inventory_path, get_content) {
         return fetch;
     }
 
-    if ((typeof name !== "string") || 
-        (typeof resolver !== "function") || 
+    if ((typeof name !== "string") ||
+        (typeof resolver !== "function") ||
         (typeof inventory_path !== "function")) {
         throw make_appfetch_error("Invalid arguments to make_appfetch_method", APPFETCH_ERROR_METHOD)
     }
@@ -1429,7 +1433,7 @@ function get_appfetch_method(method_name) {
 /**
 *   Cache appfetcher
 *
-*   Special appfetch method that checks cache 
+*   Special appfetch method that checks cache
 *   for previously fetched apps (any method)
 *
 **/
@@ -1522,14 +1526,14 @@ var disk_inventory_path = function(app, disk_path) {
 
         delete f;
     });
-    
+
     return res;
 }
 
 var disk_get_content = function() {
     syslog.debug(this.content_id, "disk.get.content");
     //open the file in binary mode if there is a media_type and it starts with application/ or image/
-    var f = new _file(this.content_id, this.media_type != undefined && (this.media_type.indexOf('image/') == 0  
+    var f = new _file(this.content_id, this.media_type != undefined && (this.media_type.indexOf('image/') == 0
                                                                         || this.media_type ==  'application/octet-stream'
                                                                         || this.media_type == 'multipart/form-data'));
     var res = {
@@ -1602,7 +1606,7 @@ delete mjt.acre.handler;
 // Initialize some mjt variables
 mjt.debug = 1;
 
-// expose a function for deprecating                                                                                
+// expose a function for deprecating
 mjt.deprecate = function () {
 }
 
@@ -1642,7 +1646,7 @@ acre.form = {
         var hash = acre.hash.b64_sha1(s);
         if (hash !== token_hash) {
             console.error("Invalid CSRF token");
-            return false; 
+            return false;
         }
 
         return true;
@@ -1782,7 +1786,7 @@ for (var name in script_scope) {
 /**
 *   Add features only available in trusted mode
 *
-*   This is broken out as a function so trusted mode 
+*   This is broken out as a function so trusted mode
 *   can also be set for cases like admin scripts
 **/
 function set_trusted_mode() {
@@ -1855,7 +1859,7 @@ function Script(app, name, path_info) {
     // we need to do this post-overrides being applied
     var ext_md = _u.get_extension_metadata(name, app.extensions);
 
-    // Create a good looking copy of script metadata 
+    // Create a good looking copy of script metadata
     // this will be used in acre.current_script, etc.
     var script_data = _u.extend({}, ext_md, app.files[name]);
 
@@ -1878,10 +1882,10 @@ function Script(app, name, path_info) {
         mounts: app.mounts,
         version: (app.versions.length > 0 ? app.versions[0] : null),
         versions: app.versions,
-        base_url : acre.host.protocol + "://" + 
+        base_url : acre.host.protocol + "://" +
                 (app.host.match(/\.$/) ? app.host.replace(/\.$/, "") : (app.host + "." + acre.host.name)) +
                 (acre.host.port !== 80 ? (":" + acre.host.port) : "")
-    };  
+    };
     this.script_data = script_data;
 
     this.get_content = get_appfetch_method(this.source).get_content;
@@ -1896,7 +1900,7 @@ Script.prototype.normalize_path = function(path, version, new_only) {
     // Mode 1: new require syntax
     if (parts.length >= 2) {
         return path;
-    } 
+    }
 
     // Mode 2: old require syntax
     else if (/^(freebase:)?\//.test(path)) {
@@ -1919,7 +1923,7 @@ Script.prototype.normalize_path = function(path, version, new_only) {
             segs.push(path.replace("./", ""));
             path = segs.join("/");
         }
-        
+
         // check whether there's a matching mount
         if (this.app && this.app.mounts) {
             var path_segs = path.split("/");
@@ -1951,7 +1955,7 @@ Script.prototype.set_scope = function(scope) {
 
     /**
     *   _request.scope augmentation:
-    *   This is stuff we only do for 
+    *   This is stuff we only do for
     *   the top-level requested script:
     **/
     if (scope == _request.scope && !scope.__augmented__ && script.name.indexOf("not_found.") !== 0) {
@@ -2085,11 +2089,11 @@ Script.prototype.set_scope = function(scope) {
     *   helper for the following functions (require, include, get_source)
     *
     *   all take a path as the primary arugment, but
-    *   optionally can take a metadata object in the second 
+    *   optionally can take a metadata object in the second
     *   position to be spliced on to the context of the app.
     *
     *   ... or, for backward-compatibility, the metadata slot
-    *   can be a version string (path must be a freebase ID) 
+    *   can be a version string (path must be a freebase ID)
     **/
     function get_sobj(path, metadata) {
         var version,
@@ -2149,8 +2153,8 @@ Script.prototype.to_module = function(scope) {
     this.set_scope(scope);
 
     // now that the scope's all set up, we can finally load our handler
-    var handler_path = (this.app.handlers && this.app.handlers[this.handler]) ? 
-                        this.normalize_path(this.app.handlers[this.handler]) : 
+    var handler_path = (this.app.handlers && this.app.handlers[this.handler]) ?
+                        this.normalize_path(this.app.handlers[this.handler]) :
                         undefined;
     this._handler = _load_handler(this.scope, this.handler, handler_path);
 
@@ -2158,19 +2162,19 @@ Script.prototype.to_module = function(scope) {
         this._handler.augment_scope(this.scope, this);
     }
 
-    // let's make sure we don't end up with the cached compiled_js 
+    // let's make sure we don't end up with the cached compiled_js
     // from a different file version or different handler
     var class_name = this.path;
     var hash = acre.hash.hex_md5(this.content_hash + "." + this._handler.content_hash);
     this.linemap = null;
 
-    // get compiled javascript, either directly from the class cache or 
+    // get compiled javascript, either directly from the class cache or
     // by generating raw javascript and compiling (and caching the result)
     var compiled_js = _hostenv.load_script_from_cache(class_name, hash, this.scope, false);
     if (compiled_js == null) {
         var jsstr = this._handler.to_js(this);
         if (jsstr) {
-            compiled_js = _hostenv.load_script_from_string(jsstr, class_name, hash, 
+            compiled_js = _hostenv.load_script_from_string(jsstr, class_name, hash,
                                                            this.scope, this.linemap, false);
         }
     }
@@ -2225,8 +2229,8 @@ var proto_require = function(req_path, req_opts) {
         if (md) {
             for (var key in md) {
                 if (!skip_keys[key]) {
-                    app[key] = _u.isPlainObject(md[key]) ? 
-                                _u.extend(true, app[key] || {}, md[key]) : 
+                    app[key] = _u.isPlainObject(md[key]) ?
+                                _u.extend(true, app[key] || {}, md[key]) :
                                 md[key];
                 }
             }
@@ -2237,7 +2241,7 @@ var proto_require = function(req_path, req_opts) {
                 var host_parts = host.split(".");
                 var project_parts = project.split(".");
                 while (project_parts.length) {
-                    if (project_parts.pop() !== host_parts.pop()) 
+                    if (project_parts.pop() !== host_parts.pop())
                         return false;
                 }
                 return true;
@@ -2254,7 +2258,7 @@ var proto_require = function(req_path, req_opts) {
             app.hosts = app.hosts || [app.host];
             app.guid = app.guid || app.host;
             app.project = app.project || app.guid;
-            app.as_of = app.as_of || null; 
+            app.as_of = app.as_of || null;
             app.path = app.path || _u.compose_req_path(app.host);
             app.id = app.id || _u.host_to_namespace(app.host);
         }
@@ -2269,19 +2273,19 @@ var proto_require = function(req_path, req_opts) {
     /**
     *   utility for resolving filenames to files
     *   using the filenames lookup hash in app_data
-    * 
+    *
     *   we look for a match in several ways:
     *   1. foo.ext --> foo.ext
     *   2. foo.ext --> foo
-    *   3. foo --> foo.ext 
+    *   3. foo --> foo.ext
     *
     *   with preferred values of ext for #3 (.sjs, .mjt).
     **/
     function get_file(fn) {
         var filename, filenames;
 
-        // Early-on acre didn't support extensions, so it would resolve 
-        // requests for filenames with extensions to the filename w/out an 
+        // Early-on acre didn't support extensions, so it would resolve
+        // requests for filenames with extensions to the filename w/out an
         // extension... now we get to support that forever!  :-P
         var fn_noext = fn.replace(/\.[^\/\.]*$/,"");
         if (app_data.filenames[fn]) {
@@ -2308,7 +2312,7 @@ var proto_require = function(req_path, req_opts) {
           for (var ext in filenames) {
               filename = filenames[ext];
               break;
-          }          
+          }
         }
 
         return filename;
@@ -2324,7 +2328,7 @@ var proto_require = function(req_path, req_opts) {
     _u.each(appfetch_methods, function(i, m) {
         try {
             method = m;
-            var app_defaults = (method.name === 'cache') ? {} : 
+            var app_defaults = (method.name === 'cache') ? {} :
                 set_app_metadata({host: host}, _request.default_metadata);
             app_data = method.fetcher(host, app_defaults);
             return false;
@@ -2352,7 +2356,7 @@ var proto_require = function(req_path, req_opts) {
         }
         set_app_metadata(app_data, md);
     }
-    
+
     // now cache the app metadata
     var ckey = "METADATA:" + app_data.guid + ":" + app_data.as_of;
     var ttl = (typeof app_data.ttl === "number") ? app_data.ttl : 0;
@@ -2361,7 +2365,7 @@ var proto_require = function(req_path, req_opts) {
         // cache the metadata in the long-term cache, the metadata is
         // cached permanently (or until overriden).
         _cache.put(ckey, _json.stringify(app_data));
-        
+
         // we want to build an index of ids to the metadata block
         // which we do with HOST keys in the metadata cache. These
         // only last for ten minutes, since they are considered a
@@ -2433,7 +2437,7 @@ var proto_require = function(req_path, req_opts) {
 *   - routes: whether to try routes file first
 *   - fallbacks: whether to fail through to the defaults app
 *     for known files (e.g., error, robots.txt)
-*   - not_found: whether to return a not_found script 
+*   - not_found: whether to return a not_found script
 *     if no script is found
 */
 var route_require = function(req_path, req_opts, opts) {
@@ -2515,7 +2519,7 @@ var handle_request = function (req_path, req_body, skip_routes) {
     acre.request.body = req_body || "";
     acre.request.query_string = req_query_string || "";
     set_request_params();
-    
+
     // This information is needed to run the not_found page
     // it will actually get overriden with a proper
     // version once scope_augmentation is run
@@ -2531,12 +2535,12 @@ var handle_request = function (req_path, req_body, skip_routes) {
     // initialize the response
     acre.response = new AcreResponse();
     acre.response.set_header('x-acre-source-url',
-                            _request.freebase_site_host + 
+                            _request.freebase_site_host +
                             '/appeditor#!path=' + _request.source_path);
 
     try {
         script = route_require(req_path, null, {
-            routes: skip_routes ? false : true, 
+            routes: skip_routes ? false : true,
             fallbacks: true,
             not_found: true
         });
