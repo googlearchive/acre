@@ -1,0 +1,1 @@
+acre.write(acre.request.path_info);
