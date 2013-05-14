@@ -546,7 +546,7 @@ function augment(freebase, urlfetch, async_urlfetch) {
                                      "topics use 'get_topic_multi' instead.");
         }
 
-        if (options.callback) {
+        if (options && options.callback) {
             var callback = options.callback;
             options.callback = function(topic){
                 return callback(topic);
