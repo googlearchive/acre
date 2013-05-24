@@ -48,26 +48,26 @@ import com.google.acre.util.Supervisor;
 import com.google.acre.util.TIDGenerator;
 
 public class OneTrueServlet extends HttpServlet implements Filter {
-    
+
     private final static Log _logger = new Log(OneTrueServlet.class);
 
     private static final long serialVersionUID = -7572688360464348578L;
-        
+
     public static final String SUPERVISOR = "com.google.acre.supervisor";
-     
+
     private static boolean LIMIT_EXECUTION_TIME = Configuration.Values.ACRE_LIMIT_EXECUTION_TIME.getBoolean();
     private static boolean REMOTING = Configuration.Values.APPENGINE_REMOTING.getBoolean();
-    
+
     protected static final List<String[]> urlmap;
 
     private static String server;
-    
+
     private int log_level;
-    
+
     public static String getServer() {
         return server;
     }
-    
+
     static {
         try {
             urlmap = OneTrueConfig.parse();
@@ -75,7 +75,7 @@ public class OneTrueServlet extends HttpServlet implements Filter {
             throw new RuntimeException("Failed to parse OTS config file", e);
         }
     }
-    
+
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         dispatch(request, response);
@@ -85,7 +85,7 @@ public class OneTrueServlet extends HttpServlet implements Filter {
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         dispatch(request, response);
     }
-   
+
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -99,7 +99,7 @@ public class OneTrueServlet extends HttpServlet implements Filter {
             this.servletContext.setAttribute(SUPERVISOR, news);
         }
     }
-    
+
     @Override
     public void destroy() {
         Supervisor s = (Supervisor) this.servletContext.getAttribute(SUPERVISOR);
@@ -107,12 +107,12 @@ public class OneTrueServlet extends HttpServlet implements Filter {
             s.cancel();
         }
     }
-    
+
     @Override
     public boolean isLoggable(LogRecord r) {
-        return (r.getLevel().intValue() >= this.log_level); 
+        return (r.getLevel().intValue() >= this.log_level);
     }
-    
+
     private void initializeLogging() {
         this.log_level = Level.parse(Configuration.Values.ACRE_LOG_LEVEL.getValue()).intValue();
         Logger logger = Logger.getLogger("com.google.acre");
@@ -139,9 +139,9 @@ public class OneTrueServlet extends HttpServlet implements Filter {
 
     private final static boolean app_thresholding = Configuration.Values.ACRE_APP_THRESHOLDING.getBoolean();
     private final static float max_request_rate = Configuration.Values.ACRE_MAX_REQUEST_RATE.getFloat();
-    
+
     private transient ServletContext servletContext;
-            
+
     private boolean check_hostname(String rule_host, String request_host) {
         if (rule_host == null) return true;
 
@@ -165,7 +165,7 @@ public class OneTrueServlet extends HttpServlet implements Filter {
     private void dispatch(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
         RemotingManager remotingManager = null;
-        
+
         if (REMOTING) {
             try {
                 remotingManager = AcreFactory.getRemotingManager();
@@ -174,7 +174,7 @@ public class OneTrueServlet extends HttpServlet implements Filter {
                 throw new ServletException(e);
             }
         }
-                
+
         long start = System.currentTimeMillis();
         String tid = request.getHeader("X-Metaweb-TID");
         String sname = Configuration.Values.SERVICE_NAME.getValue();
@@ -196,34 +196,34 @@ public class OneTrueServlet extends HttpServlet implements Filter {
         String portval = "";
 
         _logger.info("****** request *******", access_log(request, response));
-        
+
         _logger.debug("request.start", start_log(request));
         _logger.debug(tid_event, tid);
-        
+
         try {
-            
+
             if (hostval == null) {
                 _logger.warn("request.url", "missing Host: header");
                 response.sendError(400);
                 return;
             }
-            
+
             AcreHttpServletResponse res = new AcreHttpServletResponse(response);
             AcreHttpServletRequest req = null;
-            
+
             for (String[] url_mapping : urlmap) {
-                
+
                 String[] host_path = url_mapping[0].split(":", 2);
                 String host_match = null;
                 String path_match = null;
-                
+
                 if (host_path.length > 1) {
                     host_match = host_path[0];
                     path_match = host_path[1];
                 } else {
                     path_match = host_path[0];
                 }
-    
+
                 String[] hostval_parts = hostval.split(":",2);
                 if (hostval_parts.length > 1) {
                     hostval = hostval_parts[0];
@@ -231,7 +231,7 @@ public class OneTrueServlet extends HttpServlet implements Filter {
                 } else {
                     hostval = hostval_parts[0];
                 }
-   
+
                 boolean qs_match = false;
                 String qs = request.getQueryString();
                 if (qs != null && path_match.startsWith("?")) {
@@ -270,27 +270,27 @@ public class OneTrueServlet extends HttpServlet implements Filter {
                         // even in the case where the content might not end up compressed.
                         // This is because the proxies up front need to be aware of the "possibility"
                         // of this URL having multiple states based on the value of that header
-                        
+
                         if (res.isContentCompressible()) {
                             res.addHeader("Vary", "Accept-Encoding");
                             res.send(shouldCompress(url_mapping[1],req));
                         } else {
                             res.send(false);
                         }
-                        
+
                         // collect the request info for the app stats
-                        // NOTE: we collect only the successful requests to avoid the 
+                        // NOTE: we collect only the successful requests to avoid the
                         // case where people keep refreshing the page that says "try again later"
                         // and those requests are counted as traffic as well (even if they
                         // are not heavy to process).
                         Statistics.instance().collectRequestTime(host, start, System.currentTimeMillis());
-                        
+
                     } else {
                         response.sendError(503);
                     }
-                    
-                    _logger.debug("request.end", end_log(res));
-                    
+
+                    _logger.info("request.end", end_log(res));
+
                     break;
                 }
             }
@@ -302,12 +302,12 @@ public class OneTrueServlet extends HttpServlet implements Filter {
             }
         }
     }
-    
-    private boolean shouldCompress(String servletName, AcreHttpServletRequest request) { 
+
+    private boolean shouldCompress(String servletName, AcreHttpServletRequest request) {
         String ae = request.getHeader("accept-encoding");
         return (servletName.toLowerCase().indexOf("proxy") == -1 && ae != null && ae.indexOf("gzip") != -1);
     }
-    
+
     @SuppressWarnings("unchecked")
     private HashMap<String, String> start_log(HttpServletRequest request) {
         HashMap<String, String> start_log = new HashMap<String, String>();
@@ -333,7 +333,7 @@ public class OneTrueServlet extends HttpServlet implements Filter {
 
         return start_log;
     }
-    
+
     private HashMap<String, String> end_log(AcreHttpServletResponse response) {
         HashMap<String, String> end_log = new HashMap<String, String>();
         end_log.put("Status", Integer.toString(response.getStatus()));
@@ -355,14 +355,14 @@ public class OneTrueServlet extends HttpServlet implements Filter {
             sb.append("\n");
         }
         end_log.put("Cookies", sb.toString());
-        
+
         return end_log;
     }
-    
+
     private String access_log(HttpServletRequest req, HttpServletResponse res) {
-    
+
         StringBuilder buf = new StringBuilder(300);
-        
+
         buf.append(req.getRemoteAddr());
         buf.append(" \"");
         buf.append(req.getMethod());
@@ -391,8 +391,8 @@ public class OneTrueServlet extends HttpServlet implements Filter {
             buf.append(user_agent);
             buf.append("\"");
         }
-                     
+
         return buf.toString();
     }
-    
+
 }
