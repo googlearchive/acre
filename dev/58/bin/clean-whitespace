@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Normalize the current directory to the toplevel acre directory
+cd `dirname $0`/..
+
+for i in `find . -name *.java` 
+do 
+    # expand tabs to spaces
+    expand -t 4 < $i > $i.1
+    
+    # convert DOS to UNIX newlines
+    tr -d '\r' < $i.1 > $i.2
+        
+    rm $i $i.1
+    mv $i.2 $i
+done
+
