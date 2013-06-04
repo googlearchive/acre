@@ -1197,7 +1197,14 @@ acre.handlers.acre_script = {
 
 acre.handlers.passthrough = {
     'to_js': function(script) {
-        return "var module = ("+_json.stringify(script.get_content())+");";
+        // Augment result with correct MIME type from script definition not
+        // with the one from APIs response, which is always application/json
+        var media_type = script.media_type;
+        var content = script.get_content();
+        if (content && content.headers && media_type) {
+            content.headers["content-type"] = media_type + "; charset=UTF-8";
+        }
+        return "var module = ("+_json.stringify(content)+");";
     },
     'to_module': function(compiled_js, script) {
         return compiled_js.module;
