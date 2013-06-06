@@ -1,0 +1,20 @@
+#!/bin/sh 
+
+# this should be called with ./acre to pickup the environment vars 
+# you can provide a list of paths to test modules or test packages
+# else the deafault list of packages defined below will be run
+
+# Normalize the current directory
+cd `dirname $0`/..
+BASE=`pwd`
+FSBASE=${BASE}/webapp/WEB-INF/scripts/googlecode/freebase-site/svn/trunk/pytests
+ARGS=$*
+if [ -z "$ARGS" ]
+then
+# define default tests here!
+ARGS="signin topic"
+fi
+
+python bin/testrunner -t unittest -u $FSBASE $ARGS
+  
+exit $?
