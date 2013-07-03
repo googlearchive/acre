@@ -21,7 +21,7 @@ import java.util.Iterator;
 
 /**
  * Provides counters for collecting statistics for an acre request.
- * Implemented as a singleton - the expectation is that a new one will be 
+ * Implemented as a singleton - the expectation is that a new one will be
  * created at the beginning of each request. See servlet/DispatchServlet.
  */
 public class CostCollector {
@@ -30,28 +30,28 @@ public class CostCollector {
     private static final ThreadLocal<CostCollector> _instance = new ThreadLocal<CostCollector>();
 
     // Creates a new collector object and returns it.
-    public static CostCollector createInstance() { 
+    public static CostCollector createInstance() {
         _instance.set(new CostCollector());
         return getInstance();
     }
 
-    public static CostCollector getInstance() { 
+    public static CostCollector getInstance() {
         return _instance.get();
     }
 
     // Holds the actual cost numbers.
     Map<String,Float> costs = new TreeMap<String,Float>();
-    
+
     public void merge(String costs_header) {
         String[] cost_frags = costs_header.split(", ");
-        for (String cost_frag : cost_frags) { 
+        for (String cost_frag : cost_frags) {
             String[] ff = cost_frag.split("=");
             if (ff.length == 2) {
                 collect(ff[0],Float.parseFloat(ff[1]));
             }
         }
     }
-    
+
     public CostCollector collect(String bin) {
         float value = 1.0f;
         if (costs.containsKey(bin)) {
@@ -68,19 +68,21 @@ public class CostCollector {
     public CostCollector collect(String bin, long cost) {
         return collect(bin, cost / 1000.0f);
     }
-    
+
     public CostCollector collect(String bin, float cost) {
         if (costs.containsKey(bin)) {
             cost += costs.get(bin);
         }
-        costs.put(bin, cost);
+        if (cost != null) {
+            costs.put(bin, cost);
+        }
         return getInstance();
     }
-    
+
     public String getCosts() {
-        
+
         StringBuilder b = new StringBuilder();
-        
+
         Iterator<String> i = costs.keySet().iterator();
         while (i.hasNext()) {
             String key = i.next();
