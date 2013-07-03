@@ -54,7 +54,7 @@ public class CostCollector {
 
     public CostCollector collect(String bin) {
         float value = 1.0f;
-        if (costs.containsKey(bin)) {
+        if (costs.containsKey(bin) && costs.get(bin) != null) {
             value += costs.get(bin);
         }
         costs.put(bin, value);
@@ -70,12 +70,10 @@ public class CostCollector {
     }
 
     public CostCollector collect(String bin, float cost) {
-        if (costs.containsKey(bin)) {
+        if (costs.containsKey(bin) && costs.get(bin) != null) {
             cost += costs.get(bin);
         }
-        if (cost != null) {
-            costs.put(bin, cost);
-        }
+        costs.put(bin, cost);
         return getInstance();
     }
 
