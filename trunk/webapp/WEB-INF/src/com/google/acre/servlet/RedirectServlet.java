@@ -33,6 +33,7 @@ public class RedirectServlet extends HttpServlet {
     public void service(HttpServletRequest request,
             HttpServletResponse response) throws ServletException, IOException {
 
-        response.sendRedirect(request.getPathInfo());
+        response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
+        response.setHeader("Location", request.getPathInfo());
     }
 }
