@@ -1,0 +1,91 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<link rel="stylesheet" href="../style.css" type="text/css"></link>
+<script type="text/javascript" src="../mjt.js"></script>
+<title>mjt.for testing</title>
+</head>
+<body onload="mjt.run()" style="display:none">
+
+<div>
+this is a demonstration of the various mjt.for= variants.
+</div>
+
+  (var i = 0; i &lt; 4; i++) 
+  <ul><li mjt.for="(var i = 0; i &lt; 4; i++)">
+    $i
+  </li></ul>
+  
+  i,v in [ 'a', 'b', 'c' ]
+  <ul><li mjt.for="i,v in [ 'a', 'b', 'c' ]">
+    $i,${JSON.stringify(v)}
+  </li></ul>
+
+  v in [ 'a', 'b', 'c' ]
+  <ul><li mjt.for="v in [ 'a', 'b', 'c' ]">
+    ${JSON.stringify(v)}
+  </li></ul>
+
+  v in { 'a': 'aa', 'b': 'bb' }
+  <ul><li mjt.for="v in { 'a': 'aa', 'b': 'bb' }">
+    ${JSON.stringify(v)}
+  </li></ul>
+
+  k,v in { 'a': 'aa', 'b': 'bb' }
+  <ul><li mjt.for="k,v in { 'a': 'aa', 'b': 'bb' }">
+    $k,${JSON.stringify(v)}
+  </li></ul>
+
+  c in 'abcd'
+  <ul><li mjt.for="c in 'abcd'">
+    '$c'
+  </li></ul>
+
+  i,c in 'abcd'
+  <ul><li mjt.for="i,c in 'abcd'">
+    $i,'$c'
+  </li></ul>
+
+  elt in document.getElementsByTagName('html')[0].childNodes
+  <ul><li mjt.for="elt in document.getElementsByTagName('html')[0].childNodes"
+          mjt.if="typeof elt === 'object'">
+    $elt.nodeName
+  </li></ul>
+
+  jquery resultsets should be supported too but no test yet.
+
+  <h3>variable capture</h3>
+
+  <p>
+  Unlike Javascript's native <code>for</code> loops, the body of an
+  element with a <code>mjt.for=</code> attribute creates a new
+  variable scope.  Variables declared inside the body are not shared
+  across iterations of the loop: this works out very nicely when you
+  want to create an event handler for each item in a list.
+  </p>
+
+  <p>
+  When you do want to share a variable, you can declare it outside the
+  <code>mjt.for=""</code>.  Try <i>View&nbsp;source</i> on this page to see how the
+  buttons below are constructed:
+  </p>
+
+  <div>
+    <pre mjt.script="">
+      var shared = 0;
+    </pre>
+    <div mjt.for="i, elt in document.getElementsByTagName('html')[0].childNodes">
+        <pre mjt.script="">
+          shared++;
+        </pre>
+        
+        <button mjt.onclick="alert('shared_var: '+shared+'; i: '+i)">$i: $elt.nodeName</button>
+    </div>
+    total: $shared
+  </div>
+
+
+
+</body></html>
