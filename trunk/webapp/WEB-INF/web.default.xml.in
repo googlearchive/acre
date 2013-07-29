@@ -20,6 +20,13 @@
   </servlet>
 
   <servlet>
+    <description>Serve Gone</description>
+    <display-name>GONE</display-name>
+    <servlet-name>GoneServlet</servlet-name>
+    <servlet-class>com.google.acre.servlet.GoneServlet</servlet-class>
+  </servlet>
+
+  <servlet>
     <description>proxy</description>
     <display-name>ProxyPassServlet</display-name>
     <servlet-name>ProxyPassServlet</servlet-name>
