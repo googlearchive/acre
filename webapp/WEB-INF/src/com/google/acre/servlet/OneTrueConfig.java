@@ -160,6 +160,14 @@ public class OneTrueConfig {
         return out;
     }
 
+    public Map<String, String> route_as_gone(Map<?,?> to) throws JSONException, OneTrueConfigException {
+        Map<String, String> out = new HashMap<String, String>();
+        out.put("servlet", "GoneServlet");
+        out.put("host", "");
+        out.put("path", "");
+        return out;
+    }
+
     public String process_param(Map<?,?> param) throws JSONException,
                                                   OneTrueConfigException {
         if (param.containsKey("key") && param.containsKey("value")) {
@@ -293,6 +301,8 @@ public class OneTrueConfig {
                 route_rule = route_as_app(to);
             } else if (route_as.equals("redirect")) {
                 route_rule = route_as_redirect(to);
+            } else if (route_as.equals("gone")) {
+                route_rule = route_as_gone(to);
             } else {
                 throw new OneTrueConfigException("Not a valid route_as "+route_as);
             }
