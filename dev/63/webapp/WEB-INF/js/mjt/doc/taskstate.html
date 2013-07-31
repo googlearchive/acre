@@ -1,0 +1,290 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>the mjt.Task lifecycle</title>
+<link rel="stylesheet" href="./style.css" type="text/css" />
+<style type="text/css">
+
+.stateeq {
+  display: block;
+  font-size: smaller;
+}
+.stateval {
+  display: block;
+  font-weight: bold;
+  font-size: 200%;
+}
+
+.statecell {
+  margin: 1em;
+}
+
+.taskstate {
+  font-weight: bold;
+}
+
+.arrowcell {
+  margin: 1em;
+  font-size: 200%;
+}
+
+td {
+  text-align: center;
+}
+
+p {
+  text-align: left;
+}
+
+.orsep {
+  margin: 3em;
+}
+
+.topofstate {
+  vertical-align: bottom;
+}
+
+.bottomofstate {
+  vertical-align: top;
+}
+
+</style>
+</head>
+<body>
+<div class="document">
+<h1 class="title">mjt.Task state transitions</h1>
+
+<table>
+<tr>
+<td class="topofstate">
+
+<p>
+The user calls the constructor for a particular task type to create a new
+instance:
+</p>
+<p>
+  <code>var task = MyTask(...);</code>
+</p>
+<p>
+  The new task object begins in <span class="taskstate">init</span> state.
+</p>
+
+</td><td>
+</td><td class="topofstate">
+
+<p>
+The task will not reach wait state until all prerequisites succeed.
+At that point the  task begins its work.  Generally this involves
+a network request.
+</p>
+
+
+
+</td><td>
+
+<div>
+  <div class="arrowcell">
+  <span class="arrow">&rarr;</span>
+  </div>
+</div>
+
+</td><td>
+
+<p>
+A ready state indicates that the task produced a useful result.
+</p>
+  
+  <div>
+    <div class="statecell">
+    <span class="stateeq">task.state ==</span>
+    <span class="stateval">'ready'</span>
+    </div>
+  </div>
+
+<p>
+
+When a task becomes <span class="taskstate">ready</span>,
+the task framework notifies all pending
+<code>onready()</code> callbacks, e.g.
+<code>ready_handler(result)</code>
+The result of the task can also be
+found in <code>task.result</code>.
+</p>
+
+</td></tr>
+
+<tr><td>
+
+<div class="statecell">
+<span class="stateeq">task.state ==</span>
+<span class="stateval">'init'</span>
+</div>
+
+
+</td><td>
+
+  <div>
+    <div class="arrowcell">
+    <span class="arrow">&rarr;</span>
+    </div>
+  </div>
+
+</td><td>
+
+
+<div class="statecell">
+<span class="stateeq">task.state ==</span>
+<span class="stateval">'wait'</span>
+</div>
+
+</td><td>
+</td><td>
+
+<div class="orsep">
+&mdash;
+<i>or</i>
+&mdash;
+</div>
+
+</td></tr>
+
+<tr><td class="bottomofstate">
+
+<p>
+Tasks are not started immediately after
+construction.  After construction the user
+can attach handlers using <code>task.onready(<i>ready_handler</i>)</code> or <code>task.onerror(<i>error_handler</i>)</code>,
+set up prerequisites using <code>task.require(<i>subtask</i>)</code>, or set up an
+error timeout using <code>task.set_timeout(milliseconds)</code>.
+</p>
+<p>
+Finally the user calls <code>task.enqueue()</code> to start the
+task.  The enqueue() is also propagated to any
+prerequisite tasks.
+</p>
+
+</td><td>
+</td><td class="bottomofstate">
+
+<p>
+When the asynchronous task is complete,
+it is handled as either <span class="taskstate">ready</span> or <span class="taskstate">error</span>.
+</p>
+
+</td><td>
+
+  <div>
+    <div class="arrowcell">
+    <span class="arrow">&rarr;</span>
+    </div>
+  </div>
+
+
+</td><td>
+<p>
+An error can be due to network timeouts, HTTP-level errors, failed prerequisite
+tasks, or application-specific errors.
+</p>
+
+  <div>
+    <div class="statecell">
+    <span class="stateeq">task.state ==</span>
+    <span class="stateval">'error'</span>
+    </div>
+  </div>
+
+<p>
+When a task reaches an <span class="taskstate">error</span>,
+the task framework notifies all pending
+<code>onerror(code, message, details)</code> callbacks.
+</p>
+
+</td></tr></table>
+
+<hr></hr>
+
+<h2>Notes</h2>
+
+<p>
+Task states proceed strictly from left to right.
+</p>
+
+<p>
+<code>task.enqueue()</code> may be called any number of times:
+if the task is not in the <span class="taskstate">init</span> state, enqueue() will be ignored.
+</p>
+
+<p>
+
+Before calling <code>task.enqueue()</code>, you can set up prerequisites using
+<code>task.require(subtask)</code>.  The task will not enter
+<span class="taskstate">wait</span> state until all subtasks are
+<span class="taskstate">ready</span>.  If any subtask goes into
+<span class="taskstate">error</span> state, the task goes into error immediately, without
+waiting for other subtasks to complete.
+</p>
+
+<p>
+If <code>task.onready(ready_handler)</code> is called when the task
+is already ready, <code>ready_handler(task.result)</code> is called immediately.
+Similarly for <code>task.onerror(error_handler)</code> if the task is
+already in the error state.
+</p>
+
+
+<h2>Developing a new mjt.Task</h2>
+
+<p>
+To develop a new mjt.Task subclass, you need a few more hooks.
+</p>
+
+<p>
+A new task type called <code>MyTask</code> can be created with:
+</p>
+<pre>
+  //
+  // declare the new task type
+  // 
+  var MyTimeout = mjt.define_task(null, {name:'msec'});
+</pre>
+
+<p>
+You must also provide an .init() function:
+</p>
+<pre>
+  //
+  // do any initialization necessary for the task type
+  //
+  MyTimeout.prototype.init = function () {
+     // this.msec is filled in before calling
+     // but we can do any other initialization here.
+  };
+</pre>
+
+<p>
+When a task goes into <span class="taskstate">wait</span> state, 
+it calls the <code>.request()</code> method of the class.  This
+is where the task should initiate some work.  When the task
+completes, the developer should call <code>task.ready(result)</code>
+or <code>task.error(code, message, details)</code> to notify other
+tasks.
+</p>
+
+<pre>
+  //
+  // .request() is where the code to initiate the task goes
+  //
+  MyTimeout.prototype.request = function () {
+     // task wrapper for window.setTimeout()
+     var task = this;
+     this.token = window.setTimeout(this.msec, function() {
+         // when the timeout occurs, we go into ready state.
+         task.ready(true);
+     });
+  };
+</pre>
+
+
+</div>
+</body>
+</html>
