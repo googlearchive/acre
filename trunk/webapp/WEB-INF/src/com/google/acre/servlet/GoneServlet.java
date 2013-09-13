@@ -33,6 +33,6 @@ public class GoneServlet extends HttpServlet {
     public void service(HttpServletRequest request,
             HttpServletResponse response) throws ServletException, IOException {
 
-      response.sendError(410, "Gone. See https://developers.google.com/freebase/v1/getting-started");
+      response.setStatus(HttpServletResponse.SC_GONE);
     }
 }
