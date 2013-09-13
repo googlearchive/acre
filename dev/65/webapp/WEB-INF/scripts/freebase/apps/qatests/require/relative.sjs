@@ -1,0 +1,1 @@
+var foo = acre.require("foo.sjs").foo;
