@@ -271,14 +271,11 @@ public class OneTrueServlet extends HttpServlet implements Filter {
                         // This is because the proxies up front need to be aware of the "possibility"
                         // of this URL having multiple states based on the value of that header
 
-                        // Send response only if request is not already committed (e.g. by sendError)
-                        if (!res.isCommitted()) {
-                            if (res.isContentCompressible()) {
-                                res.addHeader("Vary", "Accept-Encoding");
-                                res.send(shouldCompress(url_mapping[1],req));
-                            } else {
-                                res.send(false);
-                            }
+                        if (res.isContentCompressible()) {
+                            res.addHeader("Vary", "Accept-Encoding");
+                            res.send(shouldCompress(url_mapping[1],req));
+                        } else {
+                            res.send(false);
                         }
 
                         // collect the request info for the app stats
