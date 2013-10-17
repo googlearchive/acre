@@ -26,7 +26,7 @@ class ConfigParser:
     regex substitution callback
     will substitute the string matched with the environment variable of the same name
     '''
-    
+
     k = matchobj.groups(0)[0]
 
     if k in self.IGNORED_PARAMS:
@@ -35,14 +35,14 @@ class ConfigParser:
     if os.environ.get(k):
         print '%s: %s' % (k, os.environ[k])
         return os.environ[k]
-    
+
     print "No value found for variable %s in %s" % (k, self.full_path)
     return ""
 
   def convert(self):
     '''
-    read the file given in the constructor and 
-    substitute any occurance of the pattern @<PARAM_NAME>@ 
+    read the file given in the constructor and
+    substitute any occurance of the pattern @<PARAM_NAME>@
     Finally, spit-out the same filename without the suffix .in
     '''
 
@@ -65,24 +65,55 @@ class ConfigParser:
 
 # ----------------------------------------------------------------------#
 
-def copy_configuration_file(source,target):
+def copy_configuration_file(source, target):
+    target_dir = os.curdir + "/" + "/".join(target.split("/")[:-1])
     if os.path.exists(target):
       os.chmod(target, 0777)
+    elif not os.path.isdir(target_dir):
+      os.makedirs(target_dir)
+
     shutil.copy(source, target)
     print 'Copied %s to %s' % (source, target)
 
-# copy necessary configuration files from the alternate config directory 
+# copy necessary configuration files from the alternate config directory
 # or from defaults if no private configurations are given
 def copy_configuration_files(options):
 
   conf_files = [
-    ('appengine-web.%s.xml.in', 'appengine-web.xml.in'), 
-    ('web.%s.xml.in', 'web.xml.in'), 
-    ('cron.%s.xml.in', 'cron.xml.in'), 
-    ('queue.%s.xml.in', 'queue.xml.in'), 
+    ('appengine-web.%s.xml.in', 'appengine-web.xml.in'),
+    ('web.%s.xml.in', 'web.xml.in'),
+    ('cron.%s.xml.in', 'cron.xml.in'),
+    ('queue.%s.xml.in', 'queue.xml.in'),
     ('datastore-indexes.%s.xml.in', 'datastore-indexes.xml.in'),
-    ('backends.%s.xml.in', 'backends.xml.in')
+    ('backends.%s.xml.in', 'backends.xml.in'),
+    ('dispatch.%s.xml.in', 'dispatch.xml.in')
   ]
+
+  meta_conf_files = [
+    ('application.%s.xml.in', 'application.xml.in'),
+    ('appengine-application.%s.xml.in', 'appengine-application.xml.in')
+  ]
+
+
+  def copy_config_files(subdir):
+
+     # these files require a default
+     for source_target in conf_files:
+
+       f = os.path.join(options.directory, subdir, source_target[0] % options.config)
+       if os.path.exists(f):
+         copy_configuration_file(f,'webapp/%s/WEB-INF/%s' % (subdir, source_target[1]))
+       else:
+         f = os.path.join(options.directory,options.config,subdir,source_target[1])
+         if os.path.exists(f):
+           copy_configuration_file(f,'webapp/%s/WEB-INF/%s' % (subdir, source_target[1]))
+         else:
+           f = os.path.join(options.directory,subdir,source_target[1])
+           if os.path.exists(f):
+             copy_configuration_file(f,'webapp/%s/WEB-INF/%s' % (subdir, source_target[1]))
+           else:
+             f = 'webapp/WEB-INF/%s' % (source_target[0] % 'default')
+             copy_configuration_file(f,'webapp/%s/WEB-INF/%s' % (subdir, source_target[1]))
 
   # if a directory and target where specified in the command line, use them
   if options.config and options.directory:
@@ -102,32 +133,30 @@ def copy_configuration_files(options):
           f = os.path.join(options.directory,source_target[1])
           if os.path.exists(f):
             copy_configuration_file(f,'webapp/META-INF/%s' % source_target[2])
-            
-    # these files require a default
-    for source_target in conf_files:
+
+
+    # these files go into META-INF as part of AE modules
+    for source_target in meta_conf_files:
 
       f = os.path.join(options.directory, source_target[0] % options.config)
       if os.path.exists(f):
-        copy_configuration_file(f,'webapp/WEB-INF/%s' % source_target[1])
+        copy_configuration_file(f,'webapp/META-INF/%s' % source_target[1])
       else:
-        f = os.path.join(options.directory,options.config,source_target[1])
+        f = os.path.join(options.directory, options.config, source_target[1])
         if os.path.exists(f):
-          copy_configuration_file(f,'webapp/WEB-INF/%s' % source_target[1])
-        else:
-            f = os.path.join(options.directory,source_target[1])
-            if os.path.exists(f):
-              copy_configuration_file(f,'webapp/WEB-INF/%s' % source_target[1])
-            else:
-              f = 'webapp/WEB-INF/%s' % (source_target[0] % 'default')
-              copy_configuration_file(f,'webapp/WEB-INF/%s' % source_target[1])
+          copy_configuration_file(f,'webapp/META-INF/%s' % source_target[1])
 
-  # no directory and target specified, use the default 
+    for subdir in os.listdir(os.path.join(options.directory, options.config)):
+      if os.path.isdir(os.path.join(options.directory, options.config, subdir)) and subdir not in [".git"]:
+        copy_config_files(subdir)
+
+  # no directory and target specified, use the default
   else:
 
     for source_target in conf_files:
       f = 'webapp/WEB-INF/%s' % (source_target[0] % 'default')
       if os.path.exists(f):
-        copy_configuration_file(f,'webapp/WEB-INF/%s' % source_target[1])          
+        copy_configuration_file(f,'webapp/WEB-INF/%s' % source_target[1])
 
     for ots_file in ['ots.other.conf.in', 'ots.other.conf']:
       f = 'webapp/META-INF/%s' % ots_file
@@ -151,13 +180,13 @@ def modify_config_params():
           m = re.match('URL: (.*)', line)
           if m:
             ver.append('/'.join(m.group(1).split('/')[4:]))
-              
+
           m = re.match('Revision: (\d+)', line)
           if m:
             ver.append(m.group(1))
 
   ver = ':'.join(ver)
-      
+
   os.environ['ACRE_VERSION'] = ver
   return True
 
@@ -170,10 +199,24 @@ def create_configuration_files(dir):
 
   return True
 
+
+def create_config_files_for_modules(webapp_dir):
+  other_dirs = ["META-INF", "WEB-INF"]
+
+  # Check if there are modules = 'default' dir is present
+  if os.path.isdir(os.path.join(webapp_dir, "default")):
+    for subdir in os.listdir(webapp_dir):
+      if (os.path.isdir(os.path.join(webapp_dir, subdir))
+              and subdir not in other_dirs and not subdir.startswith(".")):
+        create_configuration_files(os.path.join(webapp_dir, subdir, "WEB-INF"))
+
+  return True
+
+
 # ----------------------------------------------------------------------#
 
 def main():
-    
+
     parser = OptionParser()
     parser.add_option('-c', '--config', dest='config', default=None,
                         help='the configuration group you want - e.g. acre')
@@ -191,6 +234,10 @@ def main():
     # ---- Step 3: Create configuration files from their source .in files
     create_configuration_files("webapp/META-INF")
     create_configuration_files("webapp/WEB-INF")
+
+    # ---- Step 4: Create configuration files from module .in files if we are using modules
+    create_config_files_for_modules("webapp")
+
 
 # ----------------------------------------------------------------------#
 
