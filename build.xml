@@ -158,7 +158,67 @@
             <include name="appengine-remote-api.jar" />
           </fileset>
         </copy>
+
+        <iterate target="copy-appengine-modules">
+          <dirset dir="${webapp.dir}">
+            <include name="*" />
+            <exclude name="META-INF/"/>
+            <exclude name="WEB-INF/"/>
+            <exclude name=".**"/>
+          </dirset>
+        </iterate>
+
     </target>
+
+    <target name="copy-appengine-modules">
+
+      <copy todir="${webapp.dir}/${module}/WEB-INF/classes">
+        <fileset dir="${webapp.classes.dir}">
+          <include name="**/*.class"/>
+        </fileset>
+        <fileset dir="${library.classes.dir}">
+          <include name="**/*.class"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${webapp.dir}/${module}/WEB-INF/lib" flatten="true">
+        <fileset dir="${webapp.lib.dir}">
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${server.lib.dir}">
+          <include name="log4j-*.jar" />
+          <include name="slf4j-*.jar" />
+          <include name="jcl-*.jar" />
+        </fileset>
+      </copy>
+
+      <copy todir="${webapp.dir}/${module}/WEB-INF/js">
+        <fileset dir="${webapp.dir}/WEB-INF/js">
+          <include name="**/*.js" />
+          <exclude name="mjt/examples/**"/>
+          <exclude name="mjt/doc/**"/>
+          <exclude name="mjt/test/**"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${webapp.dir}/${module}/WEB-INF/scripts">
+        <fileset dir="${webapp.dir}/WEB-INF/scripts">
+          <include name="**/*" />
+          <exclude name="freebase/**"/>
+          <exclude name="googlecode/**"/>
+          <exclude name="qa/**"/>
+          <exclude name="test/tests/**"/>
+          <exclude name="test/writetests/**"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${webapp.dir}/${module}/WEB-INF/global_static">
+        <fileset dir="${webapp.dir}/WEB-INF/global_static">
+          <include name="**/*" />
+        </fileset>
+      </copy>
+    </target>
+
 
     <!-- ======================================================================== -->
 
@@ -168,6 +228,17 @@
       <mkdir dir="${war.config.dir}" />
       <mkdir dir="${war.lib.dir}" />
       <mkdir dir="${war.classes.dir}" />
+
+      <!-- Copy modules -->
+      <copy todir="${war.dir}">
+        <fileset dir="${webapp.dir}">
+          <exclude name="META-INF/**"/>
+          <exclude name="WEB-INF/**"/>
+          <exclude name=".**/**"/>
+        </fileset>
+      </copy>
+      <copy file="${webapp.web-inf}/appengine-application.xml" tofile="${war.config.dir}/appengine-application.xml" />
+      <copy file="${webapp.web-inf}/application.xml" tofile="${war.config.dir}/application.xml" />
 
       <copy todir="${war.config.dir}">
         <fileset dir="${webapp.config.dir}">
@@ -322,8 +393,18 @@
             </fileset>
         </delete>
 
+        <delete>
+          <fileset dir="${webapp.dir}">
+            <include name="*/WEB-INF/**"/>
+          </fileset>
+          <dirset dir="${webapp.dir}">
+            <include name="*/WEB-INF/**"/>
+          </dirset>
+        </delete>
+
         <delete dir="${war.dir}" />
         <delete dir="${build.dir}" />
+
     </target>
 
     <target name="distclean" description="Remove all files not in version control" depends="clean">
@@ -331,5 +412,35 @@
         <delete dir="${data.dir}" />
         <delete dir="${logs.dir}" />
     </target>
+
+    <scriptdef name="iterate" language="javascript">
+    <element name="dirset" type="dirset"/>
+    <attribute name="target"/>
+    <![CDATA[
+      dirsets = elements.get("dirset"); // Can have multiple dirsets
+      target = attributes.get("target");
+
+      for (var i = 0; i < dirsets.size(); ++i) {
+        dirset = dirsets.get(i);
+
+        var it = dirset.iterator();
+        while(it.hasNext()) {
+          var key = it.next();
+          println("Executing task for " + key.getName());
+
+          var callTask = project.createTask("antcall");
+          callTask.setTarget(target);
+
+          // Configure the parameters for the "antcall" task - module name
+          var param = callTask.createParam();
+          param.setName("module");
+          param.setValue(key.getName());
+
+          callTask.execute();
+        }
+      }
+
+    ]]>
+    </scriptdef>
 
 </project>
