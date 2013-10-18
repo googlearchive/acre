@@ -1,0 +1,18 @@
+<html>
+<head>
+<script type="text/javascript">
+// escaping
+// &<>"
+//
+// attempting to close the tag should be prevented:
+// ${'<' + '/script>'}
+
+</script>
+</head>
+<body>
+view source to check that<ul>
+<li>the characters in the script tag are not html-escaped</li>
+<li>the &lt;/script&gt; inside the script tag shows up as &lt;\/script&gt; (with a backslash)</li>
+</ul>
+</body>
+</html>

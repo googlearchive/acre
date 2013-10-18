@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Normalize the current directory
+cd `dirname $0`/..
+
+ab -c 10 -n 1000 http://qa.$ACRE_HOST_DELIMITER_PATH.$ACRE_HOST_BASE:$ACRE_PORT/
