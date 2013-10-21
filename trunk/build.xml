@@ -229,7 +229,7 @@
       <mkdir dir="${war.lib.dir}" />
       <mkdir dir="${war.classes.dir}" />
 
-      <!-- Copy modules -->
+      <!-- Copy modules if available -->
       <copy todir="${war.dir}">
         <fileset dir="${webapp.dir}">
           <exclude name="META-INF/**"/>
@@ -237,8 +237,12 @@
           <exclude name=".**/**"/>
         </fileset>
       </copy>
-      <copy file="${webapp.web-inf}/appengine-application.xml" tofile="${war.config.dir}/appengine-application.xml" />
-      <copy file="${webapp.web-inf}/application.xml" tofile="${war.config.dir}/application.xml" />
+      <copy todir="${war.config.dir}">
+        <fileset dir="${webapp.web-inf}">
+          <include name="appengine-application.xml" />
+          <include name="application.xml" />
+        </fileset>
+      </copy>
 
       <copy todir="${war.config.dir}">
         <fileset dir="${webapp.config.dir}">
@@ -374,6 +378,7 @@
         <delete file="${webapp.web-inf}/datastore-indexes.xml"/>
         <delete file="${webapp.web-inf}/queue.xml"/>
         <delete file="${webapp.web-inf}/backends.xml"/>
+        <delete file="${webapp.web-inf}/dispatch.xml"/>
 
         <delete file="${webapp.web-inf}/appengine-web.xml.in"/>
         <delete file="${webapp.web-inf}/web.xml.in"/>
@@ -381,12 +386,17 @@
         <delete file="${webapp.web-inf}/datastore-indexes.xml.in"/>
         <delete file="${webapp.web-inf}/queue.xml.in"/>
         <delete file="${webapp.web-inf}/backends.xml.in"/>
+        <delete file="${webapp.web-inf}/dispatch.xml.in"/>
 
         <delete>
             <fileset dir="${webapp.dir}/META-INF">
                 <include name="*.conf"/>
                 <include name="*.properties"/>
                 <include name="ots.other.conf.in"/>
+                <include name="appengine-application.xml.in"/>
+                <include name="appengine-application.xml"/>
+                <include name="application.xml.in"/>
+                <include name="application.xml"/>
             </fileset>
             <fileset dir="${webapp.lib.dir}">
                 <include name="appengine-*.jar" />
@@ -399,6 +409,15 @@
           </fileset>
           <dirset dir="${webapp.dir}">
             <include name="*/WEB-INF/**"/>
+          </dirset>
+        </delete>
+
+        <delete>
+          <dirset dir="${webapp.dir}">
+            <include name="*" />
+            <exclude name="META-INF/"/>
+            <exclude name="WEB-INF/"/>
+            <exclude name=".**"/>
           </dirset>
         </delete>
 
