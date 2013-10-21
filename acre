@@ -1,6 +1,6 @@
 #!/bin/sh
 
-########################################################## 
+##########################################################
 #                  Acre Control System                   #
 ##########################################################
 
@@ -147,6 +147,13 @@ check_appengine_build() {
     fi
 }
 
+check_appengine_build_with_modules() {
+    if [ ! -d "webapp/default/WEB-INF/classes/com/google/acre" ] && [ -f "webapp/META-INF/application.xml" ]; then
+        echo "Rebuilding for modules"
+        appengine_build
+    fi
+}
+
 appengine_build_config() {
     check_python
     if [ "$CONF_DIR" != "" ] && [ "$CONF" != "" ]; then
@@ -160,6 +167,7 @@ appengine_run() {
     check_appengine
     check_appengine_build
     appengine_build_config
+    check_appengine_build_with_modules
     echo ""
     echo "=========== Starting Acre ======================================= "
     echo ""
@@ -191,7 +199,7 @@ appengine_hostbase() {
         if [ "$ACRE_HOST_BASE" != "" ] &&  [ "$ACRE_HOST_BASE" != "localhost" ]; then
             return
         fi
-        
+
         if [ "$APPENGINE_APP_ID" != "" ]; then
             ACRE_HOST_BASE="$APPENGINE_APP_ID.$APPENGINE_BASE_HOST"
 
@@ -210,6 +218,8 @@ appengine_build_war() {
 
     appengine_hostbase
     appengine_build_config
+
+    check_appengine_build_with_modules
 
     ant -f build.xml -Dsdk.dir=\"$APPENGINE_HOME\" -Dconfig.file=\"$CONF\" -Dwar.dir=\"$WAR\" appengine-war || exit 1
 
@@ -230,7 +240,7 @@ check_appengine_build_war() {
 
 appengine_deploy() {
     check_appengine
-    check_appengine_build_war    
+    check_appengine_build_war
     appengine_hostbase
 
     if [ ! -f "$WAR/WEB-INF/appengine-web.xml" ]; then
@@ -278,7 +288,7 @@ cd `dirname $0`
 # Load default configs ------------------------------------
 if [ -f "config/project.conf" ]; then
     load "config/project.conf"
-else 
+else
     error "Missing 'project.conf'"
 fi
 
@@ -294,17 +304,17 @@ while [ $# -ne 0 ]; do
   case "$1" in
     -h) usage;;
 
-    -c) shift 
-        export CONF="$1" 
+    -c) shift
+        export CONF="$1"
         shift
         continue;;
 
-    -d) shift 
-        export CONF_DIR="$1" 
+    -d) shift
+        export CONF_DIR="$1"
         shift
         continue;;
 
-    -p) shift 
+    -p) shift
         export PORT="$1"
         shift
         continue;;
@@ -336,7 +346,7 @@ if [ "$CONF" != "" ]; then
         load $CONF
     elif [ -f "config/project.$CONF.conf" ]; then
         load "config/project.$CONF.conf"
-    else 
+    else
         error "configuration file config/project.$CONF.conf not found";
     fi
 
@@ -369,67 +379,67 @@ fi
 
 # Decide what script to run based on the wanted action ----
 case "$ACTION" in
-    help) 
+    help)
         usage;;
-    run) 
-        SCRIPT="start" 
+    run)
+        SCRIPT="start"
         invoke;;
-    build) 
+    build)
         SCRIPT="build"
-        COMMAND="compile" 
+        COMMAND="compile"
         invoke;;
-    war) 
-        SCRIPT="build" 
-        COMMAND="war" 
+    war)
+        SCRIPT="build"
+        COMMAND="war"
         invoke;;
-    dist) 
-        SCRIPT="build" 
-        COMMAND="dist" 
-        get_version $1 
+    dist)
+        SCRIPT="build"
+        COMMAND="dist"
+        get_version $1
         get_revision
-        export ANT_PARAMS="-Dversion=$VERSION -Drevision=$REVISION" 
+        export ANT_PARAMS="-Dversion=$VERSION -Drevision=$REVISION"
         invoke;;
-    clean) 
+    clean)
         SCRIPT="build"
-        COMMAND="clean" 
+        COMMAND="clean"
         invoke;;
-    distclean) 
+    distclean)
         SCRIPT="build"
-        COMMAND="distclean" 
+        COMMAND="distclean"
         invoke;;
 
-    appengine-build) 
+    appengine-build)
         appengine_build;;
 
-    appengine-build-config) 
+    appengine-build-config)
         appengine_build_config;;
 
-    appengine-run) 
+    appengine-run)
         appengine_run;;
 
-    appengine-build-war) 
+    appengine-build-war)
         appengine_build_war;;
 
-    appengine-deploy) 
+    appengine-deploy)
         appengine_deploy;;
 
-    appengine-rollback) 
+    appengine-rollback)
         appengine_rollback;;
 
-    appengine-update-indexes) 
+    appengine-update-indexes)
         appengine_build_war
         appengine_update_indexes;;
 
-    appengine-update-cron) 
+    appengine-update-cron)
         appengine_build_war
         appengine_update_cron;;
 
-    appengine-update-queues) 
+    appengine-update-queues)
         appengine_build_war
         appengine_update_queues;;
 
-    *) 
-        SCRIPT="$ACTION" 
+    *)
+        SCRIPT="$ACTION"
         invoke $*;;
 esac
 

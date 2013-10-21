@@ -146,9 +146,15 @@ def copy_configuration_files(options):
         if os.path.exists(f):
           copy_configuration_file(f,'webapp/META-INF/%s' % source_target[1])
 
+    seen_subdir = False
     for subdir in os.listdir(os.path.join(options.directory, options.config)):
       if os.path.isdir(os.path.join(options.directory, options.config, subdir)) and subdir not in [".git"]:
         copy_config_files(subdir)
+        seen_subdir = True
+
+    if not seen_subdir:
+      # If there are not subdirs, assume there are no modules and copy files flat.
+      copy_config_files(".")
 
   # no directory and target specified, use the default
   else:
@@ -156,7 +162,7 @@ def copy_configuration_files(options):
     for source_target in conf_files:
       f = 'webapp/WEB-INF/%s' % (source_target[0] % 'default')
       if os.path.exists(f):
-        copy_configuration_file(f,'webapp/WEB-INF/%s' % source_target[1])
+        copy_configuration_file(f, 'webapp/WEB-INF/%s' % source_target[1])
 
     for ots_file in ['ots.other.conf.in', 'ots.other.conf']:
       f = 'webapp/META-INF/%s' % ots_file
