@@ -217,6 +217,13 @@
           <include name="**/*" />
         </fileset>
       </copy>
+
+      <copy todir="${webapp.dir}/${module}/META-INF">
+        <fileset dir="${webapp.config.dir}">
+          <include name="**/*.properties"/>
+          <include name="**/*.conf"/>
+        </fileset>
+      </copy>
     </target>
 
 
@@ -238,7 +245,7 @@
         </fileset>
       </copy>
       <copy todir="${war.config.dir}">
-        <fileset dir="${webapp.web-inf}">
+        <fileset dir="${webapp.config.dir}">
           <include name="appengine-application.xml" />
           <include name="application.xml" />
         </fileset>

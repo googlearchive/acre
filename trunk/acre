@@ -243,12 +243,13 @@ appengine_deploy() {
     check_appengine_build_war
     appengine_hostbase
 
-    if [ ! -f "$WAR/WEB-INF/appengine-web.xml" ]; then
-        fatal "Can't deploy, the war is missing WEB-INF/appengine-web.xml"
+    if [ ! -f "$WAR/WEB-INF/appengine-web.xml" ] && [ ! -f "$WAR/META-INF/application.xml" ]; then
+        error "Can't deploy, the war is missing WEB-INF/appengine-web.xml or META-INF/application.xml"
     fi
 
     echo ""
     echo "Deploying $APPENGINE_APP_ID [$APPENGINE_APP_VERSION] at http://$ACRE_HOST_BASE/"
+    echo "By running: $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update '$WAR'"
     echo ""
 
     $APPENGINE_HOME/bin/appcfg.sh $APPENGINE_DEPLOY_PARAMS update "$WAR"
