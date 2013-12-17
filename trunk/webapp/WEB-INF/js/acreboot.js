@@ -2337,6 +2337,8 @@ var proto_require = function(req_path, req_opts) {
             method = m;
             var app_defaults = (method.name === 'cache') ? {} :
                 set_app_metadata({host: host}, _request.default_metadata);
+            syslog.debug("Method:" + method.name + ", req_path:" + req_path ,
+                    "appfetcher.fetch_sources");
             app_data = method.fetcher(host, app_defaults);
             return false;
         } catch (e if e.__code__ == APPFETCH_ERROR_NOT_FOUND) {

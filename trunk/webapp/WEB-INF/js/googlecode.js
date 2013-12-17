@@ -25,6 +25,8 @@ function appfetcher(register_appfetcher, make_appfetch_error, _system_urlfetch) 
         var dir_url = "http://code.google.com/p/" + project + "/source/dirfeed?p=/" + path;
         var source_url = "http://" + project + ".googlecode.com/" + repo + "/" + path;
 
+        acre.syslog.info("dir_url:" + dir_url + ", dir:" + dir, "googlecode.fetch_sources");
+
         // we need to go fetch it
         if (!dir) {
             try {
