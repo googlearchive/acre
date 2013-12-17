@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# this should be called with ./acre to pickup the environment vars 
+
+# Normalize the current directory
+cd `dirname $0`/..
+BASE=`pwd`
+
+ECHO="/bin/echo"
+
+$ECHO
+
+$ECHO -n "CHECK: python availability... "
+python -V &> /dev/null
+RET=$?
+if [ $RET == 127 ]; then
+    $ECHO "FAILED"
+    $ECHO "FATAL: These tests require 'python'"
+    exit 1
+else
+    $ECHO "PASSED"
+fi
+
+ARGS=$*
+python bin/testrunner -t unittest -u $BASE/tests acre_py_tests
+
+exit $?
