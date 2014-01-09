@@ -2371,6 +2371,18 @@ var proto_require = function(req_path, req_opts) {
     var ttl = (typeof app_data.ttl === "number") ? app_data.ttl : 0;
 
     if (method.cachable && (ttl !== 0)) {
+
+        // log special case when we cache app that has source:googlecode_json
+        // which will force files to be loaded from googlecode
+        //
+        // TODO(pmikota): remove this logging after we figure out why is this
+        // happening
+        if (app_data.source == "googlecode_json") {
+            syslog.error('Caching app_data.source: ' + app_data.source +
+                    'app_data.host: ' + app_data.host,
+                    'cache.googlecode');
+        }
+
         // cache the metadata in the long-term cache, the metadata is
         // cached permanently (or until overriden).
         _cache.put(ckey, _json.stringify(app_data));

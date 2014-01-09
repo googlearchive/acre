@@ -70,8 +70,8 @@ import com.google.acre.util.CostCollector;
  */
 public class AcreFetch extends JSConvertable {
 
-    private final static Log _logger = new Log(AcreFetch.class);    
-    
+    private final static Log _logger = new Log(AcreFetch.class);
+
     private static String ACRE_METAWEB_API_ADDR = Configuration.Values.ACRE_METAWEB_API_ADDR.getValue();
     private static String ACRE_FREEBASE_SITE_ADDR = Configuration.Values.ACRE_FREEBASE_SITE_ADDR.getValue();
 
@@ -96,7 +96,7 @@ public class AcreFetch extends JSConvertable {
     private boolean _internal;
     private ClientConnectionManager _connectionManager;
     private CostCollector _costCollector;
-    
+
     public AcreFetch(String url, String method, long deadline, int reentries, AcreResponse response, ClientConnectionManager connectionManager) {
         request_url = url;
         request_method = method;
@@ -142,15 +142,15 @@ public class AcreFetch extends JSConvertable {
 
     @SuppressWarnings("boxing")
     public void fetch(boolean system, String response_encoding, boolean log_to_user, boolean no_redirect) {
-        
+
         if (request_url.length() > 2047) {
             throw new AcreURLFetchException("fetching URL failed - url is too long");
         }
 
         DefaultHttpClient client = new DefaultHttpClient(_connectionManager, null);
-        
+
         HttpParams params = client.getParams();
-        
+
         // pass the deadline down to the invoked service.
         // this will be ignored unless we are fetching from another
         // acre server.
@@ -163,7 +163,7 @@ public class AcreFetch extends JSConvertable {
         long sub_deadline = (HostEnv.LIMIT_EXECUTION_TIME) ? _deadline - HostEnv.SUBREQUEST_DEADLINE_ADVANCE : System.currentTimeMillis() + HostEnv.ACRE_URLFETCH_TIMEOUT;
         int reentries = _reentries + 1;
         request_headers.put(HostEnv.ACRE_QUOTAS_HEADER, "td=" + sub_deadline + ",r=" + reentries);
-        
+
         // if this is not an internal call, we need to invoke the call thru a proxy
         if (!_internal) {
             // XXX No sense wasting the resources to gzip inside the network.
@@ -214,7 +214,7 @@ public class AcreFetch extends JSConvertable {
 
         params.setParameter(AllClientPNames.HANDLE_REDIRECTS, !no_redirect);
         logmsg.put("Redirect", Boolean.toString(!no_redirect));
-        
+
         try {
             if (request_method.equals("GET")) {
                 method = new HttpGet(request_url);
@@ -298,7 +298,7 @@ public class AcreFetch extends JSConvertable {
             msg.add(logmsg);
             _acre_response.log("debug", msg);
         }
-        _logger.debug("urlfetch.request", logmsg);
+        _logger.info("urlfetch.request", logmsg);
 
         long startTime = System.currentTimeMillis();
 
@@ -342,7 +342,7 @@ public class AcreFetch extends JSConvertable {
                 _acre_response.log("debug", msg);
             }
 
-            _logger.debug("urlfetch.response", res_logmsg);
+            _logger.info("urlfetch.response", res_logmsg);
 
             // read cookies
             for (Cookie c : cstore.getCookies()) {
