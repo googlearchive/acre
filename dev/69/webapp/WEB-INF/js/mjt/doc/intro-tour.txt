@@ -1,0 +1,948 @@
+============
+Mjt.Template
+============
+
+Mjt.Template is a templating system that can run entirely in the browser.
+
+Templates are described in HTML but with some non-standard attributes
+that describe the templating process.  A RelaxNG compact schema
+for the extended attributes can be found in mjt.rnc_.
+
+Templates are compiled from the extended HTML into Javascript
+functions.  These template functions format Javascript data
+structures into HTML, which is then inserted into the current page.
+Template substitution may be explicitly directed from Javascript,
+or automatically triggered as data arrives from external sources.
+
+This document demonstrates most of the constructs in the
+template language.  
+
+For more information, see http://mjtemplate.org
+
+.. contents::
+
+
+Overview
+========
+
+The examples are actual mjt templates
+that have (we hope) just been expanded in your browser.
+
+We'll be evaluating bits of mjt-enhanced html throughout
+this page.  On the left will be some mjt-enhanced html, and
+on the right will be the expanded html after evaluating the
+mjt extensions.
+
+Here's our first example: plain html passes right through::
+
+  <h3>hello</h3>
+
+
+Note that you can run any of the examples standalone by embedding
+them inside the following HTML:
+
+.. class:: nomjt
+
+::
+
+    <html><head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+    <script type="text/javascript"
+            src="http://mjtemplate.org/dist/mjt-0.9.3/mjt.js"></script>
+    </head>
+    <body onload="mjt.run()" style="display:none">
+        <!-- PASTE YOUR MJT EXAMPLE HERE! -->
+    </body></html>
+
+
+Example data
+------------
+
+To start with we'll set up some sample data, so we can
+talk about the basics of the template language without
+contacting an external service just yet.  We'll set up a
+global javascript variable ``q`` that contains a simulated
+JSON_ response from the Freebase_ service.
+
+To set ``q``, we just pass through a <script> tag to
+the generated template.  The example data will get set
+up when the template is expanded into the page.  This
+is a little trickier than necessary because of the
+constraints of this demo - in a real application you
+would probably set up your data outside the template
+or fetch it using mjt.task:
+
+.. class:: js
+
+::
+
+  q = {
+      "result": {
+          "id": "/guid/9202a8c04000641f8000000000056600",
+          "name": "Buster Keaton",
+          "film": [
+             {
+               "type": "/film/performance",
+               "film": {
+                   "id": "/guid/9202a8c04000641f800000000008910a",
+                   "name": "Sherlock, Jr.",
+                   "initial_release_date": "1924-04-21"
+               }
+             }, {
+               "type": "/film/performance",
+               "film": {
+                   "id": "/guid/9202a8c04000641f80000000002c39db",
+                   "name": "Steamboat Bill Jr.",
+                   "initial_release_date": "1928-05-19"
+               }
+             }]
+      }
+  };
+
+
+Text substitution
+=================
+
+Text splicing is the fundamental operation in any template language.
+In mjt, text substitutions are introduced with the dollar sign: $.  Complex
+expressions following the $ must be enclosed in curly braces:
+${ *expr* }.  For simple expressions the braces may be omitted.
+
+$ and ${}
+---------
+
+Inside the text and attribute values in the template, you can
+evaluate arbitrary javascript expressions with ${ *expr* }.  The
+result of evaluating *expr* will be inserted into the output
+document::
+
+  <div>${q.result.film.length} films found</div>
+
+Variable names and "." paths don't require {} delimiters::
+
+  <div>$q.result.film.length films found</div>
+
+
+$-substitution works in attribute values, too::
+
+  <a href="http://www.freebase.com/view$q.result.id">
+      $q.result.name
+  </a>
+
+To avoid triggering substitution, you can use two dollar signs ($$)
+to generate a single $ in the output::
+
+ US$$100.00
+
+Inside ${}, the $ character does not need to be quoted::
+
+  ${'US$'}100.00
+
+However, the } character is illegal inside ${}, and this will
+create an error:
+
+  ``${(function (x) { return x; })(1)}``
+
+You can't use the right-brace '}' character inside ${ *expr* }, because
+the code that looks for ${...} doesn't know how to count nested
+braces.  If you need to use braces in an expression, create a
+new javascript function using a <script> tag and call that
+function from the ${}.
+
+
+HTML entity encoding
+--------------------
+
+All javascript strings (e.g. from query results) are treated
+as text rather than html markup.  When they are inserted into the page,
+the &, <, >, and " characters will be converted to html entities.
+Note that < and > render correctly::
+
+  ${String.fromCharCode(60)}
+
+::
+
+  ${String.fromCharCode(62)}
+
+This means that script injection vulnerabilities are now the exception
+rather than  the rule.
+
+A string can be turned from text into markup using ``mjt.bless()``.
+If you have some html you know to be safe, you can make sure the
+browser interprets it like so::
+
+  ${mjt.bless('&lt;h2&gt;hello&lt;/h2&gt;')}
+
+Compare that to the identical string without the mjt.bless() call.
+The angle brackets are quoted by mjt so they don't get interpreted
+as markup in the output::
+
+  ${'&lt;h2&gt;hello&lt;/h2&gt;'}
+
+This ability to pass around mixed text and markup between functions is
+one of the things that makes the kid_ approach to templating
+remarkably powerful.  Mostly it works without you thinking about it.
+
+
+Substitution in HTML <script> and <style> tags
+----------------------------------------------
+
+The rules inside an HTML ``<script>`` tag are somewhat different.
+
+* Templating is only applied to <script> tags in server-side
+  templating.  In the browser, this would cause the script
+  to execute twice.
+
+* only ``${...}`` substitutions are done. ``$`` is passed through.
+
+* HTML entity encoding is not done.  However, the string ``</script`` in
+  the output will be escaped as ``<\/script``.
+
+``<style>`` tags are treated similarly to ``<script>`` tags.
+
+
+mjt HTML attributes
+===================
+
+
+mjt.if
+------
+
+``mjt.if="expr"``  evaluates the javascript *expr*.
+If *expr* evaluates to false, mjt removes the current element
+and all its subelements from the output.  "false" is determined
+using the usual javascript boolean rules, this may change.
+
+::
+
+  <div mjt.if="false">
+    if=false
+  </div>
+
+::
+
+  <div mjt.if="true">
+    if=true
+  </div>
+
+mjt.else
+--------
+
+``mjt.else=""`` is only valid if the preceding HTML element
+contained a ``mjt.if=`` or ``mjt.elif=""`` attribute.
+If any of the preceding if or elif expressions evaluated to
+true, Mjt will generate no output.  Otherwise the current
+element will be expanded into the output.
+
+
+::
+
+  <div mjt.if="false">
+    if=false
+  </div>
+  <div mjt.else="">
+    else
+  </div>
+
+::
+
+  <div mjt.if="true">
+    if=true
+  </div>
+  <div mjt.else="">
+    else
+  </div>
+
+
+mjt.elif
+--------
+
+``mjt.elif="expr"``  combines ``mjt.else`` and ``mjt.if`` in the
+fashion expected by most programmers.
+It is only valid if the preceding HTML element
+contained a ``mjt.if=`` or ``mjt.elif=""`` attribute.
+
+::
+
+  <div mjt.if="false">
+    if=false
+  </div>
+  <div mjt.elif="false">
+    elif=false
+  </div>
+  <div mjt.elif="true">
+    elif=true
+  </div>
+  <div mjt.else="">
+    else
+  </div>
+
+
+mjt.for
+-------
+
+mjt.for repeats its body once for each item in a list or object.
+Note that ``mjt.for="v in expr"`` is expanded with *v* bound to the *value*
+of each item (like iterating through a python list) not to the *key*
+(as in js)::
+
+ <h4>filmography:</h4><ul>
+   <li mjt.for="role in q.result.film">
+       $role.film.name
+   </li>
+ </ul>
+
+it works on any element that can be repeated::
+
+ <h4>filmography:</h4><table><tbody>
+   <tr mjt.for="role in q.result.film">
+       <td>$role.film.name</td>
+       <td>$role.film.initial_release_date</td>
+   </tr>
+ </tbody></table>
+
+
+``mjt.for="k,v in expr"`` is expanded with *k* bound to the key
+and *v* bound to the value (like python's ``for k,v in dict.items()``)::
+
+ <h4>film properties:</h4>
+ <table>
+   <thead><tr>
+     <th mjt.for="k,v in q.result.film[0].film"
+         mjt.if="k!='id'">
+       $k
+     </th>
+   </tr></thead>
+   <tbody>
+     <tr mjt.for="role in q.result.film">
+       <td mjt.for="k,v in role.film"
+           mjt.if="k!='id'">
+          $v
+       </td>
+     </tr>
+   </tbody>
+ </table>
+
+
+Notice in the previous example that mjt.for= and mjt.if= can be
+combined.  The mjt.if= is logically "inside" the mjt.for=: it is
+applied to each item rather than to the loop as a whole.
+
+
+If you need to use a real javascript ``for`` expression, you
+can enclose it in parentheses::
+
+  <ul>
+    <li mjt.for="(var i = 2; i &lt; 6; i++)">
+        $i
+    </li>
+  </ul>
+
+Unlike Javascript's native ``for`` loops, the body of a ``mjt.for=`` element
+creates a new variable scope.  Variables declared inside the body
+are not shared across iterations of the loop: this works out very
+nicely when you want to create an event handler for each item in a
+list.
+
+Mjt.for works on some array-like objects other than Javascript Arrays:
+see the `mjt.for test`_ for examples.
+
+
+mjt.choose/when/otherwise
+-------------------------
+
+mjt.choose selects at most one of its subelements to expand into
+the output and elides the rest.  There are two forms of mjt.choose - 
+one is similar to an if/else chain, while the other is more like
+a switch statement.  mjt.when attributes are interpreted very
+differently depending on which style you are using.
+
+The if/else chain form of ``mjt.choose`` is now deprecated in favor
+of the new ``mjt.elif`` and ``mjt.else`` attributes.
+
+``mjt.choose="expr"`` begins a case dispatch.  The subelements must
+each have a``mjt.when="value"`` attribute, except the last subelement
+which can have ``mjt.otherwise=""`` instead.  The *expr* in the
+mjt.choose attribute is evaluated and converted to a string.  If
+there is a subelement with a mjt.when attribute that has
+the same string value, its element will be expanded and output.  Otherwise,
+if a subelement with a ``mjt.otherwise=""`` attribute is present, it will
+be expanded::
+
+   <div mjt.choose="'bottle'">
+       <div mjt.when="apple">apple</div>
+       <div mjt.when="bottle">bottle</div>
+       <div mjt.when="cat">cat</div>
+       <div mjt.otherwise="">other</div>
+   </div>
+
+::
+
+   <div mjt.choose="'banana'">
+       <div mjt.when="apple">apple</div>
+       <div mjt.when="bottle">bottle</div>
+       <div mjt.when="cat">cat</div>
+       <div mjt.otherwise="">other</div>
+   </div>
+    
+without the mjt.otherwise, there is no output - but notice that the
+outer <div> (the one that had the mjt.choose= attribute) makes it
+through, breaking the output into two lines.  that should probably
+change, but for now you can use mjt.strip="1" if you want to force it.::
+
+   before 
+   <div mjt.choose="'banana'">
+       <div mjt.when="apple">apple</div>
+       <div mjt.when="bottle">bottle</div>
+       <div mjt.when="cat">cat</div>
+   </div>
+   and after
+
+
+*Deprecated*: ``mjt.choose=""`` begins an if/else chain.  Use
+an explicit if/else chain instead.
+
+
+mjt.strip
+---------
+
+``mjt.strip="expr"``  evaluates the javascript *expr*.
+If *expr* evaluates to true, mjt removes the current element.
+Subelements are expanded and spliced into the output at
+the same level as the current element::
+
+ <div style="font-size:150%" mjt.strip="0">
+     strip=0
+ </div>
+
+::
+
+ <div style="font-size:150%" mjt.strip="1">
+     strip=1
+ </div>
+
+
+mjt.content
+-----------
+
+``mjt.content="expr"`` evaluates *expr* and replaces the contents of
+the current element with the result::
+
+   <div style="font-size:150%"
+        mjt.content="q.result.name"></div>
+
+Using ${} within the content is generally easier to read than attaching a
+mjt.content attribute - this is equivalent to the above::
+
+   <div style="font-size:150%">$q.result.name</div>
+
+
+mjt.replace
+-----------
+
+mjt.replace behaves like mjt.content but splices in the markup at the same
+at the same level as the current element rather than as subelements.
+It combines the effects of ``mjt.content="expr"`` and ``mjt.strip="true"``::
+
+   <div style="font-size:150%"
+        mjt.replace="q.result.name">
+       ... this entire DIV will be replaced,
+           including the style="font-size:150%" ...
+   </div>
+
+which is equivalent to::
+
+   <div style="font-size:150%" mjt.strip="1">$q.result.name</div>
+
+mjt.trim
+-----------
+
+``mjt.trim=""`` on a tag will strip out leading and trailing
+whitespace inside the tag.  This allows you to use indentation
+to make your template clearer, without introducing undesirable
+whitespace in the output.  Here's an example template without
+mjt.trim: notice that there is extra space before the commas::
+
+   <span mjt.for="i,v in [1,2,3,4]">
+     <span mjt.if="i">,</span>
+     $v
+   </span>
+
+Here's the same template fragment using mjt.trim to remove
+the extra whitespace::
+
+   <span mjt.for="i,v in [1,2,3,4]" mjt.trim="">
+     <span mjt.if="i">,</span>
+     $v
+   </span>
+
+mjt.attrs
+---------
+
+``mjt.attrs="..."`` includes dynamically computed attributes in 
+the markup.  The value is a Javascript expression which should
+evaluate to an object.  Each property in the object is turned
+into an attribute on the element::
+
+  <div mjt.script="">
+    function myattrs() {
+      return { style: 'color:red;' };
+    }
+  </div>
+  <div mjt.attrs="myattrs()">
+     this text in red
+  </div>
+
+This can be useful in several cases.
+
+- Attributes like ``checked=""`` that imply *true* no matter what
+  their value is.  If you want to conditionally set the checked
+  attribute, use ``mjt.attrs="item_is_checked?{checked:''}:{}"``.
+
+- ``$`` is an illegal character in HTML id= and class= attributes,
+  so a validator may complain about dynamically generated classes
+  using $-substitution.  In this case you can use mjt.attrs to
+  sneak the substitution past the validator.
+  
+  this is invalid html (according to nxml-mode), because the
+  ``$`` character is forbidden in ``class=`` attributes:
+
+    ``<span class="$mycss">some text</span>``
+
+  this is valid html that has the desired effect, using mjt.attrs:
+
+    ``<span mjt.attrs="{'class':mycss}"``>some text</span>``
+
+
+Mjt.attrs does not (yet) override or delete attributes that were
+declared in the source markup.  Trying this may cause problems
+with duplicated attributes.
+
+
+mjt.def
+-------
+
+``mjt.def="name(args...)"`` declares a subtemplate.
+
+The subtemplate is nothing more than a javascript function
+that returns markup.  You can invoke it elsewhere using ${},
+just like any other javascript function::
+
+  <div mjt.def="mklink(o)">
+      <a href="http://www.freebase.com/view$o.id">
+          $o.name
+      </a>
+  </div>
+  <h4>filmography:</h4><ul>
+     <li mjt.for="role in q.result.film">
+          ${mklink(role.film)}
+      </li>
+  </ul>
+
+No output is generated from the definition itself.
+
+
+mjt.script
+----------
+
+``mjt.script=""`` treats the body of the element as javascript.
+This is similar to a <script> tag, but the contained script is
+evaluated *each time the template is applied*, while a <script>
+tag is evaluated *once, when the page is first loaded*.
+
+One use is to set the title of the window (take a look at it now)::
+
+  <div mjt.script="">
+       var newtitle = 'mjt demo: ' + q.result.name;
+       document.title = newtitle;
+  </div>
+  the window title is now "$newtitle".
+
+Generally this allows javascript programmers to insert arbitrary
+code into the template execution path.
+
+``mjt.script="ondomready"`` is similar, but the contained
+script is not executed until the generated HTML has been loaded
+into the browser page.  This form is useful for attaching
+event handlers to DOM nodes generated by a template, or when
+you want to use jQuery_ in combination with Mjt::
+
+  <ul>
+    <li mjt.for="color in ['red', 'green', 'blue']"
+        id="item-$color">
+      $color
+      <span mjt.script="ondomready">
+        var elt = document.getElementById('item-' + color);
+        elt.style.color = color;
+      </span>
+    </li>
+  </ul>
+
+No output is generated directly.  The tag with the mjt.script attribute
+is ignored, as are its attributes.  The contents must be a single
+text element with no markup.  No $-substitution is done within
+a mjt.script= block.
+
+mjt.script= blocks are also different from <script> tags in that
+you must quote HTML special characters like <, >, and &.
+
+currently '//' comments don't work in mjt.script blocks on IE.
+
+mjt.src
+-------
+
+It is common to include ``<img src="...">`` tags
+in mjt templates, where you want to compute the ``src=``
+attribute using a javascript expression.  However,
+using $-substitution in a ``src=`` attribute has an
+unexpected side-effect: when the browser parses the
+template html ``<img src="images/${imgname}.jpg"></img>``
+it will interpret the expression as a literal url, causing
+a wasteful attempt to fetch ``./images/${imgname}.jpg``,
+which fails because mjt hasn't has a chance to expand
+``${imgname}`` yet.
+
+The workaround for this is to use the ``mjt.src=`` attribute
+instead.  This will not be recognized by the browser, and
+mjt rewrites it to ``src=`` when the template is expanded:
+``<img mjt.src="images/${imgname}.jpg"></img>``
+
+If you include a ``src=""``attribute, it will be overridden
+by the mjt.src value upon expansion.  The ``src=`` attribute
+may be required for XHTML validation, but note that if it is
+set to "", the browser may re-fetch the current page.
+
+mjt.task
+--------
+
+``mjt.task="name"`` declares an asynchronous task.  The body of
+the element is interpreted as a javascript expression and should
+evaluate to a Task object.
+
+The variable *name* is declared and set to the task object.
+The task object always contains a ``state`` property, and
+potentially other properties as well depending on the state.
+
+No output is generated.  The tag with the mjt.task attribute
+is ignored, as are its other attributes.  The contents must be a single
+text element with no markup.  No $-substitution is done within
+a mjt.task= block.
+
+The current mjt.def= block (or the outermost block) is set up
+to depend on the task as follows:
+
+1. the template invokes a subtemplate defined with mjt.def
+2. when a mjt.task="myquery" definition is found in the subtemplate.
+   it is evaluated to produce the task and the task is started
+   (perhaps by sending a query to the a web service).
+3. while waiting for the task to complete, myquery.state is set
+   to "wait" and the template is rendered.
+4. when the response (or timeout) arrives,
+   myquery.state is set to "ready" (or "error"), myquery.result
+   is set from the response, and the template is rendered again,
+   overwriting the previous one.
+
+Notice that the template is rendered twice!  This is the simplest
+way to handle updates: completely redraw the template.  But it is
+**unusual and likely to cause confusion**.   If your template
+keeps any state, be very careful.  Also, any
+UI state within the "wait" version of the template will be
+destroyed when the query finishes or times out.  In practice
+the "wait" version of the template should be simple and
+non-interactive to avoid this.
+
+Here's a template that fetches data from freebase.com  and
+reports all the query states::
+
+  <div mjt.task="q">
+    mjt.freebase.MqlRead({
+      id: '/guid/9202a8c04000641f8000000000056600',
+      name: null,
+      type: '/film/actor',
+      film: [{
+        film: {
+          id: null,
+          name: null,
+          initial_release_date:null
+        }
+      }]
+    })
+  </div>
+
+  <div mjt.choose="q.state">
+    <div mjt.when="ready">
+      <h4>filmography for $q.result.name:</h4><ul>
+         <li mjt.for="role in q.result.film">
+           <a href="http://www.freebase.com/view$role.film.id">$role.film.name</a>
+         </li>
+      </ul>
+    </div>
+    <div mjt.when="wait">
+        loading...
+    </div>
+    <div mjt.when="error">
+      error:
+      <div mjt.for="msg in q.messages">
+        $msg.message
+      </div>
+    </div>
+  </div>
+
+
+Javascript Helpers
+==================
+
+mjt provides a few helper functions and objects for use inside
+javascript expressions.
+
+
+mjt.urlquery
+------------
+
+When the page is loaded, mjt.js parses the query section of the
+url looking for html form arguments.  This mimics the behavior
+of a server-side cgi script, but the form is actually interpreted
+by the browser.
+
+
+mjt.formquote(...)
+------------------
+
+This is similar to javascript's builtin ``encodeURIComponent()``
+function, but somewhate less aggressive.  The resulting quoted
+string can be used in the query section of a uri not necessarily
+elsewhere.
+
+``encodeURIComponent()`` passes   ``~!*()-_.'``
+
+``mjt.formquote()`` additionally passes   ``,:@$/``
+
+
+mjt.bless(...)
+--------------
+
+Bless() is used to explicitly label a string as valid markup.  This is
+a potential entry point for script injection attacks, so be sure that
+you trust the source of the string before blessing it!  If you aren't
+sure what this means, you should never use mjt.bless().
+
+
+mjt.freebase.MqlRead(expr)
+--------------------------
+
+This is used inside mjt.task_ to construct and send freebase queries.
+The *expr* argument should be a valid mqlread query.
+
+See the freebase.com `mql documentation`_ for more information on the
+mqlread service.
+
+
+mjt.run(element, template_function, template_args)
+--------------------------------------------------
+
+In simple mjt pages, mjt.run is called from window.onload to expand
+all the templates after the dom has loaded.
+
+All the arguments to mjt.run() are optional, and it behaves
+slightly differently depending.  Generally, use of mjt.run takes
+three forms:
+
+- ``mjt.run()`` with no arguments treats the entire <body>
+  element of the current page as a mjt.template.  It compiles
+  the template, expands it, and replaces the <body> contents
+  with the resulting html.
+
+- ``mjt.run(element)`` is similar, but only the contents
+  of the element with the given id are compiled and replaced.
+  If *element* is a string, it will be looked up using
+  document.getElementByID().  If *element* is an actual HTML
+  element, a unique id= attribute for it will be created if necessary.
+  
+
+- ``mjt.run(element, template_function, template_args)``
+  does not invoke the compiler: instead it expands the
+  provided template_function with the provided template_args,
+  and replaces the element with the given element.
+
+The contents of that element are interpreted as a mjt template.  Any
+queries in the template are sent, and the template is expanded.  The
+original markup is removed from the page and replaced with the
+expanded result.  As query results arrive the template may be
+re-expanded in place.
+
+In all cases, mjt.run returns a namespace object that contains
+the template functions defined by ``mjt.def=`` at the top level of the 
+template (i.e. not inside another mjt.def=).  These template functions
+can then be called later using mjt.run() with an explicit
+template_function argument.
+
+mjt.run() has the somewhat unusual behavior of changing the display
+style of the target element.  this is done so that you can hide the
+template source code using ``style="display:none"``.  after the
+template has been executed, mjt.run will check if the display style
+is ``display:none`` and set it to ``display:block`` if so.
+this makes simple mjt pages shorter.  ** This behavior will probably
+change slightly in a later release.**
+
+
+
+Recursive templates
+===================
+
+Here's a dict/list formatter in mjt, suitable for displaying json
+values.  Note that both kinds of mjt.choose are in use, as well
+as `combining mjt attributes`_ on the same tag.
+
+This will eventually go into a standard library, but for
+now you will have to copy it into your template if you want to use
+it.  The styling could use some work too::
+
+  <span mjt.def="showjson(o)"
+       mjt.choose="typeof(o)">
+    <span mjt.when="object"
+          mjt.choose="">
+      <i mjt.when="!o"> null </i>
+      <span mjt.when="o instanceof Array">
+        [
+          <div mjt.for="v in o"
+               style="padding-left:20px;">
+            ${showjson(v)}
+          </div>
+        ]
+      </span>
+      <span mjt.otherwise="">
+        {
+          <div mjt.for="k,v in o"
+               style="padding-left:20px;">
+            $k: ${showjson(v)}
+          </div>
+        }
+      </span>
+    </span>
+ 
+    <span mjt.when="number"> $o </span>
+    <i mjt.when="boolean"> $o </i>
+    <span mjt.when="string"> "$o" </span>
+  </span>
+
+  <div> ${showjson(q)} </div>
+
+
+
+Combining mjt attributes
+========================
+
+Most attributes may be combined, in which case they are applied in the
+following order (copied from genshi_):
+
+1. mjt.def
+2. mjt.when
+3. mjt.otherwise
+4. mjt.for
+5. mjt.if
+6. mjt.script
+7. mjt.choose
+8. mjt.replace
+9. mjt.content
+10. mjt.strip
+
+mjt.task= is very special and doesn't combine with any other attributes,
+
+
+Error gallery
+=============
+
+The red error text in this section is intentional.
+
+$ must begin a variable substitution or be quoted::
+
+    $
+
+The result of $-expansion must be a number or string
+or a markup object.  Other types of javascript objects
+generate errors for now::
+
+    $Object
+
+null values show up like this::
+
+    ${null}
+
+undefined properties show up like this::
+
+    $q.missing_property
+
+``a['b']`` must be enclosed with ${}::
+
+    wrong: $q.result.film[0].film.name
+    <hr></hr>
+    right: ${q.result.film[0].film.name}
+
+Unfortunately, many other bugs will generate fatal javascript
+errors or just fail.  Step 1: get Firebug_.
+
+You can add a ``mjt.debug=1`` query argument to a mjt page to see
+the generated javascript for template expansion.  this is very
+useful when debugging.  Unfortunately firebug doesn't give
+correct line numbers within eval() calls.
+
+Better debugging tools are definitely on the todo list.
+
+
+Other useful patterns
+=====================
+
+The shortest way to log something to the firebug console
+from within a mjt template is this::
+
+  <div>
+    look at the firebug console if you have it
+
+    ${mjt.log('hello from mjt')}
+  </div>
+
+
+Here's a way to do multi-column display of a list::
+
+  <table mjt.def="mktable(ncols, items)">
+    <tr mjt.for="(var rowi = 0; rowi &lt; items.length; rowi += ncols)">
+       <td style="border: solid black 1px"
+           mjt.for="(var coli = 0; coli &lt; ncols; coli++)"
+           mjt.if="rowi+coli &lt; items.length">
+           ${items[rowi+coli]}
+       </td>
+    </tr>
+  </table>
+
+  ${mktable(3, 'the quick brown fox jumped over the lazy dog'.split(' '))}
+
+
+
+.. references
+
+.. _JSON: http://json.org/
+.. _kid : http://kid-templating.org/
+.. _genshi : http://genshi.edgewall.org/
+.. _genshi template language : http://genshi.edgewall.org/wiki/Documentation/xml-templates.html
+.. _genshi2js : http://dev.codeflow.org/trac/genshi2js
+.. _trimpath jst : http://trimpath.com/project/wiki/JavaScriptTemplates
+
+.. _firebug : http://getfirebug.org
+
+.. _sign in : http://www.freebase.com/signin.html
+.. _all domains : alldomains.html
+
+
+.. _demosrc.txt: demosrc.txt
+.. _mkdemo.py: mkdemo.py
+.. _README: README.html
+
+.. _mjt.for test: ../test/mjt.for.html
+
+.. _mql documentation: http://www.freebase.com/view/documentation/
+
+.. _freebase: http://www.freebase.com/
+
+.. _mjt.rnc: http://freebaselibs.com/mjt/mjt-0.9.3/tools/mjt.rnc
+.. _nxml-mode :  http://www.thaiopensource.com/nxml-mode/
+.. _jQuery: http://jquery.com

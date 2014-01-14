@@ -1,0 +1,93 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<link rel="stylesheet" href="../style.css" type="text/css"></link>
+<script type="text/javascript" src="../mjt.js"></script>
+
+<script type="text/javascript">
+
+function init() {
+
+    var delay1 = mjt.Delay(1000);
+    var delay2 = mjt.Delay(2000).require(delay1);
+    var succeed = mjt.Succeed();
+
+    var all = mjt.Succeed()
+               .require(delay2)
+               .require(succeed)
+               .enqueue();
+    var fail = mjt.Fail().enqueue();
+
+
+    window.t0 = new Date().getTime();
+
+    mjt.run();
+}
+
+/*
+    var test = this;
+    mjt.NoPendingTasks()
+        .enqueue()
+        .onready(function () {
+            var dt = new Date() - t0;
+            if (dt > 9.0)
+                test.ok();
+            else
+                test.fail();
+        });
+
+};
+
+tests.def('await_empty', function () {
+    var t0 = new Date();
+
+    var all = mjt.Succeed()
+               .require(delay2)
+               .require(succeed)
+               .enqueue();
+    var fail = mjt.Fail().enqueue();
+
+    var test = this;
+    mjt.NoPendingTasks()
+        .enqueue()
+        .onready(function () {
+            var dt = new Date() - t0;
+            if (dt > 9.0)
+                test.ok();
+            else
+                test.fail();
+        });
+});
+
+*/
+
+</script>
+
+<title>mjt.NoPendingTasks test</title>
+</head>
+<body onload="init()" style="display:none">
+
+This is a separate test because the tsetse tests are all
+run simultaneously for now.
+
+<div mjt.def="foo()">
+   <pre mjt.task="t">
+     mjt.NoPendingTasks()
+   </pre>
+   <div>
+     $t.state at ${new Date().getTime() - window.t0} msec
+   </div>
+   <ul mjt.if="mjt.Task.pending !== null">
+     <li mjt.for="task in mjt.Task.pending">
+       $task
+     </li>
+   </ul>
+</div>
+
+${foo()}
+
+
+
+</body></html>

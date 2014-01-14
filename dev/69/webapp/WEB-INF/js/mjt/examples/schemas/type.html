@@ -1,0 +1,281 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<title>Type detail</title>
+<script type="text/javascript" src="../../mjt.js"></script>
+<script type="text/javascript" src="./util.js"></script>
+<link type="text/css" rel="stylesheet" href="chrome.css" />
+</head>
+
+<body onload="l = mjt.load_from_iframe('lib'); mjt.run('top');">
+<iframe id="lib" style="display:none;" src="lib.html"></iframe>
+
+<div id="top" style="display:none;"> 
+ <div mjt.task="q">
+  mjt.freebase.MqlRead({
+    "type":"/type/type",
+    "id":mjt.urlquery.id,
+    "name":{
+      "value":null,
+      "optional":true
+    },
+    "domain":{
+      "id":null,
+      "name":{
+        "value":null,
+        "optional":true
+      },
+      "optional":true
+    },
+    "expected_by":[{
+      "name":{
+        "value":null,
+        "optional":true
+      },
+      "schema":{
+        "id":null,
+        "name":{
+          "value":null,
+          "optional":true
+        }
+      },
+      "master_property":{
+        "optional":true,
+        "schema":{
+          "id":null,
+          "optional":true
+        }
+      },
+      "reverse_property":{
+        "optional":true,
+        "schema":{
+          "id":null,
+          "optional":true
+        }
+      },
+      "optional":true
+    }],
+/*
+    "/type/reflect/any_reverse":[{
+      link: { master_property: '/freebase/type_hints/hinted_type' },
+      "type":"/freebase/type_hints",
+      "mediator":null,
+      "included_types":[{
+        "name":null,
+        "id":null,
+        "optional":true
+       }],
+      "optional":true
+    }],
+*/
+    "default_property":null,
+    "/freebase/type_profile/instance_count":{
+      "value":null,
+      "optional":true,
+      "link":{
+        "timestamp":null
+      }
+    },
+    "properties":[{
+      "id":null,
+      "name":null,
+      "index":null,
+      "sort":"index",
+      "expected_type":{
+        "id":null,
+        "name":{
+          "value":null,
+          "optional":true
+        }
+      },
+/*
+      "/freebase/hinted_property/hinted_by":[{
+        "optional":true,
+        "display_orientation":null,
+        "disambiguator":null,
+        "display_none":null,
+        "enumeration":null
+      }],
+*/
+      "master_property":{
+        "optional":true,
+        "id":null,
+        "name":null
+      },
+      "reverse_property":{
+        "optional":true,
+        "id":null,
+        "name":null
+      },
+      "key":{
+        "value":null,
+        "namespace":mjt.urlquery.id
+      },
+      "unique":null,
+      "optional":true
+    }]
+  })
+ </div>
+
+ ${l.header()}
+
+    <div mjt.if="q.state == 'ready'">
+        <a mjt.if="q.result.domain"
+           href="${l.app_url('domain.html?id=' + mjt.formquote(q.result.domain.id))}">[back to $q.result.domain.name.value domain]</a>
+        <div mjt.script="1">
+            document.title = 'Type:' + q.result.name.value;
+        </div>
+        <h3>Type: $q.result.name.value</h3>
+        <div>
+          <a href="${mjt.service_url}/view$mjt.urlquery.id">[edit schema]</a>
+          <br></br>
+        </div>
+        <div>
+          <a href="instance_list.html?id=$mjt.urlquery.id">[view instances]</a>
+        </div>
+        <table cellpadding="3">
+          <tr>
+            <td><b>Key:</b></td>
+            <td>$q.result.id</td>
+          </tr>
+          <tr>
+            <td><b>Domain:</b></td>
+            <td><span mjt.if="q.result.domain">
+              <a href="${l.app_url('domain.html?id=' + mjt.formquote(q.result.domain.id))}">$q.result.domain.name.value</a> &nbsp;&nbsp;($q.result.domain.id)
+            </span>
+            <span mjt.else="">
+              no domain
+            </span>
+            </td>
+          </tr>
+          <tr>
+            <td><b>Instance count:</b></td>
+            <td mjt.if="q.result['/freebase/type_profile/instance_count']">
+              ${commaFormatInteger(q.result['/freebase/type_profile/instance_count'].value)}
+              &nbsp;&nbsp;(as of ${mjt.freebase.date_from_iso(q.result['/freebase/type_profile/instance_count'].link.timestamp).toLocaleDateString()})
+            </td>
+          </tr>
+<!--
+          <tr>
+            <td><b>Depends on types:</b></td>
+            <td mjt.if="q.result['/freebase/type_hints/included_types']">$q.result['/freebase/type_hints/included_types']</td>
+            <td>
+                <span mjt.if="q.result['/type/reflect/any_reverse']">
+                  <span mjt.for="typehints in q.result['/type/reflect/any_reverse']">
+                    <span mjt.for="inctype in typehints.included_types">
+
+
+                      <a href="${l.app_url('type.html?id=' + mjt.formquote(inctype.id))}">$inctype.name</a>
+                    </span>
+                  </span>
+                </span>
+                <span mjt.else="">none</span>
+            </td>
+          </tr>
+          <tr>
+            <td><b>Mediator:</b></td>
+            <td>
+                <span mjt.if="q.result['/type/reflect/any_reverse']">
+                  <span mjt.for="th in q.result['/type/reflect/any_reverse']">
+                      <span mjt.if="th.mediator">yes</span>
+                      <span mjt.else="">no</span>
+                  </span>
+                </span>
+                <span mjt.else="">no</span>
+            </td>
+          </tr>  
+-->
+        </table>
+        <table cellpadding="5">
+            <tr><td>&nbsp;</td></tr>
+            <tr>
+              <th></th>
+              <th align="left">property name</th>
+              <th align="left">key</th>
+              <th align="left">master</th>
+              <th align="left">unique</th>
+              <th align="left">expected type</th>
+              <th align="left">rev. property name</th>
+<!--
+              <th align="left">orientation</th>
+              <th align="left">disamb</th>
+              <th align="left">hidden</th>
+              <th align="left">enumeration</th>
+-->
+            </tr>
+            <tr mjt.for="prop in q.result.properties">
+              <td width="20"></td>
+              <td>$prop.name</td>
+              <td>$prop.key.value</td>
+              <td align="center">
+                  <span mjt.if="prop.master_property == null">[m]</span>
+                  <span mjt.else="">-</span>
+              </td>
+              <td align="center">
+                  <span mjt.if="prop.unique">[u]</span>
+                  <span mjt.else="">-</span>
+              </td>
+              <td><a href="${l.app_url('type.html?id='+mjt.formquote(prop.expected_type.id))}">$prop.expected_type.id</a></td>
+              <td>
+                  <span mjt.if="prop.reverse_property">$prop.reverse_property.name</span>
+                  <span mjt.elif="prop.master_property">$prop.master_property.name</span>
+                  <span mjt.else="">-</span>
+              </td>
+<!--
+              <td>  
+                  <span mjt.if="prop['/freebase/hinted_property/hinted_by']">
+                    <span mjt.for="hinted_by in prop['/freebase/hinted_property/hinted_by']">
+                       <span mjt.if="hinted_by.display_orientation">
+                        ${hinted_by.display_orientation} 
+                       </span>
+                       <span mjt.else="">-</span>
+                    </span>
+                  </span>
+                  <span mjt.else="">-</span>
+                <span mjt.if="prop['/freebase/hinted_property/hinted_by'] == ''">-</span>
+              </td>
+              <td align="center">
+                <span mjt.for="hinted_by in prop['/freebase/hinted_property/hinted_by']">
+                    <span mjt.if="hinted_by.disambiguator">
+                      [d]
+                    </span>
+                    <span mjt.else="">-</span>
+                </span>
+                <span mjt.if="prop['/freebase/hinted_property/hinted_by'] == ''">-</span>
+              </td>
+              <td align="center">
+                <span mjt.for="hinted_by in prop['/freebase/hinted_property/hinted_by']">
+                    <span mjt.if="hinted_by.display_none">
+                      [h]
+                    </span>
+                    <span mjt.else="">-</span>
+                </span>
+                <span mjt.if="prop['/freebase/hinted_property/hinted_by'] == ''">-</span>
+              </td>
+              <td align="center">
+               <span mjt.for="hinted_by in prop['/freebase/hinted_property/hinted_by']">
+                   <span mjt.if="hinted_by.enumeration">
+                     [e]
+                   </span>
+                   <span mjt.else="">-</span>
+               </span>
+               <span mjt.if="prop['/freebase/hinted_property/hinted_by'] == ''">-</span>
+              </td>
+-->
+            </tr>
+        </table>
+        
+        <div><br></br><b>Suggested properties</b></div>
+
+    </div>
+
+    ${l.task_state(q)}
+
+    ${l.footer()}
+
+</div>
+
+</body>
+</html>

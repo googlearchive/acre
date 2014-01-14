@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--+
+    |
+    |  Acre Build File
+    |
+    +-->
+
+<project name="acre" default="compile" basedir=".">
+
+    <property environment="env"/>
+
+    <defaultexcludes add="**/.git"/>
+    <defaultexcludes add="**/.git/**"/>
+
+    <condition property="version" value="trunk">
+        <not><isset property="version"/></not>
+    </condition>
+
+    <condition property="revision" value="rXXXX">
+        <not><isset property="revision"/></not>
+    </condition>
+
+    <condition property="revision" value="appengine">
+        <not><isset property="config.file"/></not>
+    </condition>
+
+    <property name="name" value="acre" />
+    <property name="fullname" value="${name}-${version}-${revision}" />
+
+    <property name="build.dir" value="_build" />
+    <property name="dist.dir" value="_dist" />
+    <property name="data.dir" value="_data" />
+    <property name="logs.dir" value="_logs" />
+
+    <property name="config.dir" value="${basedir}/config" />
+    <property name="tests.dir" value="${basedir}/tests" />
+
+    <property name="library.dir" value="${basedir}/library"/>
+    <property name="library.src.dir" value="${library.dir}/src" />
+    <property name="library.lib.dir" value="${library.dir}/lib" />
+    <property name="library.classes.dir" value="${library.dir}/classes" />
+
+    <property name="server.dir" value="${basedir}/server"/>
+    <property name="server.src.dir" value="${server.dir}/src" />
+    <property name="server.lib.dir" value="${server.dir}/lib" />
+    <property name="server.classes.dir" value="${server.dir}/classes" />
+
+    <property name="webapp.dir" value="${basedir}/webapp"/>
+    <property name="webapp.config.dir" value="${webapp.dir}/META-INF"/>
+    <property name="webapp.web-inf" value="${webapp.dir}/WEB-INF"/>
+    <property name="webapp.src.dir" value="${webapp.web-inf}/src" />
+    <property name="webapp.lib.dir" value="${webapp.web-inf}/lib" />
+    <property name="webapp.classes.dir" value="${webapp.web-inf}/classes" />
+
+    <property name="appengine.dir" value="${basedir}/appengine"/>
+    <property name="appengine.src.dir" value="${appengine.dir}/src" />
+    <property name="appengine.lib.dir" value="${appengine.dir}/lib" />
+    <property name="appengine.classes.dir" value="${appengine.dir}/classes" />
+
+    <condition property="war.dir" value="${build.dir}/war">
+        <not><isset property="war.dir"/></not>
+    </condition>
+
+    <property name="war.config.dir" value="${war.dir}/META-INF"/>
+    <property name="war.web-inf" value="${war.dir}/WEB-INF"/>
+    <property name="war.lib.dir" value="${war.web-inf}/lib" />
+    <property name="war.classes.dir" value="${war.web-inf}/classes" />
+
+    <available file="${webapp.web-inf}/web.xml" property="web.xml.present"/>
+
+    <!-- ======================================================================== -->
+
+    <path id="server.class.path">
+        <fileset dir="${server.lib.dir}">
+            <include name="**/*.jar" />
+        </fileset>
+        <pathelement location="${library.classes.dir}"/>
+    </path>
+
+    <path id="webapp.class.path">
+        <path refid="server.class.path"/>
+        <fileset dir="${webapp.lib.dir}">
+            <include name="**/*.jar" />
+        </fileset>
+        <pathelement location="${library.classes.dir}"/>
+    </path>
+
+    <path id="appengine.class.path">
+        <path refid="webapp.class.path"/>
+        <fileset dir="${sdk.dir}/lib/user">
+            <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${sdk.dir}/lib">
+            <include name="**/appengine-remote-api.jar" />
+        </fileset>
+        <pathelement location="${webapp.classes.dir}"/>
+    </path>
+
+    <!-- ======================================================================== -->
+
+    <target name="compile-library" description="Compile the library">
+        <mkdir dir="${library.classes.dir}" />
+        <javac srcdir="${library.src.dir}" destdir="${library.classes.dir}" includeantruntime="false" debug="true">
+            <classpath refid="server.class.path" />
+        </javac>
+    </target>
+
+    <target name="compile-server" description="Compile the server">
+        <mkdir dir="${server.classes.dir}" />
+        <javac srcdir="${server.src.dir}" destdir="${server.classes.dir}" includeantruntime="false" debug="true">
+            <classpath refid="server.class.path" />
+        </javac>
+    </target>
+
+    <target name="create-web-xml" description="Move the default web.xml file in place if it's missing" unless="${web.xml.present}">
+        <copy file="${webapp.web-inf}/web.default.xml.in" tofile="${webapp.web-inf}/web.xml" overwrite="true"/>
+    </target>
+
+    <target name="compile-webapp" description="Compile the webapp" depends="create-web-xml">
+        <mkdir dir="${webapp.classes.dir}" />
+        <javac sourcepath="" srcdir="${webapp.src.dir}" destdir="${webapp.classes.dir}" includeantruntime="false" debug="true">
+            <classpath refid="webapp.class.path" />
+            <exclude name="**/appengine/**/*.java"/>
+            <include name="**/*.java"/>
+        </javac>
+    </target>
+
+    <target name="compile-webapp-appengine" description="Compile the Google AppEngine specific parts of the webapp">
+        <javac sourcepath="" srcdir="${webapp.src.dir}" destdir="${webapp.classes.dir}" includeantruntime="false" debug="true">
+            <classpath refid="appengine.class.path" />
+            <include name="**/appengine/**/*.java"/>
+        </javac>
+    </target>
+
+    <target name="compile" depends="compile-library, compile-server, compile-webapp" description="Compile Standard Acre" />
+
+    <target name="compile-appengine" depends="compile-library, compile-webapp, compile-webapp-appengine" description="Compile Appengine Acre">
+        <copy todir="${webapp.lib.dir}">
+          <fileset dir="${server.lib.dir}">
+            <include name="log4j-*.jar"/>
+            <include name="jcl-*.jar"/>
+            <include name="slf4j-*.jar"/>
+          </fileset>
+        </copy>
+
+        <copy todir="${webapp.classes.dir}">
+          <fileset dir="${library.classes.dir}">
+            <include name="**/*.class"/>
+          </fileset>
+        </copy>
+
+        <copy todir="${webapp.lib.dir}" flatten="true">
+          <fileset dir="${sdk.dir}/lib/user">
+            <include name="appengine-api-*.jar" />
+          </fileset>
+          <fileset dir="${sdk.dir}/lib">
+            <include name="appengine-remote-api.jar" />
+          </fileset>
+        </copy>
+
+        <iterate target="copy-appengine-modules">
+          <dirset dir="${webapp.dir}">
+            <include name="*" />
+            <exclude name="META-INF/"/>
+            <exclude name="WEB-INF/"/>
+            <exclude name=".**"/>
+          </dirset>
+        </iterate>
+
+    </target>
+
+    <target name="copy-appengine-modules">
+
+      <copy todir="${webapp.dir}/${module}/WEB-INF/classes">
+        <fileset dir="${webapp.classes.dir}">
+          <include name="**/*.class"/>
+        </fileset>
+        <fileset dir="${library.classes.dir}">
+          <include name="**/*.class"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${webapp.dir}/${module}/WEB-INF/lib" flatten="true">
+        <fileset dir="${webapp.lib.dir}">
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${server.lib.dir}">
+          <include name="log4j-*.jar" />
+          <include name="slf4j-*.jar" />
+          <include name="jcl-*.jar" />
+        </fileset>
+      </copy>
+
+      <copy todir="${webapp.dir}/${module}/WEB-INF/js">
+        <fileset dir="${webapp.dir}/WEB-INF/js">
+          <include name="**/*.js" />
+          <exclude name="mjt/examples/**"/>
+          <exclude name="mjt/doc/**"/>
+          <exclude name="mjt/test/**"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${webapp.dir}/${module}/WEB-INF/scripts">
+        <fileset dir="${webapp.dir}/WEB-INF/scripts">
+          <include name="**/*" />
+          <exclude name="freebase/**"/>
+          <exclude name="googlecode/**"/>
+          <exclude name="qa/**"/>
+          <exclude name="test/tests/**"/>
+          <exclude name="test/writetests/**"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${webapp.dir}/${module}/WEB-INF/global_static">
+        <fileset dir="${webapp.dir}/WEB-INF/global_static">
+          <include name="**/*" />
+        </fileset>
+      </copy>
+
+      <copy todir="${webapp.dir}/${module}/META-INF">
+        <fileset dir="${webapp.config.dir}">
+          <include name="**/*.properties"/>
+          <include name="**/*.conf"/>
+        </fileset>
+      </copy>
+    </target>
+
+
+    <!-- ======================================================================== -->
+
+    <target name="war" depends="compile-library, compile-webapp" description="Build a webapp">
+
+      <mkdir dir="${war.dir}" />
+      <mkdir dir="${war.config.dir}" />
+      <mkdir dir="${war.lib.dir}" />
+      <mkdir dir="${war.classes.dir}" />
+
+      <!-- Copy modules if available -->
+      <copy todir="${war.dir}">
+        <fileset dir="${webapp.dir}">
+          <exclude name="META-INF/**"/>
+          <exclude name="WEB-INF/**"/>
+          <exclude name=".**/**"/>
+        </fileset>
+      </copy>
+      <copy todir="${war.config.dir}">
+        <fileset dir="${webapp.config.dir}">
+          <include name="appengine-application.xml" />
+          <include name="application.xml" />
+        </fileset>
+      </copy>
+
+      <copy todir="${war.config.dir}">
+        <fileset dir="${webapp.config.dir}">
+          <include name="**/*.properties"/>
+          <include name="**/*.conf"/>
+        </fileset>
+      </copy>
+
+      <copy file="${webapp.web-inf}/web.xml" tofile="${war.web-inf}/web.xml" />
+
+      <copy todir="${war.classes.dir}">
+        <fileset dir="${webapp.classes.dir}">
+          <include name="**/*.class"/>
+        </fileset>
+        <fileset dir="${library.classes.dir}">
+          <include name="**/*.class"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${war.lib.dir}" flatten="true">
+        <fileset dir="${webapp.lib.dir}">
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${server.lib.dir}">
+          <include name="log4j-*.jar" />
+          <include name="slf4j-*.jar" />
+          <include name="jcl-*.jar" />
+        </fileset>
+      </copy>
+
+      <copy todir="${war.dir}/WEB-INF/js">
+        <fileset dir="${webapp.dir}/WEB-INF/js">
+          <include name="**/*.js" />
+          <exclude name="mjt/examples/**"/>
+          <exclude name="mjt/doc/**"/>
+          <exclude name="mjt/test/**"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${war.dir}/WEB-INF/scripts">
+        <fileset dir="${webapp.dir}/WEB-INF/scripts">
+          <include name="**/*" />
+          <exclude name="freebase/**"/>
+          <exclude name="googlecode/**"/>
+          <exclude name="qa/**"/>
+          <exclude name="test/tests/**"/>
+          <exclude name="test/writetests/**"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${war.dir}/WEB-INF/global_static">
+        <fileset dir="${webapp.dir}/WEB-INF/global_static">
+          <include name="**/*" />
+        </fileset>
+      </copy>
+    </target>
+
+    <target name="appengine-war" depends="compile-appengine, war">
+      <delete>
+        <fileset dir="${war.lib.dir}" includes="**/mysql*"/>
+        <fileset dir="${war.classes.dir}" includes="**/MySQL*"/>
+      </delete>
+
+      <jar destfile="${war.lib.dir}/acre-appengine.jar">
+          <fileset dir="${war.classes.dir}"/>
+      </jar>
+
+      <delete dir="${war.classes.dir}"/>
+
+      <copy todir="${war.config.dir}" overwrite="true">
+        <fileset dir="${webapp.config.dir}">
+          <include name="**/*.properties"/>
+          <include name="**/*.conf"/>
+        </fileset>
+      </copy>
+
+      <copy todir="${war.web-inf}" overwrite="true">
+        <fileset dir="${webapp.web-inf}">
+          <include name="*.xml"/>
+        </fileset>
+      </copy>
+    </target>
+
+    <!-- ======================================================================== -->
+
+    <target name="dist" description="Build the acre distribution" depends="compile">
+        <mkdir dir="${build.dir}" />
+
+        <delete file="${build.dir}/${name}-${version}/${config.dir}/project.local.conf" />
+
+        <copy todir="${build.dir}/${name}-${version}">
+            <fileset dir=".">
+                <include name="**/*"/>
+                <exclude name="${data.dir}/**"/>
+                <exclude name="${logs.dir}/**"/>
+                <exclude name="${build.dir}/**"/>
+                <exclude name="${dist.dir}/**"/>
+                <exclude name="${data.dir}/**"/>
+                <exclude name="${webapp.config.dir}/*.properties"/>
+                <exclude name="${webapp.config.dir}/*.conf"/>
+                <exclude name="**/mysql-connector-java*"/>
+            </fileset>
+        </copy>
+
+        <delete dir="${build.dir}/${name}-${version}/${webapp.web-inf}/static" />
+
+        <echo file="${build.dir}/${name}-${version}/${config.dir}/project.local.conf" append="true">ACRE_VERSION=${version}</echo>
+
+        <tar longfile="gnu" compression="gzip" destfile="${dist.dir}/${fullname}.tar.gz">
+           <tarfileset dir="${build.dir}" filemode="755">
+               <include name="${name}-${version}/${name}"/>
+               <include name="${name}-${version}/bin/**"/>
+           </tarfileset>
+           <tarfileset dir="${build.dir}">
+               <include name="${name}-${version}/**"/>
+               <exclude name="${name}-${version}/${name}"/>
+               <exclude name="${name}-${version}/bin/**"/>
+           </tarfileset>
+        </tar>
+    </target>
+
+    <!-- ======================================================================== -->
+
+    <target name="clean" description="Remove all compiled classes">
+        <delete dir="${library.classes.dir}" />
+        <delete dir="${server.classes.dir}" />
+        <delete dir="${webapp.classes.dir}" />
+        <delete dir="${appengine.classes.dir}" />
+
+        <delete file="${webapp.web-inf}/appengine-web.xml"/>
+        <delete file="${webapp.web-inf}/web.xml"/>
+        <delete file="${webapp.web-inf}/cron.xml"/>
+        <delete file="${webapp.web-inf}/datastore-indexes.xml"/>
+        <delete file="${webapp.web-inf}/queue.xml"/>
+        <delete file="${webapp.web-inf}/backends.xml"/>
+        <delete file="${webapp.web-inf}/dispatch.xml"/>
+
+        <delete file="${webapp.web-inf}/appengine-web.xml.in"/>
+        <delete file="${webapp.web-inf}/web.xml.in"/>
+        <delete file="${webapp.web-inf}/cron.xml.in"/>
+        <delete file="${webapp.web-inf}/datastore-indexes.xml.in"/>
+        <delete file="${webapp.web-inf}/queue.xml.in"/>
+        <delete file="${webapp.web-inf}/backends.xml.in"/>
+        <delete file="${webapp.web-inf}/dispatch.xml.in"/>
+
+        <delete>
+            <fileset dir="${webapp.dir}/META-INF">
+                <include name="*.conf"/>
+                <include name="*.properties"/>
+                <include name="ots.other.conf.in"/>
+                <include name="appengine-application.xml.in"/>
+                <include name="appengine-application.xml"/>
+                <include name="application.xml.in"/>
+                <include name="application.xml"/>
+            </fileset>
+            <fileset dir="${webapp.lib.dir}">
+                <include name="appengine-*.jar" />
+            </fileset>
+        </delete>
+
+        <delete>
+          <fileset dir="${webapp.dir}">
+            <include name="*/WEB-INF/**"/>
+          </fileset>
+          <dirset dir="${webapp.dir}">
+            <include name="*/WEB-INF/**"/>
+          </dirset>
+        </delete>
+
+        <delete>
+          <dirset dir="${webapp.dir}">
+            <include name="*" />
+            <exclude name="META-INF/"/>
+            <exclude name="WEB-INF/"/>
+            <exclude name=".**"/>
+          </dirset>
+        </delete>
+
+        <delete dir="${war.dir}" />
+        <delete dir="${build.dir}" />
+
+    </target>
+
+    <target name="distclean" description="Remove all files not in version control" depends="clean">
+        <delete dir="${dist.dir}" />
+        <delete dir="${data.dir}" />
+        <delete dir="${logs.dir}" />
+    </target>
+
+    <scriptdef name="iterate" language="javascript">
+    <element name="dirset" type="dirset"/>
+    <attribute name="target"/>
+    <![CDATA[
+      dirsets = elements.get("dirset"); // Can have multiple dirsets
+      target = attributes.get("target");
+
+      for (var i = 0; i < dirsets.size(); ++i) {
+        dirset = dirsets.get(i);
+
+        var it = dirset.iterator();
+        while(it.hasNext()) {
+          var key = it.next();
+          println("Executing task for " + key.getName());
+
+          var callTask = project.createTask("antcall");
+          callTask.setTarget(target);
+
+          // Configure the parameters for the "antcall" task - module name
+          var param = callTask.createParam();
+          param.setName("module");
+          param.setValue(key.getName());
+
+          callTask.execute();
+        }
+      }
+
+    ]]>
+    </scriptdef>
+
+</project>

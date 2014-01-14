@@ -1,0 +1,721 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<title>rison - json for uris</title>
+<script type="text/javascript" src="../mjt.js"></script>
+<script type="text/javascript" src="../rison.js"></script>
+
+<script type="text/javascript">//<![CDATA[
+
+window.rison_examples = [
+    "(a:0,b:1)",
+    "(a:0,b:foo,c:'23skidoo')",
+    "!t",
+    "!f",
+    "!n",
+    "''",
+    "0",
+    "1.5",
+    "-3",
+    "1e30",
+    "1e-30",
+    "a",
+    "'0a'",
+    "'abc def'",
+    "()",
+    "(a:0)",
+    "(id:!n,type:/common/document)",
+    "!()",
+    "!(!t,!f,!n,'')",
+    "'-h'",
+    "a-z",
+    "'wow!!'",
+    "domain.com",
+    "'user@domain.com'",
+    "'US $10'",
+    "'can!'t'",
+    "'Control-F: \u0006'",
+    "'Unicode: \u0beb'"
+];
+
+window.indented_json = function (o, linesep) {
+    if (typeof o != 'object')
+        return JSON.stringify(o);
+
+    if (o === null)
+        return 'null';
+
+    if (typeof linesep == 'undefined')
+        linesep = '\n';
+
+    var a, b, f, i, v;
+
+    if (o instanceof Array) {
+        var l = o.length;
+        a = ['['];
+        for (i = 0; i < l; i += 1) {
+            v = o[i];
+            v = indented_json(v, linesep + '  ');
+            if (typeof v == 'string') {
+                if (b) {
+                    a[a.length] = ',';
+                }
+                a[a.length] = linesep;
+                a[a.length] = v;
+                b = true;
+            }
+        }
+        if (b)
+            a[a.length] = linesep;
+        a[a.length] = ']';
+        return a.join('');
+    }
+
+    a = ['{'];
+    for (i in o) {
+        v = o[i];
+        v = indented_json(v, linesep + '  ');
+        if (typeof v == 'string') {
+            if (b) {
+                a[a.length] = ',';
+            }
+            a[a.length] = linesep + '  ';
+            a.push(JSON.stringify(i), ':', v);
+            b = true;
+        }
+    }
+    if (b)
+        a[a.length] = linesep;
+    a[a.length] = '}';
+    return a.join('');
+};
+
+//]]></script>
+
+<style type="text/css">
+
+body {
+  font-family: Helvetica, sans-serif;
+}
+
+tt,code,pre {
+  font-family: "Monospace font handling in Firefox is braindead", monospace;
+  font-size: 1.1em;
+}
+
+a:link {
+  color: #06c;
+  text-decoration: none;
+}
+
+a:visited {
+  color: #06c;
+  text-decoration:none;
+}
+
+a:hover {
+  color: #06c;
+  text-decoration: underline;
+}
+
+a[name]:hover {
+  text-decoration: inherit; 
+  color: inherit; 
+  background: inherit
+  }
+
+p {
+  margin:0.5em;
+  max-width: 600px;
+}
+
+h1 {
+  margin: 0.3em;
+  color: #b20;
+  font-weight: normal;
+}
+
+ul {
+  padding: 0 20px;
+}
+  
+li {
+  margin: 5px;
+  max-width: 550px;  
+}
+
+</style>
+
+
+</head>
+
+<body onload="mjt.run('top');">
+
+<h1>Rison - Compact Data in URIs</h1>
+
+<div style="float: right; border: 2px solid black; margin: 10px; padding: 10px; background-color: white;">
+  modified from the <a href="http://json.org">json.org</a> grammar.<br></br>
+
+  <dl>
+    <dt><i>object</i></dt>
+    <dd><tt><b>()</b></tt><br></br>
+      <tt><b>(</b></tt> <i>members</i> <tt><b>)</b></tt> </dd>
+    <dt><tt><b></b></tt></dt>
+
+    <dt><i>members</i></dt>
+    <dd><i>pair</i><br></br>
+        <i>pair</i> <tt><b>,</b></tt> <i>members</i></dd>
+    <dt><i>pair</i></dt>
+    <dd><i>key</i> <tt><b>:</b></tt> <i>value</i></dd>
+
+    <dt><i>array</i></dt>
+    <dd><tt><b>!()</b></tt><br></br>
+      <tt><b>!(</b></tt> <i>elements</i> <tt><b>)</b></tt></dd>
+
+    <dt><i>elements</i></dt>
+    <dd><i>value</i> <br></br>
+        <i>value</i> <tt><b>,</b></tt> <i>elements</i></dd>
+
+    <dt><i>key</i></dt>
+    <dd><i>id</i><br></br>
+      <i>string</i><br></br></dd>
+
+    <dt><i>value</i></dt>
+    <dd><i>id</i><br></br>
+      <i>string</i><br></br>
+      <i>number</i><br></br>
+      <i>object</i><br></br>
+
+      <i>array</i><br></br>
+      <tt><b>!t</b></tt><br></br>
+      <tt><b>!f</b></tt><br></br>
+      <tt><b>!n</b></tt></dd>
+  </dl>
+  <hr align="center" width="144"/>
+  <dl>
+
+    <dt><i>id</i></dt>
+    <dd>
+      <i>idstart</i><br></br>
+      <i>idstart idchars</i>
+    </dd>
+
+    <dt><i>idchars</i></dt>
+    <dd><i>idchar</i><br></br>
+        <i>idchar idchars</i></dd>
+
+    <dt><i>idchar</i></dt>
+    <dd>
+      any alphanumeric ASCII character<br></br>
+      any ASCII character from the set <tt>-_./~</tt><br></br>
+      any non-ASCII Unicode character<br></br>
+      <!-- not in &nbsp;&nbsp;&nbsp;&nbsp;<b><tt>'!=:(),*@$;&amp;</tt></b> -->
+    </dd>
+
+    <dt><i>idstart</i></dt>
+    <dd>
+      any <i>idchar</i> not in<br></br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<b><tt>-</tt></b>, <i>digit</i>
+    </dd>
+
+  </dl>
+  <hr align="center" width="144"/>
+  <dl>
+
+    <dt><i>string</i></dt>
+    <dd><tt><b>''</b></tt><br></br>
+      <tt><b>'</b></tt> <i>strchars</i> <tt><b>'</b></tt></dd>
+    <dt><i>strchars</i></dt>
+    <dd><i>strchar</i><br></br>
+
+      <i>strchar strchars</i></dd>
+
+    <dt><i>strchar</i></dt>
+    <dd>any Unicode character except<br></br>
+        &nbsp;&nbsp;&nbsp;&nbsp;ASCII <b><tt>'</tt></b> and <b><tt>!</tt></b><br></br>
+      <tt><b>!!</b></tt><br></br>
+      <tt><b>!'</b></tt><br></br>
+
+    </dd>
+
+  </dl>
+  <hr align="center" width="144"/>
+  <dl>
+
+    <dt><i>number</i></dt>
+    <dd><i>int</i><br></br>
+
+        <i>int frac</i><br></br>
+        <i>int exp</i><br></br>
+        <i>int frac exp</i>
+    </dd>
+    <dt><i>int</i></dt>
+    <dd><i>digit</i><br></br>
+
+      <i>digit1-9 digits</i>
+    <br></br><tt><b>-</b></tt> <i>digit</i><br></br>
+      <tt><b>-</b></tt> <i>digit1-9 digits</i>
+    </dd>
+    <dt><i>frac</i></dt>
+
+    <dd><b><tt>.</tt></b> <i>digits</i></dd>
+    <dt><i>exp</i></dt>
+    <dd><i>e</i> <i>digits</i></dd>
+    <dt><i>digits</i></dt>
+    <dd><i>digit</i><br></br>
+
+        <i>digit</i> <i>digits</i></dd>
+    <dt><i>e</i></dt>
+    <dd><b><tt>e</tt></b><br></br>
+<b><tt>e-</tt></b><br></br>
+</dd>
+  </dl>
+</div>
+
+
+<p>
+This page describes <i>Rison</i>, a data serialization
+format optimized for compactness in URIs.  Rison is 
+a slight variation of JSON that looks vastly superior
+after URI encoding.  Rison still expresses exactly
+the same set of data structures as JSON, so data can
+be translated back and forth without loss or guesswork.
+</p>
+
+<p>
+You can skip straight to some <a href="#examples">examples</a>,
+or read on for more background.
+</p>
+
+<p>
+Downloads:
+<ul>
+  <li><a href="../../dist/mjt-0.9.3/rison.js">rison.js</a> includes a
+ Javascript Rison encoder
+ (based on <a href="http://json.org">Douglas Crockford</a>'s
+ <a href="http://json.org/json.js">json.js</a>)
+ and decoder (based on <a href="http://osteele.com">Oliver Steele</a>'s
+ <a href="http://osteele.com/sources/openlaszlo/json/">JSON for OpenLaszlo</a>).
+</li>
+<li><a href="http://freebase-python.googlecode.com/svn/trunk/freebase/rison.py">rison.py</a> contains a decoder in Python.
+</li>
+<li><a href="http://tfletcher.com/dev/">Tim Fletcher</a> has implemented <a href="http://rison.rubyforge.org/">Rison in Ruby</a> including both encoder and decoder.
+</li>
+</ul>
+</p>
+
+
+
+<h3>Why another data serialization format?</h3>
+
+Rison is intended to meet the following goals, in roughly this order:
+<ol>
+  <li>Comply with <a href="http://gbiv.com/protocols/uri/rfc/rfc3986.html">URI specifications</a> and usage</li>
+  <li>Express <b>nested</b> data structures</li>
+  <li>Be <b>human-readable</b></li>
+  <li>Be <b>compact</b></li>
+</ol>
+
+Rison is necessary because the obvious alternatives fail to meet these goals:
+<ul>
+  <li>URI-encoded XML and JSON are illegible and inefficient.
+  </li>
+  <li><a href="http://www.w3.org/TR/html4/interact/forms.html#form-content-type"
+         >HTML Form encoding</a> rules the web but can only
+         represent a flat list of string pairs.
+  </li>
+  <li>
+         Ian Bicking's
+         <a href="http://formencode.org/">FormEncode</a> package includes the
+         <a href="http://formencode.org/Validator.html#id16">variabledecode</a>
+         parser, an interesting convention for form encoding that allows
+         nested lists and dictionaries.  However, it becomes inefficient
+         with deeper nesting, and allows no terminal datatypes except
+         strings.
+  </li>
+</ul>
+
+
+<p>
+Note that these goals are shaped almost entirely by the constraints of
+URIs, though Rison has turned out to be useful in command-line tools
+as well.  In the <i>body</i> of an HTTP request or response, length is
+less critical and URI encoding can be avoided, so JSON would usually
+be preferred to Rison.
+</p>
+
+<p>
+Given that a new syntax is needed, Rison tries to innovate
+as little as possible:
+</p>
+
+<ul>
+  <li>
+    It uses the same data model as, and a very similar syntax to 
+    <a href="http://json.org">JSON</a>.  The Rison grammar is only
+    a slight alteration of the JSON grammar.
+  </li>
+  <li>
+    It introduces very little additional quoting, since we assume that
+    URI encoding will be applied on top of the Rison encoding.
+  </li>
+</ul>
+
+<h3>Differences from JSON syntax</h3>
+
+<ul>
+<li>
+no whitespace is permitted except inside quoted strings.
+</li>
+<li>
+almost all character escaping is left to the uri encoder.
+</li>
+<li>
+single-quotes are used for quoting, but quotes can and should
+be left off strings when the strings are simple identifiers.
+</li>
+<li>
+the <tt>e+</tt> exponent format is forbidden, since
+<tt>+</tt> is not safe in form values and the plain <tt>e</tt>
+format is equivalent.
+</li>
+<li>
+the <tt>E</tt>, <tt>E+</tt>, and <tt>E</tt> exponent formats are removed.
+</li>
+<li>
+object keys should be lexically sorted when encoding.  the
+intent is to improve url cacheability.
+</li>
+<li>
+uri-safe tokens are used in place of the standard json tokens:
+<table cellpadding="10px">
+<tbody>
+<tr>
+<th>rison token</th>
+<th>json token </th>
+<th>meaning</th>
+</tr>
+<tr>
+<td>'</td>
+<td>"</td>
+<td>string quote</td>
+</tr>
+
+<tr>
+<td>!</td>
+<td>\</td>
+<td>string escape</td>
+</tr>
+
+<tr>
+<td>(...)</td>
+<td>{...}</td>
+<td>object</td>
+</tr>
+
+<tr>
+<td>!(...)</td>
+<td>[...]</td>
+<td>array</td>
+</tr>
+
+</tbody>
+</table>
+</li>
+
+<li>
+the JSON literals that look like identifiers (<tt>true</tt>, <tt>false</tt> and <tt>null</tt>)
+are represented as <tt>!</tt> sequences:
+
+<table cellpadding="10px">
+<tbody>
+<tr>
+<th>rison token</th>
+<th>json token </th>
+</tr>
+
+<tr>
+<td>!t</td>
+<td>true</td>
+</tr>
+
+<tr>
+<td>!f</td>
+<td>false</td>
+</tr>
+<tr>
+<td>!n</td>
+<td>null</td>
+</tr>
+
+
+</tbody>
+</table>
+</li>
+</ul>
+
+<p>
+The <tt>!</tt> character plays two similar but different roles,
+as an escape character within strings, and as a marker for
+special values.  This may be confusing.
+</p>
+
+<p>
+Notice that services can distinguish Rison-encoded strings
+from JSON-encoded strings by checking the first character.
+Rison structures start with <tt>(</tt> or <tt>!(</tt>.
+JSON structures start with <tt>[</tt> or <tt>{</tt>.
+This means that a service which expects a JSON encoded
+object or array can accept Rison-encoded objects without
+loss of compatibility.
+</p>
+
+
+<h3>Interaction with URI %-encoding</h3>
+<p>
+Rison syntax is designed to produce strings that be legible
+after being
+<a href="http://www.w3.org/TR/html4/interact/forms.html#form-content-type"
+>form-encoded</a> for the
+<a href="http://gbiv.com/protocols/uri/rfc/rfc3986.html#query">query</a>
+section of a URI.  None of the characters in the
+Rison syntax need to be URI encoded in that context,
+though the data itself may require URI encoding.  Rison
+tries to be orthogonal to the %-encoding process - it
+just defines a string format that should survive
+%-encoding with very little bloat.  Rison quoting is
+only applied when necessary to quote characters that
+might otherwise be interpreted as special syntax.
+</p>
+
+<p>
+Note that most URI encoding libraries are very conservative,
+percent-encoding many characters that are legal according to
+<a href="http://gbiv.com/protocols/uri/rfc/rfc3986.html">RFC 3986</a>.
+For example, Javascript's builtin <code>encodeURIComponent()</code>
+function will still make Rison strings difficult to read. 
+The rison.js library includes a more tolerant URI encoder.
+</p>
+
+<p>
+Rison uses its own quoting for strings, using the single
+quote (<tt><b>'</b></tt>) as a string delimiter and the
+exclamation point (<tt><b>!</b></tt>) as the string escape
+character.  Both of these characters are legal in uris.
+Rison quoting is largely inspired by Unix shell command
+line parsing.
+</p>
+
+<p>
+All Unicode characters other than <tt><b>'</b></tt> and
+<tt><b>!</b></tt> are legal inside quoted strings.  This
+includes newlines and control characters.  Quoting
+all such characters is left to the %-encoding process.
+</p>
+
+<h3>Interaction with IRIs</h3>
+<p>
+This still needs to be addressed.  Advice from an IRI
+expert would be very welcome.
+</p>
+<p>
+Particular attention
+should be paid to Unicode characters that may be interpreted
+as Rison syntax characters.
+</p>
+<p>
+The <i>idchars</i> set is hard to define well.  The goal
+is to include foreign language alphanumeric characters
+and some punctuation that is common in identifiers
+("<tt>_</tt>", "<tt>-</tt>", "<tt>.</tt>", "<tt>/</tt>",
+and others).
+However, whitespace and most punctuation characters should
+require quoting.
+</p>
+
+<h3>Emailing URIs</h3>
+<p>
+Most text emailers are conservative about what they turn into
+a hyperlink, and they will assume that characters like '(' mean
+the end of the URI.  This results in broken, truncated links.
+</p>
+
+<p>
+This is actually a problem with URI encoding rather than with
+Rison, but it comes up a lot in practice.  You could use Rison
+with a more aggressive URI encoder to generate emailable URIs.
+
+You can also wrap your emailed URIs in angle brackets:
+<tt>&lt;http://...&gt;</tt>
+which some mail readers have better luck with.
+</p>
+
+<h3>Further Rationale</h3>
+
+<p>
+<b>Passing data in URIs</b> is necessary in many situations.
+Many web services rely on the HTTP GET method, which can take
+advantage of an extensive deployed caching infrastructure.
+Browsers also have different capabilities for GET, including
+the crucial ability to make cross-site requests.
+It is also very convenient to store the state of a small
+browser application in the URI.
+</p>
+
+<p>
+<b>Human readability</b> makes everything go faster.
+Primarily this means avoiding URI encoding whenever possible.
+This requires careful choice of characters for the syntax,
+and a tolerant URI encoder that only encodes characters when
+absolutely necessary.
+</p>
+
+<p>
+<b>Compactness</b> is important because of implementation
+limits on URI length.  Internet Explorer is once again the
+weakest link at 2K.
+One could certainly invent a more compact representation by dropping the
+human-readable constraint and using a compression algorithm.
+</p>
+
+
+<h3>Variations</h3>
+
+There are several variations on Rison which are useful or at
+least thought-provoking.
+
+<h4>O-Rison</h4>
+
+<p>
+When you know the parameter being encoded will always be an object,
+always wrapping it in a containing <tt>()</tt> is unnecessary and
+hard to explain.  Until you've dealt with nested structures,
+the need for parentheses is hard to explain.  In this case you
+may wish to declare that the argument is encoded in <i>O-Rison</i>,
+which can be translated to Rison by wrapping it in parentheses.
+</p>
+
+<p>
+Here's a URI with a single query argument which is a nested
+structure:
+    <tt>http://example.com/service?query=(q:'*',start:10,count:10)</tt>
+</p>
+
+<p>
+This is more legible if you specify that the argument is O-Rison
+instead of Rison, and leave the containing <tt>()</tt> as implied:
+    <tt>http://example.com/service?query=q:'*',start:10,count:10</tt>
+</p>
+
+<p>
+This seems to be useful in enough situations that it is worth
+defining the term <i>O-Rison</i>.
+</p>
+
+<h4>A-Rison</h4>
+
+<p>
+Similarly, sometimes you know the value will always be
+an array.  Instead of specifying a Rison argument:
+    <tt>.../?items=!(item1,item2,item3)</tt>
+you can specify the far more legible A-Rison argument:
+    <tt>.../?items=item1,item2,item3</tt>
+</p>
+
+<h4>Accepting other delimiters</h4>
+
+<p>
+Notice that O-Rison looks almost like a drop-in replacement for
+<a href="http://www.w3.org/TR/html4/interact/forms.html#form-content-type">
+URL form encoding</a>, with two substitutions:
+</p>
+<ul>
+  <li>"<tt>:</tt>" for "<tt>=</tt>"</li>
+  <li>"<tt>,</tt>" for "<tt>&amp;</tt>"</li>
+</ul>
+<p>
+We could expand the Rison parser
+to treat all of "<tt>,</tt>", "<tt>&amp;</tt>", and "<tt>;</tt>" as
+valid item separators and both "<tt>:</tt>" and "<tt>=</tt>" as
+key-value separators.  In this case the vast majority of 
+URI queries would form a flat subset of O-Rison.  The exceptions
+are services that depend on ordering of query parameters or
+allow duplicate parameter names.
+</p>
+
+<p>
+This extension doesn't change the parsing of standard Rison
+strings because "<tt>&amp;</tt>", "<tt>=</tt>", and "<tt>;</tt>"
+are already illegal in Rison identifiers.
+</p>
+
+<h3><a name="examples">Examples</a></h3>
+
+<p>
+These examples compare Rison and JSON representations of
+identical values.  The table is generated in the browser
+using <a href="http://mjtemplate.org/">mjt</a>.
+</p>
+
+<p>
+The compression ratio column shows
+<tt>(1&nbsp;-&nbsp;encoded_rison_size)&nbsp;/&nbsp;encoded_json_size.</tt>
+</p>
+<p>
+On a log of Freebase mqlread service URIs, the queries were from
+35% to 45% smaller when encoded with Rison.
+</p>
+<p>
+URI encoding is done with a custom URI encoder which is less aggressive
+than Javascript's built-in <tt>encodeURIComponent()</tt>.
+</p>
+
+<div id="top" style="display:none;">
+
+  <table cellpadding="10px">
+    <tbody>
+    <tr>
+      <th>Rison</th>
+      <th>JSON</th>
+      <th>URI-encoded Rison</th>
+      <th>URI-encoded JSON</th>
+      <th>roundtrip test</th>
+      <th>compression</th>
+    </tr>
+    <tr mjt.for="r in rison_examples">
+        <td mjt.script="">
+            var test = rison.decode(r);
+            if (typeof(test) != 'undefined') {
+                var json = JSON.stringify(test);
+                var urljson = rison.quote(json);
+                var ur = rison.quote(r);
+                var r2 = rison.encode(test);
+            }
+        </td>
+  
+        <td><tt style="font-size:0.8em">${r}</tt></td>
+  
+        <td><pre style="font-size:0.8em">${indented_json(test)}</pre></td>
+  
+        <td><tt style="font-size:0.8em">$ur</tt></td>
+
+        <td><tt style="font-size:0.8em">$urljson</tt></td>
+
+        <td><tt>
+            <span mjt.if="typeof(r2)=='undefined'" style="color:red">undefined</span>
+            <span mjt.elif="r!=r2" style="color:red">$r2</span>
+            <span mjt.else="">ok</span>
+        </tt></td>
+        <td>
+          <div>
+          ${Math.round(100 * (1.0 - ur.length / urljson.length))}%</div>
+        </td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>
