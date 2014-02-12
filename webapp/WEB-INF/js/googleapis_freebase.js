@@ -263,6 +263,14 @@ function augment(freebase, urlfetch, async_urlfetch) {
         var opts = decant_options(options);
         var api_opts = opts[0];
         var fetch_opts = opts[1];
+
+        // FIX(pmikota): this will force every request to Topic API to return
+        // latest data.
+        // Behavior: "now": fetch from cache and fall back to sstable.
+        // Update to latest timestamp. ~6 mql lookups (does call
+        // to mql with nocache=true)
+        api_opts.dateline = "now";
+
         var base_url = freebase.googleapis_url + "/topic" + id;
         var url = acre.form.build_url(base_url, api_opts);
         return fetch(url, fetch_opts);
