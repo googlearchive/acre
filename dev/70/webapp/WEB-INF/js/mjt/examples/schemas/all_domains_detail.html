@@ -1,0 +1,100 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"></meta>
+<title>All domains detail</title>
+<script type="text/javascript" src="../../mjt.js"></script>
+<script type="text/javascript" src="util.js"></script>
+<link type="text/css" rel="stylesheet" href="chrome.css" />
+</head>
+
+<body onload="mjt.run('top')">
+
+
+<div id="top" style="display:none;">
+<h3>Categories and Domains Detail</h3>
+<a href="index.html">[switch to compact view]</a>
+    <div mjt.script="1">document.title='Categories and Domains detail';</div>
+    <div mjt.task="o">
+       mjt.freebase.MqlRead([{
+        "type":"/freebase/domain_category",
+        "name":null,
+        "id":null,
+        "domains":[{
+          "type":"/type/domain",
+          "id":null,
+          "name":null,
+          "types":[{
+            "name":null,
+            "properties":[],
+            "id":null,
+            "/freebase/type_profile/instance_count":null,
+            "/freebase/type_profile/work_needed":[{
+              "optional":true,
+              "detail":null,
+              "type_project":{
+                "name":null,
+                "id":null
+              }
+            }]
+          }],
+          "owners":[{
+            "optional":true,
+            "name":null,
+            "id":null,
+            "member":[{
+              "optional":true,
+              "name":null,
+              "id":null,
+              "a:type":"/freebase/user_profile"
+            }]
+          }]
+        }]
+      }])
+      
+    </div>
+
+    <table mjt.for="category in o.result" cellpadding="0">
+      <tr><td></td><td>&nbsp;</td></tr>
+      <tr>
+        <td width="20"></td>
+        <td colspan="2">
+          <table cellpadding="1" mjt.for="domain in category.domains">
+            <tr>
+              <td colspan="3"><b>$domain.name</b><a href="domain.html?id=$domain.id">
+                $domain.id</a>&nbsp; ($category.name)
+              </td>
+            </tr>
+            <tr>
+              <td colspan="3"><span mjt.for="owner in domain.owners">
+                <span mjt.for="i,member in owner.member"><span mjt.if="i &gt; 0">,</span><a href="$mjt.service_url/view$member.id">
+                  $member.name</a></span></span></td>
+            </tr>
+            <tr>
+              <td></td>
+              <td align="right"><b>instances</b></td>
+              <td align="right"><b>properties</b></td>
+              <td align="left">&nbsp;<b>projects</b></td>
+            </tr>
+            <tr mjt.for="t in domain.types">
+              <td width="180" align="left"><a href="type.html?id=${t.id}">$t.name</a></td>
+              <td width="80" align="right" mjt.content="commaFormatInteger(t['/freebase/type_profile/instance_count'])"></td>
+              <td width="80" align="right" mjt.content="commaFormatInteger(t.properties.length)"></td>
+              <td valign="top" align="left">
+                <span mjt.for="work in t['/freebase/type_profile/work_needed']">
+                  &nbsp;<a href="$mjt.service_url/view$work.type_project.id">              
+                  $work.type_project.name</a> 
+                  <span mjt.if="work.detail">($work.detail),</span>
+                </span>
+              </td>    
+            </tr>
+            <tr><td>&nbsp;</td></tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+</div>
+
+</body>
+</html>

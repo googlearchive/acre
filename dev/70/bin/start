@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# Normalize the current directory
+cd `dirname $0`/..
+
+# Make configuration files
+. bin/make-configs
+
+# function to make paths absolute
+absolute_path () {
+  case $1 in
+    /*) echo $1; ;;
+    *) echo `pwd`/$1; ;;
+  esac
+}
+
+# Obtain Acre classpath
+classpath="`absolute_path library/classes`:`absolute_path server/classes`"
+classpath="${classpath}:`ls server/lib/*.jar | paste -s -d: -`"
+
+RUN_CMD="$JAVA $JVM_MEM $JVM_PERM_MEM $JVM_JMX $DEBUG -cp $classpath -Djava.util.logging.config.file=webapp/META-INF/logging.properties -DconfigDir=webapp/META-INF -DSTATIC_SCRIPT_PATH=webapp/WEB-INF/scripts $EXTRA_CONF com.google.acre.Main"
+
+echo "Starting 'Acre $ACRE_VERSION' mounted at '*.$ACRE_HOST_BASE' over '$ACRE_METAWEB_API_ADDR' "    
+
+if [ ! -z "$DEBUG" ]; then
+    echo "with DEBUG parameters: $DEBUG"
+fi
+
+if [ "$ACTION" = "start" ] ; then
+
+    # Execute the JVM fork the process in background
+    nohup sh -c "exec $RUN_CMD >> acre.console.log 2>&1" >/dev/null &
+    A_PID=$!
+    echo $A_PID > $ACRE_PID
+
+    # Loop waiting for status
+    sleep 2
+    ./bin/status
+    if [ "$?" -eq "0" ]; then
+      exit 0
+    fi
+    # if we get here, there was an error, so we should kill
+    echo status failed, stop acre
+    ./acre stop
+    
+    echo
+    echo "giving up, last /status check returned:"
+    echo "$result"
+    echo
+    echo "start failed"
+    exit 1
+    
+else 
+    exec $RUN_CMD
+fi
