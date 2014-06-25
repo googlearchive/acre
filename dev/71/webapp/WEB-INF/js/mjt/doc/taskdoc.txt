@@ -1,0 +1,165 @@
+
+========
+mjt.Task
+========
+
+**Mjt.Task** is a library for Javascript programmers who have to manage
+interdependent asynchronous tasks.
+
+Browser-based applications make complex chains of I/O requests,
+possibly calling a variety of web services in a partially defined
+order.  Mjt.Task makes it simple to express the dependencies between
+network requests and to trigger user code when those requests succeed
+or fail.
+
+Mjt.Task was originally built as part of the Mjt_ template system,
+but it is just as useful with plain Javascript.
+
+Mjt.Task comes with predefined tasks that make HTTP
+requests using JSONP_ or XMLHttpRequest.  Other tasks build on
+these to provide access to particular web services, or to
+make a series of interdependent queries.
+
+Every task goes through a life cycle of states: **init** when it is
+first constructed, **wait** after the task has been started and finally
+either **ready** or **error** when the task completes.
+
+What does the task machinery do for you?
+
+- handles the state transitions.
+
+- distinguishes between **ready** or **error** completion,
+  which simplifies user code in most cases.
+
+- accepts event handlers that are partial functions, using a concise syntax.
+
+- allows a timeout to be applied on any task.
+
+- keeps track of prerequisites for any task, to easily express the most
+  common form of task interdependency.
+
+- (usually) clarifies the problem you were facing to begin with.
+
+Mjt.Task has been used successfully to build complex
+multi-request operations against the Freebase web service, including
+a schema cache, paged results, and an in-browser Javascript
+development environment (the Freebaseapps `Application Editor`_).
+
+
+Task Lifecycle
+--------------
+
+See also this `task state diagram`_.
+
+.. _task state diagram: taskstate.html
+
+Every task defines a constructor function.  Unlike standard Javascript
+constructors, these do not require the "new" operator.  Here we create
+a new JSONP function:
+
+   var task = mjt.JsonP('http://api.freebase.com/api/service/mqlread ... ');
+
+The task is now in state **init**.  Any callbacks can now be specified
+Here we'll insert the result of the call into the document using jQuery::
+
+   function handle_data(result) {
+      $('#result').text(JSON.stringify(result));
+   }
+   task.onready(handle_data);
+
+We handle the error case separately::
+
+   task.onerror(function (code, message, details) {
+                    alert('error ' + code + ': ' + message);
+                });
+
+When we're finished setting up the task, we can send it off::
+
+   task.enqueue();
+
+If the request completes successfully, the task framework will
+call handle_data later, passing the request.  Otherwise the
+anonymous function for onerror will be called.  Any number of
+onready and onerror callbacks can be added.
+
+
+Chaining calls
+--------------
+
+As in jQuery, most task methods return the task, so the above can
+be expressed more tersely as::
+
+   var task = mjt.JsonP('http://api.freebase.com/api/service/mqlread ... ')
+       .onready(handle_data)
+       .onerror(function (code, message, details) {
+                    alert('error ' + code + ': ' + message);
+                })
+       .enqueue();
+
+Note that you can call most of these methods in any order.  If the
+task has already completed successfully, any further onready() or
+onerror() calls will be triggered immediately if the state matches.
+
+You can chain tasks together using the onready() and onerror()
+handlers, but simple task dependencies can be expressed using
+task.require().  If you want to run several tasks simultaneously
+and get notified only when all of them are complete, you can
+create a dummy task that always succeeds, but make it require
+all the subtasks::
+
+    var alltasks = mjt.Succeed()
+                      .require(subtask1)
+                      .require(subtask2)
+                      .require(subtask3)
+                      .enqueue();
+
+
+Timeouts
+--------
+
+Tasks also support an optional timeout.  This is particularly
+useful in making JSONP calls, where the browser doesn't necessarily
+get notified about errors::
+
+    task.set_timeout(4000);
+
+Will force the task into the error state if it isn't ready after four
+seconds.
+
+
+Event notification syntax
+-------------------------
+
+The .onready() and .onerror() methods allow callbacks to be requested
+in several ways.
+
+The most common way to describe a callback is as a Javascript function::
+
+    task.onready(function(result) { ... });
+
+A callback can also be specified as a method call::
+
+    task.onready('methodname', obj);
+
+which will call ``obj.methodname(result)``.
+
+The method call version helps you avoid creating a temporary binding
+for `this`::
+
+    task.onready('methodname', this);
+
+This syntax is considerably shorter than the equivalent alternative::
+
+    var _this = this;
+    task.onready(function (result) { _this.methodname(result); });
+
+Extra arguments can be specified as well::
+
+    task.onready('methodname', this, 'foo', 'bar');
+
+will eventually call ``this.methodname('foo', 'bar', result)``.
+
+
+.. _jsonp: http://en.wikipedia.org/wiki/JSON#JSONP
+.. _mjt: /
+.. _Application Editor: http://freebaseapps.com

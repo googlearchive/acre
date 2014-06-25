@@ -1,0 +1,2933 @@
+{
+  "console": {}, 
+  "description": "The Global scope", 
+  "mjt": {}, 
+  "JSON": {}, 
+  "members": {
+    "console": {
+      "fqid": "console", 
+      "console": {}, 
+      "description": "The debug console where you can log messages from your server-side Acre scripts. These messages are visible when your scripts are viewed with the URL parameter acre.console=1", 
+      "mjt": {}, 
+      "JSON": {}, 
+      "members": {
+        "debug": {
+          "fqid": "console.debug", 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "obj", 
+              "name": "obj", 
+              "description": "a javascript object to log"
+            }
+          ], 
+          "type": "function", 
+          "description": "Writes a debug message with the given object."
+        }, 
+        "info": {
+          "fqid": "console.info", 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "obj", 
+              "name": "obj", 
+              "description": "a javascript object to log"
+            }
+          ], 
+          "type": "function", 
+          "description": "Writes an info message with the given object."
+        }, 
+        "warn": {
+          "fqid": "console.warn", 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "obj", 
+              "name": "obj", 
+              "description": "a javascript object to log"
+            }
+          ], 
+          "type": "function", 
+          "description": "Writes a warning message with the given object."
+        }, 
+        "log": {
+          "fqid": "console.log", 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "obj", 
+              "name": "obj", 
+              "description": "a javascript object to log"
+            }
+          ], 
+          "type": "function", 
+          "description": "Writes an info message with the given object."
+        }, 
+        "error": {
+          "fqid": "console.error", 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "obj", 
+              "name": "obj", 
+              "description": "a javascript object to log"
+            }
+          ], 
+          "type": "function", 
+          "description": "Writes an error message with the given object."
+        }
+      }, 
+      "acre": {
+        "current_script": {
+          "name": "obj_console", 
+          "app": {
+            "versions": [], 
+            "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+            "source": "graph", 
+            "version": null, 
+            "path": "//acreassist.dfhuynh.user.dev", 
+            "guid": "#9202a8c04000641f800000000ba148f6", 
+            "id": "/user/dfhuynh/acreassist"
+          }, 
+          "handler": "acre_script", 
+          "media_type": "text/plain", 
+          "path": "//acreassist.dfhuynh.user.dev/obj_console", 
+          "content_id": "/m/062zx_l", 
+          "id": "/user/dfhuynh/acreassist/obj_console"
+        }
+      }, 
+      "type": "module"
+    }, 
+    "decodeURI": {
+      "fqid": "decodeURI", 
+      "paramInfo": [
+        {
+          "optional": false, 
+          "type": "string", 
+          "name": "uri", 
+          "description": "The URI to decode"
+        }
+      ], 
+      "type": "function", 
+      "description": "Decodes a URI previously created by encodeURI."
+    }, 
+    "escape": {
+      "fqid": "escape", 
+      "paramInfo": [
+        {
+          "optional": false, 
+          "type": "string", 
+          "name": "text", 
+          "description": "The string to escape"
+        }
+      ], 
+      "type": "function", 
+      "description": "Encodes a string to the form suitable for transmission as part of a URI."
+    }, 
+    "JSON": {
+      "fqid": "JSON", 
+      "console": {}, 
+      "description": "Contains JSON processing functionalities.", 
+      "mjt": {}, 
+      "JSON": {}, 
+      "members": {
+        "parse": {
+          "fqid": "JSON.parse", 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "string", 
+              "name": "json_string", 
+              "description": "The JSON string to parse"
+            }
+          ], 
+          "type": "function", 
+          "description": "Parses a string containing a serialized JSON object and returns a Javascript object."
+        }, 
+        "stringify": {
+          "fqid": "JSON.stringify", 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "obj", 
+              "name": "object", 
+              "description": "The javascript object to serialize"
+            }, 
+            {
+              "optional": true, 
+              "type": "function | string | null", 
+              "name": "resolver", 
+              "description": "Used to replace an object with some string value if its encoding is unsupported (not implemented)"
+            }, 
+            {
+              "optional": true, 
+              "type": "string | number", 
+              "name": "indent", 
+              "description": "A string to prefix before indented lines, or the number of spaces to use for each indentation level"
+            }
+          ], 
+          "type": "function", 
+          "description": "Serializes a Javascript object into a JSON string representation."
+        }
+      }, 
+      "acre": {
+        "current_script": {
+          "name": "obj_JSON", 
+          "app": {
+            "versions": [], 
+            "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+            "source": "graph", 
+            "version": null, 
+            "path": "//acreassist.dfhuynh.user.dev", 
+            "guid": "#9202a8c04000641f800000000ba148f6", 
+            "id": "/user/dfhuynh/acreassist"
+          }, 
+          "handler": "acre_script", 
+          "media_type": "text/plain", 
+          "path": "//acreassist.dfhuynh.user.dev/obj_JSON", 
+          "content_id": "/m/063jjnx", 
+          "id": "/user/dfhuynh/acreassist/obj_JSON"
+        }
+      }, 
+      "type": "module"
+    }, 
+    "parseFloat": {
+      "fqid": "parseFloat", 
+      "paramInfo": [
+        {
+          "optional": false, 
+          "type": "string", 
+          "name": "text", 
+          "description": "The text string to parse"
+        }
+      ], 
+      "type": "function", 
+      "description": "Parses a string into a floating number."
+    }, 
+    "eval": {
+      "fqid": "eval", 
+      "paramInfo": [
+        {
+          "optional": false, 
+          "type": "string", 
+          "name": "code", 
+          "description": "The code string to evaluate"
+        }
+      ], 
+      "type": "function", 
+      "description": "Evaluates a string of Javascript code."
+    }, 
+    "acre": {
+      "fqid": "acre", 
+      "console": {}, 
+      "mjt": {}, 
+      "JSON": {}, 
+      "members": {
+        "version": {
+          "fqid": "acre.version", 
+          "type": "string", 
+          "description": "Version of the Acre system"
+        }, 
+        "start_response": {
+          "fqid": "acre.start_response", 
+          "description": "Starts the response and sets headers (NOTE: Acre apps no longer need to call this function, it's strongly suggested to use the 'acre.response' object instead and let Acre construct the response transparently).", 
+          "deprecated": true, 
+          "paramInfo": [
+            {
+              "optional": true, 
+              "type": "number", 
+              "name": "status", 
+              "description": "the HTTP status code of the response."
+            }, 
+            {
+              "optional": true, 
+              "type": "obj", 
+              "name": "headers", 
+              "description": "the HTTP headers to set on the response."
+            }
+          ], 
+          "see": "acre.response", 
+          "type": "function"
+        }, 
+        "freebase": {
+          "fqid": "acre.freebase", 
+          "console": {}, 
+          "description": "Contains information and utility functions for the Freebase service.", 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "search": {
+              "fqid": "acre.freebase.search", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "query", 
+                  "description": "The string pattern to search for, e.g., \"love*\"."
+                }, 
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "options", 
+                  "structure": [
+                    {
+                      "type": "number", 
+                      "name": "limit", 
+                      "description": "Maximum number of results to return. Default is 20."
+                    }, 
+                    {
+                      "type": "string", 
+                      "name": "type", 
+                      "description": "One or more type IDs to restrict the results to, separated by commas (e.g., \"/people/person,/business/company\")."
+                    }, 
+                    {
+                      "choices": {
+                        "all": "Each result must match all types specified.", 
+                        "any": "Each result has at least one matched type.", 
+                        "should": "Types are not required to match, but results with matched types are boosted."
+                      }, 
+                      "type": "string", 
+                      "name": "type_strict", 
+                      "description": "Specifies how the given type or types should be taken into account."
+                    }, 
+                    {
+                      "type": "string", 
+                      "name": "domain", 
+                      "description": "One or more domain IDs to restrict the results to, separated by commas (e.g., \"/people,/business\")."
+                    }, 
+                    {
+                      "choices": {
+                        "all": "Each result must match all domains specified.", 
+                        "any": "Each result has at least one matched domain.", 
+                        "should": "Domains are not required to match, but results with matched domains are boosted."
+                      }, 
+                      "type": "string", 
+                      "name": "domain_strict", 
+                      "description": "Specifies how the given domain or domains should be taken into account."
+                    }, 
+                    {
+                      "type": "string", 
+                      "name": "type_exclude", 
+                      "description": "One or more type IDs to exclude from results, separated by commas (e.g., \"/people/person,/business/company\")."
+                    }, 
+                    {
+                      "choices": {
+                        "all": "If a result has all the types in the excluded type list, then it is excluded.", 
+                        "any": "If a result has any type in the excluded type list, then it is excluded.", 
+                        "should": "Results with excluded types are demoted but not removed automatically."
+                      }, 
+                      "type": "string", 
+                      "name": "type_exclude_strict", 
+                      "description": "Specifies how the given excluded type or types should be taken into account."
+                    }, 
+                    {
+                      "type": "string", 
+                      "name": "domain_exclude", 
+                      "description": "One or more domain IDs to exclude from results, separated by commas (e.g., \"/people,/business\")."
+                    }, 
+                    {
+                      "choices": {
+                        "all": "If a result has all the domains in the excluded domain list, then it is excluded.", 
+                        "any": "If a result has any domain in the excluded domain list, then it is excluded.", 
+                        "should": "Results with excluded domains are demoted but not removed automatically."
+                      }, 
+                      "type": "string", 
+                      "name": "domain_exclude_strict", 
+                      "description": "Specifies how the given excluded domain or domains should be taken into account."
+                    }, 
+                    {
+                      "type": "string", 
+                      "name": "blacklist", 
+                      "description": "A comma-separated list of blacklist names. Only one blacklist, named \"fus\", is available at the moment, and it includes /type/domain, /type/type, /common/topic, /type/user, /freebase/freebase_help_topic, and /music/track."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "callback", 
+                      "description": "The function to call with response object if successful.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "errback", 
+                      "description": "The function to call with error object if failure.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "number", 
+                      "name": "http_timeout", 
+                      "description": "Number of ms to give the request before throwing (or calling errback with) a timeout error"
+                    }
+                  ], 
+                  "description": "Custom key/value options for the relevance search service (<a target=\"blank\" href=\"http://www.freebase.com/api/service/search?help\">details</a>)."
+                }
+              ], 
+              "type": "function", 
+              "description": "Performs a text search."
+            }, 
+            "date_from_iso": {
+              "fqid": "acre.freebase.date_from_iso", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "iso_date", 
+                  "description": "The ISO8601 date/time string to parse (e.g., \"2009-11-29\")."
+                }
+              ], 
+              "type": "function", 
+              "description": "Converts an ISO8601 date string returned in MQL to Javascript Date object."
+            }, 
+            "create_group": {
+              "fqid": "acre.freebase.create_group", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "name", 
+                  "description": "The name to give the newly created permission group"
+                }, 
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "options", 
+                  "structure": [
+                    {
+                      "optional": true, 
+                      "type": "string", 
+                      "name": "extra_group", 
+                      "description": "The ID of an existing user group to include in the new permission object"
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "callback", 
+                      "description": "The function to call with response object if successful.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "errback", 
+                      "description": "The function to call with error object if failure.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "number", 
+                      "name": "http_timeout", 
+                      "description": "Number of ms to give the request before throwing (or calling errback with) a timeout error"
+                    }
+                  ], 
+                  "description": "General HTTP options and additional key/value params for this web service"
+                }
+              ], 
+              "type": "function", 
+              "description": "Creates a new permission group that can then be used to create future permissioned nodes (with use_permission_of)."
+            }, 
+            "extend_query": {
+              "fqid": "acre.freebase.extend_query", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "mql_obj", 
+                  "description": "A MQL query as a Javascript object"
+                }, 
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "overrides", 
+                  "description": "A Javascript object whose properties are used to override properties in the MQL query.  The object's keys use the same syntax as MQL sort directives in that they support both '.' notation and automatically traverse arrays.  If segments of the path are missing, they will automatically be created.  The value will then be set at the location the path specifies, replacing any existing value."
+                }
+              ], 
+              "type": "function", 
+              "description": "Overlay new key/value pairs in the given obj into an existing query.  NOTE: <em>extend_query</em> modifies the original query object, so if you would like to use the same base query more than once, you may want to create a deep copy first."
+            }, 
+            "mqlread": {
+              "fqid": "acre.freebase.mqlread", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "mql_query", 
+                  "description": "The MQL query as a Javascript object."
+                }, 
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "envelope", 
+                  "structure": [
+                    {
+                      "optional": true, 
+                      "type": "string", 
+                      "name": "as_of_time", 
+                      "description": "Specify that the results should reflect the state of the database as of the time specified by the timestamp (useful for making historical queries). An ISO8601 date/time string."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "number", 
+                      "name": "page", 
+                      "description": "A page number, starting from 1."
+                    }, 
+                    {
+                      "default": false, 
+                      "optional": true, 
+                      "type": "bool", 
+                      "name": "cursor", 
+                      "description": "Enables the retrieval of a large result set in batches.  Present the cursor you receive in the response envelope in the next request envelope to get the next set of results."
+                    }, 
+                    {
+                      "default": true, 
+                      "optional": true, 
+                      "type": "bool", 
+                      "name": "escape", 
+                      "description": "Enables escaping of , & characters. Should not be used to display output in web browsers since it opens vulnerability to script injection attacks."
+                    }, 
+                    {
+                      "default": "/lang/en", 
+                      "optional": true, 
+                      "type": "string", 
+                      "name": "lang", 
+                      "description": "specify the language in which you want the results returned"
+                    }, 
+                    {
+                      "description": "Prevents an error when more than one result is returned and the query is not enclosed in square brackets indicating that multiple results are expected.", 
+                      "default": "hard", 
+                      "type": "string", 
+                      "choices": {
+                        "hard": "Error when there's a uniqueness failure.", 
+                        "soft": "Don't error when there's a uniqueness failure."
+                      }, 
+                      "optional": true, 
+                      "name": "uniqueness_failure"
+                    }
+                  ], 
+                  "description": "Envelope parameters used by the query, (e.g., as_of_time, page)."
+                }, 
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "options", 
+                  "structure": [
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "callback", 
+                      "description": "The function to call with response object if successful.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "errback", 
+                      "description": "The function to call with error object if failure.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "number", 
+                      "name": "http_timeout", 
+                      "description": "Number of ms to give the request before throwing (or calling errback with) a timeout error"
+                    }
+                  ], 
+                  "description": "General HTTP options and additional key/value params for this web service"
+                }
+              ], 
+              "type": "function", 
+              "description": "Performs a MQL read. The result is a Javascript object that contains a property called \"result\" if the query was successful."
+            }, 
+            "get_user_info": {
+              "fqid": "acre.freebase.get_user_info", 
+              "paramInfo": [
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "options", 
+                  "structure": [
+                    {
+                      "optional": true, 
+                      "type": "obj", 
+                      "name": "mql_output", 
+                      "description": "Query to use for retrieving data about the user"
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "callback", 
+                      "description": "The function to call with response object if successful.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "errback", 
+                      "description": "The function to call with error object if failure.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "number", 
+                      "name": "http_timeout", 
+                      "description": "Number of ms to give the request before throwing (or calling errback with) a timeout error"
+                    }
+                  ], 
+                  "description": "General HTTP options and additional key/value params for this web service"
+                }
+              ], 
+              "type": "function", 
+              "description": "Returns a JSON object of user info if the use ris logged in via OAuth."
+            }, 
+            "get_blob": {
+              "fqid": "acre.freebase.get_blob", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "id", 
+                  "description": "The ID of the Blob to obtain."
+                }, 
+                {
+                  "optional": true, 
+                  "choices": {
+                    "raw": "Despite the name, <em>raw</em> requests are still processed in an attempt to guard against the most blatant forms of malicious use.", 
+                    "unsafe": "For truly 'raw' content, wear rubber gloves with <em>unsafe</em>. ", 
+                    "blurb": "The <em>blurb</em> mode returns plain text and works only with content whose original content-type is of the form text/*. If the original content is an html document, only the contents of the &lt;p&gt; tags are processed... contents of all other tags are discarded."
+                  }, 
+                  "type": "string", 
+                  "name": "mode", 
+                  "description": "The retrieval mode."
+                }, 
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "options", 
+                  "structure": [
+                    {
+                      "type": "number", 
+                      "name": "maxlength", 
+                      "description": "The max length of the blurb to retrieve (used only in 'blurb' mode)."
+                    }, 
+                    {
+                      "type": "boolean", 
+                      "name": "break_paragraphs", 
+                      "description": "Wheather the blurb mode should break on paragraphs or not (defaults to 'true')."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "callback", 
+                      "description": "The function to call with response object if successful.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "errback", 
+                      "description": "The function to call with error object if failure.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "number", 
+                      "name": "http_timeout", 
+                      "description": "Number of ms to give the request before throwing (or calling errback with) a timeout error"
+                    }
+                  ], 
+                  "description": "Optional arguments passed to some retrieval modes."
+                }
+              ], 
+              "type": "function", 
+              "description": "Retrieves content from the content store given a document's ID."
+            }, 
+            "geosearch": {
+              "fqid": "acre.freebase.geosearch", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "query", 
+                  "description": "The string pattern to search for."
+                }, 
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "options", 
+                  "structure": [
+                    {
+                      "type": "number", 
+                      "name": "limit", 
+                      "description": "Maximum number of results to return. Default is 20."
+                    }, 
+                    {
+                      "type": "string", 
+                      "name": "type", 
+                      "description": "One or more type IDs to restrict the results to, separated by commas (e.g., \"/people/person,/business/company\")."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "callback", 
+                      "description": "The function to call with response object if successful.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "errback", 
+                      "description": "The function to call with error object if failure.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "number", 
+                      "name": "http_timeout", 
+                      "description": "Number of ms to give the request before throwing (or calling errback with) a timeout error"
+                    }
+                  ], 
+                  "description": "Custom key/value options for the relevance search service (<a target=\"blank\" href=\"http://www.freebase.com/api/service/geosearch?help\">details</a>)."
+                }
+              ], 
+              "type": "function", 
+              "description": "Performs a geo search."
+            }, 
+            "mqlkey_quote": {
+              "fqid": "acre.freebase.mqlkey_quote", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "String", 
+                  "name": "string", 
+                  "description": "a Javascript string"
+                }
+              ], 
+              "type": "function", 
+              "description": "Encode a Javascript string to turn it into a valid MQL /type/key/value"
+            }, 
+            "upload": {
+              "fqid": "acre.freebase.upload", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "content", 
+                  "description": "The content to upload."
+                }, 
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "content_type", 
+                  "description": "The MIME type of the content."
+                }, 
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "options", 
+                  "structure": [
+                    {
+                      "type": "string", 
+                      "name": "document", 
+                      "description": "ID of an existing document to which the uploaded content object should be linked to."
+                    }, 
+                    {
+                      "type": "string", 
+                      "name": "content", 
+                      "description": "ID of the current /type/content attached to the document.  Upload will fail if this doesn't match.  Useful for avoiding clobbering changes."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "callback", 
+                      "description": "The function to call with response object if successful.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "errback", 
+                      "description": "The function to call with error object if failure.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "number", 
+                      "name": "http_timeout", 
+                      "description": "Number of ms to give the request before throwing (or calling errback with) a timeout error"
+                    }
+                  ], 
+                  "description": "Custom key/value options for the upload service"
+                }
+              ], 
+              "type": "function", 
+              "description": "Uploads content to the content store."
+            }, 
+            "set_service_url": {
+              "fqid": "acre.freebase.set_service_url", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "service_url", 
+                  "description": "The host URL that serves the freebase API (e.g. 'http://www.freebase.com')"
+                }
+              ], 
+              "type": "function", 
+              "description": "Set the service url for all subsequent calls that use it (such as mqlread/mqlwrite).  It's important to use this call rather than trying to set acre.freebase.service_url directly as the latter method does not correctly re-set OAuth."
+            }, 
+            "site_host": {
+              "fqid": "acre.freebase.site_host", 
+              "type": "string", 
+              "description": "The URL for the Freebase web site (i.e., where App Editor resides)."
+            }, 
+            "service_url": {
+              "fqid": "acre.freebase.service_url", 
+              "type": "string", 
+              "description": "The URL for Freebase APIs used by the Acre server."
+            }, 
+            "date_to_iso": {
+              "fqid": "acre.freebase.date_to_iso", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "Date", 
+                  "name": "date", 
+                  "description": "The Javascript Date object to encode as an ISO8601 string."
+                }
+              ], 
+              "type": "function", 
+              "description": "Converts a Javascript Date object to an ISO8601 date string usable in MQL."
+            }, 
+            "touch": {
+              "fqid": "acre.freebase.touch", 
+              "paramInfo": [
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "options", 
+                  "structure": [
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "callback", 
+                      "description": "The function to call with response object if successful.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "errback", 
+                      "description": "The function to call with error object if failure.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "number", 
+                      "name": "http_timeout", 
+                      "description": "Number of ms to give the request before throwing (or calling errback with) a timeout error"
+                    }
+                  ], 
+                  "description": "General HTTP options and additional key/value params for the mqlread web service"
+                }
+              ], 
+              "type": "function", 
+              "description": "Updates the request's (and the user's) MWLastWriteTime cookie which is necessary for getting the latest content from other Freebase APIs."
+            }, 
+            "get_topic": {
+              "fqid": "acre.freebase.get_topic", 
+              "paramInfo": [
+                {
+                  "optional": "false", 
+                  "type": "string", 
+                  "name": "id", 
+                  "description": ""
+                }, 
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "options", 
+                  "structure": [
+                    {
+                      "description": "What level of data to return for the topic", 
+                      "default": "basic", 
+                      "type": "string", 
+                      "choices": {
+                        "standard": "Includes properties", 
+                        "basic": "Only the meta-data for a topic without any properties."
+                      }, 
+                      "optional": true, 
+                      "name": "mode"
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "string", 
+                      "name": "domains", 
+                      "description": "Comma-separated list of domain IDs.  Only properties from the listed domains will be returned"
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "callback", 
+                      "description": "The function to call with response object if successful.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "errback", 
+                      "description": "The function to call with error object if failure.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "number", 
+                      "name": "http_timeout", 
+                      "description": "Number of ms to give the request before throwing (or calling errback with) a timeout error"
+                    }
+                  ], 
+                  "description": "General HTTP options and additional key/value params for this web service"
+                }
+              ], 
+              "type": "function"
+            }, 
+            "mqlkey_unquote": {
+              "fqid": "acre.freebase.mqlkey_unquote", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "String", 
+                  "name": "string", 
+                  "description": "a MQL /type/key/value string"
+                }
+              ], 
+              "type": "function", 
+              "description": "Unencode a MQL /type/key/value string to a Javascript string"
+            }, 
+            "imgurl": {
+              "fqid": "acre.freebase.imgurl", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "id", 
+                  "description": "The ID of the image."
+                }, 
+                {
+                  "optional": false, 
+                  "type": "number", 
+                  "name": "maxwidth", 
+                  "description": "Maximum width of the image, in pixels."
+                }, 
+                {
+                  "optional": false, 
+                  "type": "number", 
+                  "name": "maxheight", 
+                  "description": "Maximum height of the image, in pixels."
+                }, 
+                {
+                  "optional": false, 
+                  "choices": {
+                    "fillcrop": "In this mode, a fill operation is done and any part of the image that protrudes out of the provided rectangle is cropped out.  Requires that both the dimensions of the desired rectangle are provided.", 
+                    "fillcropmid": "In this mode, a fill operation is done, the crop rectangle is centered on the resulting image and any part of that image that protrudes out of the centered rectangle is cropped out. Center is calculated by: (image.x - crop.x)/2, and y is 0.", 
+                    "fit": "In fit mode, given a rectangle, the image will be resized to fit in the rectangle. There may be empty space left over along one dimension.", 
+                    "fill": "In fill mode, given a rectangle, the image will be resized so that the rectangle fits completely inside the resulting image and one of the image dimensions is the same as one of the provided rectangle's. "
+                  }, 
+                  "type": "string", 
+                  "name": "mode", 
+                  "description": "How to fit the image into the specified maximum dimensions by scaling and cropping."
+                }, 
+                {
+                  "optional": true, 
+                  "type": "number", 
+                  "name": "pad", 
+                  "description": "The intention of pad is to allow the user to predict dimensions of the resulting image even if the resulting dimensions do not match the requested maxwidth and maxheight."
+                }, 
+                {
+                  "optional": true, 
+                  "type": "string", 
+                  "name": "errorid", 
+                  "description": "Freebase ID of a topic or image that is the fallback in case the original cannot be thumbnailed."
+                }
+              ], 
+              "type": "function", 
+              "description": "Returns a URL that can be used as the src attribute of an img tag.  More <a href='/docs/web_services/image_thumb'>detail</a> can be found in the documentation of the image_thumb web service."
+            }, 
+            "mqlwrite": {
+              "fqid": "acre.freebase.mqlwrite", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "mql_query", 
+                  "description": "The MQL query as a Javascript object."
+                }, 
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "envelope", 
+                  "description": "Envelope parameters used by the query."
+                }, 
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "options", 
+                  "structure": [
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "callback", 
+                      "description": "The function to call with response object if successful.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "errback", 
+                      "description": "The function to call with error object if failure.  If present, automatically causes call to be made asynchronously."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "number", 
+                      "name": "http_timeout", 
+                      "description": "Number of ms to give the request before throwing (or calling errback with) a timeout error"
+                    }
+                  ], 
+                  "description": "General HTTP options and additional key/value params for this web service"
+                }
+              ], 
+              "type": "function", 
+              "description": "Performs a MQL write."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_freebase", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_freebase", 
+              "content_id": "/m/0cldl2d", 
+              "id": "/user/dfhuynh/acreassist/obj_freebase"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "formdecode": {
+          "fqid": "acre.formdecode", 
+          "description": "Parses a www-form-urlencoded string into a Javascript object.", 
+          "deprecated": true, 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "string", 
+              "name": "string", 
+              "description": "a string to decode"
+            }
+          ], 
+          "see": "acre.form.decode", 
+          "type": "function"
+        }, 
+        "get_metadata": {
+          "fqid": "acre.get_metadata", 
+          "paramInfo": [
+            {
+              "default": "the current app", 
+              "optional": false, 
+              "type": "string", 
+              "name": "url", 
+              "description": "The URL of an app"
+            }
+          ], 
+          "type": "function", 
+          "description": "Returns the metadata for an app, including the list of files."
+        }, 
+        "keystore": {
+          "fqid": "acre.keystore", 
+          "console": {}, 
+          "description": "Contains functions to manage and retrieve app secrets.", 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "keys": {
+              "fqid": "acre.keystore.keys", 
+              "paramInfo": [], 
+              "type": "function", 
+              "description": "Returns an array of key names that belong to the current ACRE app."
+            }, 
+            "remove": {
+              "fqid": "acre.keystore.remove", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "name", 
+                  "description": "The name of the key to remove"
+                }
+              ], 
+              "type": "function", 
+              "description": "Removes the key associated with the given name."
+            }, 
+            "get": {
+              "fqid": "acre.keystore.get", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "name", 
+                  "description": "The name of the key to get"
+                }
+              ], 
+              "type": "function", 
+              "description": "Returns a key object associated with the given name."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_keystore", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_keystore", 
+              "content_id": "/m/063jl3r", 
+              "id": "/user/dfhuynh/acreassist/obj_keystore"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "log": {
+          "fqid": "acre.log", 
+          "console": {}, 
+          "description": "See console for description.", 
+          "deprecated": true, 
+          "see": [
+            "console"
+          ], 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "debug": {
+              "fqid": "acre.log.debug", 
+              "description": "Writes a debug message with the given obj.", 
+              "deprecated": true, 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "obj", 
+                  "description": "a javascript object to log"
+                }
+              ], 
+              "see": "console.debug", 
+              "type": "function"
+            }, 
+            "info": {
+              "fqid": "acre.log.info", 
+              "description": "Writes an info message with the given obj.", 
+              "deprecated": true, 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "obj", 
+                  "description": "a javascript object to log"
+                }
+              ], 
+              "see": "console.info", 
+              "type": "function"
+            }, 
+            "warn": {
+              "fqid": "acre.log.warn", 
+              "description": "Writes a warning message with the given obj.", 
+              "deprecated": true, 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "obj", 
+                  "description": "a javascript object to log"
+                }
+              ], 
+              "see": "console.warn", 
+              "type": "function"
+            }, 
+            "log": {
+              "fqid": "acre.log.log", 
+              "description": "Writes an info message with the given obj.", 
+              "deprecated": true, 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "obj", 
+                  "description": "a javascript object to log"
+                }
+              ], 
+              "see": "console.log", 
+              "type": "function"
+            }, 
+            "error": {
+              "fqid": "acre.log.error", 
+              "description": "Writes an error message with the given obj.", 
+              "deprecated": true, 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "obj", 
+                  "description": "a javascript object to log"
+                }
+              ], 
+              "see": "console.error", 
+              "type": "function"
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_log", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_log", 
+              "content_id": "/m/05yy1nr", 
+              "id": "/user/dfhuynh/acreassist/obj_log"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "formencode": {
+          "fqid": "acre.formencode", 
+          "description": "Generates a www-form-urlencoded string from an object. Undefined values are skipped, but empty strings are included.", 
+          "deprecated": true, 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "obj", 
+              "name": "obj", 
+              "description": "a javascript object to encode"
+            }
+          ], 
+          "see": "acre.form.encode", 
+          "type": "function"
+        }, 
+        "htmlencode": {
+          "fqid": "acre.htmlencode", 
+          "description": "Substitutes html entities in the string as necessary.", 
+          "deprecated": true, 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "string", 
+              "name": "text", 
+              "description": "some text to encode"
+            }
+          ], 
+          "see": "acre.form.encode", 
+          "type": "function"
+        }, 
+        "urlfetch": {
+          "fqid": "acre.urlfetch", 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "string", 
+              "name": "url", 
+              "description": "A valid publicly accessible URL"
+            }, 
+            {
+              "console": {}, 
+              "description": "The HTTP request options for an urlfetch.", 
+              "mjt": {}, 
+              "JSON": {}, 
+              "acre": {
+                "current_script": {
+                  "name": "obj_urlfetch_options", 
+                  "app": {
+                    "versions": [], 
+                    "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                    "source": "graph", 
+                    "version": null, 
+                    "path": "//acreassist.dfhuynh.user.dev", 
+                    "guid": "#9202a8c04000641f800000000ba148f6", 
+                    "id": "/user/dfhuynh/acreassist"
+                  }, 
+                  "handler": "acre_script", 
+                  "media_type": "text/plain", 
+                  "path": "//acreassist.dfhuynh.user.dev/obj_urlfetch_options", 
+                  "content_id": "/m/0cc96sz", 
+                  "id": "/user/dfhuynh/acreassist/obj_urlfetch_options"
+                }
+              }, 
+              "type": "obj", 
+              "structure": [
+                {
+                  "default": "\"GET\"", 
+                  "optional": true, 
+                  "type": "string", 
+                  "name": "method", 
+                  "description": "An HTTP method, such as \"GET\" and \"POST\". Default is \"GET\"."
+                }, 
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "headers", 
+                  "description": "A Javascript object containing key/value pairs, e.g., { \"Content-Length\" : 25 }"
+                }, 
+                {
+                  "optional": true, 
+                  "type": "string", 
+                  "name": "content", 
+                  "description": "The body of the HTTP request, applicable for POST"
+                }, 
+                {
+                  "optional": true, 
+                  "type": "boolean", 
+                  "name": "sign", 
+                  "description": "Whether or not Acre should try to 'sign' the request using OAuth credentials set by acre.oauth.get_credentials() [defaults to 'false']"
+                }, 
+                {
+                  "optional": true, 
+                  "type": "number", 
+                  "name": "timeout", 
+                  "description": "(Async only).  Number of ms to give the request before throwing (or calling errback with) a timeout error"
+                }
+              ], 
+              "name": "options"
+            }
+          ], 
+          "type": "function", 
+          "description": "Fetches the given url using the given HTTP method, headers, and content as payload."
+        }, 
+        "write": {
+          "fqid": "acre.write", 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "string", 
+              "name": "response_text", 
+              "description": "The text to write"
+            }
+          ], 
+          "type": "function", 
+          "description": "Writes the given string to the HTTP response body."
+        }, 
+        "current_script": {
+          "fqid": "acre.current_script", 
+          "console": {}, 
+          "description": "Contains information on scripts currently being executed (and potentially invoked by other scripts).", 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "name": {
+              "fqid": "acre.current_script.name", 
+              "type": "string", 
+              "description": "The name of the script being executed (possibly by another script)."
+            }, 
+            "app": {
+              "fqid": "acre.current_script.app", 
+              "type": "module", 
+              "description": "The Acre app containing the script being executed (possibly by another script).", 
+              "members": {
+                "version": {
+                  "fqid": "acre.current_script.app.version", 
+                  "type": "string", 
+                  "description": "The version of the script being executed (possibly by another script)."
+                }, 
+                "id": {
+                  "fqid": "acre.current_script.app.id", 
+                  "type": "string", 
+                  "description": "The ID of the acre app that contains the script being executed (possibly by another script)."
+                }, 
+                "base_url": {
+                  "fqid": "acre.current_script.app.base_url", 
+                  "type": "string", 
+                  "description": "The full base URL for this application."
+                }
+              }
+            }, 
+            "handler": {
+              "fqid": "acre.current_script.handler", 
+              "type": "string", 
+              "description": "The type of handler executing the current script."
+            }, 
+            "media_type": {
+              "fqid": "acre.current_script.media_type", 
+              "type": "string", 
+              "description": "The MIME type of the content returned by the current script."
+            }, 
+            "content_id": {
+              "fqid": "acre.current_script.content_id", 
+              "type": "string", 
+              "description": "The ID of the content of the script being executed (possibly by another script)."
+            }, 
+            "id": {
+              "fqid": "acre.current_script.id", 
+              "type": "string", 
+              "description": "The full ID of the script being executed (possibly by another script)."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_current_script", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_current_script", 
+              "content_id": "/m/094wltq", 
+              "id": "/user/dfhuynh/acreassist/obj_current_script"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "html": {
+          "fqid": "acre.html", 
+          "console": {}, 
+          "description": "Contains HTML processing functions.", 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "parse": {
+              "fqid": "acre.html.parse", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "html_text", 
+                  "description": "The string to parse"
+                }
+              ], 
+              "type": "function", 
+              "description": "Parses a string containing an HTML page and generates a DOM representation of it."
+            }, 
+            "encode": {
+              "fqid": "acre.html.encode", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "html_text", 
+                  "description": "The HTML text to encode"
+                }
+              ], 
+              "type": "function", 
+              "description": "Substitutes HTML entities in the string as necessary."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_html", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_html", 
+              "content_id": "/m/063jk58", 
+              "id": "/user/dfhuynh/acreassist/obj_html"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "exit": {
+          "fqid": "acre.exit", 
+          "paramInfo": [], 
+          "type": "function", 
+          "description": "Abruptly terminates the execution of the script."
+        }, 
+        "include": {
+          "fqid": "acre.include", 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "string", 
+              "name": "url", 
+              "description": "The URL of a template"
+            }
+          ], 
+          "type": "function", 
+          "description": "Includes the output of a template inline.  Currently, only works for templates. "
+        }, 
+        "xml": {
+          "fqid": "acre.xml", 
+          "console": {}, 
+          "description": "Contains XML processing functions.", 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "parse": {
+              "fqid": "acre.xml.parse", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "xml_content", 
+                  "description": "The XML string to parse"
+                }
+              ], 
+              "type": "function", 
+              "description": "Parses a string containing an XML page and generates a DOM representation of it."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_xml", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_xml", 
+              "content_id": "/m/063jk5l", 
+              "id": "/user/dfhuynh/acreassist/obj_xml"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "hash": {
+          "fqid": "acre.hash", 
+          "console": {}, 
+          "description": "Contains utility functions for generating hashes.", 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "hex_hmac_sha1": {
+              "fqid": "acre.hash.hex_hmac_sha1", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "key", 
+                  "description": "The key"
+                }, 
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "data", 
+                  "description": "The string to hash"
+                }
+              ], 
+              "type": "function", 
+              "description": "Generates a HEX encoded HMAC of the given key, value pair using SHA-1 to hash them."
+            }, 
+            "hex_sha1": {
+              "fqid": "acre.hash.hex_sha1", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "data", 
+                  "description": "The string to hash"
+                }
+              ], 
+              "type": "function", 
+              "description": "Generates a HEX encoded SHA-1 hash of the given string."
+            }, 
+            "hex_hmac_md5": {
+              "fqid": "acre.hash.hex_hmac_md5", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "key", 
+                  "description": "The key"
+                }, 
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "data", 
+                  "description": "The string to hash"
+                }
+              ], 
+              "type": "function", 
+              "description": "Generates a HEX encoded HMAC of the given key, value pair using MD5 to hash them."
+            }, 
+            "b64_hmac_md5": {
+              "fqid": "acre.hash.b64_hmac_md5", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "key", 
+                  "description": "The key"
+                }, 
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "data", 
+                  "description": "The string to hash"
+                }
+              ], 
+              "type": "function", 
+              "description": "Generates a base64 encoded HMAC of the given key, value pair using MD5 to hash them."
+            }, 
+            "hex_md5": {
+              "fqid": "acre.hash.hex_md5", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "data", 
+                  "description": "The string to hash"
+                }
+              ], 
+              "type": "function", 
+              "description": "Generates a HEX encoded MD5 hash of the given string."
+            }, 
+            "b64_hmac_sha1": {
+              "fqid": "acre.hash.b64_hmac_sha1", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "key", 
+                  "description": "The key"
+                }, 
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "data", 
+                  "description": "The string to hash"
+                }
+              ], 
+              "type": "function", 
+              "description": "Generates a base64 encoded HMAC of the given key, value pair using SHA-1 to hash them."
+            }, 
+            "b64_sha1": {
+              "fqid": "acre.hash.b64_sha1", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "data", 
+                  "description": "The string to hash"
+                }
+              ], 
+              "type": "function", 
+              "description": "Generates a base64 encoded SHA-1 hash of the given string."
+            }, 
+            "b64_md5": {
+              "fqid": "acre.hash.b64_md5", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "data", 
+                  "description": "The string to hash"
+                }
+              ], 
+              "type": "function", 
+              "description": "Generates a base64 encoded MD5 hash of the given string."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_hash", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_hash", 
+              "content_id": "/m/05yy1gg", 
+              "id": "/user/dfhuynh/acreassist/obj_hash"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "form": {
+          "fqid": "acre.form", 
+          "console": {}, 
+          "description": "Contains utility functions for dealing with HTML forms.", 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "encode": {
+              "fqid": "acre.form.encode", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "parameters", 
+                  "description": "A Javascript object whose properties are the parameter names and values to encode"
+                }
+              ], 
+              "type": "function", 
+              "description": "Generates a www-form-urlencoded string from an object. Undefined values are skipped, but empty strings are included."
+            }, 
+            "quote": {
+              "fqid": "acre.form.quote", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "text", 
+                  "description": "The text to quote"
+                }
+              ], 
+              "type": "function", 
+              "description": "Like encodeURIComponent, but quotes fewer characters (so resulting strings are more compact)."
+            }, 
+            "build_url": {
+              "fqid": "acre.form.build_url", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "base_url", 
+                  "description": "the base URL"
+                }, 
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "url_parameters", 
+                  "description": "A Javascript object whose properties are the URL parameter names and values to encode"
+                }
+              ], 
+              "type": "function", 
+              "description": "Constructs a url by appending a query string, constructed from the given Javascript object, to a base url."
+            }, 
+            "decode": {
+              "fqid": "acre.form.decode", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "encoded_text", 
+                  "description": "The www-form-urlencoded string that to decode"
+                }
+              ], 
+              "type": "function", 
+              "description": "Parses a www-form-urlencoded string into a Javascript object."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_form", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_form", 
+              "content_id": "/m/05yy19r", 
+              "id": "/user/dfhuynh/acreassist/obj_form"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "route": {
+          "fqid": "acre.route", 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "string", 
+              "name": "url", 
+              "description": "The Acre-hosted URL to route to... can include path and params."
+            }
+          ], 
+          "type": "function", 
+          "description": "Routes the request to the given URL, but does not change the user-visible URL"
+        }, 
+        "host": {
+          "fqid": "acre.host", 
+          "console": {}, 
+          "description": "Contains information about the Acre host server.", 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "dev_name": {
+              "fqid": "acre.host.dev_name", 
+              "type": "string", 
+              "description": "The development subdomain name of the Acre host."
+            }, 
+            "protocol": {
+              "fqid": "acre.host.protocol", 
+              "type": "string", 
+              "description": "The network protocol the Acre host accepted the request on."
+            }, 
+            "name": {
+              "fqid": "acre.host.name", 
+              "type": "string", 
+              "description": "The domain name of the Acre host."
+            }, 
+            "port": {
+              "fqid": "acre.host.port", 
+              "type": "string", 
+              "description": "The network port the Acre host accepted the request on."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_host", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_host", 
+              "content_id": "/m/063jjls", 
+              "id": "/user/dfhuynh/acreassist/obj_host"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "formquote": {
+          "fqid": "acre.formquote", 
+          "description": "Like encodeURIComponent, but quotes fewer characters (so resulting strings are more compact).", 
+          "deprecated": true, 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "string", 
+              "name": "string", 
+              "description": "some text to decode"
+            }
+          ], 
+          "see": "acre.form.quote", 
+          "type": "function"
+        }, 
+        "oauth": {
+          "fqid": "acre.oauth", 
+          "console": {}, 
+          "description": "Provides Open Authentication (OAuth) functionalities.", 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "remove_credentials": {
+              "fqid": "acre.oauth.remove_credentials", 
+              "paramInfo": [
+                {
+                  "optional": true, 
+                  "type": "string", 
+                  "name": "provider", 
+                  "description": "The name of the OAuth provider"
+                }
+              ], 
+              "type": "function", 
+              "description": "Removes OAuth credentials with the given provider from the user's cookies (if omitted, the default provider is Freebase)."
+            }, 
+            "providers": {
+              "fqid": "acre.oauth.providers", 
+              "type": "array", 
+              "description": "A convenient list of OAuth providers."
+            }, 
+            "has_credentials": {
+              "fqid": "acre.oauth.has_credentials", 
+              "paramInfo": [
+                {
+                  "optional": true, 
+                  "type": "string", 
+                  "name": "provider", 
+                  "description": "The name of the OAuth provider"
+                }
+              ], 
+              "type": "function", 
+              "description": "Checks if the user has the given provider's OAuth credentials in his/her cookies (if omitted, the default provider is Freebase)."
+            }, 
+            "get_authorization": {
+              "fqid": "acre.oauth.get_authorization", 
+              "paramInfo": [
+                {
+                  "optional": true, 
+                  "type": "string", 
+                  "name": "provider", 
+                  "description": "The name of the OAuth provider."
+                }, 
+                {
+                  "optional": true, 
+                  "type": "string", 
+                  "name": "success_url", 
+                  "description": "The URL to redirect the user in case of a successful OAuth authorization."
+                }, 
+                {
+                  "optional": true, 
+                  "type": "string", 
+                  "name": "failure_url", 
+                  "description": "The URL to redirect the user in case of a failed OAuth authorization."
+                }
+              ], 
+              "type": "function", 
+              "description": "Performs the OAuth dance with the given provider (if omitted, the default provider is Freebase)."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_oauth", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_oauth", 
+              "content_id": "/m/063jkbf", 
+              "id": "/user/dfhuynh/acreassist/obj_oauth"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "response": {
+          "fqid": "acre.response", 
+          "console": {}, 
+          "description": "The HTTP response object", 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "status": {
+              "fqid": "acre.response.status", 
+              "type": "number", 
+              "description": "The HTTP status of the response."
+            }, 
+            "set_header": {
+              "fqid": "acre.response.set_header", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "name", 
+                  "description": "The header name"
+                }, 
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "value", 
+                  "description": "The header value"
+                }
+              ], 
+              "type": "function", 
+              "description": "Sets a response HTTP header. If there's an exiting value for the name specified, the new value will replace it."
+            }, 
+            "set_cookie": {
+              "fqid": "acre.response.set_cookie", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "name", 
+                  "description": "The cookie name"
+                }, 
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "value", 
+                  "description": "The cookie value"
+                }, 
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "options", 
+                  "description": "[TODO]"
+                }
+              ], 
+              "type": "function", 
+              "description": "Sets a cookie."
+            }, 
+            "clear_cookie": {
+              "fqid": "acre.response.clear_cookie", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "name", 
+                  "description": "The cookie name"
+                }, 
+                {
+                  "optional": true, 
+                  "type": "obj", 
+                  "name": "options", 
+                  "description": "[TODO]"
+                }
+              ], 
+              "type": "function", 
+              "description": "Clears the given cookie."
+            }, 
+            "set_error_page": {
+              "fqid": "acre.response.set_error_page", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "path", 
+                  "description": "Require path of the handler script"
+                }
+              ], 
+              "type": "function", 
+              "description": "Set which script to run as the error handler for just the current request."
+            }, 
+            "add_header": {
+              "fqid": "acre.response.add_header", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "name", 
+                  "description": "The header name"
+                }, 
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "value", 
+                  "description": "The header value"
+                }
+              ], 
+              "type": "function", 
+              "description": "Adds a response HTTP header. If there's an exiting value for the name specified, the new value will be appended."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_response", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_response", 
+              "content_id": "/m/0g5fjrm", 
+              "id": "/user/dfhuynh/acreassist/obj_response"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "markup": {
+          "fqid": "acre.markup", 
+          "console": {}, 
+          "description": "Contains utility functions to deal with markup generation (mostly useful inside Acre templates).", 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "bless": {
+              "fqid": "acre.markup.bless", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "html_code", 
+                  "description": "The HTML code to inject into the HTTP response"
+                }
+              ], 
+              "type": "function", 
+              "description": "Allows direct injection of markup into a template (and performs XSS sanitation)."
+            }, 
+            "stringify": {
+              "fqid": "acre.markup.stringify", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "template_obj", 
+                  "description": "The output of an ACRE template or of an ACRE template function"
+                }
+              ], 
+              "type": "function", 
+              "description": "Flattens the tree representation of an ACRE template output into a Javascript string."
+            }, 
+            "define_browser_var": {
+              "fqid": "acre.markup.define_browser_var", 
+              "deprecated": true, 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "obj", 
+                  "name": "object", 
+                  "description": "The server-side Javascript object"
+                }, 
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "name", 
+                  "description": "The name of the client-side Javascript variable"
+                }
+              ], 
+              "type": "function", 
+              "description": "Makes a server side Javascript object available on the client side (by creating a script tag with marshalling code)."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_markup", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_markup", 
+              "content_id": "/m/063m1w1", 
+              "id": "/user/dfhuynh/acreassist/obj_markup"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "request": {
+          "fqid": "acre.request", 
+          "console": {}, 
+          "description": "The HTTP request object and information on the script and app associated to that request.", 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "body": {
+              "fqid": "acre.request.body", 
+              "type": "string", 
+              "description": "The body of the request (POST requests only)."
+            }, 
+            "app_url": {
+              "fqid": "acre.request.app_url", 
+              "type": "string", 
+              "description": "The base URL of the request (basically http://host)."
+            }, 
+            "cookies": {
+              "fqid": "acre.request.cookies", 
+              "type": "hash", 
+              "description": "The dictionary of HTTP cookies of the request."
+            }, 
+            "server_name": {
+              "fqid": "acre.request.server_name", 
+              "type": "string", 
+              "description": "The host that was originally called to request the script."
+            }, 
+            "script": {
+              "fqid": "acre.request.script", 
+              "type": "module", 
+              "description": "The script that gets executed first to respond to the HTTP request", 
+              "members": {
+                "name": {
+                  "fqid": "acre.request.script.name", 
+                  "type": "string", 
+                  "description": "The name of the script first executed by the request."
+                }, 
+                "app": {
+                  "fqid": "acre.request.script.app", 
+                  "type": "module", 
+                  "description": "The Acre app containing the script that gets executed first to respond to the HTTP request", 
+                  "members": {
+                    "version": {
+                      "fqid": "acre.request.script.app.version", 
+                      "type": "string", 
+                      "description": "The version of the script."
+                    }, 
+                    "id": {
+                      "fqid": "acre.request.script.app.id", 
+                      "type": "string", 
+                      "description": "The ID of the acre app that contains the script."
+                    }, 
+                    "base_url": {
+                      "fqid": "acre.request.script.app.base_url", 
+                      "type": "string", 
+                      "description": "The full base URL for this application."
+                    }
+                  }
+                }, 
+                "handler": {
+                  "fqid": "acre.request.script.handler", 
+                  "type": "string", 
+                  "description": "The handler that executed the script."
+                }, 
+                "media_type": {
+                  "fqid": "acre.request.script.media_type", 
+                  "type": "string", 
+                  "description": "The MIME type of the content the script produced."
+                }, 
+                "content_id": {
+                  "fqid": "acre.request.script.content_id", 
+                  "type": "string", 
+                  "description": "The ID of the content of the script first executed by the request."
+                }, 
+                "id": {
+                  "fqid": "acre.request.script.id", 
+                  "type": "string", 
+                  "description": "The ID of the script first executed by the request."
+                }
+              }
+            }, 
+            "url": {
+              "fqid": "acre.request.url", 
+              "type": "string", 
+              "description": "The full request URL that was used to request the script."
+            }, 
+            "start_time": {
+              "fqid": "acre.request.start_time", 
+              "type": "string", 
+              "description": "The time the request started."
+            }, 
+            "base_url": {
+              "fqid": "acre.request.base_url", 
+              "deprecated": true, 
+              "see": "acre.request.app_url", 
+              "type": "string", 
+              "description": "The base URL of the request (basically http://host/)."
+            }, 
+            "body_params": {
+              "fqid": "acre.request.body_params", 
+              "type": "hash", 
+              "description": "The dictionary of HTTP POST body parameters of the request."
+            }, 
+            "headers": {
+              "fqid": "acre.request.headers", 
+              "type": "hash", 
+              "description": "The dictionary of HTTP headers of the request."
+            }, 
+            "params": {
+              "fqid": "acre.request.params", 
+              "type": "hash", 
+              "description": "The dictionary of the request parameters."
+            }, 
+            "path_info": {
+              "fqid": "acre.request.path_info", 
+              "type": "string", 
+              "description": "The part of the URL path after the script name."
+            }, 
+            "server_port": {
+              "fqid": "acre.request.server_port", 
+              "type": "string", 
+              "description": "The port that was originally called to request the script."
+            }, 
+            "query_string": {
+              "fqid": "acre.request.query_string", 
+              "type": "string", 
+              "description": "The part of the URL after ?"
+            }, 
+            "method": {
+              "fqid": "acre.request.method", 
+              "type": "string", 
+              "description": "The HTTP method used to request the script."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_request", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_request", 
+              "content_id": "/m/094wsjp", 
+              "id": "/user/dfhuynh/acreassist/obj_request"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "environ": {
+          "fqid": "acre.environ", 
+          "console": {}, 
+          "description": "See acre.request and acre.host for description.", 
+          "deprecated": true, 
+          "see": [
+            "acre.request", 
+            "acre.freebase", 
+            "acre.host"
+          ], 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "content_length": {
+              "fqid": "acre.environ.content_length", 
+              "deprecated": true, 
+              "see": "acre.request.headers['content-length']", 
+              "type": "number", 
+              "description": "The content length of the body of the request (POST requests only)."
+            }, 
+            "cookies": {
+              "fqid": "acre.environ.cookies", 
+              "deprecated": true, 
+              "see": "acre.request.cookies", 
+              "type": "hash", 
+              "description": "The dictionary of HTTP cookies of the request."
+            }, 
+            "request_server_name": {
+              "fqid": "acre.environ.request_server_name", 
+              "deprecated": true, 
+              "see": "acre.request.server_name", 
+              "type": "string", 
+              "description": "The server_host that was originally called to request the script."
+            }, 
+            "request_start_time": {
+              "fqid": "acre.environ.request_start_time", 
+              "deprecated": true, 
+              "see": "acre.request.start_time", 
+              "type": "string", 
+              "description": "The time of the request."
+            }, 
+            "default_namespace": {
+              "fqid": "acre.environ.default_namespace", 
+              "deprecated": true, 
+              "see": "(no replacement)", 
+              "type": "string", 
+              "description": "The default acre app nemespace."
+            }, 
+            "server_protocol": {
+              "fqid": "acre.environ.server_protocol", 
+              "deprecated": true, 
+              "see": "acre.host.protocol", 
+              "type": "string", 
+              "description": "The protocol that was used to make the request."
+            }, 
+            "request_server_port": {
+              "fqid": "acre.environ.request_server_port", 
+              "deprecated": true, 
+              "see": "acre.request.server_port", 
+              "type": "string", 
+              "description": "The server_port that was originally called to request the script."
+            }, 
+            "server_host_base": {
+              "fqid": "acre.environ.server_host_base", 
+              "deprecated": true, 
+              "see": "acre.host.name", 
+              "type": "string", 
+              "description": "The base host name for this Acre instance."
+            }, 
+            "request_base_url": {
+              "fqid": "acre.environ.request_base_url", 
+              "deprecated": true, 
+              "see": "acre.request.base_url", 
+              "type": "string", 
+              "description": "The base of the current URL (basically http://server_host/)"
+            }, 
+            "request_body": {
+              "fqid": "acre.environ.request_body", 
+              "deprecated": true, 
+              "see": "acre.request.body", 
+              "type": "string", 
+              "description": "The body of the request (POST requests only)."
+            }, 
+            "body_params": {
+              "fqid": "acre.environ.body_params", 
+              "deprecated": true, 
+              "see": "acre.request.body_params", 
+              "type": "hash", 
+              "description": "The dictionary of HTTP POST body parameters of the request."
+            }, 
+            "server_host": {
+              "fqid": "acre.environ.server_host", 
+              "deprecated": true, 
+              "see": "acre.host.dev_name", 
+              "type": "string", 
+              "description": "The host name for this app."
+            }, 
+            "version": {
+              "fqid": "acre.environ.version", 
+              "deprecated": true, 
+              "see": "acre.version", 
+              "type": "string", 
+              "description": "Version of the Acre system."
+            }, 
+            "params": {
+              "fqid": "acre.environ.params", 
+              "deprecated": true, 
+              "see": "acre.request.params", 
+              "type": "hash", 
+              "description": "The dictionary of the request parameters."
+            }, 
+            "server_port": {
+              "fqid": "acre.environ.server_port", 
+              "deprecated": true, 
+              "see": "acre.host.port", 
+              "type": "string", 
+              "description": "The port the request was made against."
+            }, 
+            "request_method": {
+              "fqid": "acre.environ.request_method", 
+              "deprecated": true, 
+              "see": "acre.request.method", 
+              "type": "string", 
+              "description": "The HTTP method used to request the script."
+            }, 
+            "freebase_site_host": {
+              "fqid": "acre.environ.freebase_site_host", 
+              "deprecated": true, 
+              "see": "acre.freebase.site_host", 
+              "type": "string", 
+              "description": "The URL for the Freebase web site (i.e., where App Editor resides)."
+            }, 
+            "freebase_service_url": {
+              "fqid": "acre.environ.freebase_service_url", 
+              "deprecated": true, 
+              "see": "acre.freebase.service_url", 
+              "type": "string", 
+              "description": "The URL for Freebase APIs used by the Acre server."
+            }, 
+            "error_info": {
+              "fqid": "acre.environ.error_info", 
+              "deprecated": true, 
+              "see": "acre.error", 
+              "type": "hash", 
+              "description": "The dictionary of properties of the error (only present when executing an error script)."
+            }, 
+            "path_info": {
+              "fqid": "acre.environ.path_info", 
+              "deprecated": true, 
+              "see": "acre.request.path_info", 
+              "type": "string", 
+              "description": "The part of the URL path after the script name."
+            }, 
+            "content_type": {
+              "fqid": "acre.environ.content_type", 
+              "deprecated": true, 
+              "see": "acre.request.headers['content-type']", 
+              "type": "string", 
+              "description": "The content type of the body of the request (POST requests only)."
+            }, 
+            "request_url": {
+              "fqid": "acre.environ.request_url", 
+              "deprecated": true, 
+              "see": "acre.request.url", 
+              "type": "string", 
+              "description": "The full request URL that was used to request the script."
+            }, 
+            "server_name": {
+              "fqid": "acre.environ.server_name", 
+              "deprecated": true, 
+              "see": "(No replacement)", 
+              "type": "string", 
+              "description": "The name of the Acre server."
+            }, 
+            "request_path_info": {
+              "fqid": "acre.environ.request_path_info", 
+              "deprecated": true, 
+              "see": "acre.request.path_info", 
+              "type": "string", 
+              "description": "The part of the URL path after the script name."
+            }, 
+            "headers": {
+              "fqid": "acre.environ.headers", 
+              "deprecated": true, 
+              "see": "acre.request.headers", 
+              "type": "hash", 
+              "description": "The dictionary of HTTP headers of the request."
+            }, 
+            "query_string": {
+              "fqid": "acre.environ.query_string", 
+              "deprecated": true, 
+              "see": "acre.request.query_string", 
+              "type": "string", 
+              "description": "The part of the URL after the ?"
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_environ", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_environ", 
+              "content_id": "/m/063jhv3", 
+              "id": "/user/dfhuynh/acreassist/obj_environ"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "context": {
+          "fqid": "acre.context", 
+          "console": {}, 
+          "description": "See acre.current_script for description.", 
+          "deprecated": true, 
+          "see": [
+            "acre.current_script", 
+            "acre.current_script.app"
+          ], 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "script_version": {
+              "fqid": "acre.context.script_version", 
+              "deprecated": true, 
+              "see": "acre.current_script.app.version", 
+              "type": "string", 
+              "description": "The version of the script being executed (possibly by another script)."
+            }, 
+            "script_name": {
+              "fqid": "acre.context.script_name", 
+              "deprecated": true, 
+              "see": "acre.current_script.name", 
+              "type": "string", 
+              "description": "The name of the script being executed (possibly by another script)."
+            }, 
+            "handler": {
+              "fqid": "acre.context.handler", 
+              "deprecated": true, 
+              "see": "acre.current_script.handler", 
+              "type": "string", 
+              "description": "The type of handler that is executing the current script."
+            }, 
+            "media_type": {
+              "fqid": "acre.context.media_type", 
+              "deprecated": true, 
+              "see": "acre.current_script.media_type", 
+              "type": "string", 
+              "description": "The MIME type of the content returned by the current script."
+            }, 
+            "script_namespace": {
+              "fqid": "acre.context.script_namespace", 
+              "deprecated": true, 
+              "see": "acre.current_script.app.id", 
+              "type": "string", 
+              "description": "The ID of the acre app that contains the script being executed (possibly by another script)."
+            }, 
+            "script_id": {
+              "fqid": "acre.context.script_id", 
+              "deprecated": true, 
+              "see": "acre.current_script.id", 
+              "type": "string", 
+              "description": "The ID of the script being executed (possibly by another script)."
+            }, 
+            "content_id": {
+              "fqid": "acre.context.content_id", 
+              "deprecated": true, 
+              "see": "acre.current_script.content_id", 
+              "type": "string", 
+              "description": "The ID of the content executed by this script."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_context", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_context", 
+              "content_id": "/m/063jjwc", 
+              "id": "/user/dfhuynh/acreassist/obj_context"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "error": {
+          "fqid": "acre.error", 
+          "type": "hash", 
+          "description": "The dictionary of properties of the error (only present when executing an error script)."
+        }, 
+        "request_context": {
+          "fqid": "acre.request_context", 
+          "console": {}, 
+          "description": "Information on the context executing the script associated to the request.", 
+          "deprecated": true, 
+          "see": [
+            "acre.request.script", 
+            "acre.request.script.app"
+          ], 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "script_version": {
+              "fqid": "acre.request_context.script_version", 
+              "deprecated": true, 
+              "see": "acre.request.script.app.version", 
+              "type": "string", 
+              "description": "The version of the top-level script."
+            }, 
+            "script_name": {
+              "fqid": "acre.request_context.script_name", 
+              "deprecated": true, 
+              "see": "acre.request.script.name", 
+              "type": "string", 
+              "description": "The name of the top-level script."
+            }, 
+            "handler": {
+              "fqid": "acre.request_context.handler", 
+              "deprecated": true, 
+              "see": "acre.request.script.handler", 
+              "type": "string", 
+              "description": "The handler executing the top-level script."
+            }, 
+            "media_type": {
+              "fqid": "acre.request_context.media_type", 
+              "deprecated": true, 
+              "see": "acre.request.script.media_type", 
+              "type": "string", 
+              "description": "The MIME type of the content produced by the top-level script."
+            }, 
+            "script_namespace": {
+              "fqid": "acre.request_context.script_namespace", 
+              "deprecated": true, 
+              "see": "acre.request.script.app.id", 
+              "type": "string", 
+              "description": "The ID of the acre app that contains the top-level script."
+            }, 
+            "script_id": {
+              "fqid": "acre.request_context.script_id", 
+              "deprecated": true, 
+              "see": "acre.request.script.id", 
+              "type": "string", 
+              "description": "The full ID of the top-level script."
+            }, 
+            "content_id": {
+              "fqid": "acre.request_context.content_id", 
+              "deprecated": true, 
+              "see": "acre.request.script.content_id", 
+              "type": "string", 
+              "description": "The ID of the content of the top-level script."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_request_context", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_request_context", 
+              "content_id": "/m/0c05xjf", 
+              "id": "/user/dfhuynh/acreassist/obj_request_context"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "async": {
+          "fqid": "acre.async", 
+          "console": {}, 
+          "description": "Functions for asynchronously fetching URLs.  Useful for doing parallel requests.", 
+          "mjt": {}, 
+          "JSON": {}, 
+          "members": {
+            "wait_on_results": {
+              "fqid": "acre.async.wait_on_results", 
+              "paramInfo": [
+                {
+                  "optional": true, 
+                  "type": "number", 
+                  "name": "timeout", 
+                  "description": "Deadline for request to complete (in milliseconds)."
+                }
+              ], 
+              "type": "function", 
+              "description": "Blocks until all asynchronous requests have completed"
+            }, 
+            "urlfetch": {
+              "fqid": "acre.async.urlfetch", 
+              "paramInfo": [
+                {
+                  "optional": false, 
+                  "type": "string", 
+                  "name": "url", 
+                  "description": "A valid publicly accessible URL"
+                }, 
+                {
+                  "console": {}, 
+                  "description": "The HTTP request options for an async urlfetch.", 
+                  "mjt": {}, 
+                  "JSON": {}, 
+                  "acre": {
+                    "current_script": {
+                      "name": "obj_async_urlfetch_options", 
+                      "app": {
+                        "versions": [], 
+                        "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                        "source": "graph", 
+                        "version": null, 
+                        "path": "//acreassist.dfhuynh.user.dev", 
+                        "guid": "#9202a8c04000641f800000000ba148f6", 
+                        "id": "/user/dfhuynh/acreassist"
+                      }, 
+                      "handler": "acre_script", 
+                      "media_type": "text/plain", 
+                      "path": "//acreassist.dfhuynh.user.dev/obj_async_urlfetch_options", 
+                      "content_id": "/m/0cc972g", 
+                      "id": "/user/dfhuynh/acreassist/obj_async_urlfetch_options"
+                    }
+                  }, 
+                  "type": "obj", 
+                  "structure": [
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "callback", 
+                      "description": "The function to call with response object if successful."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "function", 
+                      "name": "errback", 
+                      "description": "The function to call with response object if successful."
+                    }, 
+                    {
+                      "default": "\"GET\"", 
+                      "optional": true, 
+                      "type": "string", 
+                      "name": "method", 
+                      "description": "An HTTP method, such as \"GET\" and \"POST\". Default is \"GET\"."
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "obj", 
+                      "name": "headers", 
+                      "description": "A Javascript object containing key/value pairs, e.g., { \"Content-Length\" : 25 }"
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "string", 
+                      "name": "content", 
+                      "description": "The body of the HTTP request, applicable for POST"
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "boolean", 
+                      "name": "sign", 
+                      "description": "Whether or not Acre should try to 'sign' the request using OAuth credentials set by acre.oauth.get_credentials() [defaults to 'false']"
+                    }, 
+                    {
+                      "optional": true, 
+                      "type": "number", 
+                      "name": "timeout", 
+                      "description": "(Async only).  Number of ms to give the request before throwing (or calling errback with) a timeout error"
+                    }
+                  ], 
+                  "name": "options"
+                }
+              ], 
+              "type": "function", 
+              "description": "Fetches the given url using the given HTTP method, headers, and content as payload."
+            }
+          }, 
+          "acre": {
+            "current_script": {
+              "name": "obj_async", 
+              "app": {
+                "versions": [], 
+                "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+                "source": "graph", 
+                "version": null, 
+                "path": "//acreassist.dfhuynh.user.dev", 
+                "guid": "#9202a8c04000641f800000000ba148f6", 
+                "id": "/user/dfhuynh/acreassist"
+              }, 
+              "handler": "acre_script", 
+              "media_type": "text/plain", 
+              "path": "//acreassist.dfhuynh.user.dev/obj_async", 
+              "content_id": "/m/0fpqqsy", 
+              "id": "/user/dfhuynh/acreassist/obj_async"
+            }
+          }, 
+          "type": "module"
+        }, 
+        "form_url": {
+          "fqid": "acre.form_url", 
+          "description": "Constructs a url by appending a query string, constructed from the given Javascript object, to a base url.", 
+          "deprecated": true, 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "string", 
+              "name": "base_url", 
+              "description": "the base URL"
+            }, 
+            {
+              "optional": false, 
+              "type": "obj", 
+              "name": "url_parameters", 
+              "description": "a javascript object"
+            }
+          ], 
+          "see": "acre.form.build_url", 
+          "type": "function"
+        }, 
+        "require": {
+          "fqid": "acre.require", 
+          "paramInfo": [
+            {
+              "optional": false, 
+              "type": "string", 
+              "name": "url", 
+              "description": "The URL of an Acre-hosted script, either absolute (\"http://published-host.freebaseapps.com/foo\"), relative to Acre (\"//published-host/foo\" or \"//appY.userX.user.dev/foo\"), or relative to the file (\"foo\")."
+            }
+          ], 
+          "type": "function", 
+          "description": "Loads the script with the given URL and returns the loaded script as an object."
+        }
+      }, 
+      "acre": {
+        "current_script": {
+          "name": "obj_acre", 
+          "app": {
+            "versions": [], 
+            "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+            "source": "graph", 
+            "version": null, 
+            "path": "//acreassist.dfhuynh.user.dev", 
+            "guid": "#9202a8c04000641f800000000ba148f6", 
+            "id": "/user/dfhuynh/acreassist"
+          }, 
+          "handler": "acre_script", 
+          "media_type": "text/plain", 
+          "path": "//acreassist.dfhuynh.user.dev/obj_acre", 
+          "content_id": "/m/0ccb3f4", 
+          "id": "/user/dfhuynh/acreassist/obj_acre"
+        }
+      }, 
+      "type": "module"
+    }, 
+    "parseInt": {
+      "fqid": "parseInt", 
+      "paramInfo": [
+        {
+          "optional": false, 
+          "type": "string", 
+          "name": "text", 
+          "description": "The text string to parse"
+        }
+      ], 
+      "type": "function", 
+      "description": "Parses a string into an integer number."
+    }, 
+    "unescape": {
+      "fqid": "unescape", 
+      "paramInfo": [
+        {
+          "optional": false, 
+          "type": "string", 
+          "name": "text", 
+          "description": "The string to escape"
+        }
+      ], 
+      "type": "function", 
+      "description": "Decodes a string previously created by escape."
+    }, 
+    "decodeURIComponent": {
+      "fqid": "decodeURIComponent", 
+      "paramInfo": [
+        {
+          "optional": false, 
+          "type": "string", 
+          "name": "uri_component", 
+          "description": "The URI component to decode"
+        }
+      ], 
+      "type": "function", 
+      "description": "Decodes a URI component previously created by encodeURIComponent."
+    }, 
+    "encodeURIComponent": {
+      "fqid": "encodeURIComponent", 
+      "paramInfo": [
+        {
+          "optional": false, 
+          "type": "string", 
+          "name": "uri_component", 
+          "description": "The URI component to encode"
+        }
+      ], 
+      "type": "function", 
+      "description": "Encodes a URI component by replacing each instance of certain characters by one, two, or three escape sequences representing the UTF-8 encoding of the character."
+    }, 
+    "encodeURI": {
+      "fqid": "encodeURI", 
+      "paramInfo": [
+        {
+          "optional": false, 
+          "type": "string", 
+          "name": "uri", 
+          "description": "The URI to encode"
+        }
+      ], 
+      "type": "function", 
+      "description": "Encodes a URI by replacing each instance of certain characters by one, two, or three escape sequences representing the UTF-8 encoding of the character."
+    }
+  }, 
+  "acre": {
+    "current_script": {
+      "name": "obj_global", 
+      "app": {
+        "versions": [], 
+        "base_url": "http://acreassist.dfhuynh.user.dev.freebaseapps.com", 
+        "source": "graph", 
+        "version": null, 
+        "path": "//acreassist.dfhuynh.user.dev", 
+        "guid": "#9202a8c04000641f800000000ba148f6", 
+        "id": "/user/dfhuynh/acreassist"
+      }, 
+      "handler": "acre_script", 
+      "media_type": "text/plain", 
+      "path": "//acreassist.dfhuynh.user.dev/obj_global", 
+      "content_id": "/m/05yy299", 
+      "id": "/user/dfhuynh/acreassist/obj_global"
+    }
+  }, 
+  "type": "module"
+}

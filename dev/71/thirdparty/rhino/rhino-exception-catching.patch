@@ -1,0 +1,99 @@
+diff -r -u dist-rhino1_7R2/src/org/mozilla/javascript/Context.java rhino/src/org/mozilla/javascript/Context.java
+--- dist-rhino1_7R2/src/org/mozilla/javascript/Context.java	2009-03-22 14:32:24.000000000 -0700
++++ rhino/src/org/mozilla/javascript/Context.java	2009-05-07 18:47:58.000000000 -0700
+@@ -1758,18 +1758,31 @@
+         while ((e instanceof InvocationTargetException)) {
+             e = ((InvocationTargetException) e).getTargetException();
+         }
+-        // special handling of Error so scripts would not catch them
+-        if (e instanceof Error) {
+-            Context cx = getContext();
+-            if (cx == null ||
+-                !cx.hasFeature(Context.FEATURE_ENHANCED_JAVA_ACCESS))
+-            {
++        if (e instanceof RhinoException) {
++            throw (RhinoException)e;
++        }
++        Context cx = getContext();
++
++        // rethrow without wrapping if ENHANCED_JAVA_ACCESS is off
++        // to prevent JS from catching any non-JS exceptions.
++        if (cx == null ||
++            !cx.hasFeature(Context.FEATURE_ENHANCED_JAVA_ACCESS)) {
++            if (e instanceof Error) {
+                 throw (Error)e;
+             }
++            if (e instanceof RuntimeException) {
++                throw (RuntimeException)e;
++            }
++            // throw a generic Error if somehow we get another exception
++            throw new Error(e.getClass() + ": " + e);
+         }
+-        if (e instanceof RhinoException) {
+-            throw (RhinoException)e;
++
++        // special handling of Error so scripts would not catch them
++        if (e instanceof Error) {
++            throw (Error)e;
+         }
++
++        // wrap other exceptions if we get this far
+         throw new WrappedException(e);
+     }
+ 
+diff -r -u dist-rhino1_7R2/src/org/mozilla/javascript/Interpreter.java rhino/src/org/mozilla/javascript/Interpreter.java
+--- dist-rhino1_7R2/src/org/mozilla/javascript/Interpreter.java	2009-03-22 14:32:26.000000000 -0700
++++ rhino/src/org/mozilla/javascript/Interpreter.java	2009-05-13 22:58:26.000000000 -0700
+@@ -3893,7 +3893,7 @@
+             } else if (throwable instanceof RuntimeException) {
+                 exState = cx.hasFeature(Context.FEATURE_ENHANCED_JAVA_ACCESS)
+                           ? EX_CATCH_STATE
+-                          : EX_FINALLY_STATE;
++                          : EX_NO_JS_STATE;
+             } else if (throwable instanceof Error) {
+                 exState = cx.hasFeature(Context.FEATURE_ENHANCED_JAVA_ACCESS)
+                           ? EX_CATCH_STATE
+@@ -3905,7 +3905,7 @@
+             } else {
+                 exState = cx.hasFeature(Context.FEATURE_ENHANCED_JAVA_ACCESS)
+                           ? EX_CATCH_STATE
+-                          : EX_FINALLY_STATE;
++                          : EX_NO_JS_STATE;
+             }
+ 
+             if (instructionCounting) {
+diff -r -u dist-rhino1_7R2/src/org/mozilla/javascript/optimizer/Codegen.java rhino/src/org/mozilla/javascript/optimizer/Codegen.java
+--- dist-rhino1_7R2/src/org/mozilla/javascript/optimizer/Codegen.java	2009-03-22 14:32:24.000000000 -0700
++++ rhino/src/org/mozilla/javascript/optimizer/Codegen.java	2009-05-14 10:46:08.000000000 -0700
+@@ -3761,6 +3761,23 @@
+             cfw.addALoad(savedVariableObject);
+             cfw.addAStore(variableObjectLocal);
+ 
++            // don't allow javascript ...finally... code to intercept
++            // any subclasses of java.lang.Error
++            int rethrowLabel = cfw.acquireLabel();
++            Context cx = Context.getCurrentContext();
++            if (cx == null ||
++                !cx.hasFeature(Context.FEATURE_ENHANCED_JAVA_ACCESS))
++            {
++                // if (exc instanceof Error) rethrow without visiting js finally handler
++                cfw.addALoad(exceptionLocal);
++                cfw.add(ByteCode.INSTANCEOF, "java/lang/Error");
++                cfw.add(ByteCode.IFNE, rethrowLabel);
++
++                cfw.addALoad(exceptionLocal);
++                cfw.add(ByteCode.INSTANCEOF, "java/lang/RuntimeException");
++                cfw.add(ByteCode.IFNE, rethrowLabel);
++            }
++
+             // get the label to JSR to
+             int finallyLabel = finallyTarget.labelId();
+             if (isGenerator)
+@@ -3769,6 +3786,7 @@
+                 cfw.add(ByteCode.JSR, finallyLabel);
+ 
+             // rethrow
++            cfw.markLabel(rethrowLabel);
+             cfw.addALoad(exceptionLocal);
+             if (isGenerator)
+                 cfw.add(ByteCode.CHECKCAST, "java/lang/Throwable");
