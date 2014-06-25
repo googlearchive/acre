@@ -1,18 +1,18 @@
 
 
 /**
- * 
+ *
  * ISO 8601 date functions
- * 
+ *
  * parsing originally from dojo.date.serialize
  *
  * according to http://svn.dojotoolkit.org/src/trunk/LICENSE :
  *    Dojo is availble under *either* the terms of the modified BSD license *or* the
  *    Academic Free License version 2.1.
- * 
- * 
+ *
+ *
  * formatting from http://delete.me.uk/2005/03/iso8601.html
- * 
+ *
  *   "This code is available under the AFL. This should mean
  *    you can use it pretty much anyway you want."
  */
@@ -27,6 +27,10 @@
 var setIso8601 = function(/*Date*/dateObject, /*String*/formattedString){
 	// summary: sets a Date object based on an ISO 8601 formatted string (uses date and time)
 	var comps = (formattedString.indexOf("T") == -1) ? formattedString.split(" ") : formattedString.split("T");
+	if (!comps[0]) {
+		// For Hours like "T06:00Z", just fail to parse with NaN.
+		return NaN;
+	}
 	dateObject = setIso8601Date(dateObject, comps[0]);
 	if(comps.length == 2){ dateObject = setIso8601Time(dateObject, comps[1]); }
 	return dateObject; /* Date or null */
@@ -64,13 +68,13 @@ var setIso8601Date = function(/*String*/dateObject, /*String*/formattedString){
 		dateObject.setDate(1);
 		var day = dateObject.getDay() || 7;
 		var offset = Number(dayofweek) + (7 * Number(week));
-	
+
 		if(day <= 4){ dateObject.setDate(offset + 1 - day); }
 		else{ dateObject.setDate(offset + 8 - day); }
 	} else{
 		if(month){
 			dateObject.setDate(1);
-			dateObject.setMonth(month - 1); 
+			dateObject.setMonth(month - 1);
 		}
 		if(date){ dateObject.setDate(date); }
 	}
@@ -119,7 +123,7 @@ var setIso8601Time = function(/*Date*/dateObject, /*String*/formattedString){
 
 	if(offset !== 0){
 		dateObject.setTime(dateObject.getTime() + offset * 60000);
-	}	
+	}
 	return dateObject; // Date
 };
 
@@ -151,7 +155,7 @@ var toRfc3339 = function(/*Date?*/dateObject, /*String?*/selector){
         // inlined from dojo.string.pad()
 	var _ = function(/* string */str, /* integer */len/*=2*/, /* string */ c/*='0'*/, /* integer */dir/*=1*/) {
 	//	summary
-	//	Pad 'str' to guarantee that it is at least 'len' length with the character 'c' at either the 
+	//	Pad 'str' to guarantee that it is at least 'len' length with the character 'c' at either the
 	//	start (dir=1) or end (dir=-1) of the string
 	var out = String(str);
 	if(!c) {
@@ -177,7 +181,7 @@ var toRfc3339 = function(/*Date?*/dateObject, /*String?*/selector){
 	if(selector != "dateOnly"){
 		var time = [_(dateObject.getHours(),2), _(dateObject.getMinutes(),2), _(dateObject.getSeconds(),2)].join(':');
 		var timezoneOffset = dateObject.getTimezoneOffset();
-		time += (timezoneOffset > 0 ? "-" : "+") + 
+		time += (timezoneOffset > 0 ? "-" : "+") +
 					_(Math.floor(Math.abs(timezoneOffset)/60),2) + ":" +
 					_(Math.abs(timezoneOffset)%60,2);
 		formattedDate.push(time);
@@ -193,7 +197,7 @@ var fromRfc3339 = function(/*String*/rfcDate){
 //		A string such as 2005-06-30T08:05:00-07:00
 //		"any" is also supported in place of a time.
 
-	// backwards compatible support for use of "any" instead of just not 
+	// backwards compatible support for use of "any" instead of just not
 	// including the time
 	if(rfcDate.indexOf("Tany")!=-1){
 		rfcDate = rfcDate.replace("Tany","");
@@ -280,5 +284,5 @@ mjt.freebase.date_to_iso = function (d) {
     return toISO8601String(d);
 };
 
-    
+
 })(mjt);
